@@ -50,7 +50,7 @@ importers:
         specifier: ^8.63.0
         version: 8.63.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
 
-  apps/admin:
+  apps/admin-console:
     dependencies:
       '@interview-agent/auth-client':
         specifier: workspace:*
@@ -89,7 +89,7 @@ importers:
 
   apps/agent-runtime: {}
 
-  apps/api:
+  apps/product-api:
     dependencies:
       '@interview-agent/contracts':
         specifier: workspace:*
@@ -183,7 +183,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  apps/web:
+  apps/user-portal:
     dependencies:
       '@interview-agent/auth-client':
         specifier: workspace:*

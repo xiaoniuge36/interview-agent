@@ -39,7 +39,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['apps/web/**/*.{ts,tsx}', 'apps/admin/**/*.{ts,tsx}'],
+      files: ['apps/user-portal/**/*.{ts,tsx}', 'apps/admin-console/**/*.{ts,tsx}'],
       extends: ['next/core-web-vitals'],
     },
     {

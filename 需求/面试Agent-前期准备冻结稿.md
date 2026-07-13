@@ -517,6 +517,6 @@ golden cases
 
 实现起步备注：如果已经进入编码阶段，数据库、缓存、对象存储和观测组件统一放到 `infra/docker/docker-compose.yml` 下管理。第一阶段至少包含 PostgreSQL + pgvector、Redis、MinIO，以及 Langfuse 或 Phoenix 二选一。应用服务可以先本机运行并连接 Docker 内基础设施，等链路稳定后再决定是否纳入同一个 Compose profile。
 
-技术起步备注：代码结构按 `apps/web`、`apps/admin`、`apps/api`、`apps/agent-runtime` 拆分。前端和后端分离，Product API 和 Agent Runtime 分离；浏览器不直连 Agent Runtime，Agent 不绕过 Product API 写核心业务表。
+技术起步备注：代码结构按 `apps/user-portal`、`apps/admin-console`、`apps/product-api`、`apps/agent-runtime` 拆分。前端和后端分离，Product API 和 Agent Runtime 分离；浏览器不直连 Agent Runtime，Agent 不绕过 Product API 写核心业务表。
 
 只要坚持这个边界，本项目可以做成一个有清晰产品闭环、技术选型前沿、Agent 工程含量充足的高质量作品。

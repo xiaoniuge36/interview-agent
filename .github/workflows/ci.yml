@@ -160,16 +160,16 @@ jobs:
       matrix:
         include:
           - name: api
-            dockerfile: apps/api/Dockerfile
+            dockerfile: apps/product-api/Dockerfile
             target: runtime
           - name: migration
-            dockerfile: apps/api/Dockerfile
+            dockerfile: apps/product-api/Dockerfile
             target: migration
           - name: web
-            dockerfile: apps/web/Dockerfile
+            dockerfile: apps/user-portal/Dockerfile
             target: runtime
           - name: admin
-            dockerfile: apps/admin/Dockerfile
+            dockerfile: apps/admin-console/Dockerfile
             target: runtime
           - name: agent-runtime
             dockerfile: apps/agent-runtime/Dockerfile

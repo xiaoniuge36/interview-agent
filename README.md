@@ -22,9 +22,9 @@ Web / Admin ──HTTP/SSE──> Product API ──内部 HTTP──> Agent Run
 ```text
 interview-agent/
 ├─ apps/
-│  ├─ web/                    # Next.js 用户端，默认端口 3000
-│  ├─ admin/                  # Next.js 治理后台，默认端口 3002
-│  ├─ api/                    # NestJS Product API，默认端口 3001
+│  ├─ user-portal/            # Next.js 用户端，默认端口 3000
+│  ├─ admin-console/          # Next.js 治理后台，默认端口 3002
+│  ├─ product-api/            # NestJS Product API，默认端口 3001
 │  └─ agent-runtime/          # FastAPI Agent Runtime，默认端口 8000
 ├─ packages/
 │  ├─ auth-client/            # Web/Admin 共用的 development/OIDC 认证客户端
@@ -37,7 +37,7 @@ interview-agent/
 └─ 参考资料/                  # 外部项目分析材料
 ```
 
-根目录 `apps/` 是 Monorepo 应用集合；`apps/web/src/app/`、`apps/admin/src/app/` 是 Next.js App Router 约定；`apps/agent-runtime/app/` 是 Python 包。三者语义不同，不应为追求表面一致而重命名。
+根目录 `apps/` 按业务角色与运行边界组织：`user-portal`、`admin-console`、`product-api` 与 `agent-runtime`。其中前两个是 Next.js App Router 应用，`product-api` 是 NestJS 业务 API，`agent-runtime` 是 Python 工作流运行时。
 
 ## 技术栈
 
@@ -108,15 +108,15 @@ pnpm dev
 也可按需单独运行：
 
 ```powershell
-pnpm dev:web
-pnpm dev:admin
-pnpm dev:api
-pnpm dev:agent
+pnpm dev:user-portal
+pnpm dev:admin-console
+pnpm dev:product-api
+pnpm dev:agent-runtime
 ```
 
 ## 数据库与种子数据
 
-Prisma 使用 `apps/api/prisma/schema/` 多文件 Schema，迁移位于 `apps/api/prisma/migrations/`。
+Prisma 使用 `apps/product-api/prisma/schema/` 多文件 Schema，迁移位于 `apps/product-api/prisma/migrations/`。
 
 ```powershell
 pnpm db:validate          # 校验 Schema
