@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useReducer, useRef, useState, type Dispatch } from 'react';
 import type {
@@ -210,7 +210,28 @@ function statusNotice(status: InterviewSessionStatus): string {
 }
 
 function sessionStatusLabel(session: InterviewSession | null): string {
-  return session ? session.status + ' · ' + session.stage : 'not_started';
+  if (!session) return '等待开始';
+  return statusLabel(session.status);
+}
+
+function statusLabel(status: InterviewSessionStatus): string {
+  switch (status) {
+    case 'created':
+      return '准备出题';
+    case 'running':
+      return '正在生成下一题';
+    case 'waiting_user':
+      return '等待你的回答';
+    case 'generating_report':
+      return '正在生成报告';
+    case 'report_ready':
+      return '报告已生成';
+    case 'failed':
+      return '本轮出现异常';
+    case 'cancelled':
+      return '本轮已结束';
+  }
+  return '状态更新中';
 }
 
 function retryNotice(retry: { attempt: number; delayMs: number }): string {

@@ -1,4 +1,4 @@
-﻿import {
+import {
   UserManager,
   WebStorageStateStore,
   type User,
@@ -6,7 +6,21 @@
 } from 'oidc-client-ts';
 import { AuthConfigurationError, AuthRequiredError } from './errors';
 import { buildAuthHeaders } from './headers';
-import type { AuthState, AuthStateListener, BrowserAuthConfig } from './types';
+import {
+  browserSessionStorage,
+  clearLocalSession,
+  localState,
+  persistLocalSession,
+  readLocalSession,
+  requestLocalSession,
+} from './local-auth-session';
+import type {
+  AuthState,
+  AuthStateListener,
+  BrowserAuthConfig,
+  LocalRegistrationInput,
+  LocalSignInInput,
+} from './types';
 
 const DEFAULT_SCOPE = 'openid profile email';
 
@@ -18,12 +32,18 @@ type OidcConfig = {
   scope: string;
 };
 
+type LocalAuthConfig = {
+  apiBaseUrl: string;
+};
+
 export class BrowserAuthClient {
   private readonly oidcConfig: OidcConfig | null;
+  private readonly localAuthConfig: LocalAuthConfig | null;
   private userManager: UserManager | null = null;
 
   constructor(private readonly config: BrowserAuthConfig) {
     this.oidcConfig = config.mode === 'oidc' ? readOidcConfig(config) : null;
+    this.localAuthConfig = config.mode === 'local' ? readLocalAuthConfig(config) : null;
   }
 
   get mode() {
@@ -32,23 +52,48 @@ export class BrowserAuthClient {
 
   async initialize(): Promise<AuthState> {
     if (this.config.mode === 'development') return developmentState(this.config);
+    if (this.config.mode === 'local') return localState();
     const user = await this.manager().getUser();
     return user && !user.expired ? authenticatedState(user) : unauthenticatedState();
   }
 
   async completeSignIn(): Promise<AuthState> {
     if (this.config.mode === 'development') return developmentState(this.config);
+    if (this.config.mode === 'local') {
+      throw new AuthConfigurationError('本地账号模式不使用 OIDC 登录回调。');
+    }
     const user = await this.manager().signinRedirectCallback();
     return authenticatedState(user);
   }
 
   async signIn(): Promise<void> {
     if (this.config.mode === 'development') return;
+    if (this.config.mode === 'local') {
+      throw new AuthConfigurationError('本地账号模式需要邮箱和密码。');
+    }
     await this.manager().signinRedirect();
   }
 
-  async signOut(): Promise<void> {
-    if (this.config.mode === 'development') return;
+  async signInWithPassword(input: LocalSignInInput): Promise<AuthState> {
+    const session = await requestLocalSession(this.localConfig().apiBaseUrl, '/auth/login', input);
+    return persistLocalSession(session);
+  }
+
+  async register(input: LocalRegistrationInput): Promise<AuthState> {
+    const session = await requestLocalSession(
+      this.localConfig().apiBaseUrl,
+      '/auth/register',
+      input,
+    );
+    return persistLocalSession(session);
+  }
+
+  async signOut(): Promise<AuthState | void> {
+    if (this.config.mode === 'development') return developmentState(this.config);
+    if (this.config.mode === 'local') {
+      clearLocalSession();
+      return unauthenticatedState();
+    }
     await this.manager().signoutRedirect();
   }
 
@@ -57,6 +102,15 @@ export class BrowserAuthClient {
       return buildAuthHeaders({
         mode: this.config.mode,
         developmentActor: this.config.developmentActor,
+      });
+    }
+    if (this.config.mode === 'local') {
+      const session = readLocalSession();
+      if (!session) throw new AuthRequiredError();
+      return buildAuthHeaders({
+        mode: this.config.mode,
+        developmentActor: this.config.developmentActor,
+        accessToken: session.accessToken,
       });
     }
     const user = await this.manager().getUser();
@@ -69,7 +123,7 @@ export class BrowserAuthClient {
   }
 
   subscribe(listener: AuthStateListener): () => void {
-    if (this.config.mode === 'development') return () => undefined;
+    if (this.config.mode !== 'oidc') return () => undefined;
     const manager = this.manager();
     const refresh = () => void this.notify(listener);
     manager.events.addUserLoaded(refresh);
@@ -77,6 +131,13 @@ export class BrowserAuthClient {
     manager.events.addAccessTokenExpired(refresh);
     manager.events.addSilentRenewError(refresh);
     return () => removeListeners(manager, refresh);
+  }
+
+  private localConfig(): LocalAuthConfig {
+    if (!this.localAuthConfig) {
+      throw new AuthConfigurationError('本地账号认证配置未初始化。');
+    }
+    return this.localAuthConfig;
   }
 
   private manager(): UserManager {
@@ -105,10 +166,16 @@ function readOidcConfig(config: BrowserAuthConfig): OidcConfig {
   };
 }
 
+function readLocalAuthConfig(config: BrowserAuthConfig): LocalAuthConfig {
+  return {
+    apiBaseUrl: required(config.apiBaseUrl, 'NEXT_PUBLIC_API_BASE_URL').replace(/\/+$/, ''),
+  };
+}
+
 function required(value: string | undefined, label: string): string {
   const normalized = value?.trim();
   if (normalized) return normalized;
-  throw new AuthConfigurationError(label + ' 在 oidc 模式下不能为空。');
+  throw new AuthConfigurationError(label + ' 在对应认证模式下不能为空。');
 }
 
 function userManagerSettings(config: OidcConfig): UserManagerSettings {
@@ -126,13 +193,6 @@ function userManagerSettings(config: OidcConfig): UserManagerSettings {
     monitorSession: false,
     revokeTokensOnSignout: true,
   };
-}
-
-function browserSessionStorage(): Storage {
-  if (typeof window === 'undefined') {
-    throw new AuthConfigurationError('浏览器认证客户端只能在客户端运行。');
-  }
-  return window.sessionStorage;
 }
 
 function developmentState(config: BrowserAuthConfig): AuthState {

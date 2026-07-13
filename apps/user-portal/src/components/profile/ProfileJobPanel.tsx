@@ -11,13 +11,17 @@ type ProfileJobPanelProps = {
 
 export function ProfileJobPanel(props: ProfileJobPanelProps) {
   return (
-    <section id="profile" className="grid-2 section-gap">
-      <ProfilePanel profile={props.profile} onChanged={props.onProfileChanged} />
-      <JobIntentPanel
-        profile={props.profile}
-        latestJob={props.jobs[0]}
-        onCreated={props.onJobCreated}
-      />
+    <section className="profile-job-grid section-gap" aria-label="训练资料">
+      <div id="profile" className="anchor-target">
+        <ProfilePanel profile={props.profile} onChanged={props.onProfileChanged} />
+      </div>
+      <div id="job-intent" className="anchor-target">
+        <JobIntentPanel
+          profile={props.profile}
+          latestJob={props.jobs[0]}
+          onCreated={props.onJobCreated}
+        />
+      </div>
     </section>
   );
 }

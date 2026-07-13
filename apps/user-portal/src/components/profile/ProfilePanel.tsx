@@ -14,11 +14,9 @@ export function ProfilePanel({ profile, onChanged }: ProfilePanelProps) {
   return (
     <form className="panel stack" onSubmit={controller.submit} noValidate={false}>
       <div>
-        <div className="eyebrow">Profile Memory</div>
-        <h2 className="h2">候选人画像</h2>
-        <p className="muted-text">
-          前端只提交结构化资料，权限判断和能力评分统一由 Product API 完成。
-        </p>
+        <div className="eyebrow">第一步</div>
+        <h2 className="h2">建立候选人画像</h2>
+        <p className="muted-text">只填写会影响面试的问题：目标岗位、经验、技术栈和项目证据。</p>
       </div>
       <ProfileFields value={controller.form} onChange={controller.update} />
       <div className="row-between">

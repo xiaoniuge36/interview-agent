@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   createContext,
@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { BrowserAuthClient } from './browser-auth-client';
-import type { AuthState } from './types';
+import type { AuthState, LocalRegistrationInput, LocalSignInInput } from './types';
 
 const INITIAL_STATE: AuthState = {
   status: 'loading',
@@ -21,6 +21,8 @@ const INITIAL_STATE: AuthState = {
 type AuthContextValue = AuthState & {
   mode: BrowserAuthClient['mode'];
   signIn: () => Promise<void>;
+  signInWithPassword: (input: LocalSignInInput) => Promise<void>;
+  register: (input: LocalRegistrationInput) => Promise<void>;
   signOut: () => Promise<void>;
   completeSignIn: () => Promise<void>;
   getRequestHeaders: () => Promise<Headers>;
@@ -41,6 +43,8 @@ export function AuthProvider({ client, children }: AuthProviderProps) {
       ...controller.state,
       mode: client.mode,
       signIn: controller.signIn,
+      signInWithPassword: controller.signInWithPassword,
+      register: controller.register,
       signOut: controller.signOut,
       completeSignIn: controller.completeSignIn,
       getRequestHeaders,
@@ -54,11 +58,19 @@ function useAuthController(client: BrowserAuthClient) {
   const [state, setState] = useState<AuthState>(INITIAL_STATE);
   useEffect(() => initializeAuth(client, setState), [client]);
   const signIn = useCallback(() => runAuthAction(client.signIn.bind(client), setState), [client]);
+  const signInWithPassword = useCallback(
+    (input: LocalSignInInput) => runAuthAction(() => client.signInWithPassword(input), setState),
+    [client],
+  );
+  const register = useCallback(
+    (input: LocalRegistrationInput) => runAuthAction(() => client.register(input), setState),
+    [client],
+  );
   const signOut = useCallback(() => runAuthAction(client.signOut.bind(client), setState), [client]);
   const completeSignIn = useCallback(() => completeAuth(client, setState), [client]);
   return useMemo(
-    () => ({ state, signIn, signOut, completeSignIn }),
-    [completeSignIn, signIn, signOut, state],
+    () => ({ state, signIn, signInWithPassword, register, signOut, completeSignIn }),
+    [completeSignIn, register, signIn, signInWithPassword, signOut, state],
   );
 }
 
@@ -80,10 +92,14 @@ function initializeAuth(client: BrowserAuthClient, setState: (state: AuthState) 
   };
 }
 
-async function runAuthAction(action: () => Promise<void>, setState: (state: AuthState) => void) {
+async function runAuthAction(
+  action: () => Promise<AuthState | void>,
+  setState: (state: AuthState) => void,
+) {
   setState(INITIAL_STATE);
   try {
-    await action();
+    const state = await action();
+    if (state) setState(state);
   } catch (error) {
     setState(failure(error));
   }

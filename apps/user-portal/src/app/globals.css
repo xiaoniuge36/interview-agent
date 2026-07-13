@@ -2,5 +2,7 @@
 @import './styles/shell.css';
 @import './styles/primitives.css';
 @import './styles/interview.css';
+@import './styles/practice.css';
 @import './styles/states.css';
+@import './styles/auth.css';
 @import './styles/responsive.css';

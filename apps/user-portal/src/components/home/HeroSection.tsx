@@ -1,41 +1,131 @@
-const METRICS = [
-  ['3', '已接入阶段'],
-  ['SSE', '流式面试反馈'],
-  ['Trace', '审计与回放'],
-] as const;
+import type { JobIntentPayload, ProfilePayload } from '@interview-agent/contracts';
 
-const PRINCIPLES = ['Product API 是事实源', 'Agent Runtime 管状态机', '前端不拼 prompt'] as const;
+type HeroSectionProps = { profile: ProfilePayload; jobs: JobIntentPayload[] };
+type TrainingStep = { label: string; detail: string; ready: boolean };
 
-export function HeroSection() {
+export function HeroSection({ profile, jobs }: HeroSectionProps) {
+  const currentProfile = profile.profile;
+  const hasProfile = currentProfile !== null;
+  const hasJob = jobs.length > 0;
+  const nextAction = resolveNextAction(hasProfile, hasJob);
+  const steps = trainingSteps({
+    profileRole: currentProfile?.targetRole,
+    jobRole: jobs[0]?.intent.targetRole,
+    hasProfile,
+    hasJob,
+  });
   return (
-    <section className="hero">
-      <div className="panel">
-        <div className="eyebrow">Agent-native Interview Workspace</div>
-        <h1 className="h1">从个人画像到模拟面试，再到记忆写回。</h1>
-        <p className="muted-text">
-          前台只承载训练体验；业务事实、权限和 Agent 状态统一进入 Product API 与 Agent Runtime。
+    <section id="workspace" className="hero">
+      <div className="hero-main">
+        <div className="eyebrow">Training workspace</div>
+        <h1 className="h1">Make your next interview response verifiable.</h1>
+        <p className="hero-copy">
+          Bring role targets, project experience, and feedback into one training path, so every next
+          answer starts with evidence.
         </p>
-        <div className="grid-3 metric-grid">
-          {METRICS.map(([value, label]) => (
-            <div className="metric" key={label}>
-              <strong>{value}</strong>
-              <span>{label}</span>
-            </div>
-          ))}
-        </div>
+        <a className="button hero-action" href={nextAction.href}>
+          {nextAction.label}
+          <span aria-hidden="true">?</span>
+        </a>
+        <TrainingRail steps={steps} />
       </div>
-      <div className="panel muted">
-        <div className="eyebrow">Current Focus</div>
-        <h2 className="h2">AI Agent 应用开发</h2>
-        <p className="muted-text">优先训练状态机、RAG 权限过滤、工程边界、项目表达和可观测性。</p>
-        <div className="stack focus-stack">
-          {PRINCIPLES.map((item) => (
-            <span className="chip" key={item}>
-              {item}
-            </span>
-          ))}
-        </div>
-      </div>
+      <ReadinessCard nextAction={nextAction} hasProfile={hasProfile} hasJob={hasJob} />
     </section>
   );
+}
+
+function TrainingRail({ steps }: { steps: TrainingStep[] }) {
+  return (
+    <div className="training-rail" aria-label="Training readiness progress">
+      {steps.map((step, index) => (
+        <div className={step.ready ? 'training-step complete' : 'training-step'} key={step.label}>
+          <span className="training-step-index">0{index + 1}</span>
+          <div>
+            <strong>{step.label}</strong>
+            <small>{step.detail}</small>
+          </div>
+          <span className="training-step-state">{step.ready ? 'Complete' : 'Pending'}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+type ReadinessCardProps = {
+  nextAction: ReturnType<typeof resolveNextAction>;
+  hasProfile: boolean;
+  hasJob: boolean;
+};
+
+function ReadinessCard({ nextAction, hasProfile, hasJob }: ReadinessCardProps) {
+  return (
+    <aside className="readiness-card" aria-label="Suggested next action">
+      <span className="readiness-label">Today&apos;s recommendation</span>
+      <div className="readiness-orbit" aria-hidden="true">
+        <span>Readiness</span>
+        <strong>{readinessScore(hasProfile, hasJob)}</strong>
+      </div>
+      <h2>{nextAction.title}</h2>
+      <p>{nextAction.description}</p>
+      <div className="readiness-footer">
+        <span>Training path</span>
+        <strong>{readyStepCount(hasProfile, hasJob)} / 3</strong>
+      </div>
+    </aside>
+  );
+}
+
+type TrainingStepInput = {
+  profileRole: string | undefined;
+  jobRole: string | undefined;
+  hasProfile: boolean;
+  hasJob: boolean;
+};
+
+function trainingSteps(input: TrainingStepInput): TrainingStep[] {
+  return [
+    {
+      label: 'Candidate profile',
+      detail: input.profileRole ?? 'Add your experience and strengths',
+      ready: input.hasProfile,
+    },
+    {
+      label: 'Target role',
+      detail: input.jobRole ?? 'Add a JD or target direction',
+      ready: input.hasJob,
+    },
+    { label: 'Mock interview', detail: 'Record every answer in the practice flow', ready: false },
+  ];
+}
+
+function resolveNextAction(hasProfile: boolean, hasJob: boolean) {
+  if (!hasProfile)
+    return {
+      href: '#profile',
+      label: 'Complete candidate profile',
+      title: 'Establish a baseline first',
+      description:
+        'Your role, seniority, and project experience are used to generate relevant questions and feedback.',
+    };
+  if (!hasJob)
+    return {
+      href: '#job-intent',
+      label: 'Add a target role',
+      title: 'Add a target role',
+      description: 'Associating a job description makes questions closer to your real interview.',
+    };
+  return {
+    href: '#interview',
+    label: 'Start a mock interview',
+    title: 'You are ready to practice',
+    description: 'The baseline information is ready. Select a role and begin the interview.',
+  };
+}
+
+function readinessScore(hasProfile: boolean, hasJob: boolean) {
+  return hasProfile && hasJob ? '72' : hasProfile || hasJob ? '38' : '12';
+}
+
+function readyStepCount(hasProfile: boolean, hasJob: boolean) {
+  return Number(hasProfile) + Number(hasJob);
 }

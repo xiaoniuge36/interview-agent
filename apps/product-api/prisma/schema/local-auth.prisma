@@ -1,0 +1,12 @@
+model LocalCredential {
+  id           String   @id @default(cuid())
+  tenantId     String
+  userId       String   @unique
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId, email])
+  @@index([tenantId, userId])
+}

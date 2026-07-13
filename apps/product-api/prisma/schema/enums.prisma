@@ -147,3 +147,31 @@ enum KnowledgeAssetStatus {
   published
   failed
 }
+
+enum ImportTaskStatus {
+  received
+  processing
+  review
+  published
+  failed
+}
+
+enum PracticeSessionStatus {
+  created
+  in_progress
+  submitted
+  report_ready
+  cancelled
+}
+
+enum PracticeItemStatus {
+  pending
+  answered
+  evaluated
+}
+
+enum PracticeMode {
+  smart
+  manual
+  weakness_review
+}

@@ -1,10 +1,17 @@
-﻿import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Injectable, NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import { randomUUID } from 'node:crypto';
 import { AuthIdentityService } from '../authn/auth-identity.service';
 import type { ProductRequest } from './product-request';
 
-const PUBLIC_PATHS = new Set(['/health', '/api/health', '/api/health/live', '/api/health/ready']);
+const PUBLIC_PATHS = new Set([
+  '/health',
+  '/api/health',
+  '/api/health/live',
+  '/api/health/ready',
+  '/api/auth/login',
+  '/api/auth/register',
+]);
 
 const correlationId = (value: unknown) => {
   const candidate = typeof value === 'string' ? value.trim() : '';

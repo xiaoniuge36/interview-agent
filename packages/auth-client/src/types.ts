@@ -1,4 +1,4 @@
-export type AuthMode = 'development' | 'oidc';
+export type AuthMode = 'development' | 'oidc' | 'local';
 export type DevelopmentActor = 'user' | 'admin';
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'error';
 
@@ -14,9 +14,19 @@ export type AuthState = {
   error: string | null;
 };
 
+export type LocalSignInInput = {
+  email: string;
+  password: string;
+};
+
+export type LocalRegistrationInput = LocalSignInInput & {
+  name: string;
+};
+
 export type BrowserAuthConfig = {
   mode: AuthMode;
   developmentActor: DevelopmentActor;
+  apiBaseUrl?: string;
   authority?: string;
   clientId?: string;
   redirectUri?: string;

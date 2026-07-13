@@ -1,4 +1,4 @@
-﻿import type { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import type { AuthIdentityService } from '../authn/auth-identity.service';
 import { developmentActor } from './request-context';
 import type { ProductRequest } from './product-request';
@@ -9,19 +9,22 @@ const request = (originalUrl: string, method = 'GET') =>
 const response = () => ({ setHeader: jest.fn() }) as unknown as Response;
 
 describe('ContextMiddleware public boundary', () => {
-  it.each(['/api/health?probe=liveness', '/api/health/live', '/api/health/ready'])(
-    'keeps the exact health endpoint public: %s',
-    async (path) => {
-      const identities = { resolve: jest.fn() };
-      const middleware = new ContextMiddleware(identities as unknown as AuthIdentityService);
-      const next = jest.fn() as NextFunction;
+  it.each([
+    '/api/health?probe=liveness',
+    '/api/health/live',
+    '/api/health/ready',
+    '/api/auth/login',
+    '/api/auth/register',
+  ])('keeps the exact health endpoint public: %s', async (path) => {
+    const identities = { resolve: jest.fn() };
+    const middleware = new ContextMiddleware(identities as unknown as AuthIdentityService);
+    const next = jest.fn() as NextFunction;
 
-      await middleware.use(request(path), response(), next);
+    await middleware.use(request(path), response(), next);
 
-      expect(next).toHaveBeenCalledTimes(1);
-      expect(identities.resolve).not.toHaveBeenCalled();
-    },
-  );
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(identities.resolve).not.toHaveBeenCalled();
+  });
 
   it('does not treat health-like paths as public', async () => {
     const actor = developmentActor('user');

@@ -1,4 +1,4 @@
-﻿import type { JobIntentPayload } from '@interview-agent/contracts';
+import type { JobIntentPayload } from '@interview-agent/contracts';
 import type { InterviewController } from '@/hooks/useInterviewController';
 import { AnswerComposer } from './AnswerComposer';
 import { InterviewToolbar } from './InterviewToolbar';
@@ -14,11 +14,9 @@ export function InterviewConsole({ jobs, controller }: InterviewConsoleProps) {
     <div className="panel stack">
       <header className="row-between">
         <div>
-          <div className="eyebrow">Mock Interview</div>
-          <h2 className="h2">Agent 模拟面试</h2>
-          <p className="muted-text">
-            由 Product API 维护会话状态，Agent Runtime 返回结构化结果，并通过 SSE 实时同步。
-          </p>
+          <div className="eyebrow">模拟面试</div>
+          <h2 className="h2">像真实面试一样，逐题作答</h2>
+          <p className="muted-text">选择岗位后开始。系统会记录回答、追问与可执行的改进建议。</p>
         </div>
         <span className="chip" aria-label={'面试状态 ' + controller.statusLabel}>
           <span className="status-dot" />

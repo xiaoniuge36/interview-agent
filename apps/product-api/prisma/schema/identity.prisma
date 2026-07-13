@@ -21,6 +21,12 @@ model Tenant {
   candidateQuestions CandidateQuestion[]
   modelProfiles      ModelProfile[]
   knowledgeAssets    KnowledgeAsset[]
+  importTasks        ImportTask[]
+  practiceSessions   PracticeSession[]
+  practiceItems      PracticeSessionItem[]
+  evaluationResults  EvaluationResult[]
+  practiceReports    PracticeReport[]
+  masteryProfiles    MasteryProfile[]
   auditLogs          AuditLog[]
 }
 
@@ -39,6 +45,8 @@ model User {
   jobIntents JobIntent[]
   interviews InterviewSession[]
   memory     MemoryEvent[]
+  practices  PracticeSession[]
+  mastery    MasteryProfile[]
 
   @@unique([tenantId, id])
   @@unique([tenantId, subject])

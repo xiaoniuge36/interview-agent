@@ -1,4 +1,4 @@
-﻿import type { InterviewReport } from '@interview-agent/contracts';
+import type { InterviewReport } from '@interview-agent/contracts';
 
 type ReportPanelProps = {
   report: InterviewReport | null;
@@ -6,8 +6,8 @@ type ReportPanelProps = {
 
 export function ReportPanel({ report }: ReportPanelProps) {
   return (
-    <section className="panel report-card stack compact">
-      <div className="eyebrow">Report</div>
+    <section id="reports" className="panel report-card stack compact">
+      <div className="eyebrow">复盘报告</div>
       {report ? <ReportContent report={report} /> : <ReportPlaceholder />}
     </section>
   );
@@ -40,5 +40,7 @@ function ReportContent({ report }: { report: InterviewReport }) {
 }
 
 function ReportPlaceholder() {
-  return <p className="muted-text">完成模拟面试后，Product API 将生成结构化面试报告。</p>;
+  return (
+    <p className="muted-text">完成一场模拟面试后，这里会给出得分、薄弱环节和下一步练习建议。</p>
+  );
 }

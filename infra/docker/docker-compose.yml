@@ -220,6 +220,7 @@ services:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3001/api}
         NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Interview Agent}
         NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-development}
+        NEXT_PUBLIC_USER_AUTH_MODE: ${NEXT_PUBLIC_USER_AUTH_MODE:-local}
         NEXT_PUBLIC_OIDC_AUTHORITY: ${NEXT_PUBLIC_OIDC_AUTHORITY:-https://identity.example.com/}
         NEXT_PUBLIC_OIDC_CLIENT_ID: ${NEXT_PUBLIC_OIDC_CLIENT_ID:-interview-agent-web}
         NEXT_PUBLIC_OIDC_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_REDIRECT_URI:-http://localhost:3000/auth/callback}

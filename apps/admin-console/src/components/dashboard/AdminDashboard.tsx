@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useAuth } from '@interview-agent/auth-client';
 import { AdminShell } from '@/components/AdminShell';
@@ -9,6 +9,7 @@ import { ImportPipeline } from './ImportPipeline';
 import { ModelGovernance } from './ModelGovernance';
 import { QuestionReviewPanels } from './QuestionReviewPanels';
 import { RuntimeObservability } from './RuntimeObservability';
+import { TrainingContentWorkbench } from './TrainingContentWorkbench';
 import { AuthenticationFailure } from './SectionState';
 
 export function AdminDashboard() {
@@ -28,7 +29,7 @@ export function AdminDashboard() {
           onAction={restoreSession}
         />
       ) : (
-        <DashboardSections state={state} />
+        <DashboardSections state={state} onChanged={reload} />
       )}
     </AdminShell>
   );
@@ -36,12 +37,13 @@ export function AdminDashboard() {
 
 type DashboardState = ReturnType<typeof useAdminDashboard>['state'];
 
-function DashboardSections({ state }: { state: DashboardState }) {
+function DashboardSections({ state, onChanged }: { state: DashboardState; onChanged: () => void }) {
   return (
     <div className="console-content">
       <DashboardStats state={state.dashboard} />
       <ImportPipeline state={state.dashboard} />
       <QuestionReviewPanels questions={state.questions} candidates={state.candidates} />
+      <TrainingContentWorkbench candidates={state.candidates} onChanged={onChanged} />
       <ModelGovernance state={state.models} />
       <RuntimeObservability state={state.runs} />
       <AuditLogPanel state={state.logs} />

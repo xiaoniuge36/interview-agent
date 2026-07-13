@@ -2,6 +2,7 @@
 
 import { InterviewWorkspace } from '@/components/interview/InterviewWorkspace';
 import { ProfileJobPanel } from '@/components/profile/ProfileJobPanel';
+import { PracticeWorkspace } from '@/components/practice/PracticeWorkspace';
 import { useWorkspaceData } from '@/hooks/useWorkspaceData';
 import { HeroSection } from './HeroSection';
 
@@ -14,13 +15,14 @@ export function HomePageContent() {
   const data = workspace.state.data;
   return (
     <div className="workspace">
-      <HeroSection />
+      <HeroSection profile={data.profile} jobs={data.jobs} />
       <ProfileJobPanel
         profile={data.profile}
         jobs={data.jobs}
         onProfileChanged={workspace.updateProfile}
         onJobCreated={workspace.addJob}
       />
+      <PracticeWorkspace />
       <InterviewWorkspace jobs={data.jobs} />
     </div>
   );

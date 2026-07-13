@@ -1,13 +1,5 @@
-import { AuthGate } from '@interview-agent/auth-client';
-import { HomePageContent } from '@/components/home/HomePageContent';
-import { UserShell } from '@/components/UserShell';
+import { PortalAccess } from '@/components/auth/PortalAccess';
 
 export default function HomePage() {
-  return (
-    <AuthGate applicationName="Interview Agent">
-      <UserShell>
-        <HomePageContent />
-      </UserShell>
-    </AuthGate>
-  );
+  return <PortalAccess />;
 }

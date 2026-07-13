@@ -1,4 +1,6 @@
 from functools import lru_cache
+from os import getenv
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr
@@ -8,6 +10,8 @@ MIN_INTERNAL_TOKEN_LENGTH = 24
 DEFAULT_BODY_LIMIT_BYTES = 1_048_576
 MIN_BODY_LIMIT_BYTES = 1_024
 MAX_BODY_LIMIT_BYTES = 10_485_760
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+LOCAL_ENV_FILE = PROJECT_ROOT / ".env"
 
 
 class RuntimeSettings(BaseSettings):
@@ -38,4 +42,6 @@ class RuntimeSettings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> RuntimeSettings:
-    return RuntimeSettings.model_validate({})
+    environment = getenv("NODE_ENV", "development")
+    env_file = LOCAL_ENV_FILE if environment == "development" else None
+    return RuntimeSettings(_env_file=env_file)
