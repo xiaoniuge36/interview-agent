@@ -13,6 +13,7 @@
     "lint": "eslint \"src/**/*.ts\" \"prisma/**/*.ts\"",
     "db:generate": "prisma generate --schema prisma/schema",
     "db:migrate": "prisma migrate dev --schema prisma/schema",
+    "db:migrate:deploy": "prisma migrate deploy --schema prisma/schema",
     "db:studio": "prisma studio --schema prisma/schema",
     "pretest": "pnpm --filter @interview-agent/contracts build && prisma generate --schema prisma/schema",
     "test": "jest --runInBand --passWithNoTests"
