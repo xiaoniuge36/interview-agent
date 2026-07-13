@@ -1,0 +1,105 @@
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users              User[]
+  profiles           UserProfile[]
+  profileSnapshots   ProfileSnapshot[]
+  jobIntents         JobIntent[]
+  jobProfiles        JobProfile[]
+  interviews         InterviewSession[]
+  interviewTurns     InterviewTurn[]
+  interviewReports   InterviewReport[]
+  interviewCommands  InterviewCommand[]
+  interviewEvents    InterviewEvent[]
+  memoryEvents       MemoryEvent[]
+  agentRuns          AgentRun[]
+  questions          Question[]
+  candidateQuestions CandidateQuestion[]
+  modelProfiles      ModelProfile[]
+  knowledgeAssets    KnowledgeAsset[]
+  auditLogs          AuditLog[]
+}
+
+model User {
+  id        String    @id @default(cuid())
+  tenantId  String
+  subject   String
+  role      ActorRole @default(user)
+  email     String?
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  tenant     Tenant             @relation(fields: [tenantId], references: [id])
+  profile    UserProfile?
+  jobIntents JobIntent[]
+  interviews InterviewSession[]
+  memory     MemoryEvent[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, subject])
+  @@index([tenantId, role])
+}
+
+model UserProfile {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  userId             String
+  targetRole         String
+  yearsOfExperience  Int
+  techStacks         String[]
+  resumeSummary      String
+  projectExperiences String[]
+  currentLevel       String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant    Tenant            @relation(fields: [tenantId], references: [id])
+  user      User              @relation(fields: [tenantId, userId], references: [tenantId, id])
+  snapshots ProfileSnapshot[]
+
+  @@unique([tenantId, userId])
+  @@unique([tenantId, id])
+}
+
+model ProfileSnapshot {
+  id          String   @id @default(cuid())
+  tenantId    String
+  profileId   String
+  strengths   String[]
+  weaknesses  String[]
+  riskSignals String[]
+  skillMap    Json
+  createdAt   DateTime @default(now())
+
+  tenant  Tenant      @relation(fields: [tenantId], references: [id])
+  profile UserProfile @relation(fields: [tenantId, profileId], references: [tenantId, id])
+
+  @@index([tenantId, profileId, createdAt])
+}
+
+model AuditLog {
+  id              String      @id @default(cuid())
+  tenantId        String
+  requestId       String
+  actorId         String
+  actorRole       ActorRole
+  action          String
+  resourceType    String
+  resourceId      String
+  traceId         String
+  result          AuditResult
+  stateTransition Json?
+  metadata        Json
+  createdAt       DateTime    @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, action, createdAt])
+  @@index([traceId])
+  @@index([resourceType, resourceId])
+}

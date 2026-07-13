@@ -1,0 +1,73 @@
+{
+  "name": "interview-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent-native 面试训练平台，包含 Product API、Web、Admin 与 Agent Runtime",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20.0.0 <25",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:web": "pnpm --filter @interview-agent/web dev",
+    "dev:admin": "pnpm --filter @interview-agent/admin dev",
+    "dev:api": "pnpm --filter @interview-agent/api dev",
+    "dev:agent": "pnpm --filter @interview-agent/agent-runtime dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "verify": "pnpm format:check && pnpm contracts:check && pnpm db:validate && pnpm db:generate && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm security:audit && pnpm infra:config",
+    "format": "prettier --write \"**/*.{ts,tsx,js,cjs,mjs,json,md,yml,yaml,css,html}\" && uv run --project apps/agent-runtime --extra dev ruff format apps/agent-runtime && prisma format --schema apps/api/prisma/schema",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,cjs,mjs,json,md,yml,yaml,css,html}\" && uv run --project apps/agent-runtime --extra dev ruff format --check apps/agent-runtime",
+    "db:generate": "prisma generate --schema apps/api/prisma/schema",
+    "db:validate": "prisma validate --schema apps/api/prisma/schema",
+    "db:migrate": "prisma migrate dev --schema apps/api/prisma/schema",
+    "db:migrate:deploy": "prisma migrate deploy --schema apps/api/prisma/schema",
+    "predb:seed": "pnpm --filter @interview-agent/contracts build && pnpm db:generate",
+    "db:seed": "tsx apps/api/prisma/seed.ts",
+    "contracts:generate": "tsx packages/contracts/scripts/generate-runtime-schema.ts",
+    "infra:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "contracts:check": "tsx packages/contracts/scripts/generate-runtime-schema.ts --check",
+    "db:format": "prisma format --schema apps/api/prisma/schema",
+    "security:audit": "pnpm security:audit:node && pnpm security:audit:python",
+    "infra:config": "docker compose --env-file .env.example -f infra/docker/docker-compose.yml config --quiet",
+    "infra:build": "docker compose -f infra/docker/docker-compose.yml build",
+    "security:audit:node": "pnpm audit --prod --audit-level high",
+    "security:audit:python": "pnpm --filter @interview-agent/agent-runtime security:audit"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "15.5.20",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.6.2",
+    "prisma": "6.19.3",
+    "tsx": "^4.20.3",
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.63.0"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "sharp"
+    ],
+    "overrides": {
+      "postcss": "8.5.16",
+      "qs": "6.15.3"
+    },
+    "ignoredBuiltDependencies": [
+      "@scarf/scarf"
+    ]
+  }
+}

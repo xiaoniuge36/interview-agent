@@ -25,8 +25,129 @@ Agent 层：可编排、可追问、可评分、可记忆
 | 还需要 JS/TS 吗？ | 需要。Web、后台、题库管理、权限、报告展示、配置中心继续用 TS 更稳。 |
 | 能不能全 Python？ | 可以做 Agent demo，但做不出足够好的产品壳、管理后台和前端体验。 |
 | 能不能全 TS？ | 可以做产品快，但复杂 Agent 状态机、评估、RAG 实验和 Python AI 生态不如 Python 顺。 |
+| 是否前后端分离？ | 是，但不是传统“页面 + CRUD API”的浅分离，而是 `Web/Admin -> Product API -> Agent Runtime` 的三段式分离。 |
+| 是否需要 BFF？ | 第一阶段不单独做 BFF 服务；Next.js 只作为 UI Shell，所有业务事实写入 NestJS Product API。必要的 Server Actions 只做页面编排和轻量转发。 |
 | 推荐主线 | Next.js/NestJS/Prisma 做 Product Shell，Python/FastAPI/LangGraph/Pydantic 做 Agent Runtime，OpenAPI/JSON Schema 做跨语言契约。 |
 | 技术含量方向 | LangGraph、结构化输出、pgvector/hybrid search、rerank、model router、prompt registry、LLM judge、OpenTelemetry、Langfuse/Phoenix 观测。 |
+
+## 前后端分离与技术架构决策
+
+本项目采用“强分离、弱耦合、契约优先”的架构。分离的目的不是制造更多服务，而是让产品体验、业务事实、Agent 推理和评估观测各自稳定。
+
+```text
+User Web / Admin Web
+  -> NestJS Product API
+  -> FastAPI Agent Runtime
+  -> Model Provider / Retrieval / Evaluation
+```
+
+### 分离决策
+
+| 决策点 | 结论 | 原因 |
+|---|---|---|
+| 用户端和后台端是否分离 | 代码分应用，能力分域；底层共享 UI token、contracts 和 auth client。 | 用户端重体验和训练闭环，后台端重资产治理和配置审核，页面模型不同。 |
+| 前端和后端是否分离 | 分离。前端不直接连数据库、不直接调模型、不直接写 Agent 状态。 | 防止权限、审计、状态机散落到页面。 |
+| Product API 和 Agent Runtime 是否分离 | 分离。NestJS 管业务事实，FastAPI/LangGraph 管 Agent 状态机。 | TS 更适合产品工程，Python 更适合 Agent/RAG/评估生态。 |
+| 是否单独做 BFF | 第一阶段不做独立 BFF 服务。Next.js Server Actions 只做 UI 编排，不承载业务事实。 | 避免多一层重复鉴权和重复 DTO；后期如多端复杂再抽 BFF。 |
+| 是否微服务化 | 第一阶段不做微服务。采用 monorepo 多应用 + 模块化单体 Product API。 | 当前核心风险是闭环质量，不是服务拆分规模。 |
+| 是否 Docker 一体化 | 基础设施一体化，应用服务可逐步纳入 profile。 | 本地开发可控，线上部署仍保留服务边界。 |
+
+### 运行时拓扑
+
+```mermaid
+flowchart LR
+  Web["apps/web\nNext.js User App"] -- OpenAPI --> API["apps/api\nNestJS Product API"]
+  Admin["apps/admin\nNext.js Admin Console"] -- OpenAPI --> API
+
+  API -- Prisma --> DB["PostgreSQL + pgvector"]
+  API -- Queue --> Redis["Redis / BullMQ"]
+  API -- Object --> MinIO["MinIO / S3"]
+  API -- Internal API --> Agent["apps/agent-runtime\nFastAPI + LangGraph"]
+
+  Agent -- Typed Tools --> API
+  Agent -- Checkpoint --> DB
+  Agent -- Trace --> Obs["Langfuse / Phoenix + OpenTelemetry"]
+  Agent -- Model Router --> Model["DeepSeek / Qwen / OpenAI / Claude / Local"]
+```
+
+### 调用链路裁决
+
+| 链路 | 是否允许 | 说明 |
+|---|---|---|
+| `web/admin -> api` | 允许 | 所有页面读写都进 Product API。 |
+| `web/admin -> agent-runtime` | 禁止 | 避免页面绕过权限、审计和状态机。 |
+| `web/admin -> database` | 禁止 | 页面不是事实源。 |
+| `api -> database` | 允许 | Product API 是业务事实源。 |
+| `api -> agent-runtime` | 允许 | 通过内部 token 和 workflow grant 触发 Agent。 |
+| `agent-runtime -> api` | 允许但受控 | 只能通过 typed tools 读写授权资源。 |
+| `agent-runtime -> core database tables` | 默认禁止 | 除 checkpoint、trace 等运行态表外，核心业务写入走 Product API。 |
+| `worker -> api/repository` | 允许 | 长任务按授权上下文执行。 |
+
+### 前端技术方案
+
+| 维度 | 选择 | 说明 |
+|---|---|---|
+| 框架 | Next.js App Router + React Server Components | 页面级数据读取、路由、布局、SEO 和首屏体验稳定。 |
+| React 形态 | Server Components 优先，Client Components 局部使用 | 刷题交互、面试输入、流式输出、表单控件才进入客户端组件。 |
+| UI | Tailwind CSS v4 + shadcn/ui + Radix primitives | 兼顾现代审美、可访问性、可控组件源码和快速产出。 |
+| 状态管理 | URL state + Server state + 局部 client state | 不引入全局状态库承载业务事实；服务端事实来自 Product API。 |
+| 请求层 | OpenAPI 生成 typed client + fetch wrapper | 避免前端手写 DTO，统一处理 auth、traceId、错误模型。 |
+| 表单 | React Hook Form + Zod / contract schema | 用户画像、JD、题库编辑和模型配置都需要强校验。 |
+| 数据展示 | TanStack Table / Virtualizer | 后台题库、候选题、审计日志等复杂表格。 |
+| 实时反馈 | SSE 优先 | 导入进度、报告生成、面试流式输出先用 SSE；WebSocket 后置。 |
+| 富文本/Markdown | MDX/Markdown renderer + sanitizer | 报告展示、题解展示、资料预览必须防注入。 |
+
+前端边界：不保存业务事实、不拼接 prompt、不做权限最终裁决、不直接访问模型、不在浏览器保存敏感模型密钥。
+
+### 后端 Product API 技术方案
+
+| 维度 | 选择 | 说明 |
+|---|---|---|
+| 框架 | NestJS 模块化单体 | 模块边界清晰，适合权限、审计、事务、后台管理和业务状态机。 |
+| ORM | Prisma + PostgreSQL | schema 明确、migration 可追踪、类型生成稳定。 |
+| 数据库能力 | PostgreSQL + pgvector + full-text search | 同时承载业务事实、权限、向量检索和全文检索。 |
+| API 契约 | OpenAPI + JSON Schema | 前端 typed client、Agent Pydantic schema 和测试样例都从契约出发。 |
+| 权限 | `packages/authz` policy-as-code | RBAC、资源所有权、数据作用域、workflow grant 集中裁决。 |
+| 任务队列 | BullMQ + Redis | 导入、向量化、评分、报告、记忆写回等异步任务。 |
+| 事务一致性 | outbox pattern + domain events | 避免数据库提交成功但队列消息丢失。 |
+| 文件 | MinIO/S3-compatible | 上传、解析、报告附件统一对象存储。 |
+| 观测 | OpenTelemetry + structured logs | API、worker、Agent、模型调用通过 traceId 串联。 |
+
+Product API 边界：它是业务事实源，但不写复杂 prompt、不承载多轮 Agent 推理、不直接把模型散文本写入核心表。
+
+### Agent Runtime 技术方案
+
+| 维度 | 选择 | 说明 |
+|---|---|---|
+| 框架 | FastAPI + Pydantic v2 | 内部 Agent API、schema 校验、流式事件输出。 |
+| 编排 | LangGraph StateGraph | 导入抽题、模拟面试、报告生成、记忆写回都用显式状态机。 |
+| 工具 | Typed tools + WorkflowGrant | Agent 工具调用必须受 Product API 授权，不信任 prompt 自述。 |
+| 模型路由 | LiteLLM 风格 adapter / OpenAI-compatible adapter | 多模型、fallback、预算、超时、结构化输出统一处理。 |
+| 检索 | pgvector + hybrid search + rerank | 权限过滤前置，召回后 rerank，结果写 retrieval logs。 |
+| 评估 | golden dataset + schema validation + LLM judge | 抽题、评分、报告、检索质量可回归。 |
+| 观测 | Langfuse/Phoenix + OpenTelemetry | prompt、tokens、cost、latency、schema failure 可回放。 |
+| 状态 | LangGraph checkpoint + PostgreSQL | 面试和长任务可恢复、可重试、可审计。 |
+
+Agent Runtime 边界：只产出结构化建议、评分、报告、记忆事件和工具调用请求，不直接发布正式题，不直接覆盖画像，不越权读取其他用户资料。
+
+### 契约与类型流
+
+```text
+Prisma schema / domain enum
+  -> OpenAPI DTO
+  -> frontend typed client
+  -> JSON Schema
+  -> Pydantic model
+  -> Agent structured output
+```
+
+| 契约对象 | 使用方 | 要求 |
+|---|---|---|
+| DTO | Web/Admin/API | 字段含义一致，错误模型一致。 |
+| JSON Schema | API/Agent | Agent 输出必须可校验、可重试。 |
+| Pydantic Model | Agent Runtime | 不接收自由散文本作为唯一输入。 |
+| Prisma Model | API/DB | 状态、索引、外键、审计字段落库。 |
+| Zod Schema | 前端表单 | 尽量从契约生成或保持字段同名。 |
 
 ## 技术选型原则
 
@@ -43,34 +164,98 @@ Agent 层：可编排、可追问、可评分、可记忆
 
 ## 前沿技术栈建议
 
+选型目标是“2026 年仍然先进，并且第一阶段能落地”。前沿技术只采用能强化体验、类型安全、Agent 状态机、可观测性和评估闭环的部分；不能为了炫技引入会破坏交付节奏的复杂度。
+
+### 技术栈总表
+
 | 层级 | 推荐技术 | 作用 | 选择理由 |
 |---|---|---|---|
-| Web App | Next.js App Router + React Server Components + Tailwind + shadcn/ui | 用户端、刷题页、报告页、岗位准备页 | 现代前端体验好，组件生态成熟，适合快速做高质量产品壳。 |
-| Admin Console | Next.js + shadcn/ui / Ant Design Pro 二选一 | 题库审核、模型配置、Prompt 管理 | 如果追求作品统一质感，优先 shadcn；如果追求后台效率，可用 Ant Design Pro。 |
+| Web App | Next.js App Router + React Server Components + Tailwind CSS v4 + shadcn/ui | 用户端、刷题页、报告页、岗位准备页 | 现代前端体验好，组件生态成熟，适合快速做高质量产品壳。 |
+| Admin Console | Next.js App Router + shadcn/ui + TanStack Table | 题库审核、模型配置、Prompt 管理、审计查询 | 后台需要高密度表格、筛选、批量操作和可维护组件。 |
 | Product API | NestJS + Prisma + OpenAPI | 业务 API、权限、题库、训练记录、Agent 代理 | 结构清晰，适合模块化边界和类型化 API。 |
 | Agent Runtime | Python + FastAPI + LangGraph + Pydantic v2 | Agent 编排、状态机、结构化输出、工具调用 | 当前 Agent 工程主线，能体现技术含量。 |
 | Workflow State | LangGraph checkpoint + PostgreSQL | 面试多轮状态、导入流程、报告生成流程 | 可回放、可恢复、可观察，比普通链式调用更可靠。 |
 | RAG | PostgreSQL + pgvector + Hybrid Search | 题库、资料片段、JD、项目卡片检索 | 短闭环阶段足够强，避免早期引入过重向量库。 |
 | Rerank | bge-reranker / Jina reranker / provider rerank | 岗位题单、追问上下文重排 | 提高检索质量，体现 AI 应用工程能力。 |
-| Model Router | LiteLLM / 自研 OpenAI-compatible adapter | 多模型、fallback、预算、重试 | 兼容 DeepSeek、Qwen、OpenAI、Claude、本地模型。 |
+| Model Router | LiteLLM 风格 adapter / OpenAI-compatible adapter | 多模型、fallback、预算、重试 | 兼容 DeepSeek、Qwen、OpenAI、Claude、本地模型。 |
 | Observability | OpenTelemetry + Langfuse / Arize Phoenix | prompt、tokens、成本、延迟、trace、评分回放 | Agent 项目必须具备可观测性，否则无法迭代质量。 |
-| Evaluation | pytest + deepeval/Ragas 思路 + golden dataset | 抽题、评分、报告、检索质量评估 | 让项目从“能跑”升级为“可持续变好”。 |
-| Async Jobs | Redis + BullMQ + Python worker / Celery 二选一 | 导入、抽题、向量化、批改、报告生成 | TS 产品层可继续 BullMQ；Python 重任务可独立 worker。 |
+| Evaluation | pytest + golden dataset + LLM judge + deepeval/Ragas 思路 | 抽题、评分、报告、检索质量评估 | 让项目从“能跑”升级为“可持续变好”。 |
+| Async Jobs | Redis + BullMQ + Python worker | 导入、抽题、向量化、批改、报告生成 | TS 产品层承载业务任务，Python 承载 Agent 重任务。 |
 | File Storage | S3-compatible MinIO | 导入文件、简历、报告附件 | 本地和线上一致，方便迁移。 |
 | Realtime | SSE 优先，WebSocket 后置 | 面试流式输出、导入进度、报告生成进度 | SSE 简洁稳定，足够支撑第一阶段实时反馈。 |
+
+### 版本与成熟度口径
+
+| 技术 | 采用口径 | 暂缓口径 |
+|---|---|---|
+| Next.js App Router | 作为 Web/Admin 主框架，使用 RSC、Route Handlers、Server Actions 的稳定能力。 | 不把 Server Actions 当业务事实源，不绕过 Product API。 |
+| React Server Components | 用于页面级数据加载、布局和报告展示。 | 不把高频交互刷题页面全部做成 Server Component。 |
+| Tailwind CSS v4 | 新项目可直接采用 v4，配合 shadcn/ui 做统一视觉系统。 | 如果组件生态或插件不稳定，允许锁定到团队可控版本。 |
+| shadcn/ui | 作为源码级组件基础，方便作品质感和可定制。 | 不把它当完整设计系统，复杂后台表格仍用 TanStack Table。 |
+| NestJS | Product API 模块化单体。 | 不拆成多个 Node 微服务。 |
+| Prisma | 第一阶段主 ORM 和 migration 工具。 | 复杂 SQL、pgvector 检索可使用原生 SQL，但要封装在 repository。 |
+| FastAPI | Agent Runtime 内部 API 和流式事件。 | 不暴露给浏览器直连。 |
+| LangGraph | Agent 工作流状态机。 | 不用普通 chain 拼复杂流程。 |
+| Pydantic v2 | Agent 输入输出强校验。 | 不接收无 schema 的散文本结果入库。 |
+| OpenTelemetry | 跨 API、worker、Agent 的 trace 规范。 | 不把观测做成后补日志。 |
+| Langfuse / Phoenix | 二选一先落地；优先能最快回放 prompt 和成本。 | 第一阶段不同时维护两套观测平台。 |
+
+### 前沿能力采用边界
+
+| 能力 | 第一阶段是否采用 | 裁决 |
+|---|---|---|
+| React Server Components | 采用 | 用于页面壳、报告页、后台详情页。 |
+| Server Actions | 限制采用 | 只做 UI 编排和轻量转发，不写核心业务事实。 |
+| Edge Runtime | 暂不作为主线 | 权限、数据库、Agent 内部调用更适合 Node runtime。 |
+| WebSocket | 后置 | SSE 足够覆盖导入、报告、面试流式输出。 |
+| tRPC | 暂不采用 | 本项目跨 Python Agent，需要 OpenAPI/JSON Schema 更通用。 |
+| GraphQL | 暂不采用 | 当前是状态机和资源权限问题，不是复杂图查询问题。 |
+| 独立向量库 | 暂不采用 | PostgreSQL + pgvector 足够，权限和事务更稳。 |
+| 多 Agent 评委团 | 后置 | 先保证单 Agent 状态机、评分、报告和记忆闭环。 |
+| 语音 STT/TTS | 后置 | 不影响核心 Agent 工程价值。 |
+| 桌面端 / 浏览器插件 | 不采用 | 偏离产品边界和合规边界。 |
+
+### 第一阶段落地优先级
+
+```text
+1. Monorepo + Docker 基础设施
+2. Contracts + DB schema + AuthZ policy
+3. Product API health / auth / audit / source boundary
+4. Agent Runtime health / schema / workflow shell
+5. 后台导入抽题闭环
+6. 用户画像与训练闭环
+7. 报告记忆闭环
+8. 面试状态机闭环
+```
+
+### 最前沿但可落地的工程形态
+
+| 方向 | 做法 |
+|---|---|
+| 类型安全 | OpenAPI/JSON Schema 贯穿前端、后端、Agent，而不是 TS 和 Python 各写各的。 |
+| 体验先进 | RSC + 局部 Client Component + SSE，让报告和面试体验轻、快、可流式。 |
+| Agent 先进 | LangGraph 状态机 + typed tools + workflow grant，避免 prompt 驱动一切。 |
+| 数据先进 | PostgreSQL 统一业务事实、全文检索、pgvector 和审计链路。 |
+| 评估先进 | golden dataset、schema validation、LLM judge、trace 回放从第一阶段进入。 |
+| 运维先进 | Docker Compose 本地一键底座，OpenTelemetry 统一 trace，密钥引用不进前端。 |
 
 ## 推荐最终架构
 
 ```mermaid
 flowchart TD
-  UserApp["User App / 用户端"] --> API["NestJS Product API"]
-  Admin["Admin Console / 后台端"] --> API
+  UserApp["apps/web / 用户端 Next.js"] --> API["apps/api / NestJS Product API"]
+  Admin["apps/admin / 后台端 Next.js"] --> API
 
-  API --> Auth["Auth + Role Guard"]
+  Contracts["packages/contracts\nOpenAPI / JSON Schema / Shared Enums"] --> UserApp
+  Contracts --> Admin
+  Contracts --> API
+  Contracts --> AgentAPI["apps/agent-runtime / FastAPI"]
+
+  API --> Auth["AuthZ + Policy-as-Code"]
   API --> DB["PostgreSQL + pgvector"]
-  API --> Redis["Redis Queue"]
+  API --> Redis["Redis + BullMQ"]
   API --> S3["MinIO / S3"]
-  API --> AgentAPI["FastAPI Agent Runtime"]
+  API --> AgentAPI
 
   Admin --> Source["题库维护 / 资料导入 / 候选题审核"]
   UserApp --> Training["个人画像 / 意向 JD / 训练计划 / 刷题 / 面试"]
@@ -240,6 +425,42 @@ interview-agent/
 | 本地环境 | Docker Compose 提供 PostgreSQL、pgvector、Redis、MinIO、观测组件。 |
 | 线上环境 | dev/staging/prod 配置隔离，migration 必须可重放和可回滚。 |
 
+### 本地 Docker 编排备注
+
+如果前期资料、技术方案和权限底座已经具备开始实现的条件，第一阶段基础设施统一放到同一个 Docker Compose 编排下管理，避免开发时数据库、缓存、对象存储和观测组件散落在本机环境里。
+
+| 服务 | 建议容器 | 用途 |
+|---|---|---|
+| PostgreSQL + pgvector | `postgres-pgvector` | 业务数据、权限数据、向量检索。 |
+| Redis | `redis` | 队列、任务状态、短期缓存。 |
+| MinIO | `minio` | 导入文件、简历附件、报告产物。 |
+| Observability | `langfuse` / `phoenix` 二选一 | Agent trace、prompt、tokens、成本、质量回放。 |
+| Admin Tools | `pgadmin` / `redisinsight` 可选 | 本地调试，不进入线上依赖。 |
+
+执行口径：`infra/docker/docker-compose.yml` 负责拉起基础设施；`apps/api`、`apps/agent-runtime`、`apps/web` 可以先本机运行，通过 `.env.local` 连接容器服务。等核心链路稳定后，再决定是否把应用服务也纳入 Compose profile。第一阶段不要把 Docker 编排做成复杂微服务发布系统，它只承担“本地一键启动底座”的职责。
+
+### 部署与环境分离方案
+
+本地开发可以用一个 Docker Compose 管理基础设施，但代码架构仍保持前端、Product API、Agent Runtime 的清晰分离。不要因为本地一键启动，就把运行时职责混在一起。
+
+| 环境 | 部署方式 | 说明 |
+|---|---|---|
+| local | Docker Compose 基础设施 + 本机运行应用 | PostgreSQL、Redis、MinIO、观测组件容器化；Web/API/Agent 可本机热更新。 |
+| dev | Compose profile 或轻量容器部署 | 可把 Web、Admin、API、Agent Runtime 都纳入 Compose，便于联调。 |
+| staging | 分服务部署 | Web/Admin、Product API、Agent Runtime、worker、基础设施分开部署，模拟生产权限和网络边界。 |
+| prod | 分服务部署，基础设施托管优先 | API 和 Agent Runtime 独立扩缩容；数据库、对象存储、Redis、观测服务按生产标准管理。 |
+
+| 服务 | 本地 | 线上建议 |
+|---|---|---|
+| `apps/web` | Next.js dev server | 独立 Web 服务或 Vercel/Node runtime。 |
+| `apps/admin` | Next.js dev server | 独立后台 Web 服务，后台域名单独鉴权。 |
+| `apps/api` | NestJS dev server | 独立 API 服务，内网访问数据库、Redis、MinIO。 |
+| `apps/agent-runtime` | FastAPI dev server | 独立 Agent 服务，只允许 Product API 内部调用。 |
+| workers | 本机或容器 | 独立 worker 进程，消费 Redis 队列。 |
+| infra | Docker Compose | 生产按托管服务或独立基础设施，不和业务进程混容器。 |
+
+网络边界：浏览器只能访问 Web/Admin 和 Product API；Agent Runtime 不对公网开放；数据库、Redis、MinIO 不对浏览器开放；模型密钥只存在服务端环境或密钥管理器。
+
 ### 错误模型与降级策略
 
 | 错误类型 | 返回口径 | 降级 |
@@ -398,19 +619,39 @@ interview-agent/
 
 ## Agent Runtime 设计
 
+Agent Runtime 是独立 Python 应用，不对浏览器开放，只接受 Product API 的内部调用。它的价值是状态机、结构化输出、工具编排、评估与观测，不承担业务事实源。
+
+### Python 应用结构
+
 | 模块 | 技术 | 职责 |
 |---|---|---|
+| `api/` | FastAPI | 对 NestJS 暴露内部 Agent 接口、SSE 流式事件、health check。 |
 | `workflows/` | LangGraph StateGraph | 导入抽题、刷题评分、模拟面试、JD 分析、报告生成等状态机。 |
 | `nodes/` | pure functions + typed context | LangGraph 节点，执行单一职责的抽取、检索、评分、决策。 |
 | `agents/` | policy layer | interviewer、evaluator、reporter、importer、planner 的策略封装。 |
 | `tools/` | typed tool functions | 题库检索、组卷、保存报告、更新掌握度、生成话术。 |
 | `schemas/` | Pydantic v2 | 所有输入输出 schema，和 OpenAPI/JSON Schema 对齐。 |
-| `model_router/` | LiteLLM 或自研 adapter | 模型选择、fallback、重试、预算、结构化输出校验。 |
+| `model_router/` | LiteLLM 风格 adapter | 模型选择、fallback、重试、预算、结构化输出校验。 |
 | `retrieval/` | pgvector + hybrid search + rerank | 题库、资料片段、JD、项目卡片检索。 |
 | `memory/` | SQL + vector memory | 历史报告、错题、掌握度、简历/项目画像检索。 |
 | `evals/` | golden dataset + judge rules | 抽题质量、评分质量、报告质量、检索命中质量评估。 |
 | `observability/` | OpenTelemetry + Langfuse/Phoenix | prompt、trace、tokens、cost、latency、schema failures。 |
-| `api/` | FastAPI | 对 NestJS 暴露内部 Agent 接口和流式事件。 |
+
+### Agent Runtime API 边界
+
+| 内部接口 | 用途 | 返回 |
+|---|---|---|
+| `POST /agent/profile/analyze` | 用户画像分析 | `ProfileSnapshotDraft` |
+| `POST /agent/job-intent/analyze` | 岗位画像分析 | `JobProfileDraft` |
+| `POST /agent/import/extract` | 资料抽题 | `ImportCandidate[]` |
+| `POST /agent/training-plan/create` | 训练规划 | `TrainingPlanDraft` |
+| `POST /agent/evaluate/practice` | 刷题评分 | `EvaluationResult[]` |
+| `POST /agent/report/practice` | 刷题报告 | `PracticeReportDraft` |
+| `POST /agent/interview/next` | 面试下一题/追问 | `InterviewTurnDraft` |
+| `POST /agent/report/interview` | 面试报告 | `InterviewReportDraft` |
+| `POST /agent/memory/update` | 记忆事件生成 | `MemoryEvent[]`、`MasteryUpdate[]` |
+
+所有接口都必须携带 `traceId`、`tenantId`、`workflowRunId`、`modelProfileKey`、`promptVersion` 和 `WorkflowGrant`。没有授权上下文的调用直接拒绝。
 
 ## Agent 契约
 
@@ -445,8 +686,23 @@ interview-agent/
 
 ## TypeScript 产品层设计
 
+TypeScript 产品层分成 `apps/web`、`apps/admin`、`apps/api` 三个应用。它们共享契约、UI token、权限客户端和观测规范，但不共享业务页面状态。
+
+### 应用拆分
+
+| 应用 | 技术 | 负责 | 不负责 |
+|---|---|---|---|
+| `apps/web` | Next.js App Router + RSC + Tailwind v4 + shadcn/ui | 用户端训练、刷题、模拟面试、报告阅读、画像查看。 | 不维护题库审核，不配置模型，不直接调用 Agent。 |
+| `apps/admin` | Next.js App Router + TanStack Table + shadcn/ui | 题库治理、导入审核、Prompt/模型配置、审计查看。 | 不读取用户私有训练明细，不代替用户训练。 |
+| `apps/api` | NestJS + Prisma + OpenAPI + BullMQ | 业务事实源、权限、状态机、审计、Agent 调用代理。 | 不写复杂 prompt，不做多轮 Agent 推理。 |
+
+### Product API 模块
+
 | 模块 | 职责 |
 |---|---|
+| `auth` | 登录态、服务身份、会话、后台重认证。 |
+| `authz` | RBAC、资源所有权、数据作用域、workflow grant。 |
+| `tenant` | 租户上下文和默认个人租户。 |
 | `profile` | 个人信息、简历摘要、项目经历、画像快照、掌握度。 |
 | `job-intent` | 用户主动录入的意向 JD、岗位要求、公司背景、沟通文本、岗位画像。 |
 | `source` | 文件、文本、结构化导入来源，限定来源类型白名单。 |
@@ -460,6 +716,22 @@ interview-agent/
 | `report` | 刷题报告、面试报告、报告摘要、可读 Markdown。 |
 | `memory` | `MemoryEvent`、`MasteryProfile`、训练历史画像。 |
 | `model-config` | 模型配置、Prompt Registry、成本日志。 |
+| `audit` | 审计日志、权限拒绝、高风险操作记录。 |
+| `agent-gateway` | 调用 FastAPI Agent Runtime，签发 workflow grant，校验结构化返回。 |
+| `realtime` | SSE 事件、任务进度、面试流式输出代理。 |
+
+### 前端页面分层
+
+| 层 | 说明 |
+|---|---|
+| `routes` | 页面路由和布局，只做数据装配。 |
+| `features` | 画像、JD、刷题、报告、后台审核等业务视图组件。 |
+| `entities` | 题目、报告、训练计划、候选题等展示模型。 |
+| `shared/ui` | shadcn/ui 二次封装、设计 token、通用交互。 |
+| `shared/api` | OpenAPI typed client、错误处理、traceId 注入。 |
+| `shared/auth` | 登录态读取、角色判断、前端菜单显隐。 |
+
+前端权限只做“体验层显隐”，不做最终裁决。任何敏感动作必须由 `apps/api` 重新鉴权、校验状态机并写审计。
 
 ## 模型配置设计
 
@@ -1158,15 +1430,18 @@ stateDiagram-v2
 
 | 模块 | 最终建议 |
 |---|---|
-| 主体架构 | TypeScript Product Shell + Python Agent Runtime。 |
-| 前端 | Next.js App Router + React Server Components + Tailwind + shadcn/ui。 |
-| 后端 | NestJS + Prisma + PostgreSQL + pgvector。 |
-| Agent | FastAPI + LangGraph + Pydantic v2。 |
+| 主体架构 | 前后端分离 + Product API / Agent Runtime 分离：`apps/web`、`apps/admin`、`apps/api`、`apps/agent-runtime`。 |
+| 用户端前端 | Next.js App Router + React Server Components + Tailwind CSS v4 + shadcn/ui。 |
+| 后台前端 | Next.js App Router + shadcn/ui + TanStack Table，高密度资产治理和审计操作。 |
+| Product API | NestJS 模块化单体 + Prisma + PostgreSQL + OpenAPI，作为唯一业务事实源。 |
+| Agent Runtime | FastAPI + LangGraph + Pydantic v2，只做 Agent 状态机、结构化输出和工具编排。 |
+| 契约 | OpenAPI + JSON Schema + shared enums，贯穿前端 typed client、NestJS DTO、Pydantic schema。 |
 | 模型接入 | OpenAI-compatible adapter / LiteLLM 风格 Model Router。 |
 | 检索 | PostgreSQL full-text + pgvector hybrid search，后续接 rerank。 |
 | 可观测性 | OpenTelemetry + Langfuse 或 Phoenix。 |
 | 评估 | Golden dataset + schema validation + LLM judge + 人工审核。 |
 | 队列 | Redis + BullMQ，Python 长任务可独立 worker。 |
 | 存储 | MinIO/S3-compatible。 |
+| 本地基础设施 | Docker Compose 统一管理 PostgreSQL + pgvector、Redis、MinIO、观测组件。 |
 
 这个选型足够前沿，也足够清晰。它的技术含量不在于“用了多少框架”，而在于：Agent 状态机、结构化输出、可观测性、评估闭环、长期记忆和产品化题库治理能同时成立。

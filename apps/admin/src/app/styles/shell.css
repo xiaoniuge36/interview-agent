@@ -1,0 +1,150 @@
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 12px;
+  left: 12px;
+  transform: translateY(-160%);
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: var(--surface-strong);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.console-shell {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+}
+
+.console-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  gap: 36px;
+  padding: 34px 24px;
+  background: var(--surface-strong);
+  color: #ffffff;
+}
+
+.brand-block {
+  display: grid;
+  gap: 6px;
+}
+
+.brand-block span {
+  color: #84adff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brand-block strong {
+  font-size: 22px;
+  letter-spacing: -0.04em;
+}
+
+.console-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.console-nav a {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 11px 13px;
+  color: #c9d3e6;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.console-nav a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.console-main {
+  min-width: 0;
+}
+
+.console-topbar {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid rgba(223, 229, 239, 0.88);
+  padding: 20px 32px;
+  background: rgba(243, 246, 251, 0.93);
+  backdrop-filter: blur(14px);
+}
+
+.console-topbar p {
+  margin: 0 0 5px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.console-topbar h1 {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 31px);
+  letter-spacing: -0.045em;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.console-content {
+  display: grid;
+  width: min(100%, var(--content-width));
+  gap: 28px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.console-content > section {
+  scroll-margin-top: 112px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.035em;
+}
+
+.section-heading p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+  text-align: right;
+}
+
+.compact-heading {
+  align-items: start;
+}

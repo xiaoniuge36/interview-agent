@@ -1,0 +1,13 @@
+title = "interview-agent secret scanning policy"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Documented local-only placeholders in the environment template"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^\.env\.example$''']
+regexes = [
+  '''(?i)(?:change-me|dev-only)[a-z0-9._:@/+?=-]*''',
+]

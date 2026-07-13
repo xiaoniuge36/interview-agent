@@ -1,0 +1,2 @@
+// Prisma 使用多文件 schema，真实入口为 ./schema 目录。
+// 所有 CLI 脚本均显式传入 --schema prisma/schema，避免单文件持续膨胀。

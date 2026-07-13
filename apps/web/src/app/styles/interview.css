@@ -1,0 +1,136 @@
+﻿.toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.interview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+}
+
+.transcript {
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.turn {
+  max-width: 84%;
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  padding: 14px 16px;
+  line-height: 1.65;
+}
+
+.turn.interviewer {
+  align-self: flex-start;
+  background: var(--surface-muted);
+}
+
+.turn.candidate {
+  align-self: flex-end;
+  background: #e8f2ff;
+  border-color: #aac7ff;
+}
+
+.stage {
+  margin-bottom: 6px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.answer-box {
+  min-height: 140px;
+}
+
+.insight-card {
+  border: 1px solid var(--outline);
+  border-radius: 16px;
+  padding: 18px;
+  background: linear-gradient(135deg, #ffffff 0%, #f3f7ff 100%);
+}
+
+.insight-card h3 {
+  margin: 10px 0 14px;
+}
+
+.score-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+.score-row strong {
+  color: var(--primary-strong);
+  font-size: 18px;
+}
+
+.empty-state,
+.request-state {
+  min-height: 280px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  border: 1px dashed var(--outline);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--surface-muted);
+}
+
+.empty-state h3 {
+  margin: 10px 0;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.event-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--surface-strong);
+}
+
+.event-row strong {
+  color: var(--primary-strong);
+  font-size: 13px;
+}
+
+.event-row span {
+  color: var(--text-muted);
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-size: 12px;
+}
+
+.report-card {
+  border-left: 4px solid var(--primary);
+}
+
+.score-hero {
+  width: 92px;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  border-radius: 28px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}

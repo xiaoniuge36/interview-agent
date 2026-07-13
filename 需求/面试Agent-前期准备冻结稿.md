@@ -488,12 +488,14 @@ golden cases
 | 产品定位清晰 | 已冻结 |
 | 第一条能力闭环清晰 | 已冻结 |
 | 技术选型前沿且可落地 | 已冻结 |
+| 前后端分离和 Product API / Agent Runtime 分离口径明确 | 已冻结 |
 | 系统边界清晰 | 已冻结 |
 | 核心领域模型明确 | 已冻结 |
 | 数据库核心表和关系明确 | 已冻结 |
 | pgvector 检索表和隔离规则明确 | 已冻结 |
 | 权限底座和数据作用域明确 | 已冻结 |
 | migration、seed、权限和检索测试门禁明确 | 已冻结 |
+| 本地 Docker 基础设施编排口径明确 | 已冻结 |
 | Agent 契约明确 | 已冻结 |
 | 状态机明确 | 已冻结 |
 | 结构化输出样例明确 | 已冻结 |
@@ -512,5 +514,9 @@ golden cases
 先打穿一条完整 Agent 能力闭环
 不要在第一阶段把所有场景同时铺开
 ```
+
+实现起步备注：如果已经进入编码阶段，数据库、缓存、对象存储和观测组件统一放到 `infra/docker/docker-compose.yml` 下管理。第一阶段至少包含 PostgreSQL + pgvector、Redis、MinIO，以及 Langfuse 或 Phoenix 二选一。应用服务可以先本机运行并连接 Docker 内基础设施，等链路稳定后再决定是否纳入同一个 Compose profile。
+
+技术起步备注：代码结构按 `apps/web`、`apps/admin`、`apps/api`、`apps/agent-runtime` 拆分。前端和后端分离，Product API 和 Agent Runtime 分离；浏览器不直连 Agent Runtime，Agent 不绕过 Product API 写核心业务表。
 
 只要坚持这个边界，本项目可以做成一个有清晰产品闭环、技术选型前沿、Agent 工程含量充足的高质量作品。

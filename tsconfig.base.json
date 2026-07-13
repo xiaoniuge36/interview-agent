@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@interview-agent/auth-client": ["packages/auth-client/src"],
+      "@interview-agent/auth-client/*": ["packages/auth-client/src/*"],
+      "@interview-agent/contracts": ["packages/contracts/src"],
+      "@interview-agent/contracts/*": ["packages/contracts/src/*"]
+    }
+  }
+}

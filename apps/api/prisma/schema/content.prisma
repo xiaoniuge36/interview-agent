@@ -1,0 +1,121 @@
+model JobIntent {
+  id                String          @id @default(cuid())
+  tenantId          String
+  userId            String
+  targetRole        String
+  jdText            String
+  companyContext    String?
+  communicationText String?
+  status            JobIntentStatus @default(draft)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  tenant     Tenant             @relation(fields: [tenantId], references: [id])
+  user       User               @relation(fields: [tenantId, userId], references: [tenantId, id])
+  profile    JobProfile?
+  interviews InterviewSession[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, userId, status, updatedAt])
+}
+
+model JobProfile {
+  id             String   @id @default(cuid())
+  tenantId       String
+  jobIntentId    String
+  skillWeights   Json
+  interviewFocus String[]
+  riskSignals    String[]
+  prepAdvice     String[]
+  createdAt      DateTime @default(now())
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  jobIntent JobIntent @relation(fields: [tenantId, jobIntentId], references: [tenantId, id])
+
+  @@unique([tenantId, jobIntentId])
+}
+
+model Question {
+  id         String             @id @default(cuid())
+  tenantId   String
+  visibility QuestionVisibility @default(tenant)
+  title      String
+  stem       String
+  type       QuestionType
+  difficulty QuestionDifficulty
+  tags       String[]
+  answer     String
+  rubric     Json
+  sourceRefs String[]
+  status     QuestionStatus     @default(draft)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, visibility, status, difficulty])
+}
+
+model CandidateQuestion {
+  id           String                @id @default(cuid())
+  tenantId     String
+  title        String
+  status       CandidateReviewStatus @default(pending)
+  qualityScore Float
+  tags         String[]
+  sourceRefs   String[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, status, createdAt])
+}
+
+model ModelProfile {
+  id         String             @id @default(cuid())
+  tenantId   String
+  provider   String
+  model      String
+  purpose    String
+  status     ModelProfileStatus @default(standby)
+  budget     ModelBudget        @default(medium)
+  schemaMode Boolean            @default(true)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, provider, model, purpose])
+  @@index([tenantId, status, purpose])
+}
+
+model KnowledgeAsset {
+  id         String               @id @default(cuid())
+  tenantId   String
+  sourceType KnowledgeSourceType
+  uri        String
+  title      String
+  status     KnowledgeAssetStatus @default(received)
+  metadata   Json
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id])
+  chunks KnowledgeChunk[]
+
+  @@index([tenantId, status])
+}
+
+model KnowledgeChunk {
+  id        String                       @id @default(cuid())
+  assetId   String
+  content   String
+  embedding Unsupported("vector(1536)")?
+  metadata  Json
+  createdAt DateTime                     @default(now())
+
+  asset KnowledgeAsset @relation(fields: [assetId], references: [id])
+
+  @@index([assetId])
+}

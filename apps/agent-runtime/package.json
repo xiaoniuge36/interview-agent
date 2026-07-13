@@ -1,0 +1,13 @@
+{
+  "name": "@interview-agent/agent-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "uv run --extra dev uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "build": "uv run --extra dev python -m compileall -q app",
+    "typecheck": "uv run --extra dev mypy app tests scripts",
+    "lint": "uv run --extra dev ruff check . && uv run --extra dev ruff format --check . && uv run --extra dev python scripts/check_structure.py",
+    "test": "uv run --extra dev pytest --cov=app --cov-report=term-missing",
+    "security:audit": "uv run --extra dev pip-audit --local --strict --progress-spinner off"
+  }
+}

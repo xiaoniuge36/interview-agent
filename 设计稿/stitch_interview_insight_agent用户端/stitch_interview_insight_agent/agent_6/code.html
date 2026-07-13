@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Memory &amp; Weaknesses - Interview Agent</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#c1c6d5",
+                        "surface-variant": "#e3e2e7",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#e2e2e4",
+                        "inverse-on-surface": "#f1f0f5",
+                        "surface": "#faf8fe",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#dfe8ff",
+                        "primary-fixed": "#d7e3ff",
+                        "on-background": "#1a1b1f",
+                        "on-tertiary-fixed": "#1a1c1d",
+                        "inverse-primary": "#aac7ff",
+                        "surface-dim": "#dad9df",
+                        "surface-container": "#eeedf3",
+                        "secondary-container": "#e2dfe1",
+                        "tertiary-container": "#67686a",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#004e9f",
+                        "outline": "#727784",
+                        "on-error-container": "#93000a",
+                        "secondary": "#5f5e60",
+                        "surface-bright": "#faf8fe",
+                        "secondary-fixed": "#e4e2e4",
+                        "surface-container-high": "#e9e7ed",
+                        "on-surface": "#1a1b1f",
+                        "on-primary-fixed": "#001b3e",
+                        "on-secondary-fixed-variant": "#474649",
+                        "tertiary-fixed-dim": "#c6c6c8",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed-variant": "#00458e",
+                        "surface-container-low": "#f4f3f8",
+                        "on-surface-variant": "#414753",
+                        "on-tertiary-container": "#e8e8ea",
+                        "primary-fixed-dim": "#aac7ff",
+                        "on-tertiary-fixed-variant": "#454749",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "background": "#faf8fe",
+                        "inverse-surface": "#2f3034",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "primary-container": "#0066cc",
+                        "surface-container-highest": "#e3e2e7",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#636264",
+                        "tertiary": "#4e5052",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#005cba"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "max-width": "1200px",
+                        "margin-desktop": "40px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "label-mono": ["12px", { "lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "body-lg": ["17px", { "lineHeight": "1.5", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .bento-card {
+            @apply bg-surface border border-outline-variant rounded-xl p-6 md:p-8 flex flex-col;
+        }
+        /* Custom scrollbar for timeline */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            @apply bg-surface-variant rounded-full;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen flex overflow-hidden font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-screen w-72 flex-shrink-0 bg-surface border-r border-outline-variant py-8 z-40">
+<div class="px-6 mb-8">
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">Professional Identity</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Senior UI Engineer Training</p>
+</div>
+<nav class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1">
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 transition-all hover:bg-surface-container-low hover:text-primary group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">dashboard</span>
+<span class="font-label-mono text-label-mono">Workbench</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 transition-all hover:bg-surface-container-low hover:text-primary group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">person</span>
+<span class="font-label-mono text-label-mono">Profile</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 transition-all hover:bg-surface-container-low hover:text-primary group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">work</span>
+<span class="font-label-mono text-label-mono">Job Intent</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 transition-all hover:bg-surface-container-low hover:text-primary group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">route</span>
+<span class="font-label-mono text-label-mono">Training Path</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 transition-all hover:bg-surface-container-low hover:text-primary group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">fitness_center</span>
+<span class="font-label-mono text-label-mono">Practice</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 transition-all hover:bg-surface-container-low hover:text-primary group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">videocam</span>
+<span class="font-label-mono text-label-mono">Mock Interview</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 transition-all hover:bg-surface-container-low hover:text-primary group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">analytics</span>
+<span class="font-label-mono text-label-mono">Report Center</span>
+</a>
+<a class="flex items-center gap-3 text-primary font-bold border-r-4 border-primary bg-surface-container px-6 py-3 transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<span class="font-label-mono text-label-mono">Memory &amp; Weaknesses</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-3 transition-all hover:bg-surface-container-low hover:text-primary group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">settings</span>
+<span class="font-label-mono text-label-mono">Settings</span>
+</a>
+</nav>
+<div class="px-6 mt-6">
+<button class="w-full bg-primary-container text-on-primary font-label-mono text-label-mono py-3 rounded-full hover:bg-primary transition-colors flex items-center justify-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Practice Session
+            </button>
+</div>
+<div class="mt-8 border-t border-outline-variant pt-4 flex flex-col gap-1">
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-2 transition-all hover:bg-surface-container-low hover:text-primary" href="#">
+<span class="material-symbols-outlined text-[18px]">help</span>
+<span class="font-label-mono text-label-mono">Support</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-6 py-2 transition-all hover:bg-surface-container-low hover:text-primary" href="#">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+<span class="font-label-mono text-label-mono">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-screen overflow-y-auto relative">
+<!-- TopAppBar -->
+<header class="bg-surface/80 backdrop-blur-md sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-16 max-w-max-width mx-auto border-b border-outline-variant lg:border-none">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="font-headline-md text-headline-md font-bold text-primary hidden md:block">Interview Agent</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors h-10 w-10 flex items-center justify-center rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors h-10 w-10 flex items-center justify-center rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined">history_edu</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant ml-2">
+<img alt="Current user profile" class="w-full h-full object-cover" data-alt="A minimalist, professional avatar placeholder image featuring a subtle geometric pattern in light gray and white tones, suitable for a corporate software interface light mode." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyn_uszqInQaSt-rqlRIe9LU2SF8mpY97bWHo9wk1tk1kg-So-FQZAKjna4bGNnbeExfUBYEJMS1buga35L4tubuZMf2ywdNB7WSF0gu5cDdEIY6hs1f51gONBi69-D249qudQtkgEXWBF_Apvs5HFDIunIhru69Ud1Xo5cZIZde8r9uRzqhRDd7Wv8zCrqGTrxAaGcISobqzpW6sWbI2y-t5y7Q7SJIFWV7CDB0Skd7Y4u58mGTBS4pHUBPjIi_hDIOIOVKi6JOA"/>
+</div>
+</div>
+</div>
+<!-- Subtle gradient separator replacing hard border for higher-end feel -->
+<div class="h-[1px] w-full bg-gradient-to-r from-transparent via-outline-variant/50 to-transparent absolute bottom-0 hidden lg:block"></div>
+</header>
+<!-- Canvas -->
+<div class="flex-1 w-full max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-12 flex flex-col">
+<section class="mb-10 max-w-3xl">
+<h2 class="font-display-lg text-display-lg text-on-surface tracking-tight mb-4">Memory &amp; Mastery</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                    A longitudinal record of your capabilities. The Agent continuously analyzes your performance patterns, synthesizes weaknesses, and maps your trajectory toward Senior UI Engineer proficiency.
+                </p>
+</section>
+<!-- Bento Gallery Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter flex-1">
+<!-- MasteryProfile (Span 8) -->
+<div class="bento-card md:col-span-8 group hover:bg-surface-bright transition-colors duration-300">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Competency Trajectory</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest">Long-term Understanding</p>
+</div>
+<div class="h-8 px-3 rounded-full bg-surface-container flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-mono text-label-mono text-primary">Agent Syncing</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col justify-center gap-6">
+<!-- Skill Track 1 -->
+<div>
+<div class="flex justify-between text-body-md mb-2">
+<span class="font-medium text-on-surface">System Architecture Design</span>
+<span class="text-on-surface-variant font-label-mono">Advanced</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[85%] relative">
+<div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent"></div>
+</div>
+</div>
+</div>
+<!-- Skill Track 2 -->
+<div>
+<div class="flex justify-between text-body-md mb-2">
+<span class="font-medium text-on-surface">State Management Logic</span>
+<span class="text-on-surface-variant font-label-mono">Proficient</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[70%] relative">
+<div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent"></div>
+</div>
+</div>
+</div>
+<!-- Skill Track 3 -->
+<div>
+<div class="flex justify-between text-body-md mb-2">
+<span class="font-medium text-on-surface">Performance Optimization</span>
+<span class="text-on-surface-variant font-label-mono">Developing</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[45%] relative">
+<div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent"></div>
+</div>
+</div>
+</div>
+<!-- Skill Track 4 -->
+<div>
+<div class="flex justify-between text-body-md mb-2">
+<span class="font-medium text-on-surface">Accessibility Standards</span>
+<span class="text-on-surface-variant font-label-mono">Proficient</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[65%] relative">
+<div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Weakness Attribution (Span 4) -->
+<div class="bento-card md:col-span-4 bg-surface-container-lowest">
+<div class="mb-6">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Identified Weaknesses</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest">Focus Areas</p>
+</div>
+<div class="flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2">
+<!-- Weakness Item 1 -->
+<div class="p-4 rounded-lg bg-surface border border-outline-variant/50 hover:border-outline-variant transition-colors group">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-tertiary-container mt-0.5">error</span>
+<div>
+<h4 class="font-body-md font-medium text-on-surface">Web Worker Implementation</h4>
+<p class="font-body-md text-[13px] text-on-surface-variant mt-1 leading-snug">Consistent hesitation when offloading heavy computation. Tendency to block main thread during data parsing.</p>
+<button class="mt-3 flex items-center gap-1 text-primary font-label-mono text-label-mono hover:underline">
+                                        Evidence: Mock Session #14
+                                        <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Weakness Item 2 -->
+<div class="p-4 rounded-lg bg-surface border border-outline-variant/50 hover:border-outline-variant transition-colors group">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-tertiary-container mt-0.5">error</span>
+<div>
+<h4 class="font-body-md font-medium text-on-surface">Micro-frontend Routing</h4>
+<p class="font-body-md text-[13px] text-on-surface-variant mt-1 leading-snug">Struggles with defining state sharing boundaries between disparate frontend applications.</p>
+<button class="mt-3 flex items-center gap-1 text-primary font-label-mono text-label-mono hover:underline">
+                                        Evidence: System Design Eval
+                                        <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Memory Event Timeline (Span 12) -->
+<div class="bento-card md:col-span-12 relative overflow-hidden">
+<!-- Subtle background decoration to break up solid white -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-surface-container-high rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none"></div>
+<div class="relative z-10">
+<div class="mb-8 flex justify-between items-end border-b border-outline-variant/50 pb-4">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Agent Memory Timeline</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest">Evolution of Understanding</p>
+</div>
+<span class="font-label-mono text-label-mono text-on-surface-variant">Last updated: Today, 09:41 AM</span>
+</div>
+<div class="relative border-l border-outline-variant ml-4 md:ml-32 py-4 space-y-10">
+<!-- Timeline Event 1 -->
+<div class="relative pl-8 md:pl-12">
+<div class="absolute -left-[5px] top-1.5 w-[9px] h-[9px] bg-primary rounded-full ring-4 ring-surface"></div>
+<div class="absolute left-0 top-1.5 w-8 md:w-12 h-[1px] bg-outline-variant -ml-8 md:-ml-12 hidden md:block"></div>
+<div class="md:absolute md:-left-32 md:top-0 md:text-right md:w-24 mb-2 md:mb-0">
+<span class="font-label-mono text-label-mono text-on-surface-variant block">Oct 24</span>
+<span class="font-label-mono text-[10px] text-outline">Synthesis</span>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant max-w-3xl hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition-shadow">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[16px] text-primary">psychology_alt</span>
+<span class="font-label-mono text-label-mono text-primary font-bold">INSIGHT RECORDED</span>
+</div>
+<p class="font-body-md text-on-surface leading-relaxed">
+                                        Observed a shift in candidate's approach to component refactoring. Moving away from premature abstraction towards composition-based patterns. This aligns well with senior-level pragmatism. Adjusted evaluation matrix to introduce higher-complexity state sharing scenarios.
+                                    </p>
+</div>
+</div>
+<!-- Timeline Event 2 -->
+<div class="relative pl-8 md:pl-12">
+<div class="absolute -left-[5px] top-1.5 w-[9px] h-[9px] bg-surface-variant border border-outline-variant rounded-full ring-4 ring-surface"></div>
+<div class="md:absolute md:-left-32 md:top-0 md:text-right md:w-24 mb-2 md:mb-0">
+<span class="font-label-mono text-label-mono text-on-surface-variant block">Oct 18</span>
+<span class="font-label-mono text-[10px] text-outline">Observation</span>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant max-w-3xl hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition-shadow">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">visibility</span>
+<span class="font-label-mono text-label-mono text-secondary font-bold">PATTERN IDENTIFIED</span>
+</div>
+<p class="font-body-md text-on-surface leading-relaxed">
+                                        During the "Virtual DOM Diffing" mock session, candidate successfully articulated the algorithm but failed to connect it to real-world React performance hooks (`useMemo`, `useCallback`) under pressure. Tagged <span class="inline-block px-2 py-0.5 bg-surface-variant text-on-surface-variant rounded text-[11px] font-mono ml-1">#practical-application</span> as an area for targeted practice.
+                                    </p>
+</div>
+</div>
+<!-- Timeline Event 3 -->
+<div class="relative pl-8 md:pl-12">
+<div class="absolute -left-[5px] top-1.5 w-[9px] h-[9px] bg-surface-variant border border-outline-variant rounded-full ring-4 ring-surface"></div>
+<div class="md:absolute md:-left-32 md:top-0 md:text-right md:w-24 mb-2 md:mb-0">
+<span class="font-label-mono text-label-mono text-on-surface-variant block">Sep 30</span>
+<span class="font-label-mono text-[10px] text-outline">Baseline</span>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant max-w-3xl hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition-shadow">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">flag</span>
+<span class="font-label-mono text-label-mono text-secondary font-bold">INITIAL PROFILE ESTABLISHED</span>
+</div>
+<p class="font-body-md text-on-surface leading-relaxed">
+                                        Completed diagnostic onboarding. Strong foundational knowledge in CSS architecture and semantic HTML. Primary gap identified in distributed systems context for frontend architecture. Created customized 8-week training path focusing on System Design.
+                                    </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

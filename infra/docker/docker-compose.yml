@@ -1,0 +1,283 @@
+name: interview-agent
+
+x-app-security: &app-security
+  init: true
+  restart: unless-stopped
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  tmpfs:
+    - /tmp
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.1-pg16@sha256:33198da2828a14c30348d2ccb4750833d5ed9a44c88d840a0e523d7417120337
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-interview_agent}
+      POSTGRES_USER: ${POSTGRES_USER:-interview_agent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    ports:
+      - '127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --requirepass
+      - ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    ports:
+      - '127.0.0.1:${REDIS_HOST_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$${REDIS_PASSWORD}" ping | grep PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 5s
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    ports:
+      - '127.0.0.1:${MINIO_API_HOST_PORT:-9000}:9000'
+      - '127.0.0.1:${MINIO_CONSOLE_HOST_PORT:-9001}:9001'
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://127.0.0.1:9000/minio/health/live']
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      MINIO_BUCKET: ${MINIO_BUCKET:-interview-agent-assets}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+        mc mb --ignore-existing "local/$${MINIO_BUCKET}"
+        mc anonymous set none "local/$${MINIO_BUCKET}"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    networks:
+      - backend
+
+  phoenix:
+    image: arizephoenix/phoenix:13.15.0@sha256:598e699ef3e71e26bbcfa3b19963fc480d954a758badfef1d665ec92885f13e6
+    restart: unless-stopped
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data
+    ports:
+      - '127.0.0.1:${PHOENIX_HOST_PORT:-6006}:6006'
+      - '127.0.0.1:${PHOENIX_GRPC_HOST_PORT:-4317}:4317'
+    volumes:
+      - phoenix-data:/mnt/data
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  migration:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+      target: migration
+    image: interview-agent/migration:${IMAGE_TAG:-local}
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-interview_agent}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-interview_agent}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    networks:
+      - backend
+
+  agent-runtime:
+    <<: *app-security
+    build:
+      context: ../..
+      dockerfile: apps/agent-runtime/Dockerfile
+      target: runtime
+    image: interview-agent/agent-runtime:${IMAGE_TAG:-local}
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      INTERNAL_AGENT_TOKEN: ${INTERNAL_AGENT_TOKEN:?INTERNAL_AGENT_TOKEN is required}
+      RUNTIME_BODY_LIMIT_BYTES: ${RUNTIME_BODY_LIMIT_BYTES:-1048576}
+      RUNTIME_LOG_LEVEL: ${RUNTIME_LOG_LEVEL:-INFO}
+    ports:
+      - '127.0.0.1:${RUNTIME_HOST_PORT:-8000}:8000'
+    networks:
+      - backend
+
+  api:
+    <<: *app-security
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    image: interview-agent/api:${IMAGE_TAG:-local}
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      API_HOST: 0.0.0.0
+      API_PORT: 3001
+      API_BODY_LIMIT: ${API_BODY_LIMIT:-1mb}
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:3000,http://localhost:3002}
+      API_SWAGGER_ENABLED: ${API_SWAGGER_ENABLED:-true}
+      API_THROTTLE_TTL_MS: ${API_THROTTLE_TTL_MS:-60000}
+      API_THROTTLE_LIMIT: ${API_THROTTLE_LIMIT:-120}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-interview_agent}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-interview_agent}?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
+      REDIS_REQUIRED: ${REDIS_REQUIRED:-true}
+      AUTH_MODE: ${AUTH_MODE:-development}
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_ISSUER: ${JWT_ISSUER:-interview-agent}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-interview-agent-web}
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-}
+      OIDC_JWKS_URL: ${OIDC_JWKS_URL:-}
+      OIDC_AUDIENCE: ${OIDC_AUDIENCE:-}
+      AGENT_RUNTIME_URL: http://agent-runtime:8000
+      AGENT_RUNTIME_TIMEOUT_MS: ${AGENT_RUNTIME_TIMEOUT_MS:-8000}
+      AGENT_RUNTIME_MAX_ATTEMPTS: ${AGENT_RUNTIME_MAX_ATTEMPTS:-2}
+      AGENT_RUNTIME_RETRY_BASE_MS: ${AGENT_RUNTIME_RETRY_BASE_MS:-250}
+      AGENT_RUNTIME_FALLBACK_ENABLED: ${AGENT_RUNTIME_FALLBACK_ENABLED:-true}
+      INTERVIEW_COMMAND_LEASE_MS: ${INTERVIEW_COMMAND_LEASE_MS:-360000}
+      INTERNAL_AGENT_TOKEN: ${INTERNAL_AGENT_TOKEN:?INTERNAL_AGENT_TOKEN is required}
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      agent-runtime:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:${API_HOST_PORT:-3001}:3001'
+    networks:
+      - edge
+      - backend
+
+  web:
+    <<: *app-security
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      target: runtime
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3001/api}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Interview Agent}
+        NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-development}
+        NEXT_PUBLIC_OIDC_AUTHORITY: ${NEXT_PUBLIC_OIDC_AUTHORITY:-https://identity.example.com/}
+        NEXT_PUBLIC_OIDC_CLIENT_ID: ${NEXT_PUBLIC_OIDC_CLIENT_ID:-interview-agent-web}
+        NEXT_PUBLIC_OIDC_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_REDIRECT_URI:-http://localhost:3000/auth/callback}
+        NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI:-http://localhost:3000}
+        NEXT_PUBLIC_OIDC_SCOPE: ${NEXT_PUBLIC_OIDC_SCOPE:-openid profile email}
+    image: interview-agent/web:${IMAGE_TAG:-local}
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:${WEB_HOST_PORT:-3000}:3000'
+    tmpfs:
+      - /tmp
+      - /app/apps/web/.next/cache:uid=1000,gid=1000,mode=0755
+    networks:
+      - edge
+
+  admin:
+    <<: *app-security
+    build:
+      context: ../..
+      dockerfile: apps/admin/Dockerfile
+      target: runtime
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3001/api}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Interview Agent}
+        NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-development}
+        NEXT_PUBLIC_OIDC_AUTHORITY: ${NEXT_PUBLIC_OIDC_AUTHORITY:-https://identity.example.com/}
+        NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID: ${NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID:-interview-agent-admin}
+        NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI: ${NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI:-http://localhost:3002/auth/callback}
+        NEXT_PUBLIC_ADMIN_OIDC_POST_LOGOUT_REDIRECT_URI: ${NEXT_PUBLIC_ADMIN_OIDC_POST_LOGOUT_REDIRECT_URI:-http://localhost:3002}
+        NEXT_PUBLIC_OIDC_SCOPE: ${NEXT_PUBLIC_OIDC_SCOPE:-openid profile email}
+    image: interview-agent/admin:${IMAGE_TAG:-local}
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3002
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:${ADMIN_HOST_PORT:-3002}:3002'
+    tmpfs:
+      - /tmp
+      - /app/apps/admin/.next/cache:uid=1000,gid=1000,mode=0755
+    networks:
+      - edge
+
+networks:
+  edge:
+  backend:
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+  phoenix-data:

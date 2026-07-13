@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Interview Agent - Candidate Review &amp; Question Bank</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with custom configuration -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-background": "#1a1c1d",
+                        "primary-container": "#0066cc",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001b3e",
+                        "secondary-container": "#e2dfe1",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#e2e2e4",
+                        "surface-bright": "#f9f9fb",
+                        "error": "#ba1a1a",
+                        "background": "#f9f9fb",
+                        "on-primary-fixed-variant": "#00458e",
+                        "surface": "#f9f9fb",
+                        "outline": "#727784",
+                        "on-tertiary-container": "#e9e8e7",
+                        "tertiary": "#505050",
+                        "outline-variant": "#c1c6d5",
+                        "on-primary-container": "#dfe8ff",
+                        "inverse-primary": "#aac7ff",
+                        "surface-container-highest": "#e2e2e4",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#aac7ff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#e3e2e2",
+                        "on-secondary-fixed-variant": "#474649",
+                        "surface-dim": "#d9dadc",
+                        "on-surface": "#1a1c1d",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#2f3132",
+                        "tertiary-fixed-dim": "#c7c6c6",
+                        "on-secondary-container": "#636264",
+                        "surface-tint": "#005cba",
+                        "surface-container": "#eeeef0",
+                        "surface-container-high": "#e8e8ea",
+                        "surface-container-low": "#f3f3f5",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "tertiary-container": "#686868",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "on-tertiary-fixed": "#1b1c1c",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#e4e2e4",
+                        "primary": "#004e9f",
+                        "secondary": "#5f5e60",
+                        "inverse-on-surface": "#f0f0f2",
+                        "on-tertiary-fixed-variant": "#464747",
+                        "primary-fixed": "#d7e3ff",
+                        "on-surface-variant": "#414753"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "sidebar-width": "260px",
+                        "container-max": "1440px",
+                        "drawer-width": "480px",
+                        "margin-desktop": "32px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "code-sm": ["JetBrains Mono", "monospace"],
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "label-caps": ["Inter", "sans-serif"]
+                    },
+                    fontSize: {
+                        "body-md": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "body-lg": ["17px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-sm": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom styles for detail drawer slide-in */
+        .drawer-slide-in {
+            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex">
+<!-- SideNavBar Component -->
+<nav class="bg-on-secondary-fixed dark:bg-on-background fixed left-0 top-0 h-screen w-sidebar-width border-r border-outline-variant flex flex-col py-6 z-50">
+<div class="px-6 mb-8">
+<h1 class="text-headline-md font-headline-md text-on-primary tracking-tight">Interview Agent</h1>
+<p class="text-on-primary-fixed-variant text-body-md font-body-md mt-1">Governance Console</p>
+</div>
+<ul class="flex-1 px-4 space-y-1">
+<!-- Overview -->
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="dashboard" data-weight="regular">dashboard</span>
+<span class="font-body-md text-body-md">Overview</span>
+</a>
+</li>
+<!-- Source Import -->
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="upload_file" data-weight="regular">upload_file</span>
+<span class="font-body-md text-body-md">Source Import</span>
+</a>
+</li>
+<!-- Candidate Review (Active) -->
+<li>
+<a class="flex items-center px-4 py-2 rounded bg-tertiary-container text-on-tertiary-container font-semibold opacity-90 transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="rate_review" data-weight="fill" style="font-variation-settings: 'FILL' 1;">rate_review</span>
+<span class="font-body-md text-body-md font-semibold">Candidate Review</span>
+</a>
+</li>
+<!-- Question Bank -->
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="quiz" data-weight="regular">quiz</span>
+<span class="font-body-md text-body-md">Question Bank</span>
+</a>
+</li>
+<!-- Taxonomy -->
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="account_tree" data-weight="regular">account_tree</span>
+<span class="font-body-md text-body-md">Taxonomy</span>
+</a>
+</li>
+<!-- Rubric -->
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="rule" data-weight="regular">rule</span>
+<span class="font-body-md text-body-md">Rubric</span>
+</a>
+</li>
+<!-- Prompt Registry -->
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="terminal" data-weight="regular">terminal</span>
+<span class="font-body-md text-body-md">Prompt Registry</span>
+</a>
+</li>
+<!-- Model Config -->
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="settings_input_component" data-weight="regular">settings_input_component</span>
+<span class="font-body-md text-body-md">Model Config</span>
+</a>
+</li>
+<!-- Agent Runs -->
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="play_circle" data-weight="regular">play_circle</span>
+<span class="font-body-md text-body-md">Agent Runs</span>
+</a>
+</li>
+<!-- Audit Logs -->
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="history" data-weight="regular">history</span>
+<span class="font-body-md text-body-md">Audit Logs</span>
+</a>
+</li>
+<!-- Settings -->
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="settings" data-weight="regular">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</li>
+</ul>
+<div class="px-4 mt-auto">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="help_outline" data-weight="regular">help_outline</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+</li>
+<li>
+<a class="flex items-center px-4 py-2 rounded text-on-primary-fixed-variant hover:bg-tertiary hover:text-on-tertiary transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="description" data-weight="regular">description</span>
+<span class="font-body-md text-body-md">Documentation</span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 ml-sidebar-width flex flex-col relative min-h-screen">
+<!-- TopAppBar Component -->
+<header class="bg-surface dark:bg-background border-b border-outline-variant flex justify-between items-center h-16 px-gutter docked full-width top-0 sticky z-40">
+<div class="flex items-center">
+<span class="text-headline-md font-headline-md font-semibold text-on-surface">Governance Workspace</span>
+</div>
+<div class="flex items-center space-x-4">
+<button class="bg-primary-container text-on-primary px-4 py-2 rounded hover:opacity-90 transition-opacity font-body-md text-body-md font-medium">New Run</button>
+<button class="border border-on-background text-on-background px-4 py-2 rounded hover:bg-surface-variant transition-colors font-body-md text-body-md font-medium">Switch Workspace</button>
+<div class="flex space-x-2 pl-4 border-l border-outline-variant">
+<button class="text-on-surface-variant hover:text-primary transition-colors hover:scale-95 transition-transform p-1 rounded-full">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors hover:scale-95 transition-transform p-1 rounded-full">
+<img alt="User Avatar" class="w-6 h-6 rounded-full object-cover" data-alt="A small, circular avatar portrait of a professional administrator in a minimalist style, light mode, clean corporate aesthetic, deep charcoal and white." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0-EL2Y5GtyioCpa7i1ADHhZFjhfeIh0Vv8U3D8QmubTFG9896n2TwO4IYWNZGLJ1-ly_G2WXMqrNXl4OmXNI1BSAHDrvuO3BT01KYKjx-rJMUVwtg7oDC_ohZh-tedlDwknUXkX1VSWOI6Y6oNdMLJJJVg7SbaRRF0_nRBXUKkYl0EU_pmWJl3WEXjY5ADX0UPUH0oGIGbUZnijNUirp5sgIW3u1kVatIYJPqaHLnuYrZUrvf7Dk_d0lqSgn6UufD7BrnoaAHCQU"/>
+</button>
+</div>
+</div>
+</header>
+<!-- Canvas Area -->
+<main class="flex-1 p-margin-desktop overflow-y-auto w-full max-w-container-max mx-auto relative">
+<!-- Page Title & Description -->
+<div class="mb-8">
+<h2 class="text-display font-display text-on-surface mb-2">Candidate Review</h2>
+<p class="text-body-lg font-body-lg text-on-surface-variant max-w-3xl">Review and curate AI-generated interview questions before publishing them to the official Question Bank.</p>
+</div>
+<!-- Filter Bar -->
+<div class="flex items-center justify-between mb-6 bg-surface-container-lowest border border-outline-variant rounded p-2">
+<div class="flex items-center space-x-4">
+<div class="flex items-center space-x-2 px-3 py-1 bg-surface-variant rounded">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="filter_list" style="font-size: 18px;">filter_list</span>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Filters</span>
+</div>
+<div class="h-4 border-r border-outline-variant"></div>
+<button class="flex items-center space-x-1 px-3 py-1 hover:bg-surface-variant rounded transition-colors text-on-surface-variant">
+<span class="font-body-md text-body-md">Status: Pending Review</span>
+<span class="material-symbols-outlined" data-icon="arrow_drop_down" style="font-size: 16px;">arrow_drop_down</span>
+</button>
+<button class="flex items-center space-x-1 px-3 py-1 hover:bg-surface-variant rounded transition-colors text-on-surface-variant">
+<span class="font-body-md text-body-md">Quality Score: &gt; 0.80</span>
+<span class="material-symbols-outlined" data-icon="arrow_drop_down" style="font-size: 16px;">arrow_drop_down</span>
+</button>
+<button class="flex items-center space-x-1 px-3 py-1 hover:bg-surface-variant rounded transition-colors text-on-surface-variant">
+<span class="font-body-md text-body-md">Source: langgraph-docs</span>
+<span class="material-symbols-outlined" data-icon="arrow_drop_down" style="font-size: 16px;">arrow_drop_down</span>
+</button>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant" data-icon="search" style="font-size: 18px;">search</span>
+<input class="pl-9 pr-4 py-1.5 border border-outline-variant rounded bg-surface-container-lowest text-body-md font-body-md focus:border-primary-container focus:ring-0 w-64" placeholder="Search candidate questions..." type="text"/>
+</div>
+</div>
+<!-- High-density Table -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-variant border-b border-outline-variant text-label-caps font-label-caps text-on-surface-variant uppercase tracking-wider">
+<tr>
+<th class="py-3 px-4 w-12 text-center">
+<input class="border-outline-variant rounded text-primary-container focus:ring-primary-container" type="checkbox"/>
+</th>
+<th class="py-3 px-4 font-semibold w-1/3">Question Title (Candidate)</th>
+<th class="py-3 px-4 font-semibold">质量分 (Quality)</th>
+<th class="py-3 px-4 font-semibold">标签 (Tags)</th>
+<th class="py-3 px-4 font-semibold">难度 (Diff)</th>
+<th class="py-3 px-4 font-semibold">来源引用 (Source)</th>
+<th class="py-3 px-4 font-semibold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="text-body-md font-body-md text-on-surface divide-y divide-outline-variant">
+<!-- Active Row -->
+<tr class="hover:bg-surface-variant transition-colors bg-surface-container cursor-pointer border-l-2 border-primary-container">
+<td class="py-3 px-4 text-center">
+<input checked="" class="border-outline-variant rounded text-primary-container focus:ring-primary-container" type="checkbox"/>
+</td>
+<td class="py-3 px-4 font-medium text-on-background">什么是 LangGraph StateGraph？</td>
+<td class="py-3 px-4">
+<div class="flex items-center">
+<div class="w-2 h-2 rounded-full bg-primary-container mr-2"></div>
+<span class="font-code-sm text-code-sm text-on-surface-variant">0.86</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex space-x-1">
+<span class="px-2 py-0.5 bg-surface-container-high border border-outline-variant rounded text-xs text-on-surface-variant">LangChain</span>
+<span class="px-2 py-0.5 bg-surface-container-high border border-outline-variant rounded text-xs text-on-surface-variant">Architecture</span>
+</div>
+</td>
+<td class="py-3 px-4">Medium</td>
+<td class="py-3 px-4 font-code-sm text-code-sm text-on-surface-variant truncate max-w-xs" title="rag-agent-interview.md#L42-L68">rag-agent-interview.md#L42...</td>
+<td class="py-3 px-4 text-right">
+<button class="text-primary-container hover:text-primary transition-colors text-sm font-semibold">Review</button>
+</td>
+</tr>
+<!-- Additional Rows -->
+<tr class="hover:bg-surface-variant transition-colors cursor-pointer">
+<td class="py-3 px-4 text-center">
+<input class="border-outline-variant rounded text-primary-container focus:ring-primary-container" type="checkbox"/>
+</td>
+<td class="py-3 px-4 text-on-surface-variant">How does ReAct prompting differ from standard Chain of Thought?</td>
+<td class="py-3 px-4">
+<div class="flex items-center">
+<div class="w-2 h-2 rounded-full bg-primary-container mr-2"></div>
+<span class="font-code-sm text-code-sm text-on-surface-variant">0.92</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex space-x-1">
+<span class="px-2 py-0.5 bg-surface-container-high border border-outline-variant rounded text-xs text-on-surface-variant">Prompting</span>
+</div>
+</td>
+<td class="py-3 px-4">Hard</td>
+<td class="py-3 px-4 font-code-sm text-code-sm text-on-surface-variant truncate max-w-xs">agent_patterns.pdf#Page12</td>
+<td class="py-3 px-4 text-right">
+<button class="text-on-surface-variant hover:text-primary-container transition-colors text-sm font-semibold">Review</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant transition-colors cursor-pointer">
+<td class="py-3 px-4 text-center">
+<input class="border-outline-variant rounded text-primary-container focus:ring-primary-container" type="checkbox"/>
+</td>
+<td class="py-3 px-4 text-on-surface-variant">Explain the role of a Vector Database in a RAG system.</td>
+<td class="py-3 px-4">
+<div class="flex items-center">
+<div class="w-2 h-2 rounded-full bg-secondary mr-2"></div>
+<span class="font-code-sm text-code-sm text-on-surface-variant">0.75</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex space-x-1">
+<span class="px-2 py-0.5 bg-surface-container-high border border-outline-variant rounded text-xs text-on-surface-variant">RAG</span>
+<span class="px-2 py-0.5 bg-surface-container-high border border-outline-variant rounded text-xs text-on-surface-variant">Storage</span>
+</div>
+</td>
+<td class="py-3 px-4">Easy</td>
+<td class="py-3 px-4 font-code-sm text-code-sm text-on-surface-variant truncate max-w-xs">rag_basics.md#L10-L15</td>
+<td class="py-3 px-4 text-right">
+<button class="text-on-surface-variant hover:text-primary-container transition-colors text-sm font-semibold">Review</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</main>
+<!-- Detail Drawer (Active State overlaying right side) -->
+<!-- Placed absolute within the wrapper to slide over the canvas -->
+<aside class="absolute top-0 right-0 h-full w-drawer-width bg-surface-container-lowest border-l border-outline-variant shadow-[0_10px_30px_rgba(0,0,0,0.04)] z-30 flex flex-col drawer-slide-in">
+<!-- Drawer Header -->
+<div class="h-16 border-b border-outline-variant flex items-center justify-between px-6 bg-surface">
+<h3 class="text-headline-md font-headline-md text-on-surface">Candidate Review</h3>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Drawer Body -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<!-- Trace Info -->
+<div class="flex justify-between items-center bg-surface-container-high p-3 rounded border border-outline-variant">
+<div class="flex items-center space-x-4">
+<div>
+<span class="text-label-caps font-label-caps text-on-surface-variant block">TRACE ID</span>
+<span class="font-code-sm text-code-sm text-on-surface">trc-98a721b</span>
+</div>
+<div>
+<span class="text-label-caps font-label-caps text-on-surface-variant block">PROMPT VERSION</span>
+<span class="font-code-sm text-code-sm text-on-surface">v2.4.1-extract</span>
+</div>
+</div>
+<div class="flex items-center">
+<div class="w-2 h-2 rounded-full bg-primary-container mr-2"></div>
+<span class="text-label-caps font-label-caps font-semibold">0.86 SCORE</span>
+</div>
+</div>
+<!-- Generated Question -->
+<div>
+<h4 class="text-label-caps font-label-caps text-on-surface-variant mb-2">GENERATED QUESTION</h4>
+<p class="text-body-lg font-body-lg font-medium text-on-surface bg-surface-variant p-4 rounded border border-outline-variant">
+                        什么是 LangGraph StateGraph？请描述其核心组件以及它如何维护代理应用中的状态。
+                    </p>
+</div>
+<!-- Reference Answer -->
+<div>
+<h4 class="text-label-caps font-label-caps text-on-surface-variant mb-2">REFERENCE ANSWER (RAG GENERATED)</h4>
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 text-body-md font-body-md text-on-surface-variant leading-relaxed">
+                        LangGraph 的 StateGraph 是一个用于定义循环计算图的核心类，专门用于构建具备状态的代理（Agents）。
+                        它的核心是将一个 `State` 类型（通常是 TypedDict 或 Pydantic 模型）传递给图中的每个节点。
+                        <br/><br/>
+                        核心组件包括：
+                        <ul class="list-disc pl-5 mt-2 space-y-1">
+<li><strong>Nodes (节点):</strong> 代表计算步骤，接收当前状态并返回更新。</li>
+<li><strong>Edges (边):</strong> 定义计算流，包括条件边用于路由逻辑。</li>
+<li><strong>State (状态):</strong> 在节点间流动的数据，每次节点执行后进行更新（覆盖或追加，取决于 reducer）。</li>
+</ul>
+</div>
+</div>
+<!-- AI Quality Reason -->
+<div>
+<h4 class="text-label-caps font-label-caps text-on-surface-variant mb-2 flex items-center">
+<span class="material-symbols-outlined mr-1" data-icon="auto_awesome" style="font-size: 16px;">auto_awesome</span>
+                        AI QUALITY REASONING
+                    </h4>
+<p class="text-body-md font-body-md text-on-surface-variant bg-surface-container p-3 rounded border border-outline-variant">
+                        Question aligns well with source material. It effectively isolates a core architectural concept of LangGraph. Difficulty is appropriate for mid-level engineering candidates. Reference answer captures necessary technical nuances.
+                    </p>
+</div>
+<!-- Source Refs -->
+<div>
+<h4 class="text-label-caps font-label-caps text-on-surface-variant mb-2">SOURCE REFERENCES</h4>
+<div class="flex items-center space-x-2 bg-surface-container-lowest border border-outline-variant rounded p-2">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="description">description</span>
+<a class="font-code-sm text-code-sm text-primary-container hover:underline" href="#">rag-agent-interview.md#L42-L68</a>
+</div>
+</div>
+</div>
+<!-- Drawer Footer (Actions) -->
+<div class="border-t border-outline-variant p-4 bg-surface flex justify-between items-center space-x-2">
+<button class="border border-error text-error px-4 py-2 rounded hover:bg-error-container transition-colors font-body-md text-body-md font-medium">驳回</button>
+<div class="flex space-x-2">
+<button class="border border-on-background text-on-background px-4 py-2 rounded hover:bg-surface-variant transition-colors font-body-md text-body-md font-medium">合并相似题</button>
+<button class="border border-on-background text-on-background px-4 py-2 rounded hover:bg-surface-variant transition-colors font-body-md text-body-md font-medium">编辑后发布</button>
+<button class="bg-primary-container text-on-primary px-4 py-2 rounded hover:opacity-90 transition-opacity font-body-md text-body-md font-medium">批准发布</button>
+</div>
+</div>
+</aside>
+</div>
+</body></html>

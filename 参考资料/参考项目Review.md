@@ -56,11 +56,57 @@ status: reviewed
 | 项目 | 定位 | 技术/内容 | 可复用点 | 复用级别 |
 |---|---|---|---|---|
 | [xiaoniuge36/ai-agent-interview-prep](https://github.com/xiaoniuge36/ai-agent-interview-prep) | 个人面试备战资料库。 | 公司专项、AI 应用开发、前端题库、行为面、HR 谈薪、简历版本。 | 作为私有知识库、题库种子、个人画像来源。 | 核心复用 |
-| [xiaoniuge36/InterviewRadar](https://github.com/xiaoniuge36/InterviewRadar) | 可运营题库 + 岗位定制刷题 + AI 陪练。 | Next.js、NestJS、Prisma、PostgreSQL/pgvector、Redis/BullMQ、MinIO。 | 产品层、题库、后台、JD matcher、AI Gateway、Prompt Registry。 | 核心参考，公开访问失败，需本地仓库或用户材料复核 |
+| [xiaoniuge36/InterviewRadar](https://github.com/xiaoniuge36/InterviewRadar) | 可运营题库 + 岗位定制刷题 + AI 陪练。 | Next.js、NestJS、Prisma、PostgreSQL/pgvector、Redis/BullMQ、MinIO。 | monorepo 产品壳、前台题库交互、后台题库/审核/AI 配置、共享类型与 API client 组织方式。 | 核心参考，但不直接照搬代码 |
 
-### `InterviewRadar` 参考边界
+### `InterviewRadar` 前端专项 Review
 
-当前公开访问无法复核：GitHub 页面返回 404，GitHub API 返回 403。因此本轮只基于已有本地浅克隆记录和本文件中的 review 结论判断，不臆造仓库细节。
+本轮已在当前项目仓库外通过浅克隆复核，版本为 `e264893`。GitHub Web/API 访问受限不影响本地审查结论。
+
+总体判断：有参考意义，且对“产品壳”和“后台运营台”的参考价值较高；但它不是本项目要做的 Agent-native 前端实现，不能直接迁移成新项目主流程。
+
+| 方向 | 判断 | 本项目采用方式 |
+|---|---|---|
+| monorepo 工程壳 | 可参考 | `apps/web`、`apps/admin`、`apps/api`、`packages/shared`、`packages/api-client` 的组织方式与当前方案高度一致，可作为起手结构参考。 |
+| 前台用户端视觉与信息架构 | 可参考交互，不直接复用实现 | 首页、题库列表、题目详情页、标签、难度、题型、侧栏题目导航、答题 tab、面试 tab 的页面组织值得参考。新项目需改造成“训练计划 - 面试会话 - 流式反馈 - 报告复盘”的 Agent-native 路径。 |
+| 后台管理端 | 中高参考 | `Ant Design` 后台壳、题目管理、候选题审核、AI Provider 配置、访问统计等页面可作为后台原型参考；落地时必须接入新版权限门禁、审计日志和 OpenAPI/JSON Schema 契约。 |
+| 共享类型与 API client | 可参考设计，不直接复制 | `packages/shared` 和 `packages/api-client` 说明旧项目已经意识到跨端契约问题；新项目应升级为 schema-first 的 `packages/contracts`，避免前台、后台各自维护一套 API client。 |
+| 题库领域模型 | 可参考 taxonomy | `QuestionType`、`QuestionStatus`、`Domain`、`QualityGrade`、`Permission`、`Role` 可作为题库/后台治理的种子，但需要扩展到面试会话、评分报告、训练计划、记忆画像。 |
+| 登录与会话 | 不照搬 | 旧项目主要依赖 `localStorage` 存 token/user，前台与后台各自处理登录态；新项目必须由 Product API 统一身份、会话、权限、资源所有权和数据作用域。 |
+| Agent 面试页实现 | 不照搬 | 旧项目在浏览器页面内拼 prompt、发起 `aiApi.chat`、解析评分 JSON。这与本项目“Product API 管业务事实源，Agent Runtime 管状态机”的架构冲突。只能参考 tab 交互，不复用逻辑。 |
+| 前台数据获取 | 不照搬 | 旧项目大量 `use client`、页面内 `useEffect` 请求、`any`、模拟数据 fallback；新项目应优先按契约建 Query 层、Server/Client 边界和错误模型。 |
+| 占位页与营销内容 | 低参考 | 多个页面是 `PlaceholderPage`，还有旧品牌/站点文案。只能作为低成本页面壳参考，不作为产品需求依据。 |
+
+#### 可迁移资产清单
+
+| 资产 | 迁移级别 | 处理方式 |
+|---|---|---|
+| `apps/web` 页面信息架构 | 参考 | 提炼首页、题库、题目详情、个人中心、训练入口的页面地图，重建为新项目路由。 |
+| `apps/admin` 后台 Layout 与 CRUD 页面形态 | 可改造 | 用于快速搭后台原型，但所有操作必须先过新版 Permission Gate 与 Audit Gate。 |
+| `packages/shared` 类型枚举 | 可改造 | 作为领域词表种子，迁入 `packages/contracts` 后由 schema 生成 TS/Python 类型。 |
+| `packages/api-client` 分 endpoint 的封装方式 | 可参考 | 保留“按领域分 API”思想，重写为 OpenAPI/JSON Schema 驱动的 typed client。 |
+| 题库筛选、标签、难度、状态 UI | 可参考 | 用于题库治理和训练选题体验。 |
+| 旧项目的 AI Provider 管理页 | 可参考 | 可演变为 Model Router / Provider 管理页，但 API key 展示、权限和审计必须重做。 |
+
+#### 不应照搬清单
+
+| 不照搬项 | 原因 | 新项目替代方案 |
+|---|---|---|
+| 浏览器内 prompt 编排与评分 JSON 解析 | 破坏 Agent Runtime 边界，难审计、难复现、难恢复。 | 由 Agent Runtime 执行 LangGraph 状态机，Product API 只调度和落库。 |
+| `localStorage` token 作为主要会话依据 | XSS 风险高，权限和数据作用域分散。 | Product API 统一会话、权限、资源 ownership、审计。 |
+| 前后台重复 API client | 容易契约漂移。 | `packages/contracts` 统一生成 typed client。 |
+| 页面内模拟数据 fallback | 容易掩盖后端/契约问题。 | 明确 loading、empty、error、degraded 四类状态。 |
+| 大量 `any` 和页面内业务状态堆叠 | 会导致状态机扩散。 | 训练会话、面试会话、报告生成都走显式状态模型。 |
+| 旧品牌、营销、友情链接文案 | 与新产品定位无关。 | 只保留适合面试 Agent 的信息架构。 |
+
+#### 对当前项目的落地建议
+
+1. 不要把 `InterviewRadar` 前端整包复制进新项目；应按当前技术方案重新初始化 monorepo。
+2. 第一批代码可以参考旧项目目录命名，但以 `packages/contracts` 为事实源，先建契约，再接页面。
+3. 后台端可以优先参考旧项目 `apps/admin` 的菜单和页面集合：题目管理、审核中心、AI 配置、用户/权限、系统设置。
+4. 用户端只参考页面信息架构，主链路要重构为：`训练目标/JD 输入 -> 训练计划 -> 面试会话 -> SSE 流式反馈 -> 报告复盘 -> 记忆写回`。
+5. 面试详情页里的 Q&A / 开始面试 tab 可以作为交互原型，但实现必须迁入 Agent Runtime，不允许前端直接拼 Agent prompt。
+
+### `InterviewRadar` 后端与产品能力参考边界
 
 | 方向 | 判断 | 本项目采用方式 |
 |---|---|---|

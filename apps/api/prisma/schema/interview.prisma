@@ -1,0 +1,165 @@
+model InterviewSession {
+  id            String                 @id @default(cuid())
+  tenantId      String
+  userId        String
+  jobIntentId   String?
+  status        InterviewSessionStatus @default(created)
+  stage         InterviewStage         @default(warmup)
+  version       Int                    @default(0)
+  eventSequence Int                    @default(0)
+  workflowRunId String                 @default(cuid())
+  title         String
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  tenant    Tenant             @relation(fields: [tenantId], references: [id])
+  user      User               @relation(fields: [tenantId, userId], references: [tenantId, id])
+  jobIntent JobIntent?         @relation(fields: [tenantId, jobIntentId], references: [tenantId, id])
+  turns     InterviewTurn[]
+  report    InterviewReport?
+  commands  InterviewCommand[]
+  events    InterviewEvent[]
+  runs      AgentRun[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, workflowRunId])
+  @@index([tenantId, userId, status, updatedAt])
+  @@index([tenantId, jobIntentId])
+}
+
+model InterviewTurn {
+  id                String            @id @default(cuid())
+  tenantId          String
+  sessionId         String
+  commandId         String
+  role              InterviewTurnRole
+  stage             InterviewStage
+  content           String
+  structuredPayload Json?
+  traceId           String
+  createdAt         DateTime          @default(now())
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id])
+  session InterviewSession @relation(fields: [tenantId, sessionId], references: [tenantId, id])
+  command InterviewCommand @relation(fields: [tenantId, commandId], references: [tenantId, id])
+
+  @@index([tenantId, sessionId, createdAt])
+  @@index([traceId])
+}
+
+model InterviewReport {
+  id               String   @id @default(cuid())
+  tenantId         String
+  sessionId        String
+  overall          Json
+  stageScores      Json
+  turnFeedback     Json
+  projectDiagnosis String[]
+  nextActions      String[]
+  memoryEvents     Json
+  createdAt        DateTime @default(now())
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id])
+  session InterviewSession @relation(fields: [tenantId, sessionId], references: [tenantId, id])
+
+  @@unique([tenantId, sessionId])
+  @@index([tenantId, createdAt])
+}
+
+model MemoryEvent {
+  id         String          @id @default(cuid())
+  tenantId   String
+  userId     String
+  eventType  MemoryEventType
+  sourceId   String
+  evidence   String
+  delta      Json
+  confidence Float
+  createdAt  DateTime        @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [tenantId, userId], references: [tenantId, id])
+
+  @@index([tenantId, userId, eventType, createdAt])
+  @@index([sourceId])
+}
+
+model InterviewCommand {
+  id              String                 @id @default(cuid())
+  tenantId        String
+  sessionId       String
+  actorId         String
+  idempotencyKey  String
+  fingerprint     String
+  type            InterviewCommandType
+  expectedVersion Int?
+  status          InterviewCommandStatus @default(pending)
+  result          Json?
+  errorCode       String?
+  traceId         String
+  attemptCount    Int                    @default(0)
+  leaseExpiresAt  DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  completedAt     DateTime?
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id])
+  session InterviewSession @relation(fields: [tenantId, sessionId], references: [tenantId, id])
+  turns   InterviewTurn[]
+  events  InterviewEvent[]
+  runs    AgentRun[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, actorId, idempotencyKey])
+  @@index([tenantId, sessionId, createdAt])
+  @@index([tenantId, status, leaseExpiresAt])
+  @@index([traceId])
+}
+
+model InterviewEvent {
+  id         String             @id @default(cuid())
+  tenantId   String
+  sessionId  String
+  commandId  String
+  sequence   Int
+  type       InterviewEventType
+  payload    Json
+  traceId    String
+  occurredAt DateTime           @default(now())
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id])
+  session InterviewSession @relation(fields: [tenantId, sessionId], references: [tenantId, id])
+  command InterviewCommand @relation(fields: [tenantId, commandId], references: [tenantId, id])
+
+  @@unique([tenantId, sessionId, sequence])
+  @@index([tenantId, sessionId, occurredAt])
+  @@index([traceId])
+}
+
+model AgentRun {
+  id           String         @id @default(cuid())
+  tenantId     String
+  sessionId    String?
+  commandId    String?
+  type         AgentRunType
+  status       AgentRunStatus
+  stage        InterviewStage
+  traceId      String
+  input        Json?
+  output       Json?
+  error        String?
+  latencyMs    Int?
+  schemaValid  Boolean?
+  fallbackUsed Boolean        @default(false)
+  attemptCount Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  tenant  Tenant            @relation(fields: [tenantId], references: [id])
+  session InterviewSession? @relation(fields: [tenantId, sessionId], references: [tenantId, id])
+  command InterviewCommand? @relation(fields: [tenantId, commandId], references: [tenantId, id], onDelete: Restrict)
+
+  @@index([tenantId, status, updatedAt])
+  @@index([tenantId, commandId, createdAt])
+  @@index([traceId])
+}

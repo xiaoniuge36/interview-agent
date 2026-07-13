@@ -1,0 +1,149 @@
+enum ActorRole {
+  user
+  question_reviewer
+  admin
+  support
+  agent_runtime
+}
+
+enum AuditResult {
+  success
+  failure
+}
+
+enum JobIntentStatus {
+  draft
+  analyzing
+  ready
+  archived
+}
+
+enum InterviewStage {
+  warmup
+  self_intro
+  tech_basics
+  jd_core
+  project_deep_dive
+  scenario_design
+  hr
+  final_evaluation
+  report_ready
+  memory_updated
+}
+
+enum InterviewSessionStatus {
+  created
+  running
+  waiting_user
+  generating_report
+  report_ready
+  failed
+  cancelled
+}
+
+enum InterviewTurnRole {
+  interviewer
+  candidate
+  system
+}
+
+enum InterviewCommandType {
+  start
+  advance
+  answer
+}
+
+enum InterviewCommandStatus {
+  pending
+  completed
+  failed
+}
+
+enum InterviewEventType {
+  workflow_started
+  stage_changed
+  token
+  turn_completed
+  report_ready
+  error
+}
+
+enum AgentRunType {
+  mock_interview
+}
+
+enum AgentRunStatus {
+  running
+  succeeded
+  failed
+  fallback
+}
+
+enum QuestionDifficulty {
+  intro
+  easy
+  medium
+  hard
+  expert
+}
+
+enum QuestionType {
+  short_answer
+  coding
+  system_design
+  project_deep_dive
+  behavioral
+}
+
+enum QuestionStatus {
+  draft
+  published
+  disabled
+  archived
+}
+
+enum QuestionVisibility {
+  public
+  tenant
+}
+
+enum CandidateReviewStatus {
+  pending
+  needs_edit
+  approved
+  rejected
+}
+
+enum ModelProfileStatus {
+  active
+  standby
+  disabled
+}
+
+enum ModelBudget {
+  low
+  medium
+  high
+}
+
+enum MemoryEventType {
+  skill_delta
+  risk_signal
+  strength_confirmed
+  next_action
+}
+
+enum KnowledgeSourceType {
+  upload
+  url
+  repository
+  fixture
+}
+
+enum KnowledgeAssetStatus {
+  received
+  processing
+  review
+  published
+  failed
+}

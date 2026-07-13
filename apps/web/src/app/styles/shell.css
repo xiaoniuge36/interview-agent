@@ -1,0 +1,99 @@
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 276px minmax(0, 1fr);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 30px 22px;
+  background: #0f1f3d;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.04em;
+}
+
+.brand p {
+  margin: 6px 0 0;
+  color: #aac1ed;
+  font-size: 12px;
+}
+
+.nav,
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+.nav-item {
+  padding: 11px 14px;
+  border-radius: 14px;
+  color: #c5d2e8;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nav-item small {
+  opacity: 0.72;
+}
+
+.nav-item:hover,
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.11);
+  color: #ffffff;
+}
+
+.main {
+  min-width: 0;
+}
+
+.topbar {
+  min-height: 76px;
+  padding: 16px 36px;
+  border-bottom: 1px solid var(--outline);
+  background: rgba(244, 247, 251, 0.88);
+  backdrop-filter: blur(16px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.search {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.identity-actions,
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.workspace {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 34px 36px 72px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
+  gap: 22px;
+  align-items: stretch;
+}

@@ -1,0 +1,71 @@
+.section-state {
+  display: grid;
+  min-height: 118px;
+  place-content: center;
+  gap: 7px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-medium);
+  padding: 24px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  text-align: center;
+}
+
+.section-state strong {
+  color: var(--text);
+}
+
+.section-state.warning {
+  border-color: #f2c999;
+  background: var(--warning-soft);
+}
+
+.section-state.danger {
+  border-color: #f0aaa4;
+  background: var(--danger-soft);
+}
+
+.auth-state {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(47, 99, 215, 0.16), transparent 38%), var(--background);
+}
+
+.auth-card {
+  width: min(100%, 520px);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  padding: 38px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.auth-card h1 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 42px);
+  letter-spacing: -0.05em;
+}
+
+.auth-card p {
+  margin: 16px 0 24px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.authentication-failure {
+  display: grid;
+  max-width: 720px;
+  gap: 12px;
+  justify-items: start;
+}
+
+.authentication-failure p {
+  margin: 0;
+}
+
+.authentication-failure .button {
+  margin-top: 8px;
+}

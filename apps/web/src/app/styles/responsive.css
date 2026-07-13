@@ -1,0 +1,45 @@
+@media (max-width: 960px) {
+  .app-shell,
+  .hero,
+  .interview,
+  .grid-2,
+  .grid-3,
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+  }
+
+  .topbar,
+  .row-between,
+  .identity-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar {
+    position: static;
+    padding: 20px;
+  }
+
+  .workspace {
+    padding: 24px 20px;
+  }
+
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .turn {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
