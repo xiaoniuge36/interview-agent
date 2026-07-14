@@ -1,8 +1,8 @@
 ﻿import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import type { Environment } from './common/config/environment';
@@ -11,12 +11,14 @@ import { HttpExceptionFilter } from './common/errors/http-exception.filter';
 const DEVELOPMENT_ORIGINS = ['http://localhost:3000', 'http://localhost:3002'];
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
   const config = app.get(ConfigService<Environment, true>);
   const bodyLimit = config.get('API_BODY_LIMIT', { infer: true });
   app.use(helmet());
-  app.use(json({ limit: bodyLimit }));
-  app.use(urlencoded({ extended: false, limit: bodyLimit }));
+  app.useBodyParser('json', { limit: bodyLimit });
+  app.useBodyParser('urlencoded', { extended: false, limit: bodyLimit });
   app.setGlobalPrefix('api');
   app.enableCors(corsOptions(config));
   app.useGlobalFilters(new HttpExceptionFilter());
@@ -51,7 +53,7 @@ function corsOptions(config: ConfigService<Environment, true>) {
   };
 }
 
-function setupSwagger(app: Awaited<ReturnType<typeof NestFactory.create>>) {
+function setupSwagger(app: NestExpressApplication) {
   const configuration = new DocumentBuilder()
     .setTitle('Interview Agent Product API')
     .setDescription('业务事实源 API：权限、画像、岗位、面试会话、审计与 Agent Runtime 调度。')

@@ -1,10 +1,11 @@
 import type { CandidateReview } from '@interview-agent/contracts';
 import type { SectionState } from '@/hooks/useAdminDashboard';
 import { CandidateEditor } from './training-content/CandidateEditor';
-import { MarkdownImportForm } from './training-content/MarkdownImportForm';
 
 type TrainingContentWorkbenchProps = {
   candidates: SectionState<CandidateReview[]>;
+  selectedCandidateId: string | null;
+  onCandidateSelect: (candidateId: string) => void;
   onChanged: () => void;
 };
 
@@ -14,13 +15,17 @@ export function TrainingContentWorkbench(props: TrainingContentWorkbenchProps) {
       <div className="section-heading">
         <div>
           <div className="eyebrow">Training Operations</div>
-          <h2 id="training-workbench-heading">Training content workspace</h2>
+          <h2 id="training-workbench-heading">候选题审核工作台</h2>
         </div>
-        <p>Import Markdown, review generated candidates, and publish approved questions.</p>
+        <p>编辑题目内容、记录审核结论，并发布已经通过治理检查的候选题。</p>
       </div>
-      <div className="content-grid two-columns training-workbench">
-        <MarkdownImportForm onChanged={props.onChanged} />
-        <CandidateEditor candidates={props.candidates} onChanged={props.onChanged} />
+      <div className="training-workbench">
+        <CandidateEditor
+          candidates={props.candidates}
+          selectedCandidateId={props.selectedCandidateId}
+          onCandidateSelect={props.onCandidateSelect}
+          onChanged={props.onChanged}
+        />
       </div>
     </section>
   );

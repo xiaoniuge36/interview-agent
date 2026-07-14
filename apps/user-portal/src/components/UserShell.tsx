@@ -14,12 +14,15 @@ export function UserShell({ children }: UserShellProps) {
   const activeItem = useMemo(() => NAV_ITEMS.find((item) => item.id === activeId), [activeId]);
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#workspace">
+        跳到主要内容
+      </a>
       <UserSidebar activeId={activeId} onNavigate={setActiveId} />
       <main className="main">
         <header className="topbar">
           <div className="page-context">
-            <span>Personal training space</span>
-            <strong>{activeItem?.label ?? 'Training workspace'}</strong>
+            <span>个人 AI 面试训练空间</span>
+            <strong>{activeItem?.label ?? '训练总览'}</strong>
           </div>
           <IdentityActions />
         </header>
@@ -67,15 +70,13 @@ function IdentityActions() {
       <div className="account-chip">
         <span className="account-initial">{initial(identity?.displayName)}</span>
         <span>
-          <strong>{identity?.displayName ?? 'Authenticated user'}</strong>
-          <small>
-            {identity?.role === 'user' ? 'Personal account' : (identity?.role ?? 'Verified')}
-          </small>
+          <strong>{identity?.displayName ?? '训练用户'}</strong>
+          <small>{identity?.role === 'user' ? '个人账号' : (identity?.role ?? '已验证账号')}</small>
         </span>
       </div>
       {auth.mode !== 'development' ? (
         <button className="text-button" type="button" onClick={() => void auth.signOut()}>
-          Sign out
+          退出登录
         </button>
       ) : null}
     </div>

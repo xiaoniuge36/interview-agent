@@ -1,6 +1,8 @@
 import type { CandidateQuestionDetail, CandidateReview } from '@interview-agent/contracts';
 import { useEffect, useState } from 'react';
+import { ConsoleIcon } from '@/components/ConsoleIcon';
 import { getCandidateDetail, publishCandidate, updateCandidate } from '@/lib/training-content-api';
+import { resolveCandidateSelection } from '../admin-records';
 import { SectionFeedback } from '../SectionState';
 import { CandidateForm } from './CandidateForm';
 import type { CandidateEditorProps, ChangeHandler } from './types';
@@ -8,14 +10,14 @@ import { candidateUpdateInput, errorMessage, statusLabel } from './training-util
 
 export function CandidateEditor(props: CandidateEditorProps) {
   const candidates = props.candidates.status === 'ready' ? props.candidates.data : [];
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedId = resolveCandidateSelection(candidates, props.selectedCandidateId, null);
   const detailState = useCandidateDetail(selectedId);
   const actions = useCandidateActions({ detailState, onChanged: props.onChanged });
   return (
     <CandidateEditorCard
       candidates={candidates}
       selectedId={selectedId}
-      onSelect={setSelectedId}
+      onSelect={props.onCandidateSelect}
       sourceState={props.candidates}
       detailState={detailState}
       actions={actions}
@@ -37,9 +39,9 @@ type CandidateEditorCardProps = {
 function CandidateEditorCard(props: CandidateEditorCardProps) {
   return (
     <article className="card training-card">
-      <h3>Review and publish candidate questions</h3>
+      <h3>审核并发布候选题</h3>
       <p className="card-description">
-        Save the review result first. Only approved candidates can be published.
+        先保存审核结论，再将已通过的候选题发布到正式题库。
       </p>
       <CandidateSourceState sourceState={props.sourceState} candidates={props.candidates} />
       {props.candidates.length ? (
@@ -50,7 +52,7 @@ function CandidateEditorCard(props: CandidateEditorCardProps) {
         />
       ) : null}
       {props.detailState.isLoading ? (
-        <p className="form-message">Loading candidate details?</p>
+        <p className="form-message">正在加载候选题详情…</p>
       ) : null}
       {props.detailState.detail ? (
         <CandidateForm
@@ -69,10 +71,10 @@ function CandidateEditorCard(props: CandidateEditorCardProps) {
 function CandidateSourceState(props: Pick<CandidateEditorCardProps, 'sourceState' | 'candidates'>) {
   if (props.sourceState.status !== 'ready')
     return (
-      <SectionFeedback state={props.sourceState} loadingMessage="Loading candidate questions" />
+      <SectionFeedback state={props.sourceState} loadingMessage="正在加载候选题" />
     );
   return props.candidates.length ? null : (
-    <div className="empty-state">Import Markdown content to generate candidate questions here.</div>
+    <div className="empty-state">请先导入 Markdown 资料以生成候选题。</div>
   );
 }
 
@@ -81,8 +83,12 @@ function useCandidateDetail(selectedId: string | null) {
   const [message, setMessage] = useState('');
   const [isLoading, setLoading] = useState(false);
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId) {
+      setDetail(null);
+      return;
+    }
     let active = true;
+    setDetail(null);
     setLoading(true);
     setMessage('');
     void getCandidateDetail(selectedId)
@@ -120,10 +126,10 @@ async function executeCandidateAction(request: CandidateActionRequest) {
   try {
     if (request.action === 'save') {
       setDetail(await updateCandidate(detail.id, candidateUpdateInput(detail)));
-      request.setMessage('Candidate review saved.');
+      request.setMessage('审核结果已保存。');
     } else {
       const question = await publishCandidate(detail.id);
-      request.setMessage(`Published to the question bank: ${question.title}`);
+      request.setMessage(`已发布到题库：${question.title}`);
     }
     request.onChanged();
   } catch (error) {
@@ -140,17 +146,20 @@ function CandidateSelector(props: {
 }) {
   return (
     <label className="form-label">
-      Candidate question
+      <span className="field-label-title">
+        <ConsoleIcon name="list" size={15} />
+        候选题目
+      </span>
       <select
         value={props.selectedId ?? ''}
         onChange={(event) => props.onSelect(event.target.value)}
       >
         <option value="" disabled>
-          Select a candidate question
+          选择候选题
         </option>
         {props.candidates.map((candidate) => (
           <option key={candidate.id} value={candidate.id}>
-            {candidate.title} ? {statusLabel(candidate.status)}
+            {candidate.title} · {statusLabel(candidate.status)}
           </option>
         ))}
       </select>

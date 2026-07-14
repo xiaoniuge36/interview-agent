@@ -5,12 +5,14 @@ import {
   AuditLogListSchema,
   CandidateReviewListSchema,
   DashboardSchema,
+  ImportTaskSchema,
   ModelProfileListSchema,
   QuestionListSchema,
   type AgentRunView,
   type AuditLogView,
   type CandidateReview,
   type Dashboard,
+  type ImportTask,
   type ModelProfile,
   type Question,
 } from '@interview-agent/contracts';
@@ -19,6 +21,7 @@ import { AdminApiError, adminRequest } from '@/lib/api';
 
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
+const IMPORT_LIST_LIMIT = 100;
 
 export type SectionAccess = 'required' | 'admin-only';
 export type SectionState<T> =
@@ -30,6 +33,7 @@ export type SectionState<T> =
 export type AdminDashboardState = {
   authenticationError: AdminApiError | null;
   dashboard: SectionState<Dashboard>;
+  imports: SectionState<ImportTask[]>;
   questions: SectionState<Question[]>;
   candidates: SectionState<CandidateReview[]>;
   models: SectionState<ModelProfile[]>;
@@ -39,6 +43,7 @@ export type AdminDashboardState = {
 
 type AdminRequests = {
   dashboard: (signal?: AbortSignal) => Promise<Dashboard>;
+  imports: (signal?: AbortSignal) => Promise<ImportTask[]>;
   questions: (signal?: AbortSignal) => Promise<Question[]>;
   candidates: (signal?: AbortSignal) => Promise<CandidateReview[]>;
   models: (signal?: AbortSignal) => Promise<ModelProfile[]>;
@@ -48,6 +53,8 @@ type AdminRequests = {
 
 const DEFAULT_REQUESTS: AdminRequests = {
   dashboard: (signal) => request('/admin/dashboard', DashboardSchema, signal),
+  imports: (signal) =>
+    request('/admin/imports', ImportTaskSchema.array().max(IMPORT_LIST_LIMIT), signal),
   questions: (signal) => request('/admin/questions', QuestionListSchema, signal),
   candidates: (signal) => request('/admin/candidates', CandidateReviewListSchema, signal),
   models: (signal) => request('/admin/model-profiles', ModelProfileListSchema, signal),
@@ -59,6 +66,7 @@ export function useAdminDashboard() {
   const [reloadKey, setReloadKey] = useState(0);
   const [state, setState] = useState<AdminDashboardState>(loadingState);
   const [isRefreshing, setRefreshing] = useState(true);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const reload = useCallback(() => setReloadKey((value) => value + 1), []);
 
   useEffect(() => {
@@ -67,7 +75,10 @@ export function useAdminDashboard() {
     setRefreshing(true);
     void loadAdminDashboard(DEFAULT_REQUESTS, controller.signal)
       .then((next) => {
-        if (active) setState(next);
+        if (active) {
+          setState(next);
+          setLastUpdatedAt(new Date().toISOString());
+        }
       })
       .finally(() => {
         if (active) setRefreshing(false);
@@ -78,7 +89,7 @@ export function useAdminDashboard() {
     };
   }, [reloadKey]);
 
-  return { state, isRefreshing, reload };
+  return { state, isRefreshing, lastUpdatedAt, reload };
 }
 
 export async function loadAdminDashboard(
@@ -87,16 +98,18 @@ export async function loadAdminDashboard(
 ): Promise<AdminDashboardState> {
   const results = await Promise.allSettled([
     requests.dashboard(signal),
+    requests.imports(signal),
     requests.questions(signal),
     requests.candidates(signal),
     requests.models(signal),
     requests.runs(signal),
     requests.logs(signal),
   ] as const);
-  const [dashboard, questions, candidates, models, runs, logs] = results;
+  const [dashboard, imports, questions, candidates, models, runs, logs] = results;
   return {
     authenticationError: findAuthenticationError(results),
     dashboard: toSection(dashboard, 'required'),
+    imports: toSection(imports, 'required'),
     questions: toSection(questions, 'required'),
     candidates: toSection(candidates, 'required'),
     models: toSection(models, 'admin-only'),
@@ -145,6 +158,7 @@ function loadingState(): AdminDashboardState {
   return {
     authenticationError: null,
     dashboard: { status: 'loading' },
+    imports: { status: 'loading' },
     questions: { status: 'loading' },
     candidates: { status: 'loading' },
     models: { status: 'loading' },

@@ -1,4 +1,5 @@
 import type { InterviewReport } from '@interview-agent/contracts';
+import { interviewStageLabel } from './interview-labels';
 
 type ReportPanelProps = {
   report: InterviewReport | null;
@@ -7,7 +8,7 @@ type ReportPanelProps = {
 export function ReportPanel({ report }: ReportPanelProps) {
   return (
     <section id="reports" className="panel report-card stack compact">
-      <div className="eyebrow">复盘报告</div>
+      <div className="eyebrow">本轮复盘</div>
       {report ? <ReportContent report={report} /> : <ReportPlaceholder />}
     </section>
   );
@@ -23,7 +24,7 @@ function ReportContent({ report }: { report: InterviewReport }) {
       <div className="score-list">
         {report.stageScores.map((item) => (
           <div className="score-row" key={item.stage}>
-            <span>{item.stage}</span>
+            <span>{interviewStageLabel(item.stage)}</span>
             <strong>{item.score}</strong>
           </div>
         ))}
@@ -44,3 +45,4 @@ function ReportPlaceholder() {
     <p className="muted-text">完成一场模拟面试后，这里会给出得分、薄弱环节和下一步练习建议。</p>
   );
 }
+

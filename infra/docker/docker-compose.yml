@@ -145,6 +145,34 @@ services:
     networks:
       - backend
 
+  bootstrap-admin:
+    build:
+      context: ../..
+      dockerfile: apps/product-api/Dockerfile
+      target: migration
+    image: interview-agent/bootstrap-admin:${IMAGE_TAG:-local}
+    command: ['pnpm', 'db:bootstrap:admin']
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-interview_agent}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-interview_agent}?schema=public
+      AUTH_MODE: ${AUTH_MODE:-development}
+      LOCAL_ADMIN_EMAIL: ${LOCAL_ADMIN_EMAIL:-}
+      LOCAL_ADMIN_PASSWORD: ${LOCAL_ADMIN_PASSWORD:-}
+      LOCAL_ADMIN_NAME: ${LOCAL_ADMIN_NAME:-System Administrator}
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    networks:
+      - backend
+
   agent-runtime:
     <<: *app-security
     build:
@@ -197,6 +225,8 @@ services:
       INTERNAL_AGENT_TOKEN: ${INTERNAL_AGENT_TOKEN:?INTERNAL_AGENT_TOKEN is required}
     depends_on:
       migration:
+        condition: service_completed_successfully
+      bootstrap-admin:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
@@ -251,7 +281,7 @@ services:
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3001/api}
         NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Interview Agent}
-        NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-development}
+        NEXT_PUBLIC_ADMIN_AUTH_MODE: ${NEXT_PUBLIC_ADMIN_AUTH_MODE:-local}
         NEXT_PUBLIC_OIDC_AUTHORITY: ${NEXT_PUBLIC_OIDC_AUTHORITY:-https://identity.example.com/}
         NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID: ${NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID:-interview-agent-admin}
         NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI: ${NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI:-http://localhost:3002/auth/callback}

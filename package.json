@@ -10,6 +10,7 @@
   },
   "scripts": {
     "dev": "turbo run dev --parallel",
+    "dev:local": "node scripts/start-dev.mjs",
     "dev:user-portal": "pnpm --filter @interview-agent/user-portal dev",
     "dev:admin-console": "pnpm --filter @interview-agent/admin-console dev",
     "dev:product-api": "pnpm --filter @interview-agent/product-api dev",
@@ -25,6 +26,7 @@
     "db:validate": "prisma validate --schema apps/product-api/prisma/schema",
     "db:migrate": "prisma migrate dev --schema apps/product-api/prisma/schema",
     "db:migrate:deploy": "prisma migrate deploy --schema apps/product-api/prisma/schema",
+    "db:bootstrap:admin": "pnpm --filter @interview-agent/product-api db:bootstrap:admin",
     "predb:seed": "pnpm --filter @interview-agent/contracts build && pnpm db:generate",
     "db:seed": "tsx apps/product-api/prisma/seed.ts",
     "contracts:generate": "tsx packages/contracts/scripts/generate-runtime-schema.ts",

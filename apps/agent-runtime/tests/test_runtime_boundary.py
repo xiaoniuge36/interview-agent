@@ -35,7 +35,7 @@ def payload() -> dict[str, object]:
             "status": "created",
             "stage": "warmup",
             "version": 0,
-            "title": "Agent 模拟面试",
+            "title": "后端开发工程师模拟面试",
             "candidateTurnCount": 0,
             "recentTurns": [],
         },
@@ -66,12 +66,39 @@ def test_returns_versioned_structured_decision(client: TestClient) -> None:
     assert response.status_code == 200
     assert response.headers["x-trace-id"] == "trace-test-0001"
     assert response.headers["x-content-type-options"] == "nosniff"
-    assert response.json() == {
-        "contractVersion": "interview-runtime.v1",
-        "stage": "warmup",
-        "content": "请用 2 分钟介绍一个最能体现你产品工程能力的 AI Agent 项目。",
-        "shouldFinish": False,
-    }
+    content = response.json()["content"]
+    assert response.json()["contractVersion"] == "interview-runtime.v1"
+    assert response.json()["stage"] == "warmup"
+    assert response.json()["shouldFinish"] is False
+    assert "后端开发工程师" in content
+    assert "系统边界" in content
+
+
+@pytest.mark.parametrize(
+    ("title", "expected_focus"),
+    [
+        ("后端开发工程师", "系统边界"),
+        ("数据分析师", "指标口径"),
+        ("AI Agent 工程师", "工作流设计"),
+        ("产品经理", "用户问题"),
+        ("增长运营", "目标人群"),
+        ("客户成功经理", "客户场景"),
+    ],
+)
+def test_selects_role_specific_warmup_prompt(
+    client: TestClient,
+    title: str,
+    expected_focus: str,
+) -> None:
+    request = payload()
+    session = request["session"]
+    assert isinstance(session, dict)
+    session["title"] = f"{title}模拟面试"
+
+    response = client.post("/interviews/next", json=request, headers=AUTH_HEADERS)
+
+    assert response.status_code == 200
+    assert expected_focus in response.json()["content"]
 
 
 def test_exposes_liveness_and_readiness(client: TestClient) -> None:

@@ -1,4 +1,5 @@
 import type { Dashboard } from '@interview-agent/contracts';
+import { ConsoleIcon, type ConsoleIconName } from '@/components/ConsoleIcon';
 import type { SectionState } from '@/hooks/useAdminDashboard';
 import { SectionFeedback } from './SectionState';
 
@@ -6,16 +7,17 @@ type StatKey = keyof Dashboard['stats'];
 type StatDefinition = {
   key: StatKey;
   label: string;
+  icon: ConsoleIconName;
   unit?: 'percentage' | 'milliseconds';
 };
 
 const STAT_DEFINITIONS: readonly StatDefinition[] = [
-  { key: 'publishedQuestions', label: '已发布题目' },
-  { key: 'pendingCandidates', label: '待审核候选题' },
-  { key: 'activeInterviews', label: '活跃面试' },
-  { key: 'reportsReady', label: '已生成报告' },
-  { key: 'schemaPassRate', label: 'Schema 通过率', unit: 'percentage' },
-  { key: 'avgLatencyMs', label: '平均延迟', unit: 'milliseconds' },
+  { key: 'publishedQuestions', label: '已发布题目', icon: 'review' },
+  { key: 'pendingCandidates', label: '待审核候选题', icon: 'workspace' },
+  { key: 'activeInterviews', label: '活跃面试', icon: 'activity' },
+  { key: 'reportsReady', label: '已生成报告', icon: 'document' },
+  { key: 'schemaPassRate', label: 'Schema 通过率', icon: 'check', unit: 'percentage' },
+  { key: 'avgLatencyMs', label: '平均延迟', icon: 'clock', unit: 'milliseconds' },
 ];
 
 export function DashboardStats({ state }: { state: SectionState<Dashboard> }) {
@@ -32,7 +34,12 @@ export function DashboardStats({ state }: { state: SectionState<Dashboard> }) {
         <div className="stats-grid">
           {STAT_DEFINITIONS.map((item) => (
             <article className="card stat" key={item.key}>
-              <span>{item.label}</span>
+              <div className="stat-header">
+                <span className="stat-icon">
+                  <ConsoleIcon name={item.icon} size={16} />
+                </span>
+                <span>{item.label}</span>
+              </div>
               <strong>{formatValue(state.data.stats[item.key], item.unit)}</strong>
             </article>
           ))}

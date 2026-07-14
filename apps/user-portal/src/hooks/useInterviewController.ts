@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useReducer, useRef, useState, type Dispatch } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type Dispatch } from 'react';
 import type {
   AgentStreamEvent,
   InterviewSession,
@@ -9,7 +9,6 @@ import type {
 } from '@interview-agent/contracts';
 import {
   INITIAL_INTERVIEW_STATE,
-  STARTER_ANSWERS,
   interviewReducer,
   type InterviewAction,
 } from '@/components/interview/interview-state';
@@ -20,14 +19,17 @@ import {
   getInterviewReport,
   startInterview,
 } from '@/lib/interview-api';
+import { interviewPlanForJob } from '@/lib/interview-roles';
 import { subscribeInterviewEvents } from '@/lib/interview-stream';
 
-const INTERVIEW_TITLE = 'Agent 应用工程模拟面试';
-const FOCUS_TAGS = ['Agent Runtime', 'RAG 权限', 'SSE', '可观测性'] as const;
+const MILLISECONDS_PER_SECOND = 1_000;
+const INTERNAL_ERROR_TERMS = /Product API|Agent Runtime|\bSSE\b|\bRuntime\b/iu;
 
+type InterviewPlan = ReturnType<typeof interviewPlanForJob>;
 type StreamConnector = (sessionId: string, cursor: number) => void;
 type StartContext = {
   selectedJobId: string;
+  interviewPlan: InterviewPlan;
   dispatch: Dispatch<InterviewAction>;
   connect: StreamConnector;
   disconnect: () => void;
@@ -43,9 +45,21 @@ export function useInterviewController(jobs: JobIntentPayload[]) {
   const [state, dispatch] = useReducer(interviewReducer, INITIAL_INTERVIEW_STATE);
   const [selectedJobId, setSelectedJobId] = useSelectedJob(jobs);
   const [connect, disconnect] = useInterviewStream(dispatch);
+  const selectedJob = useMemo(
+    () => jobs.find((job) => job.intent.id === selectedJobId),
+    [jobs, selectedJobId],
+  );
+  const interviewPlan = useMemo(() => interviewPlanForJob(selectedJob), [selectedJob]);
   const start = useCallback(
-    () => executeStart({ selectedJobId, dispatch, connect, disconnect }),
-    [connect, disconnect, selectedJobId],
+    () =>
+      executeStart({
+        selectedJobId: selectedJob?.intent.id ?? '',
+        interviewPlan,
+        dispatch,
+        connect,
+        disconnect,
+      }),
+    [connect, disconnect, interviewPlan, selectedJob?.intent.id],
   );
   const submitAnswer = useCallback(
     () =>
@@ -69,15 +83,19 @@ export function useInterviewController(jobs: JobIntentPayload[]) {
     submitAnswer,
     turns,
     canAnswer,
+    interviewPlan,
     statusLabel: sessionStatusLabel(state.session),
   };
 }
 
 function useSelectedJob(jobs: JobIntentPayload[]) {
-  const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.intent.id ?? '');
+  const [selectedJobId, setSelectedJobId] = useState('');
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (!selectedJobId && jobs[0]) setSelectedJobId(jobs[0].intent.id);
-  }, [jobs, selectedJobId]);
+    if (initializedRef.current || !jobs[0]) return;
+    initializedRef.current = true;
+    setSelectedJobId(jobs[0].intent.id);
+  }, [jobs]);
   return [selectedJobId, setSelectedJobId] as const;
 }
 
@@ -96,7 +114,7 @@ function useInterviewStream(dispatch: Dispatch<InterviewAction>) {
         onEvent: (event) => handleStreamEvent(dispatch, event),
         onRetry: (retry) => dispatch({ type: 'notice', notice: retryNotice(retry) }),
         onTerminalError: (error) => {
-          dispatch({ type: 'failure', message: error.message });
+          dispatch({ type: 'failure', message: errorMessage(error) });
         },
       });
     },
@@ -112,8 +130,8 @@ async function executeStart(context: StartContext) {
   try {
     const started = await startInterview({
       ...(context.selectedJobId ? { jobIntentId: context.selectedJobId } : {}),
-      title: INTERVIEW_TITLE,
-      focusTags: [...FOCUS_TAGS],
+      title: context.interviewPlan.title,
+      focusTags: context.interviewPlan.focusTags,
     });
     context.dispatch({ type: 'session', session: started.session });
     context.connect(started.session.id, started.eventCursor);
@@ -137,16 +155,11 @@ async function executeAnswer(context: AnswerContext) {
       expectedVersion: context.session.version,
     });
     applyCommandResult(context.dispatch, result.session);
+    context.dispatch({ type: 'draft', draft: '' });
     context.connect(result.session.id, result.eventCursor);
-    const count = result.session.turns.filter(isCandidateTurn).length;
-    context.dispatch({ type: 'draft', draft: starterAnswer(count) });
   } catch (error) {
     context.dispatch({ type: 'failure', message: errorMessage(error) });
   }
-}
-
-function isCandidateTurn(turn: InterviewSession['turns'][number]): boolean {
-  return turn.role === 'candidate';
 }
 
 function handleStreamEvent(dispatch: Dispatch<InterviewAction>, event: AgentStreamEvent) {
@@ -162,7 +175,7 @@ function handleStreamEvent(dispatch: Dispatch<InterviewAction>, event: AgentStre
       void synchronizeReport(dispatch, event.sessionId);
       return;
     case 'error':
-      dispatch({ type: 'failure', message: event.message });
+      dispatch({ type: 'failure', message: errorMessage(new Error(event.message)) });
   }
 }
 
@@ -201,12 +214,22 @@ function isProcessing(status: InterviewSessionStatus): boolean {
 }
 
 function statusNotice(status: InterviewSessionStatus): string {
-  if (status === 'waiting_user') return '等待候选人回答。';
-  if (status === 'report_ready') return '面试报告已生成。';
-  if (isProcessing(status)) {
-    return 'Agent 正在处理，结果将由 Product API 同步。';
+  switch (status) {
+    case 'created':
+      return 'AI 面试官正在准备第一题，请稍候。';
+    case 'running':
+      return 'AI 面试官正在组织追问…';
+    case 'waiting_user':
+      return '轮到你作答。可按背景、目标、行动、结果组织回答。';
+    case 'generating_report':
+      return 'AI 面试官正在整理本轮复盘…';
+    case 'report_ready':
+      return '本轮复盘已生成，可查看得分和下一步建议。';
+    case 'failed':
+      return '本轮训练暂未完成，请稍后重新开始。';
+    case 'cancelled':
+      return '本轮训练已结束。';
   }
-  return '会话状态已由 Product API 更新。';
 }
 
 function sessionStatusLabel(session: InterviewSession | null): string {
@@ -217,33 +240,33 @@ function sessionStatusLabel(session: InterviewSession | null): string {
 function statusLabel(status: InterviewSessionStatus): string {
   switch (status) {
     case 'created':
-      return '准备出题';
+      return '准备第一题';
     case 'running':
-      return '正在生成下一题';
+      return '正在组织追问';
     case 'waiting_user':
       return '等待你的回答';
     case 'generating_report':
-      return '正在生成报告';
+      return '正在生成复盘';
     case 'report_ready':
-      return '报告已生成';
+      return '复盘已生成';
     case 'failed':
       return '本轮出现异常';
     case 'cancelled':
       return '本轮已结束';
   }
-  return '状态更新中';
 }
 
 function retryNotice(retry: { attempt: number; delayMs: number }): string {
-  return `SSE 连接中断，将在 ${retry.delayMs}ms 后进行第 ${retry.attempt} 次重连。`;
+  const seconds = Math.max(1, Math.ceil(retry.delayMs / MILLISECONDS_PER_SECOND));
+  return `连接短暂中断，正在自动恢复（第 ${retry.attempt} 次，约 ${seconds}s 后）。`;
 }
-
-function starterAnswer(index: number): string {
-  return STARTER_ANSWERS[index % STARTER_ANSWERS.length] ?? STARTER_ANSWERS[0];
-}
-
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '面试操作失败，请稍后重试。';
+  const message = error instanceof Error ? error.message.trim() : '';
+  if (!message || INTERNAL_ERROR_TERMS.test(message)) {
+    return '训练服务暂时不可用，请稍后重试。';
+  }
+  return message;
 }
 
 export type InterviewController = ReturnType<typeof useInterviewController>;
+

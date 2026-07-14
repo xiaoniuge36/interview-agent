@@ -13,6 +13,7 @@ import { AuditService, jsonValue } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
+import { roleGuidanceFor } from '../../common/role-guidance';
 
 const MIN_SKILL_LEVEL = 45;
 const BASE_SKILL_LEVEL = 82;
@@ -118,15 +119,17 @@ function mapSnapshot(snapshot: {
 function createSnapshot(profile: {
   id: string;
   tenantId: string;
+  targetRole: string;
   techStacks: string[];
   currentLevel: string;
 }) {
+  const guidance = roleGuidanceFor(profile.targetRole);
   return {
     tenantId: profile.tenantId,
     profileId: profile.id,
-    strengths: ['工程经验可迁移', '产品体验意识较强', '具备 AI 应用落地意识'],
-    weaknesses: ['Agent 状态机表达需要更结构化', '模型评估与可观测案例需要补强'],
-    riskSignals: ['需要明确区分 Product API 与 Agent Runtime 的职责边界'],
+    strengths: guidance.profile.strengths,
+    weaknesses: guidance.profile.weaknesses,
+    riskSignals: guidance.profile.riskSignals,
     skillMap: profile.techStacks.map((label, index) => ({
       label,
       level: Math.max(MIN_SKILL_LEVEL, BASE_SKILL_LEVEL - index * SKILL_LEVEL_STEP),

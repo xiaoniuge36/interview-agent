@@ -8,21 +8,21 @@ export function UserSidebar({ activeId, onNavigate }: UserSidebarProps) {
   return (
     <aside className="sidebar">
       <a className="brand" href="#workspace" onClick={() => onNavigate('workspace')}>
-        <span className="brand-mark">IA</span>
+        <span className="brand-mark">OP</span>
         <span>
-          <strong>Interview Agent</strong>
-          <small>Practice studio</small>
+          <strong>OfferPilot</strong>
+          <small>AI 面试训练</small>
         </span>
       </a>
       <a className="sidebar-action" href="#interview" onClick={() => onNavigate('interview')}>
         <NavigationIcon name="mic" />
-        Start a mock interview
+        开始模拟面试
       </a>
       <NavigationLinks activeId={activeId} onNavigate={onNavigate} />
       <div className="sidebar-footer">
-        <span className="sidebar-footer-label">Your training record</span>
-        <strong>Visible only to this account</strong>
-        <small>Return to reports whenever you need to review feedback.</small>
+        <span className="sidebar-footer-label">训练方法</span>
+        <strong>先练能力，再冲 Offer</strong>
+        <small>用真实项目经历形成可复用的面试表达资产。</small>
       </div>
     </aside>
   );
@@ -30,13 +30,13 @@ export function UserSidebar({ activeId, onNavigate }: UserSidebarProps) {
 
 function NavigationLinks({ activeId, onNavigate }: UserSidebarProps) {
   return (
-    <nav className="nav" aria-label="Main user navigation">
-      <span className="nav-label">Training path</span>
+    <nav className="nav" aria-label="主导航">
+      <span className="nav-label">训练工作台</span>
       {NAV_ITEMS.map((item) => (
         <a
           key={item.id}
           className={activeId === item.id ? 'nav-item active' : 'nav-item'}
-          href={`#${item.id}`}
+          href={'#' + item.id}
           aria-current={activeId === item.id ? 'page' : undefined}
           onClick={() => onNavigate(item.id)}
         >

@@ -6,20 +6,13 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
-import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
-import { promisify } from 'node:util';
+import { randomUUID } from 'node:crypto';
 import { SignJWT } from 'jose';
+import { hashPassword, verifyPassword } from './password-hash';
 import type { Environment } from '../config/environment';
 import { PrismaService } from '../database/prisma.service';
 import type { LocalRegistrationInput, LocalSignInInput } from './local-auth.input';
 
-const scrypt = promisify(scryptCallback) as (
-  password: string,
-  salt: Buffer,
-  keyLength: number,
-) => Promise<Buffer>;
-const PASSWORD_KEY_LENGTH = 64;
-const PASSWORD_SALT_BYTES = 16;
 const TOKEN_LIFETIME_SECONDS = 28_800;
 const MILLISECONDS_PER_SECOND = 1_000;
 const PERSONAL_TENANT_PREFIX = 'member';
@@ -154,25 +147,6 @@ export class LocalAuthService {
       code: 'LOCAL_AUTH_DISABLED',
       message: '本地账号登录未启用，请配置 AUTH_MODE=jwt_hs256。',
     });
-  }
-}
-
-async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(PASSWORD_SALT_BYTES);
-  const derivedKey = await scrypt(password, salt, PASSWORD_KEY_LENGTH);
-  return `${salt.toString('base64url')}$${derivedKey.toString('base64url')}`;
-}
-
-async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
-  const [encodedSalt, encodedKey] = storedHash.split('$');
-  if (!encodedSalt || !encodedKey) return false;
-  try {
-    const salt = Buffer.from(encodedSalt, 'base64url');
-    const storedKey = Buffer.from(encodedKey, 'base64url');
-    const derivedKey = await scrypt(password, salt, PASSWORD_KEY_LENGTH);
-    return storedKey.length === derivedKey.length && timingSafeEqual(storedKey, derivedKey);
-  } catch {
-    return false;
   }
 }
 

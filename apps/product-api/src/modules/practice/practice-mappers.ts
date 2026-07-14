@@ -17,6 +17,7 @@ import {
 } from '@interview-agent/contracts';
 import { jsonValue } from '../../common/audit/audit.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
+import { visiblePracticeTags } from './practice-question-categories';
 
 const PERCENT_SCALE = CONTRACT_LIMITS.percentage;
 const MAX_REPORTED_WEAKNESSES = 5;
@@ -53,7 +54,7 @@ export function practiceSessionData(
         }
       : {}),
     mode: input.mode ?? (input.questionIds ? 'manual' : 'smart'),
-    title: input.title ?? 'Practice session',
+    title: input.title ?? '专项练习',
     status: 'in_progress',
     items: {
       create: questions.map((question, index) => ({
@@ -76,6 +77,7 @@ export function mapSession(record: SessionRecord): PracticeSession {
     items: record.items.map((item) => ({
       ...item,
       answeredAt: dateOrNull(item.answeredAt),
+      question: { ...item.question, tags: visiblePracticeTags(item.question.tags) },
       evaluation: item.evaluation ? mapEvaluation(item.evaluation) : null,
     })),
   });
@@ -98,16 +100,16 @@ export function createPracticeReportData(
     MAX_REPORTED_WEAKNESSES,
   );
   const strengths = weaknesses.length
-    ? ['Completed all submitted practice answers.']
-    : ['Covered every configured rubric point.'];
+    ? ['能够准确识别当前作答中的关键能力缺口，并完成题目提交。']
+    : ['回答覆盖了本轮题目的关键能力点，结构与表达较为完整。'];
   const nextActions = weaknesses.length
-    ? weaknesses.map((item) => `Review and practice: ${item}`)
-    : ['Increase difficulty in the next practice session.'];
+    ? weaknesses.map((item) => `针对「${item}」补充一个真实案例，并按背景、行动、结果、复盘的顺序重新表达。`)
+    : ['继续使用真实项目案例练习，强化量化结果与岗位相关性。'];
   return {
     tenant: { connect: { id: session.tenantId } },
     session: { connect: { id: session.id } },
     overallScore,
-    summary: `Deterministic fallback evaluation scored this session at ${overallScore.toFixed(0)}.`,
+    summary: `本轮专项练习平均得分为 ${overallScore.toFixed(0)} 分。`,
     strengths,
     weaknesses,
     nextActions,
@@ -144,15 +146,15 @@ function markdownReport(input: ReportMarkdownInput) {
   return [
     `# ${input.title}`,
     '',
-    `Overall score: ${input.score.toFixed(0)}/${PERCENT_SCALE}`,
+    `综合得分：${input.score.toFixed(0)}/${PERCENT_SCALE}`,
     '',
-    '## Strengths',
+    '## 本轮亮点',
     ...input.strengths.map((item) => `- ${item}`),
     '',
-    '## Weaknesses',
+    '## 待补强能力',
     ...input.weaknesses.map((item) => `- ${item}`),
     '',
-    '## Next actions',
+    '## 下一步建议',
     ...input.nextActions.map((item) => `- ${item}`),
   ].join('\n');
 }

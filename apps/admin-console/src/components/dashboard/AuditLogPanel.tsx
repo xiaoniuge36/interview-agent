@@ -1,15 +1,24 @@
 import type { AuditLogView } from '@interview-agent/contracts';
+import { useDeferredValue, useMemo, useState } from 'react';
 import type { SectionState } from '@/hooks/useAdminDashboard';
+import { AdminPagination, AdminTableToolbar } from './AdminTableControls';
+import { filterAuditLogs, paginateRecords } from './admin-records';
 import { SectionFeedback } from './SectionState';
 
+const PAGE_SIZE = 12;
 const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
   dateStyle: 'short',
   timeStyle: 'medium',
 });
+const RESULT_OPTIONS = [
+  { value: 'all', label: '全部结果' },
+  { value: 'success', label: '成功' },
+  { value: 'failure', label: '失败' },
+] as const;
 
 export function AuditLogPanel({ state }: { state: SectionState<AuditLogView[]> }) {
   return (
-    <section id="section-5" className="card" aria-labelledby="audit-heading">
+    <section id="section-6" className="card" aria-labelledby="audit-heading">
       <div className="section-heading compact-heading">
         <div>
           <div className="eyebrow">Audit Trail</div>
@@ -18,7 +27,7 @@ export function AuditLogPanel({ state }: { state: SectionState<AuditLogView[]> }
         <p>记录治理动作、操作者、结果与跨服务追踪标识。</p>
       </div>
       {state.status === 'ready' ? (
-        <AuditTable logs={state.data} />
+        <ReadyAuditTable logs={state.data} />
       ) : (
         <SectionFeedback state={state} loadingMessage="正在加载审计日志" />
       )}
@@ -26,8 +35,51 @@ export function AuditLogPanel({ state }: { state: SectionState<AuditLogView[]> }
   );
 }
 
+function ReadyAuditTable({ logs }: { logs: AuditLogView[] }) {
+  const table = useAuditFilters(logs);
+  return (
+    <>
+      <AdminTableToolbar
+        query={table.query}
+        searchLabel="搜索动作、资源、操作者或 Trace ID"
+        resultLabel={`筛选出 ${table.pagination.total} 条`}
+        filters={[table.resultFilter]}
+        onQueryChange={table.changeQuery}
+      />
+      <AuditTable logs={table.pagination.items} />
+      <AdminPagination {...table.pagination} onChange={table.setPage} />
+    </>
+  );
+}
+
+function useAuditFilters(logs: AuditLogView[]) {
+  const [query, setQuery] = useState('');
+  const [result, setResult] = useState<AuditLogView['result'] | 'all'>('all');
+  const [page, setPage] = useState(1);
+  const deferredQuery = useDeferredValue(query);
+  const filtered = useMemo(
+    () => filterAuditLogs(logs, { query: deferredQuery, result }),
+    [deferredQuery, logs, result],
+  );
+  const changeResult = (value: string) => {
+    setResult(value as AuditLogView['result'] | 'all');
+    setPage(1);
+  };
+  const changeQuery = (value: string) => {
+    setQuery(value);
+    setPage(1);
+  };
+  return {
+    query,
+    changeQuery,
+    setPage,
+    pagination: paginateRecords(filtered, page, PAGE_SIZE),
+    resultFilter: { label: '结果', value: result, options: RESULT_OPTIONS, onChange: changeResult },
+  };
+}
+
 function AuditTable({ logs }: { logs: AuditLogView[] }) {
-  if (!logs.length) return <div className="empty-state">暂无审计日志。</div>;
+  if (!logs.length) return <div className="empty-state compact-empty">没有匹配的审计日志。</div>;
   return (
     <div className="table-scroll">
       <table className="data-table">

@@ -16,13 +16,19 @@ export function JobIntentPanel(props: JobIntentPanelProps) {
   return (
     <form className="panel stack" onSubmit={controller.submit}>
       <div>
-        <div className="eyebrow">目标岗位</div>
-        <h2 className="h2">让问题贴近真实职位</h2>
-        <p className="muted-text">填写岗位方向或粘贴职位说明，下一场模拟面试会据此生成问题。</p>
+        <div className="eyebrow">第二步</div>
+        <h2 className="h2">匹配目标岗位模型</h2>
+        <p className="muted-text">
+          从常见岗位模板开始，或直接粘贴真实 JD。下一场模拟会围绕岗位能力重点进行追问。
+        </p>
       </div>
-      <JobIntentFields value={controller.form} onChange={controller.update} />
+      <JobIntentFields
+        value={controller.form}
+        onChange={controller.update}
+        onApplyRole={controller.applyRoleTemplate}
+      />
       <button className="button" type="submit" disabled={controller.busy}>
-        {controller.busy ? '保存中…' : '保存岗位目标'}
+        {controller.busy ? '保存中…' : '保存目标岗位'}
       </button>
       <span id="job-status" className="muted-text small-text" aria-live="polite">
         {controller.message}

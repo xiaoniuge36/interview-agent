@@ -20,13 +20,13 @@ export function splitTags(value: string) {
 
 export function statusLabel(status: CandidateReview['status']) {
   return {
-    pending: 'Pending',
-    needs_edit: 'Needs edit',
-    approved: 'Approved',
-    rejected: 'Rejected',
+    pending: '待审核',
+    needs_edit: '需修改',
+    approved: '已通过',
+    rejected: '已拒绝',
   }[status];
 }
 
 export function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'The operation failed. Please try again.';
+  return error instanceof Error ? error.message : '操作失败，请稍后重试。';
 }

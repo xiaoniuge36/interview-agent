@@ -68,6 +68,22 @@ uv sync --project apps/agent-runtime --frozen --extra dev
 
 ## 本地运行
 
+### 一键启动宿主机开发服务
+
+如果已经完成依赖安装并准备好根目录 `.env`，可以直接启动用户端、后台端、Product API 和 Agent Runtime：
+
+```powershell
+pnpm dev:local
+```
+
+Windows 也可以双击 `scripts/start-dev.cmd` 启动；需要同时启动 PostgreSQL、Redis、MinIO 和 Phoenix 时执行：
+
+```powershell
+pnpm dev:local -- --infra
+```
+
+脚本会为每个服务添加统一前缀输出，按 `Ctrl+C` 会停止本次启动的全部开发进程。首次使用仍需按环境准备完成数据库迁移和种子数据，脚本不会自动执行迁移或写入数据。
+
 ### 方案一：完整 Docker Compose 集成栈
 
 ```powershell

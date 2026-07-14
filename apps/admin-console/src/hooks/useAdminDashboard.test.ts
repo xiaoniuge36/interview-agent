@@ -25,6 +25,7 @@ const DASHBOARD: Dashboard = {
 function successfulRequests() {
   return {
     dashboard: async () => DASHBOARD,
+    imports: async () => [],
     questions: async () => [],
     candidates: async () => [],
     models: async () => [],
@@ -46,6 +47,7 @@ describe('loadAdminDashboard', () => {
     const state = await loadAdminDashboard(successfulRequests());
     expect(state.authenticationError).toBeNull();
     expect(state.dashboard).toMatchObject({ status: 'ready', data: DASHBOARD });
+    expect(state.imports).toMatchObject({ status: 'ready', data: [] });
     expect(state.models).toMatchObject({ status: 'ready', data: [] });
   });
 

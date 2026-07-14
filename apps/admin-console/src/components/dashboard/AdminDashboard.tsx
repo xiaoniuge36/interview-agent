@@ -1,11 +1,18 @@
-﻿'use client';
+'use client';
 
 import { useAuth } from '@interview-agent/auth-client';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import {
+  adminViewFromHash,
+  adminViewHash,
+  type AdminView,
+} from '@/components/admin-navigation';
 import { AdminShell } from '@/components/AdminShell';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
+import { AdminOverview } from './AdminOverview';
 import { AuditLogPanel } from './AuditLogPanel';
-import { DashboardStats } from './DashboardStats';
-import { ImportPipeline } from './ImportPipeline';
+import { getAuthenticationRecovery } from './admin-session';
+import { ImportCenter } from './ImportCenter';
 import { ModelGovernance } from './ModelGovernance';
 import { QuestionReviewPanels } from './QuestionReviewPanels';
 import { RuntimeObservability } from './RuntimeObservability';
@@ -14,22 +21,44 @@ import { AuthenticationFailure } from './SectionState';
 
 export function AdminDashboard() {
   const auth = useAuth();
-  const { state, isRefreshing, reload } = useAdminDashboard();
+  const { state, isRefreshing, lastUpdatedAt, reload } = useAdminDashboard();
+  const { activeView, selectView } = useAdminView();
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const authenticationError = state.authenticationError;
+  const recovery = getAuthenticationRecovery(auth.mode);
   const restoreSession = () => {
-    if (auth.mode === 'oidc') void auth.signIn();
+    if (recovery.action === 'sign-in') void auth.signIn();
+    else if (recovery.action === 'sign-out') void auth.signOut();
     else reload();
   };
+  const reviewCandidate = (candidateId: string) => {
+    setSelectedCandidateId(candidateId);
+    selectView('content');
+  };
   return (
-    <AdminShell isRefreshing={isRefreshing} onRefresh={reload}>
+    <AdminShell
+      activeView={activeView}
+      isRefreshing={isRefreshing}
+      lastUpdatedAt={lastUpdatedAt}
+      onRefresh={reload}
+      onViewChange={selectView}
+    >
       {authenticationError ? (
         <AuthenticationFailure
           error={authenticationError}
-          actionLabel={auth.mode === 'oidc' ? '重新登录' : '重新加载'}
+          actionLabel={recovery.label}
           onAction={restoreSession}
         />
       ) : (
-        <DashboardSections state={state} onChanged={reload} />
+        <DashboardSections
+          activeView={activeView}
+          state={state}
+          selectedCandidateId={selectedCandidateId}
+          onCandidateSelect={setSelectedCandidateId}
+          onChanged={reload}
+          onNavigate={selectView}
+          onReview={reviewCandidate}
+        />
       )}
     </AdminShell>
   );
@@ -37,16 +66,92 @@ export function AdminDashboard() {
 
 type DashboardState = ReturnType<typeof useAdminDashboard>['state'];
 
-function DashboardSections({ state, onChanged }: { state: DashboardState; onChanged: () => void }) {
+type DashboardSectionsProps = {
+  activeView: AdminView;
+  state: DashboardState;
+  selectedCandidateId: string | null;
+  onCandidateSelect: (candidateId: string) => void;
+  onChanged: () => void;
+  onNavigate: (view: AdminView) => void;
+  onReview: (candidateId: string) => void;
+};
+
+function DashboardSections(props: DashboardSectionsProps) {
+  const { activeView, state } = props;
   return (
-    <div className="console-content">
-      <DashboardStats state={state.dashboard} />
-      <ImportPipeline state={state.dashboard} />
-      <QuestionReviewPanels questions={state.questions} candidates={state.candidates} />
-      <TrainingContentWorkbench candidates={state.candidates} onChanged={onChanged} />
-      <ModelGovernance state={state.models} />
-      <RuntimeObservability state={state.runs} />
-      <AuditLogPanel state={state.logs} />
+    <div className="console-content" data-admin-view={activeView}>
+      <DashboardView active={activeView === 'overview'} view="overview">
+        <AdminOverview
+          dashboard={state.dashboard}
+          candidates={state.candidates}
+          onNavigate={props.onNavigate}
+        />
+      </DashboardView>
+      <DashboardView active={activeView === 'imports'} view="imports">
+        <ImportCenter dashboard={state.dashboard} imports={state.imports} onChanged={props.onChanged} />
+      </DashboardView>
+      <DashboardView active={activeView === 'questions'} view="questions">
+        <QuestionReviewPanels
+          questions={state.questions}
+          candidates={state.candidates}
+          onReview={props.onReview}
+        />
+      </DashboardView>
+      <DashboardView active={activeView === 'content'} view="content">
+        <TrainingContentWorkbench
+          candidates={state.candidates}
+          selectedCandidateId={props.selectedCandidateId}
+          onCandidateSelect={props.onCandidateSelect}
+          onChanged={props.onChanged}
+        />
+      </DashboardView>
+      <DashboardView active={activeView === 'models'} view="models">
+        <ModelGovernance state={state.models} />
+      </DashboardView>
+      <DashboardView active={activeView === 'runtime'} view="runtime">
+        <RuntimeObservability state={state.runs} />
+      </DashboardView>
+      <DashboardView active={activeView === 'audit'} view="audit">
+        <AuditLogPanel state={state.logs} />
+      </DashboardView>
     </div>
   );
+}
+
+type DashboardViewProps = {
+  active: boolean;
+  children: ReactNode;
+  view: AdminView;
+};
+
+function DashboardView({ active, children, view }: DashboardViewProps) {
+  return (
+    <div className="console-view" hidden={!active} id={`admin-view-${view}`}>
+      {children}
+    </div>
+  );
+}
+
+function useAdminView() {
+  const [activeView, setActiveView] = useState<AdminView>('overview');
+
+  useEffect(() => {
+    const syncView = () => setActiveView(adminViewFromHash(window.location.hash));
+    syncView();
+    window.addEventListener('hashchange', syncView);
+    window.addEventListener('popstate', syncView);
+    return () => {
+      window.removeEventListener('hashchange', syncView);
+      window.removeEventListener('popstate', syncView);
+    };
+  }, []);
+
+  const selectView = useCallback((view: AdminView) => {
+    setActiveView(view);
+    const hash = adminViewHash(view);
+    if (window.location.hash !== hash) window.history.pushState(null, '', hash);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  return { activeView, selectView };
 }

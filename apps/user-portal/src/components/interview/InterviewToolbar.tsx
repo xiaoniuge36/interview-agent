@@ -1,4 +1,4 @@
-﻿import type { JobIntentPayload } from '@interview-agent/contracts';
+import type { JobIntentPayload } from '@interview-agent/contracts';
 import type { InterviewController } from '@/hooks/useInterviewController';
 
 type InterviewToolbarProps = {
@@ -10,7 +10,7 @@ export function InterviewToolbar({ jobs, controller }: InterviewToolbarProps) {
   return (
     <div className="toolbar">
       <label className="sr-only" htmlFor="interview-job">
-        选择岗位意图
+        选择本轮训练岗位
       </label>
       <select
         id="interview-job"
@@ -18,7 +18,7 @@ export function InterviewToolbar({ jobs, controller }: InterviewToolbarProps) {
         value={controller.selectedJobId}
         onChange={(event) => controller.setSelectedJobId(event.target.value)}
       >
-        <option value="">不关联 JD（使用通用 Agent 场景）</option>
+        <option value="">未关联已保存目标岗位（通用互联网岗位训练）</option>
         {jobs.map((job) => (
           <option value={job.intent.id} key={job.intent.id}>
             {job.intent.targetRole}
@@ -31,8 +31,9 @@ export function InterviewToolbar({ jobs, controller }: InterviewToolbarProps) {
         disabled={controller.state.busy}
         onClick={() => void controller.start()}
       >
-        {controller.state.session ? '重新开始' : '开始面试'}
+        {controller.state.session ? '重新开始本轮' : '开始模拟面试'}
       </button>
     </div>
   );
 }
+

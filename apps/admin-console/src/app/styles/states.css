@@ -31,16 +31,17 @@
   place-items: center;
   padding: 24px;
   background:
-    radial-gradient(circle at top left, rgba(47, 99, 215, 0.16), transparent 38%), var(--background);
+    radial-gradient(ellipse 60% 40% at 20% 0%, rgba(37, 99, 235, 0.12), transparent 50%),
+    var(--background);
 }
 
 .auth-card {
   width: min(100%, 520px);
   border: 1px solid var(--line);
-  border-radius: 28px;
+  border-radius: 22px;
   padding: 38px;
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-raised);
 }
 
 .auth-card h1 {
@@ -68,4 +69,204 @@
 
 .authentication-failure .button {
   margin-top: 8px;
+}
+
+.admin-access {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+  background: var(--background);
+}
+
+.admin-access-intro {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(40px, 8vw, 112px);
+  background:
+    radial-gradient(ellipse 80% 50% at 100% 0%, rgba(37, 99, 235, 0.28), transparent 50%),
+    linear-gradient(155deg, #151a24 0%, #0d1118 100%);
+  color: #f8fafc;
+}
+
+.admin-access-intro::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.2;
+  background-image:
+    linear-gradient(rgba(147, 197, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(147, 197, 255, 0.1) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(140deg, transparent 15%, #000 75%);
+  content: '';
+  pointer-events: none;
+}
+
+.admin-access-intro .eyebrow {
+  color: #93c5fd;
+}
+
+.admin-access-intro h1 {
+  max-width: 700px;
+  margin: 0;
+  font-size: clamp(36px, 4.8vw, 60px);
+  font-weight: 750;
+  letter-spacing: -0.05em;
+  line-height: 1.06;
+}
+
+.admin-access-intro > p:not(.eyebrow) {
+  max-width: 600px;
+  margin: 24px 0 0;
+  color: #c5cedd;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.admin-access-facts {
+  display: grid;
+  max-width: 560px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 48px 0 0;
+}
+
+.admin-access-facts div {
+  border-top: 1px solid rgba(223, 229, 239, 0.16);
+  padding-top: 14px;
+}
+
+.admin-access-facts dt {
+  color: #93c5fd;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-access-facts dd {
+  margin: 7px 0 0;
+  color: #eef3fb;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.admin-access-panel {
+  display: flex;
+  width: min(100%, 480px);
+  align-self: center;
+  justify-self: center;
+  flex-direction: column;
+  margin: 24px;
+  padding: 36px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+}
+
+.admin-access-panel h2 {
+  margin: 0;
+  font-size: clamp(28px, 3.8vw, 38px);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+}
+
+.admin-access-description {
+  margin: 14px 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.admin-access-form {
+  display: grid;
+  gap: 18px;
+  margin-top: 34px;
+}
+
+.admin-access-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.admin-access-form input {
+  min-height: 46px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 11px 13px;
+  background: #fcfdff;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  transition:
+    border-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
+}
+
+.admin-access-form input::placeholder {
+  color: #98a2b3;
+}
+
+.admin-access-form input:hover {
+  border-color: #b8c2d4;
+}
+
+.admin-access-form input:focus {
+  border-color: var(--primary);
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--primary-glow);
+  background: #ffffff;
+}
+
+.admin-access-error {
+  margin: 0;
+  border: 1px solid #f0aaa4;
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-access-submit {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.admin-access-note {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+@media (max-width: 820px) {
+  .admin-access {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-access-intro {
+    min-height: auto;
+    padding: 42px 24px;
+  }
+
+  .admin-access-facts {
+    margin-top: 30px;
+  }
+
+  .admin-access-panel {
+    width: min(100%, 560px);
+    margin: 0 auto 32px;
+    padding: 32px 24px 40px;
+  }
 }

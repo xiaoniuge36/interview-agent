@@ -14,13 +14,7 @@ import { AuditService, jsonValue } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
-
-const SKILL_WEIGHTS = {
-  agentStateMachine: { matched: 92, fallback: 76 },
-  retrievalGovernance: { matched: 88, fallback: 70 },
-  frontendEngineering: { matched: 84, fallback: 64 },
-  observabilityEvaluation: { matched: 82, fallback: 68 },
-} as const;
+import { jobIntentGuidance } from './job-intent-guidance';
 
 @Injectable()
 export class JobIntentService {
@@ -80,7 +74,7 @@ export class JobIntentService {
             status: 'ready',
           },
         });
-        const analysis = analyzeIntent(mapIntent(intent));
+        const analysis = jobIntentGuidance(mapIntent(intent));
         const profile = await transaction.jobProfile.create({
           data: {
             tenantId: context.tenantId,
@@ -153,56 +147,4 @@ function mapProfile(record: {
   createdAt: Date;
 }): JobProfile {
   return JobProfileSchema.parse({ ...record, createdAt: record.createdAt.toISOString() });
-}
-
-function analyzeIntent(intent: JobIntent): Omit<JobProfile, 'id' | 'createdAt'> {
-  const text =
-    `${intent.jdText}\n${intent.companyContext ?? ''}\n${intent.communicationText ?? ''}`.toLowerCase();
-  const weights = [
-    [
-      'Agent 状态机',
-      skillWeight(text, ['agent', 'langgraph'], SKILL_WEIGHTS.agentStateMachine),
-      '岗位需要说明工作流与状态恢复。',
-    ],
-    [
-      'RAG 与检索治理',
-      skillWeight(text, ['rag', 'vector'], SKILL_WEIGHTS.retrievalGovernance),
-      '重点关注检索质量、权限过滤和来源追踪。',
-    ],
-    [
-      '前端产品工程',
-      skillWeight(text, ['react', 'next'], SKILL_WEIGHTS.frontendEngineering),
-      '需要把前端经验迁移到 AI 产品体验。',
-    ],
-    [
-      '可观测与评估',
-      skillWeight(text, ['observability', 'eval'], SKILL_WEIGHTS.observabilityEvaluation),
-      '需要覆盖 trace、schema failure 和 golden case。',
-    ],
-  ] as const;
-  return {
-    tenantId: intent.tenantId,
-    jobIntentId: intent.id,
-    skillWeights: weights.map(([skill, weight, reason]) => ({ skill, weight, reason })),
-    interviewFocus: [
-      'Agent Runtime 边界',
-      'Product API 事实源',
-      'RAG 权限过滤',
-      '模型输出结构化校验',
-    ],
-    riskSignals: ['不能解释业务状态与 Agent 状态分离时，容易被认为只是 prompt demo。'],
-    prepAdvice: ['准备端到端链路图', '准备失败恢复案例', '准备模型输出 schema 示例'],
-  };
-}
-
-function skillWeight(
-  text: string,
-  terms: string[],
-  weights: { matched: number; fallback: number },
-) {
-  return hasAny(text, terms) ? weights.matched : weights.fallback;
-}
-
-function hasAny(text: string, terms: string[]) {
-  return terms.some((term) => text.includes(term));
 }

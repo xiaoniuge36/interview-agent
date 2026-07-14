@@ -1,4 +1,4 @@
-﻿import { AgentStreamEventSchema, type AgentStreamEvent } from '@interview-agent/contracts';
+import { AgentStreamEventSchema, type AgentStreamEvent } from '@interview-agent/contracts';
 import { z } from 'zod';
 
 const BASE_RETRY_DELAY_MS = 500;
@@ -8,6 +8,7 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
 const HTTP_NOT_FOUND = 404;
+const STREAM_PROTOCOL_ERROR_MESSAGE = '实时数据暂时异常，请稍后重新开始本场训练。';
 const TERMINAL_STATUSES = new Set([
   HTTP_BAD_REQUEST,
   HTTP_UNAUTHORIZED,
@@ -60,7 +61,7 @@ export function parseSseFrame(rawFrame: string): SseFrame {
     if (field) applyField(frame, field);
   }
   if (frame.data.length === 0) {
-    throw new SseProtocolError('SSE frame 缺少 data 字段。');
+    throw new SseProtocolError(STREAM_PROTOCOL_ERROR_MESSAGE);
   }
   return finalizeFrame(frame);
 }
@@ -71,12 +72,10 @@ export function parseStreamFrame(rawFrame: string): ParsedStreamFrame {
   if (frame.event === 'heartbeat') return parseHeartbeat(payload);
   const event = AgentStreamEventSchema.safeParse(payload);
   if (!event.success) {
-    throw new SseProtocolError('SSE 数据不符合 AgentStreamEvent 契约。', {
-      cause: event.error,
-    });
+    throw new SseProtocolError(STREAM_PROTOCOL_ERROR_MESSAGE, { cause: event.error });
   }
   if (frame.event !== 'message' && frame.event !== event.data.type) {
-    throw new SseProtocolError('SSE event 名称与事件载荷类型不一致。');
+    throw new SseProtocolError(STREAM_PROTOCOL_ERROR_MESSAGE);
   }
   return { kind: 'event', event: event.data };
 }
@@ -133,9 +132,7 @@ function finalizeFrame(frame: MutableSseFrame): SseFrame {
 function parseHeartbeat(payload: unknown): ParsedStreamFrame {
   const heartbeat = HeartbeatSchema.safeParse(payload);
   if (heartbeat.success) return { kind: 'heartbeat' };
-  throw new SseProtocolError('SSE heartbeat 不符合契约。', {
-    cause: heartbeat.error,
-  });
+  throw new SseProtocolError(STREAM_PROTOCOL_ERROR_MESSAGE, { cause: heartbeat.error });
 }
 
 function parseRetry(value: string): number | undefined {
@@ -147,6 +144,7 @@ function parseJson(value: string): unknown {
   try {
     return JSON.parse(value);
   } catch (error) {
-    throw new SseProtocolError('SSE data 不是有效 JSON。', { cause: error });
+    throw new SseProtocolError(STREAM_PROTOCOL_ERROR_MESSAGE, { cause: error });
   }
 }
+

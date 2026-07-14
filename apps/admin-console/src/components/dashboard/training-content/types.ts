@@ -5,6 +5,8 @@ export type ChangeHandler = () => void;
 
 export type CandidateEditorProps = {
   candidates: SectionState<CandidateReview[]>;
+  selectedCandidateId: string | null;
+  onCandidateSelect: (candidateId: string) => void;
   onChanged: ChangeHandler;
 };
 

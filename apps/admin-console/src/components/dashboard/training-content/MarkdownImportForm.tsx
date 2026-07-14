@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react';
+import { ConsoleIcon } from '@/components/ConsoleIcon';
 import { importMarkdown } from '@/lib/training-content-api';
 import type { ChangeHandler } from './types';
 import { errorMessage } from './training-utils';
 
-const DEFAULT_MARKDOWN = `# Training notes
+const DEFAULT_MARKDOWN = `# 面试训练资料
 
-## Core assessment question
-Describe the expected answer, key decisions, and engineering trade-offs.`;
+## 核心考察题
+请描述期望答案、关键决策与工程权衡。`;
 
 type MarkdownImportFormProps = {
   onChanged: ChangeHandler;
@@ -16,15 +17,14 @@ export function MarkdownImportForm({ onChanged }: MarkdownImportFormProps) {
   const form = useMarkdownImport(onChanged);
   return (
     <article className="card training-card">
-      <h3>Import Markdown reference material</h3>
+      <h3>导入 Markdown 参考资料</h3>
       <p className="card-description">
-        The deterministic fallback creates review candidates only; it never publishes directly to
-        the question bank.
+        系统会生成待审核候选题，只有通过人工审核后才可进入正式题库。
       </p>
       <form className="training-form" onSubmit={(event) => void form.submit(event)}>
         <MarkdownFields form={form} />
         <button className="button" type="submit" disabled={form.isSubmitting}>
-          {form.isSubmitting ? 'Importing?' : 'Import and create candidates'}
+          {form.isSubmitting ? '导入中…' : '导入并生成候选题'}
         </button>
       </form>
       {form.message ? (
@@ -48,7 +48,7 @@ function useMarkdownImport(onChanged: ChangeHandler) {
     try {
       const task = await importMarkdown({ title, markdown });
       setTitle('');
-      setMessage(`Created an import task with ${task.candidateCount} candidate questions.`);
+      setMessage(`导入任务已创建，共生成 ${task.candidateCount} 道候选题。`);
       onChanged();
     } catch (error) {
       setMessage(errorMessage(error));
@@ -63,16 +63,22 @@ function MarkdownFields({ form }: { form: ReturnType<typeof useMarkdownImport> }
   return (
     <>
       <label className="form-label">
-        Material title
+        <span className="field-label-title">
+          <ConsoleIcon name="text" size={15} />
+          资料标题
+        </span>
         <input
           value={form.title}
           onChange={(event) => form.setTitle(event.target.value)}
-          placeholder="For example: payment system interview notes"
+          placeholder="例如：支付系统面试笔记"
           required
         />
       </label>
       <label className="form-label">
-        Markdown content
+        <span className="field-label-title">
+          <ConsoleIcon name="document" size={15} />
+          Markdown 内容
+        </span>
         <textarea
           value={form.markdown}
           onChange={(event) => form.setMarkdown(event.target.value)}

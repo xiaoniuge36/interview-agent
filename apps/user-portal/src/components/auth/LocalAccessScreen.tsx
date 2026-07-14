@@ -1,8 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '@interview-agent/auth-client';
+import { FieldIcon } from '@/components/FieldIcon';
+import { AccessStory } from './AccessStory';
 import { INITIAL_ACCESS_FORM, type AccessForm, type AccessMode } from './access-types';
 
 export function LocalAccessScreen() {
@@ -30,10 +31,6 @@ function useLocalAccess() {
   const [form, setForm] = useState<AccessForm>(INITIAL_ACCESS_FORM);
   const isRegistering = mode === 'register';
 
-  function selectMode(nextMode: AccessMode) {
-    setMode(nextMode);
-  }
-
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isRegistering) {
@@ -49,40 +46,10 @@ function useLocalAccess() {
     auth,
     isRegistering,
     isSubmitting: auth.status === 'loading',
-    selectMode,
+    selectMode: setMode,
     setForm,
     submit,
   };
-}
-
-function AccessStory() {
-  return (
-    <section className="access-story" aria-label="产品介绍">
-      <Link className="access-brand" href="/" aria-label="Interview Agent 首页">
-        <span className="brand-mark">IA</span>
-        <span>Interview Agent</span>
-      </Link>
-      <div className="access-story-copy">
-        <span className="access-kicker">INTERVIEW PRACTICE SYSTEM</span>
-        <h1>把每次练习，变成下一次面试的底气。</h1>
-        <p>建立个人画像，匹配目标岗位，在可复盘的模拟面试中持续校准表达与能力证据。</p>
-      </div>
-      <ol className="access-steps">
-        <li>
-          <span>01</span>
-          填写候选人画像
-        </li>
-        <li>
-          <span>02</span>
-          明确目标岗位
-        </li>
-        <li>
-          <span>03</span>
-          开始模拟与复盘
-        </li>
-      </ol>
-    </section>
-  );
 }
 
 function AccessHeading({ isRegistering }: { isRegistering: boolean }) {
@@ -173,7 +140,10 @@ type FormFieldProps = {
 function NameField({ form, setForm }: FormFieldProps) {
   return (
     <label className="label" htmlFor="access-name">
-      姓名
+      <span className="field-label-title">
+        <FieldIcon name="person" />
+        姓名
+      </span>
       <input
         id="access-name"
         className="input"
@@ -193,7 +163,10 @@ function CredentialFields(props: FormFieldProps & { isRegistering: boolean }) {
   return (
     <>
       <label className="label" htmlFor="access-email">
-        邮箱
+        <span className="field-label-title">
+          <FieldIcon name="mail" />
+          邮箱
+        </span>
         <input
           id="access-email"
           className="input"
@@ -209,7 +182,10 @@ function CredentialFields(props: FormFieldProps & { isRegistering: boolean }) {
         />
       </label>
       <label className="label" htmlFor="access-password">
-        密码
+        <span className="field-label-title">
+          <FieldIcon name="lock" />
+          密码
+        </span>
         <input
           id="access-password"
           className="input"

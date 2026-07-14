@@ -1,4 +1,4 @@
-import type { MasteryProfile, PracticeReport, PracticeSession } from '@interview-agent/contracts';
+﻿import type { MasteryProfile, PracticeReport, PracticeSession } from '@interview-agent/contracts';
 import { useEffect, useState } from 'react';
 import {
   createPracticeSession,
@@ -7,21 +7,21 @@ import {
   submitPracticeAnswer,
   submitPracticeSession,
 } from '@/lib/practice-api';
-import type { PracticeState } from './types';
+import type { BusyAction, PracticeState } from './types';
 import { answerDrafts, errorMessage } from './practice-utils';
 
-export function usePracticeController() {
+export function usePracticeController(jobIntentId?: string) {
   const state = usePracticeState();
   return {
     ...state,
-    start: usePracticeStarter(state),
+    start: usePracticeStarter(state, jobIntentId),
     saveAnswer: usePracticeAnswerSaver(state),
     finish: usePracticeFinisher(state),
   };
 }
 
 function usePracticeState(): PracticeState {
-  const [title, setTitle] = useState('Focused practice');
+  const [title, setTitle] = useState('我的专项练习');
   const [session, setSession] = useState<PracticeSession | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [report, setReport] = useState<PracticeReport | null>(null);
@@ -49,18 +49,24 @@ function usePracticeState(): PracticeState {
   };
 }
 
-function usePracticeStarter(state: PracticeState) {
+function usePracticeStarter(state: PracticeState, jobIntentId?: string) {
   return async function start() {
+    if (!jobIntentId) {
+      state.setMessage('请先保存目标岗位，系统才能为你匹配对应训练题。');
+      return;
+    }
     state.setBusy('start');
     state.setMessage('');
     try {
       const next = await createPracticeSession({
         title: state.title.trim() || undefined,
         mode: 'smart',
+        jobIntentId,
       });
       state.setSession(next);
       state.setReport(null);
       state.setDrafts(answerDrafts(next));
+      state.setMessage('本轮专项练习已准备好，完成并保存每题后即可生成复盘。');
     } catch (error) {
       state.setMessage(errorMessage(error));
     } finally {
@@ -74,15 +80,16 @@ function usePracticeAnswerSaver(state: PracticeState) {
     if (!state.session) return;
     const answer = state.drafts[itemId]?.trim();
     if (!answer) {
-      state.setMessage('Enter an answer before saving.');
+      state.setMessage('请先完成回答后再保存。');
       return;
     }
-    state.setBusy(`answer:${itemId}`);
+    state.setBusy(('answer:' + itemId) as BusyAction);
     state.setMessage('');
     try {
       const next = await submitPracticeAnswer(state.session.id, itemId, { answer });
       state.setSession(next);
       state.setDrafts(answerDrafts(next));
+      state.setMessage('回答已保存。');
     } catch (error) {
       state.setMessage(errorMessage(error));
     } finally {
@@ -105,6 +112,7 @@ function usePracticeFinisher(state: PracticeState) {
       state.setSession(nextSession);
       state.setReport(report);
       state.setMastery(profiles);
+      state.setMessage('本轮复盘已生成，能力记录已同步更新。');
     } catch (error) {
       state.setMessage(errorMessage(error));
     } finally {

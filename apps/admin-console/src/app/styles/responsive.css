@@ -30,7 +30,7 @@
     padding-bottom: 4px;
   }
 
-  .console-nav a {
+  .console-nav :is(a, button) {
     flex: 0 0 auto;
   }
 

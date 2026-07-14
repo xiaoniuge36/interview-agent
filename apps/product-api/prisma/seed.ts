@@ -1,9 +1,11 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+﻿import { Prisma, PrismaClient } from '@prisma/client';
 import { seedQuestions, type Question } from '@interview-agent/contracts';
+import { PUBLIC_PRACTICE_QUESTIONS } from '../src/modules/practice/public-practice-questions';
 
 const PUBLIC_TENANT_ID = 'public';
 const PUBLIC_TENANT_NAME = 'Public Question Bank';
 const prisma = new PrismaClient();
+const publicQuestions = [...seedQuestions, ...PUBLIC_PRACTICE_QUESTIONS];
 
 async function seedDatabase() {
   await prisma.$transaction(async (transaction) => {
@@ -17,7 +19,7 @@ async function seedDatabase() {
       update: { name: PUBLIC_TENANT_NAME },
     });
 
-    for (const question of seedQuestions) {
+    for (const question of publicQuestions) {
       await transaction.question.upsert(questionRecord(question));
     }
   });
@@ -45,7 +47,7 @@ function questionRecord(question: Question): Prisma.QuestionUpsertArgs {
 }
 
 seedDatabase()
-  .then(() => console.info(`Seeded ${seedQuestions.length} public questions.`))
+  .then(() => console.info(`Seeded ${publicQuestions.length} public questions.`))
   .catch((error: unknown) => {
     console.error('Database seed failed.', error);
     process.exitCode = 1;

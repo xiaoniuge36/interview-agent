@@ -1,4 +1,4 @@
-﻿import type { ProfilePayload, UpsertProfileInput } from '@interview-agent/contracts';
+import type { ProfilePayload, UpsertProfileInput } from '@interview-agent/contracts';
 
 export type ProfileFormValue = {
   targetRole: string;
@@ -10,14 +10,14 @@ export type ProfileFormValue = {
 };
 
 export const DEFAULT_PROFILE_FORM: ProfileFormValue = {
-  targetRole: 'AI Agent 应用开发工程师',
+  targetRole: '全栈开发工程师',
   yearsOfExperience: 3,
-  techStacks: 'React, Next.js, TypeScript, RAG, Agent Runtime',
+  techStacks: 'React, TypeScript, Node.js, SQL, 产品协作',
   resumeSummary:
-    '具备三年前后端研发经验，正在系统提升 AI Agent 应用工程能力，熟悉 RAG、状态机、接口契约与可观测性实践。',
+    '具备三年互联网产品研发经验，能够从需求拆解、方案设计到上线复盘完成端到端交付，正在持续提升系统设计和业务表达能力。',
   projectExperiences:
-    '负责面试训练系统的 Product API、Web 工作台与 Agent Runtime 集成，建立权限、审计和流式事件链路。',
-  currentLevel: '中级全栈与 AI 应用工程师',
+    '负责核心业务模块的前后端交付，梳理需求边界、设计接口与数据结构，并通过监控和复盘持续改善体验与稳定性。',
+  currentLevel: '中级工程师，具备端到端交付经验',
 };
 
 export function profileFormFrom(payload: ProfilePayload): ProfileFormValue {

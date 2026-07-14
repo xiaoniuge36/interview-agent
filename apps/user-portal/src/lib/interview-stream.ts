@@ -11,6 +11,7 @@ import {
 const MAX_RECONNECT_ATTEMPTS = 5;
 const MAX_STREAM_BUFFER_BYTES = 1_048_576;
 const SEEN_EVENT_HISTORY_LIMIT = 500;
+const STREAM_UNAVAILABLE_MESSAGE = '实时连接暂时不可用，请稍后重新开始本场训练。';
 
 type StreamRetry = {
   attempt: number;
@@ -58,7 +59,7 @@ async function connect(state: StreamState): Promise<void> {
   try {
     const response = await openConnection(state, controller);
     await consumeConnection(response, state);
-    if (!state.stopped) reconnectError = new Error('SSE 连接已结束。');
+    if (!state.stopped) reconnectError = new Error(STREAM_UNAVAILABLE_MESSAGE);
   } catch (error) {
     if (!state.stopped && !isAbortError(error)) reconnectError = toError(error);
   } finally {
@@ -75,13 +76,13 @@ async function openConnection(state: StreamState, controller: AbortController): 
     { headers, cache: 'no-store', signal: controller.signal },
   );
   if (!response.ok) throw await streamHttpError(response);
-  if (!response.body) throw new Error('响应不包含可读取的 SSE 流。');
+  if (!response.body) throw new Error(STREAM_UNAVAILABLE_MESSAGE);
   return response;
 }
 
 async function consumeConnection(response: Response, state: StreamState): Promise<void> {
   const reader = response.body?.getReader();
-  if (!reader) throw new Error('无法读取 SSE 响应流。');
+  if (!reader) throw new Error(STREAM_UNAVAILABLE_MESSAGE);
   const decoder = new TextDecoder();
   let buffer = '';
   try {
@@ -134,7 +135,7 @@ function scheduleReconnect(state: StreamState, error: Error): void {
   state.reconnectAttempts += 1;
   if (state.reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
     stop(state);
-    state.options.onTerminalError(new Error('SSE 重连次数已达到上限。', { cause: error }));
+    state.options.onTerminalError(new Error(STREAM_UNAVAILABLE_MESSAGE, { cause: error }));
     return;
   }
   const delayMs = computeRetryDelay(state.reconnectAttempts);
@@ -170,7 +171,7 @@ async function streamHttpError(response: Response): Promise<ApiError> {
   const payload = await readErrorPayload(response);
   const envelope = ApiErrorEnvelopeSchema.safeParse(payload);
   return new ApiError({
-    message: envelope.success ? envelope.data.error.message : 'SSE 连接失败。',
+    message: STREAM_UNAVAILABLE_MESSAGE,
     code: envelope.success ? envelope.data.error.code : 'SSE_CONNECTION_FAILED',
     status: response.status,
     ...(envelope.success ? { requestId: envelope.data.requestId } : {}),
@@ -195,7 +196,7 @@ function isTerminalError(error: Error): boolean {
 function assertBufferSize(buffer: string): void {
   const bytes = new TextEncoder().encode(buffer).byteLength;
   if (bytes > MAX_STREAM_BUFFER_BYTES) {
-    throw new Error('SSE 缓冲区超过安全上限。');
+    throw new Error(STREAM_UNAVAILABLE_MESSAGE);
   }
 }
 
@@ -204,5 +205,5 @@ function isAbortError(error: unknown): boolean {
 }
 
 function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error('SSE 发生未知错误。');
+  return error instanceof Error ? error : new Error(STREAM_UNAVAILABLE_MESSAGE);
 }

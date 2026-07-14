@@ -1,4 +1,5 @@
-﻿import type { InterviewTurn } from '@interview-agent/contracts';
+import type { InterviewTurn } from '@interview-agent/contracts';
+import { interviewSpeakerLabel, interviewStageLabel } from './interview-labels';
 
 type TranscriptProps = {
   turns: InterviewTurn[];
@@ -21,10 +22,10 @@ export function Transcript({ turns, streamingText }: TranscriptProps) {
 function EmptyTranscript() {
   return (
     <div className="empty-state">
-      <div className="eyebrow">Ready</div>
-      <h3>准备好后创建一场新的模拟面试</h3>
+      <div className="eyebrow">开始训练</div>
+      <h3>准备好后，开始一场新的模拟面试</h3>
       <p className="muted-text">
-        会话由 Product API 管理，Runtime 负责推理，并通过 SSE 实时返回过程事件。
+        选择目标岗位并开始训练。AI 面试官会根据你的回答继续追问，并在结束后给出复盘建议。
       </p>
     </div>
   );
@@ -35,7 +36,7 @@ function TranscriptTurn({ turn }: { turn: InterviewTurn }) {
   return (
     <article className={'turn ' + tone}>
       <div className="stage">
-        {turn.role} · {turn.stage}
+        {interviewSpeakerLabel(turn.role)} · {interviewStageLabel(turn.stage)}
       </div>
       {turn.content}
     </article>
@@ -45,8 +46,9 @@ function TranscriptTurn({ turn }: { turn: InterviewTurn }) {
 function StreamingTurn({ content }: { content: string }) {
   return (
     <article className="turn interviewer">
-      <div className="stage">interviewer · streaming</div>
+      <div className="stage">AI 面试官 · 正在组织追问</div>
       {content}
     </article>
   );
 }
+

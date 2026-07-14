@@ -7,11 +7,11 @@ type LatestAnalysisProps = {
 
 export function LatestAnalysis({ job, profile }: LatestAnalysisProps) {
   const insights = job?.profile?.interviewFocus ??
-    profile.snapshot?.weaknesses ?? ['等待画像或 JD 分析'];
+    profile.snapshot?.weaknesses ?? ['保存个人画像或目标岗位后，这里会展示训练重点'];
   return (
     <div className="insight-card">
-      <div className="eyebrow">Latest Analysis</div>
-      <h3>{job?.intent.targetRole ?? '尚未生成岗位意图'}</h3>
+      <div className="eyebrow">最新岗位分析</div>
+      <h3>{job?.intent.targetRole ?? '尚未保存目标岗位'}</h3>
       <div className="stack compact">
         {insights.map((item) => (
           <span className="chip" key={item}>

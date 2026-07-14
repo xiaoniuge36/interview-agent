@@ -1,7 +1,11 @@
 import type { ModelProfile } from '@interview-agent/contracts';
+import { useDeferredValue, useMemo, useState } from 'react';
 import type { SectionState } from '@/hooks/useAdminDashboard';
+import { AdminPagination, AdminTableToolbar } from './AdminTableControls';
+import { filterModels, paginateRecords } from './admin-records';
 import { SectionFeedback } from './SectionState';
 
+const PAGE_SIZE = 8;
 const STATUS_LABELS: Record<ModelProfile['status'], string> = {
   active: '启用',
   standby: '备用',
@@ -16,10 +20,16 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
   dateStyle: 'medium',
   timeStyle: 'short',
 });
+const STATUS_OPTIONS = [
+  { value: 'all', label: '全部状态' },
+  { value: 'active', label: '启用' },
+  { value: 'standby', label: '备用' },
+  { value: 'disabled', label: '停用' },
+] as const;
 
 export function ModelGovernance({ state }: { state: SectionState<ModelProfile[]> }) {
   return (
-    <section id="section-3" className="card" aria-labelledby="models-heading">
+    <section id="section-4" className="card" aria-labelledby="models-heading">
       <div className="section-heading compact-heading">
         <div>
           <div className="eyebrow">Model Governance</div>
@@ -28,7 +38,7 @@ export function ModelGovernance({ state }: { state: SectionState<ModelProfile[]>
         <p>仅管理员可查看模型路由、预算与 Schema 模式。</p>
       </div>
       {state.status === 'ready' ? (
-        <ModelTable models={state.data} />
+        <ReadyModelTable models={state.data} />
       ) : (
         <SectionFeedback state={state} loadingMessage="正在加载模型配置" />
       )}
@@ -36,8 +46,51 @@ export function ModelGovernance({ state }: { state: SectionState<ModelProfile[]>
   );
 }
 
+function ReadyModelTable({ models }: { models: ModelProfile[] }) {
+  const table = useModelFilters(models);
+  return (
+    <>
+      <AdminTableToolbar
+        query={table.query}
+        searchLabel="搜索提供方、模型或用途"
+        resultLabel={`筛选出 ${table.pagination.total} 条`}
+        filters={[table.statusFilter]}
+        onQueryChange={table.changeQuery}
+      />
+      <ModelTable models={table.pagination.items} />
+      <AdminPagination {...table.pagination} onChange={table.setPage} />
+    </>
+  );
+}
+
+function useModelFilters(models: ModelProfile[]) {
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<ModelProfile['status'] | 'all'>('all');
+  const [page, setPage] = useState(1);
+  const deferredQuery = useDeferredValue(query);
+  const filtered = useMemo(
+    () => filterModels(models, { query: deferredQuery, status }),
+    [deferredQuery, models, status],
+  );
+  const changeStatus = (value: string) => {
+    setStatus(value as ModelProfile['status'] | 'all');
+    setPage(1);
+  };
+  const changeQuery = (value: string) => {
+    setQuery(value);
+    setPage(1);
+  };
+  return {
+    query,
+    changeQuery,
+    setPage,
+    pagination: paginateRecords(filtered, page, PAGE_SIZE),
+    statusFilter: { label: '状态', value: status, options: STATUS_OPTIONS, onChange: changeStatus },
+  };
+}
+
 function ModelTable({ models }: { models: ModelProfile[] }) {
-  if (!models.length) return <div className="empty-state">暂无模型配置。</div>;
+  if (!models.length) return <div className="empty-state compact-empty">没有匹配的模型配置。</div>;
   return (
     <div className="table-scroll">
       <table className="data-table">

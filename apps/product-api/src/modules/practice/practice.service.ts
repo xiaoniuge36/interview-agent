@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   ConflictException,
   Injectable,
@@ -15,10 +15,12 @@ import {
   type SubmitPracticeAnswer,
 } from '@interview-agent/contracts';
 import { AuditService, jsonValue } from '../../common/audit/audit.service';
+import { classifyRole } from '../../common/role-category';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
 import { PracticeEvaluator } from './practice-evaluator';
+import { isPracticeCategoryTag, practiceCategoryTagFor } from './practice-question-categories';
 import {
   createPracticeReportData,
   mapMastery,
@@ -35,14 +37,12 @@ type PracticeAnswerCommand = {
   itemId: string;
   input: SubmitPracticeAnswer;
 };
-
 type MasteryUpdateInput = {
   transaction: Prisma.TransactionClient;
   context: ProductRequestContext;
   session: SessionRecord;
   evaluations: Array<{ score: number }>;
 };
-
 type MasteryUpsertInput = {
   transaction: Prisma.TransactionClient;
   context: ProductRequestContext;
@@ -50,17 +50,14 @@ type MasteryUpsertInput = {
   tag: string;
   scores: number[];
 };
-
 @Injectable()
 export class PracticeService {
   private readonly evaluator = new PracticeEvaluator();
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly policy: PolicyService,
     private readonly audit: AuditService,
   ) {}
-
   async create(
     context: ProductRequestContext,
     input: CreatePracticeSession,
@@ -88,13 +85,11 @@ export class PracticeService {
       return mapSession(session);
     });
   }
-
   async get(context: ProductRequestContext, sessionId: string): Promise<PracticeSession> {
     const session = await this.loadSession(sessionId, context.tenantId);
     this.assertAction(context, 'practice:read', session.userId);
     return mapSession(session);
   }
-
   async submitAnswer(command: PracticeAnswerCommand): Promise<PracticeSession> {
     const { context, sessionId, itemId, input } = command;
     const session = await this.loadSession(sessionId, context.tenantId);
@@ -121,7 +116,6 @@ export class PracticeService {
     });
     return this.get(context, sessionId);
   }
-
   async submit(context: ProductRequestContext, sessionId: string): Promise<PracticeReport> {
     const session = await this.loadSession(sessionId, context.tenantId);
     this.assertAction(context, 'practice:submit', session.userId);
@@ -136,14 +130,12 @@ export class PracticeService {
       this.evaluateAndReport(transaction, context, session),
     );
   }
-
   async getReport(context: ProductRequestContext, sessionId: string): Promise<PracticeReport> {
     const session = await this.loadSession(sessionId, context.tenantId);
     this.assertAction(context, 'practice:read', session.userId);
     if (!session.report) throw new NotFoundException({ code: 'PRACTICE_REPORT_NOT_READY' });
     return mapReport(session.report, session.items);
   }
-
   async mastery(context: ProductRequestContext): Promise<MasteryProfile[]> {
     this.assertAction(context, 'mastery:read', context.actor.id);
     const records = await this.prisma.masteryProfile.findMany({
@@ -151,31 +143,35 @@ export class PracticeService {
       orderBy: { updatedAt: 'desc' },
       take: LIMITS.masteryList,
     });
-    return MasteryProfileListSchema.parse(records.map(mapMastery));
+    return MasteryProfileListSchema.parse(
+      records.filter((record) => !isPracticeCategoryTag(record.tag)).map(mapMastery),
+    );
   }
-
   private async selectQuestions(context: ProductRequestContext, input: CreatePracticeSession) {
-    if (input.jobIntentId) await this.assertJobIntent(context, input.jobIntentId);
+    const job = input.jobIntentId ? await this.findJobIntent(context, input.jobIntentId) : null;
     const where: Prisma.QuestionWhereInput = {
       status: 'published',
       OR: [{ tenantId: context.tenantId }, { visibility: 'public' }],
     };
-    if (input.questionIds?.length) {
-      const questions = await this.prisma.question.findMany({
-        where: { ...where, id: { in: input.questionIds } },
-      });
-      if (questions.length !== input.questionIds.length) {
-        throw new BadRequestException({ code: 'PRACTICE_QUESTION_SELECTION_INVALID' });
-      }
-      return input.questionIds.map((id) => questions.find((question) => question.id === id)!);
-    }
-    return this.prisma.question.findMany({
-      where,
+    if (input.questionIds?.length) return this.selectedQuestions(where, input.questionIds);
+    const roleTag = job ? practiceCategoryTagFor(classifyRole(job.targetRole)) : null;
+    const questions = await this.prisma.question.findMany({
+      where: roleTag ? { ...where, tags: { has: roleTag } } : where,
       orderBy: { updatedAt: 'desc' },
       take: LIMITS.questionCount,
     });
+    if (roleTag && questions.length < LIMITS.questionCount) {
+      throw new BadRequestException({ code: 'PRACTICE_ROLE_QUESTIONS_UNAVAILABLE' });
+    }
+    return questions;
   }
-
+  private async selectedQuestions(where: Prisma.QuestionWhereInput, ids: string[]) {
+    const questions = await this.prisma.question.findMany({ where: { ...where, id: { in: ids } } });
+    if (questions.length !== ids.length) {
+      throw new BadRequestException({ code: 'PRACTICE_QUESTION_SELECTION_INVALID' });
+    }
+    return ids.map((id) => questions.find((question) => question.id === id)!);
+  }
   private async evaluateAndReport(
     transaction: Prisma.TransactionClient,
     context: ProductRequestContext,
@@ -207,7 +203,6 @@ export class PracticeService {
       session.items.map((item, index) => ({ ...item, evaluation: evaluations[index] ?? null })),
     );
   }
-
   private async persistEvaluation(
     transaction: Prisma.TransactionClient,
     item: SessionRecord['items'][number],
@@ -234,7 +229,6 @@ export class PracticeService {
       },
     });
   }
-
   private async updateMastery(input: MasteryUpdateInput) {
     const scoreByTag = new Map<string, number[]>();
     input.session.items.forEach((item, index) => {
@@ -253,7 +247,6 @@ export class PracticeService {
       });
     }
   }
-
   private async upsertMastery(input: MasteryUpsertInput) {
     const identity = {
       tenantId: input.context.tenantId,
@@ -273,14 +266,14 @@ export class PracticeService {
       update: { score, evidenceCount, lastEvidenceSessionId: input.sessionId },
     });
   }
-
-  private async assertJobIntent(context: ProductRequestContext, jobIntentId: string) {
+  private async findJobIntent(context: ProductRequestContext, jobIntentId: string) {
     const job = await this.prisma.jobIntent.findFirst({
       where: { id: jobIntentId, tenantId: context.tenantId, userId: context.actor.id },
+      select: { targetRole: true },
     });
     if (!job) throw new BadRequestException({ code: 'JOB_INTENT_NOT_FOUND' });
+    return job;
   }
-
   private async loadSession(sessionId: string, tenantId: string): Promise<SessionRecord> {
     const session = await this.prisma.practiceSession.findFirst({
       where: { id: sessionId, tenantId },
@@ -289,7 +282,6 @@ export class PracticeService {
     if (session) return session;
     throw new NotFoundException({ code: 'PRACTICE_SESSION_NOT_FOUND' });
   }
-
   private assertAction(
     context: ProductRequestContext,
     action: Parameters<PolicyService['assert']>[1],

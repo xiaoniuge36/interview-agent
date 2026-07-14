@@ -15,30 +15,25 @@
     grid-template-columns: 1fr;
   }
 
-  .readiness-card {
+  .training-brief {
     min-height: 250px;
     display: grid;
-    grid-template-columns: auto minmax(180px, 1fr) minmax(200px, 1fr);
-    column-gap: 26px;
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 0.85fr);
+    column-gap: 30px;
+    align-items: start;
   }
 
-  .readiness-orbit {
-    grid-row: span 2;
-    margin: 10px 0;
+  .training-brief-label,
+  .training-brief-caption,
+  .training-brief h2,
+  .focus-tag-list {
+    grid-column: 1;
   }
 
-  .readiness-card h2,
-  .readiness-card p {
-    margin: 0;
-  }
-
-  .readiness-card p {
-    grid-column: 3;
-  }
-
-  .readiness-footer {
-    grid-column: 2 / -1;
+  .training-brief-next {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    margin-top: 0;
   }
 
   .interview {
@@ -130,25 +125,16 @@
     border-top: 1px solid var(--outline);
   }
 
-  .readiness-card {
+  .training-brief {
     display: block;
     min-height: 0;
   }
 
-  .readiness-orbit {
-    margin: 24px 0;
+  .training-brief-caption {
+    margin-top: 24px;
   }
 
-  .readiness-card h2,
-  .readiness-card p {
-    margin: 0;
-  }
-
-  .readiness-card p {
-    margin-top: 12px;
-  }
-
-  .readiness-footer {
+  .training-brief-next {
     margin-top: 24px;
   }
 
@@ -174,7 +160,7 @@
   }
 
   .hero-main,
-  .readiness-card,
+  .training-brief,
   .panel {
     padding: 20px;
   }
