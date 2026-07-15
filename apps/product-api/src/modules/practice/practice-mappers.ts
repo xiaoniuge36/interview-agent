@@ -41,7 +41,7 @@ type ReportMarkdownInput = {
 export function practiceSessionData(
   context: ProductRequestContext,
   input: CreatePracticeSession,
-  questions: Array<{ id: string }>,
+  questions: Array<{ id: string; tenantId: string }>,
 ): Prisma.PracticeSessionCreateInput {
   return {
     tenant: { connect: { id: context.tenantId } },
@@ -59,7 +59,11 @@ export function practiceSessionData(
     items: {
       create: questions.map((question, index) => ({
         tenant: { connect: { id: context.tenantId } },
-        question: { connect: { id: question.id } },
+        question: {
+          connect: {
+            tenantId_id: { tenantId: question.tenantId, id: question.id },
+          },
+        },
         sequence: index + 1,
       })),
     },
@@ -103,11 +107,17 @@ export function createPracticeReportData(
     ? ['能够准确识别当前作答中的关键能力缺口，并完成题目提交。']
     : ['回答覆盖了本轮题目的关键能力点，结构与表达较为完整。'];
   const nextActions = weaknesses.length
-    ? weaknesses.map((item) => `针对「${item}」补充一个真实案例，并按背景、行动、结果、复盘的顺序重新表达。`)
+    ? weaknesses.map(
+        (item) => `针对「${item}」补充一个真实案例，并按背景、行动、结果、复盘的顺序重新表达。`,
+      )
     : ['继续使用真实项目案例练习，强化量化结果与岗位相关性。'];
   return {
     tenant: { connect: { id: session.tenantId } },
-    session: { connect: { id: session.id } },
+    session: {
+      connect: {
+        tenantId_id: { tenantId: session.tenantId, id: session.id },
+      },
+    },
     overallScore,
     summary: `本轮专项练习平均得分为 ${overallScore.toFixed(0)} 分。`,
     strengths,

@@ -49,6 +49,7 @@ function updateData(
     data: {
       profile: update.profile ?? state.data.profile,
       jobs: update.job ? [update.job, ...state.data.jobs] : state.data.jobs,
+      interviews: state.data.interviews,
     },
     error: null,
   };

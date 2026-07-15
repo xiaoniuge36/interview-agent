@@ -14,10 +14,10 @@ type JobIntentPanelProps = {
 export function JobIntentPanel(props: JobIntentPanelProps) {
   const controller = useJobIntentForm(props.onCreated);
   return (
-    <form className="panel stack" onSubmit={controller.submit}>
+    <form className="panel stack agent-form-panel" onSubmit={controller.submit}>
       <div>
-        <div className="eyebrow">第二步</div>
-        <h2 className="h2">匹配目标岗位模型</h2>
+        <div className="eyebrow">岗位模型</div>
+        <h2 className="h2">目标 JD 与考察重点</h2>
         <p className="muted-text">
           从常见岗位模板开始，或直接粘贴真实 JD。下一场模拟会围绕岗位能力重点进行追问。
         </p>

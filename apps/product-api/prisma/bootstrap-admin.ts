@@ -58,14 +58,14 @@ async function upsertLocalAdmin(configuration: LocalAdminConfiguration) {
       select: { id: true },
     });
     await transaction.localCredential.upsert({
-      where: { userId: user.id },
+      where: { tenantId_userId: { tenantId: tenant.id, userId: user.id } },
       create: {
         tenantId: tenant.id,
         userId: user.id,
         email: configuration.email,
         passwordHash,
       },
-      update: { tenantId: tenant.id, email: configuration.email, passwordHash },
+      update: { email: configuration.email, passwordHash },
     });
   });
 }

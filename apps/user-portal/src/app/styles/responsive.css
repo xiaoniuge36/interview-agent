@@ -1,14 +1,17 @@
-@media (max-width: 1120px) {
-  .app-shell {
-    grid-template-columns: 232px minmax(0, 1fr);
+@media (max-width: 1180px) {
+  .journey-flow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
   }
 
-  .sidebar {
-    padding-inline: 12px;
+  .journey-node-line {
+    display: none;
   }
 
-  .nav-item.active::before {
-    left: -13px;
+  .quick-action-list,
+  .reports-grid,
+  .continue-cards {
+    grid-template-columns: 1fr;
   }
 
   .hero {
@@ -46,52 +49,58 @@
   }
 }
 
-@media (max-width: 820px) {
-  .app-shell {
-    display: block;
+@media (max-width: 960px) {
+  .top-nav-bar-inner {
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
-  .sidebar {
+  .top-nav-account {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .top-nav-tabs {
+    justify-content: flex-start;
+    gap: 4px;
+    padding-block: 4px 6px;
+  }
+
+  .topbar {
     position: static;
-    height: auto;
-    padding: 16px 18px;
-    gap: 16px;
+    top: auto;
   }
 
-  .brand {
-    padding-inline: 0;
+  .page-context-helper {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .top-nav-primary {
+    padding-inline: 12px;
+    font-size: 12px;
   }
 
-  .sidebar-action {
+  .account-chip > span:last-child small {
     display: none;
   }
 
-  .nav {
-    display: flex;
-    overflow-x: auto;
-    gap: 6px;
-    margin: 0 -6px;
-    padding: 0 6px 2px;
+  .top-tab {
+    min-height: 34px;
+    padding: 5px 10px;
   }
 
-  .nav-label,
-  .nav-item small,
-  .sidebar-footer {
+  .top-tab-home .top-tab-label {
     display: none;
   }
 
-  .nav-item {
-    min-width: max-content;
-    min-height: 36px;
-    padding: 8px 10px;
+  .top-tab-divider {
+    margin: 0 4px;
   }
 
-  .nav-item > span {
-    display: block;
-  }
-
-  .nav-item.active::before {
-    display: none;
+  .top-tab-connector {
+    width: 8px;
   }
 
   .topbar {
@@ -107,8 +116,22 @@
   .grid-2,
   .grid-3,
   .metric-grid,
-  .interview > aside {
+  .interview > aside,
+  .journey-flow,
+  .quick-action-list,
+  .reports-grid,
+  .continue-cards {
     grid-template-columns: 1fr;
+  }
+
+  .journey-node {
+    min-height: 0;
+    padding: 0;
+  }
+
+  .page-intro {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .training-rail {
@@ -143,54 +166,173 @@
     flex-direction: column;
   }
 }
-
-@media (max-width: 520px) {
-  .topbar {
-    align-items: flex-start;
-    flex-direction: column;
+@media (max-width: 820px) {
+  .sidebar-shell {
+    display: block;
   }
-
-  .identity-actions {
-    width: 100%;
-    justify-content: space-between;
+  .user-sidebar {
+    position: static;
+    height: auto;
+    min-height: 66px;
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
   }
-
-  .workspace {
-    padding-inline: 14px;
+  .sidebar-brand {
+    padding: 0;
   }
-
-  .hero-main,
-  .training-brief,
-  .panel {
-    padding: 20px;
+  .sidebar-brand small,
+  .sidebar-account {
+    display: none;
   }
-
-  .h1 {
-    font-size: 35px;
+  .sidebar-cta {
+    min-height: 38px;
+    padding: 0 12px;
   }
-
-  .toolbar {
-    grid-template-columns: 1fr;
-  }
-
-  .toolbar .button {
-    width: 100%;
-  }
-
-  .turn {
-    max-width: 100%;
+  .sidebar-nav {
+    display: none;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
+@media (max-width: 1180px) {
+  .agent-dashboard-body {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .agent-memory-panel {
+    width: min(100%, 720px);
+  }
+}
+
+@media (max-width: 820px) {
+  .user-sidebar {
+    min-height: 64px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    background: linear-gradient(165deg, #0b1726, #06111e);
   }
 
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
+  .sidebar-brand {
+    padding: 0;
+    border: 0;
+  }
+  .sidebar-brand strong {
+    font-size: 21px;
+  }
+  .sidebar-mark,
+  .sidebar-mark svg {
+    width: 30px;
+    height: 30px;
+  }
+  .sidebar-user-summary,
+  .sidebar-account,
+  .sidebar-nav {
+    display: none;
+  }
+
+  .agent-dashboard-topbar {
+    min-height: 76px;
+    padding: 12px 20px;
+  }
+  .agent-online-status {
+    gap: 10px;
+  }
+  .agent-online-status strong {
+    font-size: 14px;
+  }
+  .agent-online-status small {
+    font-size: 12px;
+  }
+  .dashboard-start-button {
+    min-width: 118px;
+    min-height: 44px;
+    padding-inline: 12px;
+    font-size: 14px;
+  }
+
+  .agent-dashboard-body {
+    padding: 34px 20px 48px;
+  }
+  .dashboard-heading h1 {
+    font-size: clamp(35px, 10.4vw, 46px);
+    line-height: 1.17;
+  }
+  .preparation-card {
+    margin-top: 26px;
+    padding: 20px;
+  }
+  .preparation-target {
+    grid-template-columns: 50px minmax(0, 1fr) auto;
+    gap: 12px;
+    margin-top: 19px;
+    padding-bottom: 20px;
+  }
+  .dashboard-symbol {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+  }
+  .preparation-target strong {
+    font-size: 17px;
+  }
+  .preparation-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .preparation-detail + .preparation-detail {
+    padding: 20px 0 0;
+    border-top: 1px solid #e5e9ef;
+    border-left: 0;
+  }
+  .preparation-timeline {
+    margin-top: 26px;
+  }
+  .timeline-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 24px;
+  }
+  .timeline-connector {
+    display: none;
+  }
+  .timeline-step strong,
+  .timeline-step small {
+    white-space: normal;
+  }
+  .dashboard-progress-note {
+    grid-template-columns: auto minmax(0, 1fr);
+    margin-top: 26px;
+  }
+  .dashboard-progress-note a {
+    grid-column: 2;
+  }
+  .agent-memory-panel {
+    padding: 22px 20px 18px;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 460px) {
+  .agent-dashboard-topbar {
+    align-items: flex-start;
+  }
+  .agent-online-status small {
+    display: none;
+  }
+  .dashboard-start-button {
+    min-width: 104px;
+  }
+  .preparation-card h2,
+  .preparation-timeline h2 {
+    font-size: 19px;
+  }
+  .memory-section {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+  .memory-section-icon {
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
   }
 }

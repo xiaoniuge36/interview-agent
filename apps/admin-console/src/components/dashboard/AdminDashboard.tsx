@@ -2,11 +2,7 @@
 
 import { useAuth } from '@interview-agent/auth-client';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import {
-  adminViewFromHash,
-  adminViewHash,
-  type AdminView,
-} from '@/components/admin-navigation';
+import { adminViewFromHash, adminViewHash, type AdminView } from '@/components/admin-navigation';
 import { AdminShell } from '@/components/AdminShell';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { AdminOverview } from './AdminOverview';
@@ -23,17 +19,12 @@ export function AdminDashboard() {
   const auth = useAuth();
   const { state, isRefreshing, lastUpdatedAt, reload } = useAdminDashboard();
   const { activeView, selectView } = useAdminView();
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const authenticationError = state.authenticationError;
   const recovery = getAuthenticationRecovery(auth.mode);
   const restoreSession = () => {
     if (recovery.action === 'sign-in') void auth.signIn();
     else if (recovery.action === 'sign-out') void auth.signOut();
     else reload();
-  };
-  const reviewCandidate = (candidateId: string) => {
-    setSelectedCandidateId(candidateId);
-    selectView('content');
   };
   return (
     <AdminShell
@@ -53,11 +44,8 @@ export function AdminDashboard() {
         <DashboardSections
           activeView={activeView}
           state={state}
-          selectedCandidateId={selectedCandidateId}
-          onCandidateSelect={setSelectedCandidateId}
           onChanged={reload}
           onNavigate={selectView}
-          onReview={reviewCandidate}
         />
       )}
     </AdminShell>
@@ -69,17 +57,14 @@ type DashboardState = ReturnType<typeof useAdminDashboard>['state'];
 type DashboardSectionsProps = {
   activeView: AdminView;
   state: DashboardState;
-  selectedCandidateId: string | null;
-  onCandidateSelect: (candidateId: string) => void;
   onChanged: () => void;
   onNavigate: (view: AdminView) => void;
-  onReview: (candidateId: string) => void;
 };
 
 function DashboardSections(props: DashboardSectionsProps) {
   const { activeView, state } = props;
   return (
-    <div className="console-content" data-admin-view={activeView}>
+    <div className="admin-dashboard-content" data-admin-view={activeView}>
       <DashboardView active={activeView === 'overview'} view="overview">
         <AdminOverview
           dashboard={state.dashboard}
@@ -88,22 +73,17 @@ function DashboardSections(props: DashboardSectionsProps) {
         />
       </DashboardView>
       <DashboardView active={activeView === 'imports'} view="imports">
-        <ImportCenter dashboard={state.dashboard} imports={state.imports} onChanged={props.onChanged} />
-      </DashboardView>
-      <DashboardView active={activeView === 'questions'} view="questions">
-        <QuestionReviewPanels
-          questions={state.questions}
-          candidates={state.candidates}
-          onReview={props.onReview}
-        />
-      </DashboardView>
-      <DashboardView active={activeView === 'content'} view="content">
-        <TrainingContentWorkbench
-          candidates={state.candidates}
-          selectedCandidateId={props.selectedCandidateId}
-          onCandidateSelect={props.onCandidateSelect}
+        <ImportCenter
+          dashboard={state.dashboard}
+          imports={state.imports}
           onChanged={props.onChanged}
         />
+      </DashboardView>
+      <DashboardView active={activeView === 'questions'} view="questions">
+        <QuestionReviewPanels questions={state.questions} />
+      </DashboardView>
+      <DashboardView active={activeView === 'content'} view="content">
+        <TrainingContentWorkbench candidates={state.candidates} onChanged={props.onChanged} />
       </DashboardView>
       <DashboardView active={activeView === 'models'} view="models">
         <ModelGovernance state={state.models} />

@@ -9,13 +9,15 @@ export function FederatedAccessScreen() {
     <main className="access-shell">
       <AccessStory />
       <section className="access-panel federated-access" aria-labelledby="federated-access-title">
-        <span className="brand-mark">IA</span>
-        <p className="eyebrow">统一身份登录</p>
-        <h1 id="federated-access-title">进入个人训练工作台</h1>
-        <p>登录后即可继续管理岗位资料、模拟记录、专项练习与个性化复盘建议。</p>
+        <span className="brand-mark" aria-hidden="true">
+          <span className="brand-mark-core" />
+        </span>
+        <p className="eyebrow">安全登录</p>
+        <h1 id="federated-access-title">进入你的训练空间</h1>
+        <p>登录后接续画像、岗位、面试记录与可记忆的训练进度。</p>
         {auth.status === 'error' && auth.error ? <AccessError message={auth.error} /> : null}
         <button className="button access-submit" type="button" onClick={() => void auth.signIn()}>
-          使用组织账号继续
+          继续登录
         </button>
       </section>
     </main>

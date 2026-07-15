@@ -136,7 +136,10 @@ describe('InterviewCommandService Runtime completion', () => {
       }),
       traceId: 'trace-test-0001',
       commandId: 'command-1',
-    });
+    }, expect.objectContaining({
+      tenantId: 'tenant-a',
+      actor: expect.objectContaining({ id: 'user-a' }),
+    }));
     expect(repository.complete).toHaveBeenCalledTimes(1);
     expect(result.sessionVersion).toBe(1);
     expect(result.session.turns).toHaveLength(1);

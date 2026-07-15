@@ -54,9 +54,11 @@ model Question {
 
   tenant        Tenant                @relation(fields: [tenantId], references: [id])
   practiceItems PracticeSessionItem[]
+  publishedFrom CandidateQuestion[]   @relation("CandidateQuestionPublishedQuestion")
 
   @@unique([tenantId, id])
   @@index([tenantId, visibility, status, difficulty])
+  @@index([tenantId, updatedAt])
 }
 
 model ImportTask {
@@ -71,11 +73,13 @@ model ImportTask {
   updatedAt      DateTime         @updatedAt
 
   tenant             Tenant              @relation(fields: [tenantId], references: [id])
-  asset              KnowledgeAsset      @relation(fields: [assetId], references: [id])
+  asset              KnowledgeAsset      @relation(fields: [tenantId, assetId], references: [tenantId, id])
   candidateQuestions CandidateQuestion[]
 
+  @@unique([tenantId, id])
   @@index([tenantId, status, createdAt])
-  @@index([assetId])
+  @@index([tenantId, assetId])
+  @@index([tenantId, updatedAt])
 }
 
 model CandidateQuestion {
@@ -90,6 +94,7 @@ model CandidateQuestion {
   answer              String
   rubric              Json
   status              CandidateReviewStatus @default(pending)
+  revision            Int                   @default(1)
   qualityScore        Float
   tags                String[]
   sourceRefs          String[]
@@ -97,12 +102,14 @@ model CandidateQuestion {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
 
-  tenant     Tenant      @relation(fields: [tenantId], references: [id])
-  importTask ImportTask? @relation(fields: [importTaskId], references: [id])
+  tenant            Tenant      @relation(fields: [tenantId], references: [id])
+  importTask        ImportTask? @relation(fields: [tenantId, importTaskId], references: [tenantId, id], onDelete: Restrict)
+  publishedQuestion Question?   @relation("CandidateQuestionPublishedQuestion", fields: [tenantId, publishedQuestionId], references: [tenantId, id], onDelete: Restrict)
 
   @@index([tenantId, status, createdAt])
+  @@index([tenantId, createdAt])
   @@index([tenantId, publishedQuestionId])
-  @@index([importTaskId])
+  @@index([tenantId, importTaskId])
 }
 
 model PracticeSession {
@@ -131,31 +138,34 @@ model PracticeSession {
 }
 
 model PracticeSessionItem {
-  id         String             @id @default(cuid())
-  tenantId   String
-  sessionId  String
-  questionId String
-  sequence   Int
-  status     PracticeItemStatus @default(pending)
-  answer     String?
-  answeredAt DateTime?
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
+  id               String             @id @default(cuid())
+  tenantId         String
+  sessionId        String
+  questionTenantId String
+  questionId       String
+  sequence         Int
+  status           PracticeItemStatus @default(pending)
+  answer           String?
+  answeredAt       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   tenant     Tenant            @relation(fields: [tenantId], references: [id])
   session    PracticeSession   @relation(fields: [tenantId, sessionId], references: [tenantId, id])
-  question   Question          @relation(fields: [questionId], references: [id])
+  question   Question          @relation(fields: [questionTenantId, questionId], references: [tenantId, id])
   evaluation EvaluationResult?
 
+  @@unique([tenantId, id])
   @@unique([sessionId, sequence])
   @@index([tenantId, sessionId, status])
   @@index([tenantId, questionId])
+  @@index([questionTenantId, questionId])
 }
 
 model EvaluationResult {
   id            String   @id @default(cuid())
   tenantId      String
-  sessionItemId String   @unique
+  sessionItemId String
   score         Float
   feedback      String
   missingPoints String[]
@@ -163,15 +173,16 @@ model EvaluationResult {
   createdAt     DateTime @default(now())
 
   tenant      Tenant              @relation(fields: [tenantId], references: [id])
-  sessionItem PracticeSessionItem @relation(fields: [sessionItemId], references: [id])
+  sessionItem PracticeSessionItem @relation(fields: [tenantId, sessionItemId], references: [tenantId, id])
 
+  @@unique([tenantId, sessionItemId])
   @@index([tenantId, createdAt])
 }
 
 model PracticeReport {
   id             String   @id @default(cuid())
   tenantId       String
-  sessionId      String   @unique
+  sessionId      String
   overallScore   Float
   summary        String
   strengths      String[]
@@ -183,8 +194,9 @@ model PracticeReport {
   updatedAt      DateTime @updatedAt
 
   tenant  Tenant          @relation(fields: [tenantId], references: [id])
-  session PracticeSession @relation(fields: [sessionId], references: [id])
+  session PracticeSession @relation(fields: [tenantId, sessionId], references: [tenantId, id])
 
+  @@unique([tenantId, sessionId])
   @@index([tenantId, createdAt])
 }
 
@@ -239,18 +251,21 @@ model KnowledgeAsset {
   chunks      KnowledgeChunk[]
   importTasks ImportTask[]
 
+  @@unique([tenantId, id])
   @@index([tenantId, status])
 }
 
 model KnowledgeChunk {
   id        String                       @id @default(cuid())
+  tenantId  String
   assetId   String
   content   String
   embedding Unsupported("vector(1536)")?
   metadata  Json
   createdAt DateTime                     @default(now())
 
-  asset KnowledgeAsset @relation(fields: [assetId], references: [id])
+  tenant Tenant         @relation(fields: [tenantId], references: [id])
+  asset  KnowledgeAsset @relation(fields: [tenantId, assetId], references: [tenantId, id])
 
-  @@index([assetId])
+  @@index([tenantId, assetId])
 }

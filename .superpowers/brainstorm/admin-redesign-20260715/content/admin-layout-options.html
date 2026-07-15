@@ -1,0 +1,90 @@
+<style>
+  .admin-layout-options { display: grid; gap: 20px; }
+  .admin-layout-options .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
+  .admin-layout-options .card { overflow: hidden; padding: 0; border-radius: 14px; }
+  .admin-layout-options .card-image { min-height: 248px; padding: 12px; background: #edf2f7; }
+  .admin-layout-options .card-body { padding: 18px; }
+  .mini-admin { display: grid; grid-template-columns: 68px minmax(0, 1fr); height: 238px; overflow: hidden; border: 1px solid #d9e0ea; border-radius: 9px; background: #f5f7fa; box-shadow: 0 5px 14px rgba(15, 23, 42, .08); font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 8px; text-align: left; }
+  .mini-admin .sider { display: grid; align-content: start; gap: 8px; padding: 12px 8px; background: #001529; color: #95a6bd; }
+  .mini-admin .logo { margin: 0 4px 8px; color: #fff; font-size: 10px; font-weight: 700; }
+  .mini-admin .nav-item { padding: 7px 6px; border-radius: 5px; }
+  .mini-admin .nav-item.active { background: #1677ff; color: #fff; }
+  .mini-admin .main { display: grid; grid-template-rows: 29px 1fr; min-width: 0; }
+  .mini-admin .top { display: flex; align-items: center; justify-content: space-between; padding: 0 11px; border-bottom: 1px solid #e7ebf0; background: #fff; color: #6b7280; }
+  .mini-admin .search { width: 42%; height: 10px; border-radius: 5px; background: #f1f3f5; }
+  .mini-admin .body { display: grid; align-content: start; gap: 9px; padding: 11px; }
+  .mini-admin .crumb { color: #8c8c8c; }
+  .mini-admin .page-title { color: #1f2937; font-size: 12px; font-weight: 700; }
+  .mini-admin .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .mini-admin .metric { padding: 8px; border: 1px solid #edf0f4; border-radius: 6px; background: #fff; color: #8c8c8c; }
+  .mini-admin .metric b { display: block; margin-bottom: 3px; color: #262626; font-size: 13px; }
+  .mini-admin .panel { border: 1px solid #edf0f4; border-radius: 6px; background: #fff; }
+  .mini-admin .panel-title { display: flex; justify-content: space-between; padding: 8px; color: #262626; font-size: 9px; font-weight: 700; }
+  .mini-admin .toolbar { display: flex; gap: 5px; padding: 0 8px 7px; }
+  .mini-admin .field { height: 10px; border-radius: 3px; background: #f3f5f7; }
+  .mini-admin .field.search-field { width: 45%; }
+  .mini-admin .field.select-field { width: 19%; }
+  .mini-admin .table-head, .mini-admin .table-row { display: grid; grid-template-columns: 1.5fr .65fr 1fr .6fr; gap: 4px; padding: 6px 8px; }
+  .mini-admin .table-head { border-top: 1px solid #f0f0f0; background: #fafafa; color: #595959; font-weight: 700; }
+  .mini-admin .table-row { border-top: 1px solid #f6f6f6; color: #737373; }
+  .mini-admin .tag { justify-self: start; padding: 1px 4px; border-radius: 2px; background: #e6f4ff; color: #1677ff; }
+  .mini-admin.workspace .body { grid-template-columns: minmax(0, 1fr) 86px; }
+  .mini-admin.workspace .topwide, .mini-admin.workspace .crumb, .mini-admin.workspace .page-title { grid-column: 1 / -1; }
+  .mini-admin.workspace .queue { min-width: 0; }
+  .mini-admin.workspace .drawer { display: grid; align-content: start; gap: 7px; padding: 10px; border-left: 1px solid #edf0f4; background: #fff; color: #595959; }
+  .mini-admin.workspace .line { height: 8px; border-radius: 3px; background: #f1f3f5; }
+  .mini-admin.dense { grid-template-columns: 48px minmax(0, 1fr); }
+  .mini-admin.dense .sider { padding-inline: 6px; }
+  .mini-admin.dense .logo { font-size: 0; }
+  .mini-admin.dense .logo::after { content: "IA"; font-size: 9px; }
+  .mini-admin.dense .nav-item { height: 10px; padding: 0; background: rgba(255,255,255,.1); }
+  .mini-admin.dense .nav-item.active { background: #1677ff; }
+  .mini-admin.dense .body { gap: 7px; padding: 9px; }
+  .mini-admin.dense .metric-row { grid-template-columns: repeat(4, 1fr); }
+  .mini-admin.dense .metric { padding: 5px; }
+  .mini-admin.dense .metric b { font-size: 10px; }
+  .recommendation { display: flex; align-items: center; gap: 8px; color: #0958d9; font-size: 13px; }
+  .recommendation span { padding: 2px 7px; border-radius: 999px; background: #e6f4ff; font-size: 11px; font-weight: 700; }
+  @media (max-width: 900px) { .admin-layout-options .cards { grid-template-columns: 1fr; } }
+</style>
+
+<div class="admin-layout-options">
+  <div>
+    <h2>选择传统后台的信息架构</h2>
+    <p class="subtitle">三种方案都使用真实 Ant Design 组件。截图中的重点表格将统一采用 <code>Table</code>、筛选条、行操作与受控 <code>Pagination</code>，区别在于总览和审核页的内容密度。</p>
+  </div>
+
+  <div class="cards">
+    <div class="card" data-choice="standard-admin" onclick="toggleSelect(this)">
+      <div class="card-image">
+        <div class="mini-admin">
+          <aside class="sider"><div class="logo">IA 后台</div><div class="nav-item active">总览</div><div class="nav-item">内容</div><div class="nav-item">模型</div><div class="nav-item">审计</div></aside>
+          <div class="main"><div class="top"><div class="search"></div><span>管理员 · 刷新</span></div><div class="body"><div class="crumb">控制台 / 内容治理</div><div class="page-title">候选题审核工作台</div><div class="metric-row"><div class="metric"><b>18</b>待审核</div><div class="metric"><b>98%</b>通过率</div><div class="metric"><b>2</b>异常任务</div></div><div class="panel"><div class="panel-title"><span>候选题列表</span><span>+ 导入资料</span></div><div class="toolbar"><div class="field search-field"></div><div class="field select-field"></div></div><div class="table-head"><span>候选题</span><span>质量</span><span>状态</span><span>操作</span></div><div class="table-row"><span>Redis 缓存策略</span><span>92</span><span class="tag">待审核</span><span>审核</span></div><div class="table-row"><span>系统设计基础</span><span>86</span><span class="tag">需修改</span><span>审核</span></div></div></div></div>
+        </div>
+      </div>
+      <div class="card-body"><h3>方案 A：标准管理后台</h3><p>深色侧栏、顶栏、面包屑、页头、指标卡和表格主导。所有管理页采用一致的“筛选 → 表格 → 分页 → 抽屉详情”结构。</p><p class="recommendation"><span>推荐</span>最贴近 Ant Design 的企业后台范式</p></div>
+    </div>
+
+    <div class="card" data-choice="workbench-admin" onclick="toggleSelect(this)">
+      <div class="card-image">
+        <div class="mini-admin workspace">
+          <aside class="sider"><div class="logo">IA 后台</div><div class="nav-item">总览</div><div class="nav-item active">审核</div><div class="nav-item">运行</div><div class="nav-item">审计</div></aside>
+          <div class="main"><div class="top"><div class="search"></div><span>筛选 · 刷新</span></div><div class="body"><div class="crumb">内容治理 / 审核工作台</div><div class="page-title">审核与发布</div><div class="topwide metric-row"><div class="metric"><b>18</b>待审核</div><div class="metric"><b>6</b>需修改</div><div class="metric"><b>12</b>今日完成</div></div><div class="queue panel"><div class="panel-title"><span>审核队列</span><span>1–8 / 18</span></div><div class="toolbar"><div class="field search-field"></div><div class="field select-field"></div></div><div class="table-head"><span>候选题</span><span>分数</span><span>状态</span><span>操作</span></div><div class="table-row"><span>分布式事务</span><span>94</span><span class="tag">待审核</span><span>打开</span></div><div class="table-row"><span>接口幂等性</span><span>88</span><span class="tag">待审核</span><span>打开</span></div></div><aside class="drawer"><b>审核详情</b><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><span class="tag">保存草稿</span></aside></div></div>
+        </div>
+      </div>
+      <div class="card-body"><h3>方案 B：工作台优先</h3><p>审核页突出右侧常驻详情，减少来回打开抽屉；其他页面仍沿用列表后台模式。</p><p>优点是审核效率高，代价是与截图的抽屉交互和小屏适配复杂度更高。</p></div>
+    </div>
+
+    <div class="card" data-choice="dense-admin" onclick="toggleSelect(this)">
+      <div class="card-image">
+        <div class="mini-admin dense">
+          <aside class="sider"><div class="logo"></div><div class="nav-item active"></div><div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div></aside>
+          <div class="main"><div class="top"><div class="search"></div><span>管理</span></div><div class="body"><div class="crumb">控制台 / 运行观测</div><div class="page-title">Agent 运行记录</div><div class="metric-row"><div class="metric"><b>1.2k</b>运行</div><div class="metric"><b>99.2%</b>成功</div><div class="metric"><b>680ms</b>P95</div><div class="metric"><b>3</b>告警</div></div><div class="panel"><div class="panel-title"><span>运行记录</span><span>导出</span></div><div class="toolbar"><div class="field search-field"></div><div class="field select-field"></div><div class="field select-field"></div></div><div class="table-head"><span>Trace / 阶段</span><span>耗时</span><span>结果</span><span>时间</span></div><div class="table-row"><span>trace_001 · 评分</span><span>421</span><span class="tag">成功</span><span>10:30</span></div><div class="table-row"><span>trace_002 · 生成</span><span>822</span><span class="tag">降级</span><span>10:28</span></div><div class="table-row"><span>trace_003 · 校验</span><span>102</span><span class="tag">成功</span><span>10:26</span></div></div></div></div>
+        </div>
+      </div>
+      <div class="card-body"><h3>方案 C：高密度数据台</h3><p>收窄侧栏、压缩卡片、把更多筛选和表格信息放进首屏，适合长期高频运营。</p><p>信息效率最高，但对日常业务人员的扫读友好度较低。</p></div>
+    </div>
+  </div>
+
+  <p class="subtitle">点击一个方案即可标记偏好；我会以你的文字回复为准。</p>
+</div>

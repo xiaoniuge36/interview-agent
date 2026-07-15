@@ -9,23 +9,23 @@ const ICON_STROKE = {
   stroke: 'currentColor',
   strokeWidth: 1.8,
   strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
 };
 
 export function NavigationIcon({ name }: NavigationIconProps) {
   if (name === 'grid') return <GridIcon />;
   if (name === 'user') return <UserIcon />;
   if (name === 'target') return <TargetIcon />;
+  if (name === 'book') return <BookIcon />;
   if (name === 'mic') return <MicIcon />;
+  if (name === 'settings') return <SettingsIcon />;
   return <ChartIcon />;
 }
 
 function GridIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="4" y="4" width="6" height="6" rx="1" {...ICON_STROKE} />
-      <rect x="14" y="4" width="6" height="6" rx="1" {...ICON_STROKE} />
-      <rect x="4" y="14" width="6" height="6" rx="1" {...ICON_STROKE} />
-      <rect x="14" y="14" width="6" height="6" rx="1" {...ICON_STROKE} />
+      <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" {...ICON_STROKE} />
     </svg>
   );
 }
@@ -49,6 +49,15 @@ function TargetIcon() {
   );
 }
 
+function BookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v15H7.5A2.5 2.5 0 0 0 5 20.5V5.5Z" {...ICON_STROKE} />
+      <path d="M5 20.5A2.5 2.5 0 0 1 7.5 18H19" {...ICON_STROKE} />
+    </svg>
+  );
+}
+
 function MicIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -63,6 +72,15 @@ function ChartIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 19V5M4 19h16" {...ICON_STROKE} />
       <path d="m7 15 4-4 3 2 5-6" {...ICON_STROKE} />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="3" {...ICON_STROKE} />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 2-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.8v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-2-2 .1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H5.6v-2.8h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L7 8.2l2-2 .1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h2.8V5a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 2 2-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2V14H21a1.7 1.7 0 0 0-1.6 1Z" {...ICON_STROKE} />
     </svg>
   );
 }

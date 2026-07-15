@@ -20,6 +20,12 @@ export type AdminNavigationItem = {
   icon: ConsoleIconName;
 };
 
+export type AdminNavigationGroup = {
+  id: 'overview' | 'content' | 'observability';
+  label: string;
+  items: readonly AdminNavigationItem[];
+};
+
 export const ADMIN_NAV_ITEMS: readonly AdminNavigationItem[] = [
   {
     id: 'overview',
@@ -37,9 +43,9 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavigationItem[] = [
   },
   {
     id: 'questions',
-    label: '题库审核',
-    helper: '发布与候选题',
-    heading: '题库审核与发布',
+    label: '题库管理',
+    helper: '正式题库',
+    heading: '正式题库管理',
     icon: 'review',
   },
   {
@@ -69,6 +75,24 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavigationItem[] = [
     helper: '可追溯记录',
     heading: '治理审计与可追溯记录',
     icon: 'audit',
+  },
+];
+
+export const ADMIN_NAV_GROUPS: readonly AdminNavigationGroup[] = [
+  {
+    id: 'overview',
+    label: '运营总览',
+    items: ADMIN_NAV_ITEMS.filter((item) => item.id === 'overview'),
+  },
+  {
+    id: 'content',
+    label: '内容治理',
+    items: ADMIN_NAV_ITEMS.filter((item) => ['imports', 'questions', 'content'].includes(item.id)),
+  },
+  {
+    id: 'observability',
+    label: '系统观测',
+    items: ADMIN_NAV_ITEMS.filter((item) => ['models', 'runtime', 'audit'].includes(item.id)),
   },
 ];
 

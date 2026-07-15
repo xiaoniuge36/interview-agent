@@ -15,19 +15,25 @@ describe('Local account input validation', () => {
     });
   });
 
-  it.each([
-    ['过短密码', 'short1', '密码至少需要 12 个字符。'],
-    ['缺少数字', 'securepassword', '密码至少需要包含一个数字。'],
-    ['缺少字母', '123456789012', '密码至少需要包含一个英文字母。'],
-  ])('拒绝%s', (_label, password, message) => {
+  it.each(['a', '123456789', '任意字符'])('允许非空密码 %s', (password) => {
     const parsed = LocalRegistrationInputSchema.safeParse({
       name: 'Avery Lin',
       email: 'avery@example.com',
       password,
     });
 
+    expect(parsed.success).toBe(true);
+  });
+
+  it('拒绝空密码', () => {
+    const parsed = LocalRegistrationInputSchema.safeParse({
+      name: 'Avery Lin',
+      email: 'avery@example.com',
+      password: '',
+    });
+
     expect(parsed.success).toBe(false);
-    if (!parsed.success) expect(parsed.error.issues[0]?.message).toBe(message);
+    if (!parsed.success) expect(parsed.error.issues[0]?.message).toBe('请输入密码。');
   });
 
   it('拒绝无效登录邮箱', () => {

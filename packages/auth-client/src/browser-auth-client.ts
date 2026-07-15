@@ -50,6 +50,16 @@ export class BrowserAuthClient {
     return this.config.mode;
   }
 
+  /**
+   * 同步恢复可立即判定的会话，避免刷新时先闪「检查登录状态」。
+   * OIDC 仍需异步读 UserManager，返回 loading。
+   */
+  bootstrapState(): AuthState {
+    if (this.config.mode === 'development') return developmentState(this.config);
+    if (this.config.mode === 'local') return localState();
+    return { status: 'loading', identity: null, error: null };
+  }
+
   async initialize(): Promise<AuthState> {
     if (this.config.mode === 'development') return developmentState(this.config);
     if (this.config.mode === 'local') return localState();

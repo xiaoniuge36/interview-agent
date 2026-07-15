@@ -1,4 +1,8 @@
-import { ConflictException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { jwtVerify } from 'jose';
 import type { ConfigService } from '@nestjs/config';
@@ -47,15 +51,32 @@ describe('LocalAuthService', () => {
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
+  it('按凭证所属租户加载本地登录用户', async () => {
+    const database = localAuthDatabase();
+    const service = localAuthService(database);
+
+    await registerThenSignIn(service, database);
+
+    expect(database.user.findUnique).toHaveBeenCalledWith({
+      where: { tenantId_id: { tenantId: 'tenant-1', id: 'user-1' } },
+      select: { subject: true, role: true, email: true, name: true },
+    });
+  });
+
   it('仅在 HS256 模式启用本地账号入口', async () => {
     const database = localAuthDatabase();
     const service = localAuthService(database, 'development');
 
-    await expect(service.register(registration)).rejects.toBeInstanceOf(ServiceUnavailableException);
+    await expect(service.register(registration)).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    );
   });
 });
 
-function localAuthService(database: LocalAuthDatabase, mode: 'development' | 'jwt_hs256' = 'jwt_hs256') {
+function localAuthService(
+  database: LocalAuthDatabase,
+  mode: 'development' | 'jwt_hs256' = 'jwt_hs256',
+) {
   const values = {
     AUTH_MODE: mode,
     JWT_SECRET,
@@ -94,7 +115,9 @@ function localAuthDatabase() {
   };
   return {
     transaction,
-    $transaction: jest.fn((callback: (client: typeof transaction) => unknown) => callback(transaction)),
+    $transaction: jest.fn((callback: (client: typeof transaction) => unknown) =>
+      callback(transaction),
+    ),
     localCredential: { findUnique: jest.fn() },
     tenant: { findUnique: jest.fn() },
     user: { findUnique: jest.fn() },

@@ -5,8 +5,8 @@ import {
   isUniqueConstraintError,
   runSerializable,
 } from '../../common/database/serializable-transaction';
-import { InterviewEventBus } from '../../common/events/interview-event.bus';
 import { InterviewCommandHandlers } from './interview-command.handlers';
+import { InterviewEventBus } from './realtime/interview-event.bus';
 import type {
   CompleteCommandRequest,
   ExecuteCommandRequest,

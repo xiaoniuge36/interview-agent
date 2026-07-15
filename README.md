@@ -132,7 +132,7 @@ pnpm dev:agent-runtime
 
 ## 数据库与种子数据
 
-Prisma 使用 `apps/product-api/prisma/schema/` 多文件 Schema，迁移位于 `apps/product-api/prisma/migrations/`。
+Prisma 使用 `apps/product-api/prisma/schema/` 多文件 Schema，迁移位于 `apps/product-api/prisma/schema/migrations/`。
 
 ```powershell
 pnpm db:validate          # 校验 Schema

@@ -27,6 +27,10 @@ export function statusLabel(status: CandidateReview['status']) {
   }[status];
 }
 
+export function canPublishCandidate(status: CandidateReview['status']): boolean {
+  return status === 'approved';
+}
+
 export function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : '操作失败，请稍后重试。';
 }

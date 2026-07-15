@@ -101,7 +101,9 @@ export class LocalAuthService {
         select: { slug: true },
       }),
       this.prisma.user.findUnique({
-        where: { id: credential.userId },
+        where: {
+          tenantId_id: { tenantId: credential.tenantId, id: credential.userId },
+        },
         select: { subject: true, role: true, email: true, name: true },
       }),
     ]);

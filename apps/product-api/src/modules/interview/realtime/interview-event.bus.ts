@@ -2,9 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { MessageEvent } from '@nestjs/common';
 import { AgentStreamEventSchema, type AgentStreamEvent } from '@interview-agent/contracts';
 import { Observable, Subject } from 'rxjs';
-import { PrismaService } from '../database/prisma.service';
-import { RedisService } from '../redis/redis.service';
-import { mapEvent } from '../../modules/interview/interview.mapper';
+import { PrismaService } from '../../../common/database/prisma.service';
+import { RedisService } from '../../../common/redis/redis.service';
+import { mapEvent } from '../interview.mapper';
 
 const CHANNEL_PREFIX = 'interview-events';
 const CHANNEL_IDLE_TTL_MS = 30_000;

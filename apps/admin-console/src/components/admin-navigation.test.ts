@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ADMIN_NAV_GROUPS,
   ADMIN_NAV_ITEMS,
+  ADMIN_VIEW_IDS,
   adminViewFromHash,
   adminViewHash,
   getAdminNavigationItem,
@@ -24,5 +26,11 @@ describe('admin navigation', () => {
   it('falls back to overview for an unknown view', () => {
     expect(isAdminView('unknown')).toBe(false);
     expect(adminViewFromHash('#unknown')).toBe('overview');
+  });
+
+  it('groups every hash view once for the management menu', () => {
+    const groupedViews = ADMIN_NAV_GROUPS.flatMap((group) => group.items.map((item) => item.id));
+    expect(groupedViews).toEqual(expect.arrayContaining([...ADMIN_VIEW_IDS]));
+    expect(new Set(groupedViews).size).toBe(ADMIN_VIEW_IDS.length);
   });
 });

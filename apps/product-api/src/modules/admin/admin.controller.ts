@@ -5,7 +5,7 @@ import {
 } from '@interview-agent/contracts';
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
-import { CandidateReviewService } from './candidate-review.service';
+import { CandidateReviewService } from '../content-review/candidate-review.service';
 import { AdminService } from './admin.service';
 
 @Roles('admin', 'question_reviewer')

@@ -3,10 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from 'jose';
 import { z } from 'zod';
-import type { Actor, Role } from '@interview-agent/contracts';
+import type { Actor } from '@interview-agent/contracts';
 import type { Environment } from '../config/environment';
-import { PrismaService } from '../database/prisma.service';
-import { actorFromIdentity } from '../context/request-context';
+import { IdentityProvisioner, type IdentityProvisioningInput } from './identity-provisioner';
 
 const IDENTITY_TEXT_MAX_LENGTH = 200;
 const EMAIL_MAX_LENGTH = 320;
@@ -31,7 +30,7 @@ export class AuthIdentityService {
 
   constructor(
     private readonly config: ConfigService<Environment, true>,
-    private readonly prisma: PrismaService,
+    private readonly provisioner: IdentityProvisioner,
   ) {
     const jwksUrl = this.config.get('OIDC_JWKS_URL', { infer: true });
     this.remoteKeySet = jwksUrl ? createRemoteJWKSet(new URL(jwksUrl)) : undefined;
@@ -43,7 +42,7 @@ export class AuthIdentityService {
       mode === 'development'
         ? this.developmentIdentity(request)
         : await this.tokenIdentity(request, mode);
-    return this.provision(identity);
+    return this.provisioner.resolve(provisioningInput(identity));
   }
 
   private developmentIdentity(request: Request): IdentityClaims {
@@ -99,39 +98,16 @@ export class AuthIdentityService {
     });
     return verified.payload;
   }
+}
 
-  private async provision(identity: IdentityClaims): Promise<Actor> {
-    const tenant = await this.prisma.tenant.upsert({
-      where: { slug: identity.tenant_id },
-      create: { slug: identity.tenant_id, name: identity.tenant_id },
-      update: {},
-      select: { id: true },
-    });
-    const user = await this.prisma.user.upsert({
-      where: {
-        tenantId_subject: { tenantId: tenant.id, subject: identity.sub },
-      },
-      create: {
-        tenantId: tenant.id,
-        subject: identity.sub,
-        role: identity.role,
-        email: identity.email ?? null,
-        name: identity.name ?? null,
-      },
-      update: {
-        role: identity.role,
-        email: identity.email ?? null,
-        name: identity.name ?? null,
-      },
-      select: { id: true, subject: true, role: true, tenantId: true },
-    });
-    return actorFromIdentity({
-      id: user.id,
-      subject: user.subject,
-      role: user.role as Role,
-      tenantId: user.tenantId,
-    });
-  }
+function provisioningInput(identity: IdentityClaims): IdentityProvisioningInput {
+  return {
+    subject: identity.sub,
+    tenantSlug: identity.tenant_id,
+    role: identity.role,
+    ...(identity.email === undefined ? {} : { email: identity.email }),
+    ...(identity.name === undefined ? {} : { name: identity.name }),
+  };
 }
 
 function bearerToken(authorization: string | undefined) {

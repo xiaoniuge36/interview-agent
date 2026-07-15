@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -16,6 +17,7 @@ import { AuditService, jsonValue } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
+import { runSerializable } from '../../common/database/serializable-transaction';
 
 @Injectable()
 export class CandidateReviewService {
@@ -39,12 +41,12 @@ export class CandidateReviewService {
     input: UpdateCandidateQuestionInput,
   ): Promise<CandidateQuestionDetail> {
     this.assertReviewPermission(context);
-    return this.prisma.$transaction(async (transaction) => {
+    return runSerializable(this.prisma, async (transaction) => {
       const current = await this.loadCandidate(transaction, context.tenantId, candidateId);
       if (current.publishedQuestionId) throw publishedCandidateConflict();
       const updated = await transaction.candidateQuestion.update({
         where: { id: current.id },
-        data: candidateUpdateData(input),
+        data: { ...candidateUpdateData(input), revision: { increment: 1 } },
       });
       await this.audit.record(
         context,
@@ -52,7 +54,11 @@ export class CandidateReviewService {
           action: 'candidate:review',
           resourceType: 'CandidateQuestion',
           resourceId: candidateId,
-          stateTransition: { from: current.status, to: updated.status, version: 1 },
+          stateTransition: {
+            from: current.status,
+            to: updated.status,
+            version: updated.revision,
+          },
         },
         transaction,
       );
@@ -66,11 +72,15 @@ export class CandidateReviewService {
     input: PublishCandidateQuestionInput,
   ) {
     this.assertPublishPermission(context);
-    return this.prisma.$transaction(async (transaction) => {
+    return runSerializable(this.prisma, async (transaction) => {
       const candidate = await this.loadCandidate(transaction, context.tenantId, candidateId);
       if (candidate.status !== 'approved') throw candidateNotApproved();
       if (candidate.publishedQuestionId)
-        return this.loadPublishedQuestion(transaction, candidate.publishedQuestionId);
+        return this.loadPublishedQuestion(
+          transaction,
+          candidate.tenantId,
+          candidate.publishedQuestionId,
+        );
       const question = await this.findOrCreateQuestion(transaction, candidate, input.visibility);
       await transaction.candidateQuestion.update({
         where: { id: candidate.id },
@@ -116,8 +126,14 @@ export class CandidateReviewService {
     });
   }
 
-  private async loadPublishedQuestion(transaction: Prisma.TransactionClient, questionId: string) {
-    const question = await transaction.question.findUnique({ where: { id: questionId } });
+  private async loadPublishedQuestion(
+    transaction: Prisma.TransactionClient,
+    tenantId: string,
+    questionId: string,
+  ) {
+    const question = await transaction.question.findUnique({
+      where: { tenantId_id: { tenantId, id: questionId } },
+    });
     if (!question) throw new ConflictException({ code: 'PUBLISHED_QUESTION_MISSING' });
     return QuestionSchema.parse(question);
   }
@@ -143,6 +159,12 @@ export class CandidateReviewService {
 
   private assertPublishPermission(context: ProductRequestContext) {
     this.assertReviewPermission(context);
+    if (context.actor.role !== 'admin') {
+      throw new ForbiddenException({
+        code: 'ROLE_NOT_ALLOWED',
+        message: '当前身份无权访问该资源。',
+      });
+    }
     this.policy.assert(context.actor, 'question:write', { tenantId: context.tenantId });
   }
 }

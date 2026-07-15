@@ -9,7 +9,7 @@ const VALID_RESPONSE = {
   shouldFinish: false,
 };
 
-function createClient(overrides: Partial<Environment> = {}) {
+function createClient(overrides: Partial<Environment> = {}, userModels?: { next: jest.Mock }) {
   const values: Partial<Environment> = {
     AGENT_RUNTIME_URL: 'http://runtime.test',
     AGENT_RUNTIME_TIMEOUT_MS: 100,
@@ -22,7 +22,10 @@ function createClient(overrides: Partial<Environment> = {}) {
   const config = {
     get: jest.fn((key: keyof Environment) => values[key]),
   };
-  return new AgentRuntimeClient(config as unknown as ConfigService<Environment, true>);
+  return new AgentRuntimeClient(
+    config as unknown as ConfigService<Environment, true>,
+    userModels as never,
+  );
 }
 
 function requestInput() {
@@ -48,6 +51,37 @@ afterEach(() => {
 });
 
 describe('AgentRuntimeClient successful responses', () => {
+  it('uses the caller model runtime when an authenticated user context is supplied', async () => {
+    const userModels = {
+      next: jest.fn().mockResolvedValue({
+        stage: 'warmup',
+        content: '请介绍一个项目。',
+        shouldFinish: false,
+        latencyMs: 12,
+        attempts: 1,
+        fallbackUsed: false,
+        schemaValid: true,
+      }),
+    };
+    const context = {
+      requestId: 'request-1',
+      traceId: 'trace-test-0001',
+      tenantId: 'tenant-a',
+      actor: {
+        id: 'user-a',
+        subject: 'subject-a',
+        tenantId: 'tenant-a',
+        role: 'user' as const,
+        scopes: ['model_credential:read' as const],
+      },
+    };
+
+    const result = await createClient({}, userModels).next(requestInput(), context);
+
+    expect(userModels.next).toHaveBeenCalledWith(expect.objectContaining({ context }));
+    expect(result.content).toBe('请介绍一个项目。');
+  });
+
   it('validates a successful response and returns flattened telemetry', async () => {
     const fetchMock = jest
       .spyOn(global, 'fetch')

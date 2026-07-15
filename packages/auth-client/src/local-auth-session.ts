@@ -27,6 +27,10 @@ export async function requestLocalSession(
 }
 
 export function localState(): AuthState {
+  // SSR 无 windowStorage：返回 loading，等客户端 hydrate 后再读会话
+  if (typeof window === 'undefined') {
+    return { status: 'loading', identity: null, error: null };
+  }
   const session = readLocalSession();
   return session
     ? { status: 'authenticated', identity: session.identity, error: null }
@@ -39,6 +43,7 @@ export function persistLocalSession(session: LocalSession): AuthState {
 }
 
 export function readLocalSession(): LocalSession | null {
+  if (typeof window === 'undefined') return null;
   const raw = browserSessionStorage().getItem(LOCAL_SESSION_KEY);
   if (!raw) return null;
   try {
@@ -52,6 +57,7 @@ export function readLocalSession(): LocalSession | null {
 }
 
 export function clearLocalSession() {
+  if (typeof window === 'undefined') return;
   browserSessionStorage().removeItem(LOCAL_SESSION_KEY);
 }
 

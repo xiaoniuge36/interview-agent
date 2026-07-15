@@ -247,6 +247,11 @@
   padding-top: 4px;
 }
 
+.candidate-editor {
+  display: grid;
+  gap: 14px;
+}
+
 .rubric-list {
   display: grid;
   gap: 6px;

@@ -19,6 +19,7 @@ const MAX_COMMAND_LEASE_MS = 900_000;
 const DEFAULT_COMMAND_LEASE_MS = 360_000;
 const MIN_INTERNAL_TOKEN_LENGTH = 24;
 const MIN_HS256_SECRET_BYTES = 32;
+const CREDENTIAL_ENCRYPTION_KEY_BYTES = 32;
 
 const BooleanEnvironmentSchema = z.enum(['true', 'false']).transform((value) => value === 'true');
 
@@ -87,6 +88,8 @@ const EnvironmentSchema = z
       .max(MAX_COMMAND_LEASE_MS)
       .default(DEFAULT_COMMAND_LEASE_MS),
     INTERNAL_AGENT_TOKEN: z.string().min(MIN_INTERNAL_TOKEN_LENGTH),
+    CREDENTIAL_ENCRYPTION_KEY: z.string().min(1),
+    CREDENTIAL_ENCRYPTION_KEY_VERSION: z.coerce.number().int().min(1).default(1),
   })
   .superRefine((environment, context) => {
     validateAuthentication(environment, context);
@@ -130,6 +133,17 @@ function validateProduction(environment: Environment, context: z.RefinementCtx) 
   }
   if (environment.API_CORS_ORIGINS.length === 0) {
     addIssue(context, 'API_CORS_ORIGINS', '生产环境必须显式配置 CORS 来源。');
+  }
+  if (decodeCredentialKey(environment.CREDENTIAL_ENCRYPTION_KEY).length !== CREDENTIAL_ENCRYPTION_KEY_BYTES) {
+    addIssue(context, 'CREDENTIAL_ENCRYPTION_KEY', '凭证加密主密钥必须是 32 字节 base64 值。');
+  }
+}
+
+function decodeCredentialKey(value: string) {
+  try {
+    return Buffer.from(value, 'base64');
+  } catch {
+    return Buffer.alloc(0);
   }
 }
 

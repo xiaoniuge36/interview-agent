@@ -90,6 +90,7 @@ export class ImportService {
   private async persistCandidates(input: CandidatePersistenceInput) {
     await input.transaction.knowledgeChunk.createMany({
       data: input.candidates.map((candidate, index) => ({
+        tenantId: input.tenantId,
         assetId: input.assetId,
         content: candidate.sourceContent,
         metadata: jsonValue({ sequence: index + 1, extractionMode: 'deterministic_fallback' }),

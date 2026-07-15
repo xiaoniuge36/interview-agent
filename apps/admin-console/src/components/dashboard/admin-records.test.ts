@@ -12,6 +12,7 @@ import {
   filterModels,
   filterQuestions,
   filterRuns,
+  paginationPages,
   paginateRecords,
   resolveCandidateSelection,
 } from './admin-records';
@@ -87,7 +88,9 @@ describe('admin record filtering', () => {
         difficulty: 'hard',
       }),
     ).toEqual([QUESTION]);
-    expect(filterQuestions([QUESTION], { query: 'React', status: 'all', difficulty: 'all' })).toEqual([]);
+    expect(
+      filterQuestions([QUESTION], { query: 'React', status: 'all', difficulty: 'all' }),
+    ).toEqual([]);
   });
 
   it('按候选题状态和关键字筛选审核队列', () => {
@@ -130,8 +133,17 @@ describe('candidate review selection', () => {
     expect(resolveCandidateSelection([CANDIDATE, second], CANDIDATE.id, null)).toBe(CANDIDATE.id);
   });
 
-  it('无有效选择时回退到第一条记录，空队列返回 null', () => {
-    expect(resolveCandidateSelection([CANDIDATE], 'missing', null)).toBe(CANDIDATE.id);
+  it('无有效选择时返回 null', () => {
+    expect(resolveCandidateSelection([CANDIDATE], 'missing', null)).toBeNull();
+    expect(resolveCandidateSelection([CANDIDATE], null, null)).toBeNull();
     expect(resolveCandidateSelection([], 'missing', null)).toBeNull();
+  });
+});
+
+describe('admin pagination page range', () => {
+  it('在首页、中间页和末页保持至多七个数字页码', () => {
+    expect(paginationPages(1, 12)).toEqual([1, 2, 3, 4, 5, 6, 'ellipsis', 12]);
+    expect(paginationPages(6, 12)).toEqual([1, 'ellipsis', 4, 5, 6, 7, 8, 'ellipsis', 12]);
+    expect(paginationPages(12, 12)).toEqual([1, 'ellipsis', 7, 8, 9, 10, 11, 12]);
   });
 });

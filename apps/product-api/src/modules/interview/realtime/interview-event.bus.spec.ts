@@ -1,8 +1,8 @@
 ﻿import type { MessageEvent } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import type { AgentStreamEvent } from '@interview-agent/contracts';
-import type { PrismaService } from '../database/prisma.service';
-import type { RedisService } from '../redis/redis.service';
+import type { PrismaService } from '../../../common/database/prisma.service';
+import type { RedisService } from '../../../common/redis/redis.service';
 import { InterviewEventBus } from './interview-event.bus';
 
 const IDLE_TTL_MS = 30_000;

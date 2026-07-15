@@ -10,6 +10,7 @@ import { InterviewCommandStartHandler } from './interview-command-start.handler'
 import { InterviewController } from './interview.controller';
 import { InterviewQueryService } from './interview-query.service';
 import { InterviewService } from './interview.service';
+import { InterviewEventBus } from './realtime/interview-event.bus';
 
 const commandProviders = [
   InterviewCommandStartHandler,
@@ -18,6 +19,7 @@ const commandProviders = [
   InterviewCommandHandlers,
   InterviewCommandRepository,
   InterviewCommandService,
+  InterviewEventBus,
 ];
 
 @Module({

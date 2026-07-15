@@ -1,6 +1,7 @@
 import {
   AdvanceInterviewInputSchema,
   InterviewCommandResultSchema,
+  InterviewListSchema,
   InterviewReportSchema,
   InterviewSessionSchema,
   StartInterviewInputSchema,
@@ -13,6 +14,13 @@ import {
   type SubmitInterviewAnswerInput,
 } from '@interview-agent/contracts';
 import { apiRequest, createIdempotencyKey } from './api';
+
+export function listInterviews(): Promise<InterviewSession[]> {
+  return apiRequest({
+    path: '/interviews',
+    schema: InterviewListSchema,
+  });
+}
 
 export function startInterview(input: StartInterviewInput): Promise<InterviewCommandResult> {
   return commandRequest('/interviews/start', StartInterviewInputSchema.parse(input), 'start');

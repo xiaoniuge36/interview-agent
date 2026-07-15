@@ -1,4 +1,5 @@
 import type { AgentRunView } from '@interview-agent/contracts';
+import { Card, Empty, Table, Tag, Typography, type TableColumnsType } from 'antd';
 import { useDeferredValue, useMemo, useState } from 'react';
 import type { SectionState } from '@/hooks/useAdminDashboard';
 import { AdminPagination, AdminTableToolbar } from './AdminTableControls';
@@ -23,22 +24,73 @@ const STATUS_OPTIONS = [
   { value: 'failed', label: '失败' },
   { value: 'fallback', label: '已降级' },
 ] as const;
+const RUN_STATUS_COLORS: Record<AgentRunView['status'], string> = {
+  running: 'processing',
+  succeeded: 'success',
+  failed: 'error',
+  fallback: 'warning',
+};
+
+const RUN_COLUMNS: TableColumnsType<AgentRunView> = [
+  {
+    title: '状态',
+    key: 'status',
+    width: 104,
+    render: (_, run) => (
+      <Tag color={RUN_STATUS_COLORS[run.status]}>{STATUS_LABELS[run.status]}</Tag>
+    ),
+  },
+  {
+    title: '阶段',
+    dataIndex: 'stage',
+    width: 180,
+    ellipsis: true,
+  },
+  {
+    title: '质量与延迟',
+    key: 'quality',
+    width: 190,
+    render: (_, run) => qualitySummary(run),
+  },
+  {
+    title: 'Trace ID',
+    key: 'traceId',
+    width: 220,
+    render: (_, run) => (
+      <Typography.Text code copyable={{ text: run.traceId }}>
+        {run.traceId}
+      </Typography.Text>
+    ),
+  },
+  {
+    title: '更新时间',
+    key: 'updatedAt',
+    width: 180,
+    render: (_, run) => (
+      <Typography.Text type="secondary">
+        <time dateTime={run.updatedAt}>{DATE_FORMATTER.format(new Date(run.updatedAt))}</time>
+      </Typography.Text>
+    ),
+  },
+];
 
 export function RuntimeObservability({ state }: { state: SectionState<AgentRunView[]> }) {
   return (
-    <section id="section-5" className="card" aria-labelledby="runs-heading">
-      <div className="section-heading compact-heading">
-        <div>
-          <div className="eyebrow">Runtime Observability</div>
-          <h2 id="runs-heading">Agent 运行观测</h2>
+    <section className="admin-page" id="section-5" aria-labelledby="runs-heading">
+      <Card className="admin-dense-card admin-table-card" size="small">
+        <div className="admin-page-heading">
+          <div>
+            <div className="eyebrow">Runtime Observability</div>
+            <h2 id="runs-heading">Agent 运行观测</h2>
+          </div>
+          <p>跟踪执行阶段、延迟、降级与结构化输出结果。</p>
         </div>
-        <p>跟踪执行阶段、延迟、降级与结构化输出结果。</p>
-      </div>
-      {state.status === 'ready' ? (
-        <ReadyRunTable runs={state.data} />
-      ) : (
-        <SectionFeedback state={state} loadingMessage="正在加载 Agent 运行记录" />
-      )}
+        {state.status === 'ready' ? (
+          <ReadyRunTable runs={state.data} />
+        ) : (
+          <SectionFeedback state={state} loadingMessage="正在加载 Agent 运行记录" />
+        )}
+      </Card>
     </section>
   );
 }
@@ -87,45 +139,18 @@ function useRunFilters(runs: AgentRunView[]) {
 }
 
 function RunTable({ runs }: { runs: AgentRunView[] }) {
-  if (!runs.length) return <div className="empty-state compact-empty">没有匹配的运行记录。</div>;
+  if (!runs.length) {
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的记录" />;
+  }
   return (
-    <div className="table-scroll">
-      <table className="data-table">
-        <caption className="visually-hidden">Agent 运行记录</caption>
-        <thead>
-          <tr>
-            <th scope="col">状态</th>
-            <th scope="col">阶段</th>
-            <th scope="col">质量与延迟</th>
-            <th scope="col">Trace ID</th>
-            <th scope="col">更新时间</th>
-          </tr>
-        </thead>
-        <tbody>
-          {runs.map((run) => (
-            <RunRow key={run.id} run={run} />
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function RunRow({ run }: { run: AgentRunView }) {
-  return (
-    <tr>
-      <td>
-        <span className={runStatusClass(run.status)}>{STATUS_LABELS[run.status]}</span>
-      </td>
-      <td>{run.stage}</td>
-      <td>{qualitySummary(run)}</td>
-      <td>
-        <code>{run.traceId}</code>
-      </td>
-      <td>
-        <time dateTime={run.updatedAt}>{DATE_FORMATTER.format(new Date(run.updatedAt))}</time>
-      </td>
-    </tr>
+    <Table<AgentRunView>
+      columns={RUN_COLUMNS}
+      dataSource={runs}
+      pagination={false}
+      rowKey="id"
+      scroll={{ x: 900 }}
+      size="middle"
+    />
   );
 }
 
@@ -133,10 +158,4 @@ function qualitySummary(run: AgentRunView): string {
   const latency = run.latencyMs === null ? '无延迟数据' : run.latencyMs + ' ms';
   if (run.schemaValid === null) return '未校验 · ' + latency;
   return (run.schemaValid ? 'Schema 通过' : 'Schema 失败') + ' · ' + latency;
-}
-
-function runStatusClass(status: AgentRunView['status']): string {
-  if (status === 'failed') return 'status danger';
-  if (status === 'fallback') return 'status warn';
-  return 'status';
 }

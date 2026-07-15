@@ -7,7 +7,7 @@ type ReportPanelProps = {
 
 export function ReportPanel({ report }: ReportPanelProps) {
   return (
-    <section id="reports" className="panel report-card stack compact">
+    <section className="panel report-card stack compact">
       <div className="eyebrow">本轮复盘</div>
       {report ? <ReportContent report={report} /> : <ReportPlaceholder />}
     </section>

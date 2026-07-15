@@ -23,6 +23,9 @@ const roleScopes: Record<Role, Action[]> = {
     'practice:answer',
     'practice:submit',
     'mastery:read',
+    'model_credential:read',
+    'model_credential:write',
+    'model_credential:test',
   ],
   question_reviewer: ['question:read', 'question:write', 'candidate:review', 'content:import'],
   admin: [

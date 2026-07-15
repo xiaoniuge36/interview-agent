@@ -21,12 +21,15 @@ model Tenant {
   candidateQuestions CandidateQuestion[]
   modelProfiles      ModelProfile[]
   knowledgeAssets    KnowledgeAsset[]
+  knowledgeChunks    KnowledgeChunk[]
   importTasks        ImportTask[]
   practiceSessions   PracticeSession[]
   practiceItems      PracticeSessionItem[]
   evaluationResults  EvaluationResult[]
   practiceReports    PracticeReport[]
   masteryProfiles    MasteryProfile[]
+  localCredentials   LocalCredential[]
+  modelCredentials   UserModelCredential[]
   auditLogs          AuditLog[]
 }
 
@@ -47,6 +50,8 @@ model User {
   memory     MemoryEvent[]
   practices  PracticeSession[]
   mastery    MasteryProfile[]
+  credential LocalCredential?
+  modelCredentials UserModelCredential[]
 
   @@unique([tenantId, id])
   @@unique([tenantId, subject])
@@ -110,4 +115,30 @@ model AuditLog {
   @@index([tenantId, action, createdAt])
   @@index([traceId])
   @@index([resourceType, resourceId])
+}
+
+model UserModelCredential {
+  id            String   @id @default(cuid())
+  tenantId      String
+  userId        String
+  provider      String
+  model         String
+  baseUrl       String?
+  ciphertext    Bytes
+  iv            Bytes
+  authTag       Bytes
+  keyVersion    Int
+  keyHint       String
+  status        String   @default("unverified")
+  isDefault     Boolean  @default(false)
+  lastTestedAt  DateTime?
+  lastErrorCode String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [tenantId, userId], references: [tenantId, id])
+
+  @@unique([tenantId, id])
+  @@index([tenantId, userId, isDefault, status])
 }

@@ -1,3 +1,4 @@
+import { Button, Card, Empty, Table, Tag, Typography, type TableProps } from 'antd';
 import type { CandidateReview } from '@interview-agent/contracts';
 import { useDeferredValue, useMemo, useState } from 'react';
 import type { SectionState } from '@/hooks/useAdminDashboard';
@@ -25,19 +26,10 @@ type CandidateReviewQueueProps = {
 
 export function CandidateReviewQueue(props: CandidateReviewQueueProps) {
   return (
-    <article className="card management-table-card">
-      <div className="card-title-row">
-        <div>
-          <h3>候选题审核队列</h3>
-          <p className="card-description">处理导入后生成的候选题并进入审核工作台。</p>
-        </div>
-      </div>
-      {props.state.status === 'ready' ? (
-        <ReadyCandidateTable candidates={props.state.data} onReview={props.onReview} />
-      ) : (
-        <SectionFeedback state={props.state} loadingMessage="正在加载候选题" />
-      )}
-    </article>
+    <Card className="admin-table-card" title="候选题审核列表">
+      <Typography.Paragraph type="secondary">筛选待办候选题，点击“审核”后再打开详情编辑。</Typography.Paragraph>
+      {props.state.status === 'ready' ? <ReadyCandidateTable candidates={props.state.data} onReview={props.onReview} /> : <SectionFeedback state={props.state} loadingMessage="正在加载候选题" />}
+    </Card>
   );
 }
 
@@ -45,13 +37,7 @@ function ReadyCandidateTable(props: { candidates: CandidateReview[]; onReview: (
   const table = useCandidateTable(props.candidates);
   return (
     <>
-      <AdminTableToolbar
-        query={table.query}
-        searchLabel="搜索候选题、标签或来源"
-        resultLabel={`筛选出 ${table.pagination.total} 条`}
-        filters={[table.statusFilter]}
-        onQueryChange={table.changeQuery}
-      />
+      <AdminTableToolbar filters={[table.statusFilter]} query={table.query} resultLabel={`筛选出 ${table.pagination.total} 条`} searchLabel="搜索候选题、标签或来源" onQueryChange={table.changeQuery} />
       <CandidateTable candidates={table.pagination.items} onReview={props.onReview} />
       <AdminPagination {...table.pagination} onChange={table.setPage} />
     </>
@@ -63,18 +49,9 @@ function useCandidateTable(candidates: CandidateReview[]) {
   const [status, setStatus] = useState<CandidateReview['status'] | 'all'>('all');
   const [page, setPage] = useState(1);
   const deferredQuery = useDeferredValue(query);
-  const filtered = useMemo(
-    () => filterCandidates(candidates, { query: deferredQuery, status }),
-    [candidates, deferredQuery, status],
-  );
-  const changeStatus = (value: string) => {
-    setStatus(value as CandidateReview['status'] | 'all');
-    setPage(1);
-  };
-  const changeQuery = (value: string) => {
-    setQuery(value);
-    setPage(1);
-  };
+  const filtered = useMemo(() => filterCandidates(candidates, { query: deferredQuery, status }), [candidates, deferredQuery, status]);
+  const changeStatus = (value: string) => { setStatus(value as CandidateReview['status'] | 'all'); setPage(1); };
+  const changeQuery = (value: string) => { setQuery(value); setPage(1); };
   return {
     query,
     changeQuery,
@@ -84,56 +61,28 @@ function useCandidateTable(candidates: CandidateReview[]) {
   };
 }
 
-function CandidateTable(props: { candidates: CandidateReview[]; onReview: (id: string) => void }) {
-  if (!props.candidates.length) {
-    return <div className="empty-state compact-empty">没有匹配的候选题。</div>;
-  }
+function CandidateTable({ candidates, onReview }: { candidates: CandidateReview[]; onReview: (id: string) => void }) {
+  if (!candidates.length) return <Empty description="没有匹配的候选题，可前往资料导入创建新任务。" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
+  const columns: TableProps<CandidateReview>['columns'] = [
+    { title: '候选题', dataIndex: 'title', render: (_, candidate) => <QuestionCell candidate={candidate} /> },
+    { title: '质量分', dataIndex: 'qualityScore', width: 92 },
+    { title: '状态', dataIndex: 'status', width: 112, render: (status: CandidateReview['status']) => <Tag color={candidateStatusColor(status)}>{STATUS_LABELS[status]}</Tag> },
+    { title: '创建时间', dataIndex: 'createdAt', width: 132, render: (value) => DATE_FORMATTER.format(new Date(value)) },
+    { title: '操作', key: 'action', fixed: 'right', width: 88, render: (_, candidate) => <Button size="small" type="link" onClick={() => onReview(candidate.id)}>审核</Button> },
+  ];
+  return <Table columns={columns} dataSource={candidates} pagination={false} rowKey="id" scroll={{ x: 760 }} size="middle" />;
+}
+
+function QuestionCell({ candidate }: { candidate: CandidateReview }) {
   return (
-    <div className="table-scroll">
-      <table className="data-table management-table">
-        <caption className="visually-hidden">候选题审核队列</caption>
-        <thead>
-          <tr>
-            <th scope="col">候选题</th>
-            <th scope="col">质量分</th>
-            <th scope="col">状态</th>
-            <th scope="col">创建时间</th>
-            <th scope="col">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {props.candidates.map((candidate) => (
-            <tr key={candidate.id}>
-              <td>
-                <strong>{candidate.title}</strong>
-                <span>{candidate.tags.length ? candidate.tags.join(' · ') : '未标注标签'}</span>
-              </td>
-              <td>{candidate.qualityScore}</td>
-              <td>
-                <span className={candidateStatusClass(candidate.status)}>
-                  {STATUS_LABELS[candidate.status]}
-                </span>
-              </td>
-              <td>{DATE_FORMATTER.format(new Date(candidate.createdAt))}</td>
-              <td>
-                <button
-                  className="button secondary compact-button table-action"
-                  onClick={() => props.onReview(candidate.id)}
-                  type="button"
-                >
-                  打开审核
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <SpaceText primary={candidate.title} secondary={candidate.tags.length ? candidate.tags.join(' · ') : '未标注标签'} />
   );
 }
 
-function candidateStatusClass(status: CandidateReview['status']): string {
-  if (status === 'needs_edit') return 'status warn';
-  if (status === 'rejected') return 'status danger';
-  return 'status';
+function SpaceText({ primary, secondary }: { primary: string; secondary: string }) {
+  return <div><Typography.Text strong>{primary}</Typography.Text><br /><Typography.Text type="secondary">{secondary}</Typography.Text></div>;
+}
+
+function candidateStatusColor(status: CandidateReview['status']): string {
+  return { pending: 'processing', needs_edit: 'warning', approved: 'success', rejected: 'error' }[status];
 }

@@ -8,6 +8,14 @@ import type {
 
 type FilterValue<T extends string> = T | 'all';
 
+const MAX_VISIBLE_PAGE_COUNT = 7;
+const EDGE_VISIBLE_PAGE_COUNT = MAX_VISIBLE_PAGE_COUNT - 1;
+const MIDDLE_PAGE_RADIUS = Math.floor((MAX_VISIBLE_PAGE_COUNT - 2) / 2);
+const EDGE_PAGE_THRESHOLD = EDGE_VISIBLE_PAGE_COUNT - MIDDLE_PAGE_RADIUS;
+
+export const PAGINATION_ELLIPSIS = 'ellipsis' as const;
+type PaginationPage = number | typeof PAGINATION_ELLIPSIS;
+
 export type QuestionFilters = {
   query: string;
   status: FilterValue<Question['status']>;
@@ -97,6 +105,30 @@ export function paginateRecords<T>(records: T[], requestedPage: number, pageSize
   };
 }
 
+export function paginationPages(page: number, pageCount: number): PaginationPage[] {
+  const totalPages = Math.max(0, Math.floor(pageCount));
+  if (totalPages <= MAX_VISIBLE_PAGE_COUNT) return pageRange(1, totalPages);
+
+  const currentPage = Math.min(Math.max(1, Math.floor(page)), totalPages);
+  if (currentPage <= EDGE_PAGE_THRESHOLD) {
+    return [...pageRange(1, EDGE_VISIBLE_PAGE_COUNT), PAGINATION_ELLIPSIS, totalPages];
+  }
+  if (currentPage > totalPages - EDGE_PAGE_THRESHOLD) {
+    return [
+      1,
+      PAGINATION_ELLIPSIS,
+      ...pageRange(totalPages - EDGE_VISIBLE_PAGE_COUNT + 1, totalPages),
+    ];
+  }
+  return [
+    1,
+    PAGINATION_ELLIPSIS,
+    ...pageRange(currentPage - MIDDLE_PAGE_RADIUS, currentPage + MIDDLE_PAGE_RADIUS),
+    PAGINATION_ELLIPSIS,
+    totalPages,
+  ];
+}
+
 export function resolveCandidateSelection(
   candidates: CandidateReview[],
   currentId: string | null,
@@ -108,7 +140,11 @@ export function resolveCandidateSelection(
   if (currentId && candidates.some((candidate) => candidate.id === currentId)) {
     return currentId;
   }
-  return candidates[0]?.id ?? null;
+  return null;
+}
+
+function pageRange(start: number, end: number): number[] {
+  return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
 }
 
 function matchesQuery(query: string, values: string[]): boolean {

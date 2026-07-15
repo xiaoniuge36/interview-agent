@@ -69,7 +69,7 @@ export class InterviewCommandService {
         ...(prepared.answer ? { answer: prepared.answer } : {}),
         traceId: prepared.context.traceId,
         commandId: prepared.commandId,
-      });
+      }, prepared.context);
       assertRuntimeDecision(prepared.session, prepared.command, runtime);
       const artifacts = buildCompletion({ preparation: prepared, runtime });
       return await this.repository.complete({

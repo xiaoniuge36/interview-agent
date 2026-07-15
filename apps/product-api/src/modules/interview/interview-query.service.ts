@@ -10,8 +10,8 @@ import type { Observable } from 'rxjs';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
-import { InterviewEventBus } from '../../common/events/interview-event.bus';
 import { mapReport, mapSession } from './interview.mapper';
+import { InterviewEventBus } from './realtime/interview-event.bus';
 
 const INTERVIEW_LIST_LIMIT = 200;
 

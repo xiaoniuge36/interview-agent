@@ -12,10 +12,10 @@ type ProfilePanelProps = {
 export function ProfilePanel({ profile, onChanged }: ProfilePanelProps) {
   const controller = useProfileForm(profile, onChanged);
   return (
-    <form className="panel stack" onSubmit={controller.submit} noValidate={false}>
+    <form className="panel stack agent-form-panel" onSubmit={controller.submit} noValidate={false}>
       <div>
-        <div className="eyebrow">第一步</div>
-        <h2 className="h2">建立候选人画像</h2>
+        <div className="eyebrow">候选人上下文</div>
+        <h2 className="h2">能力与项目证据</h2>
         <p className="muted-text">只填写会影响面试的问题：目标岗位、经验、技术栈和项目证据。</p>
       </div>
       <ProfileFields value={controller.form} onChange={controller.update} />

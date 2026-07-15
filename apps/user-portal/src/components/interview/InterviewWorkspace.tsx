@@ -13,7 +13,7 @@ type InterviewWorkspaceProps = {
 export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
   const controller = useInterviewController(jobs);
   return (
-    <section id="interview" className="interview section-gap">
+    <section className="interview section-gap">
       <InterviewConsole jobs={jobs} controller={controller} />
       <aside className="stack" aria-label="训练进度与面试复盘">
         <RuntimeEventList events={controller.state.events} />

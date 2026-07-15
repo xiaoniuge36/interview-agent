@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { LockOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { Alert, Button, Card, Form, Input, Layout } from 'antd';
 import { useAuth } from '@interview-agent/auth-client';
-import { ConsoleIcon } from '@/components/ConsoleIcon';
 
 const CONSOLE_ROLES = new Set(['admin', 'question_reviewer']);
 
@@ -30,6 +31,10 @@ export function AdminAccess({ children }: AdminAccessProps) {
 
   if (auth.status === 'authenticated' && hasConsoleAccess) return children;
   if (auth.mode === 'development') return children;
+  // OIDC 异步校验：透明占位，避免整页闪登录卡
+  if (auth.status === 'loading') {
+    return <main className="admin-access-bootstrap" aria-busy="true" aria-label="加载中" />;
+  }
   if (auth.mode === 'local') return <LocalAdminAccess error={accessError ?? auth.error} />;
   return <FederatedAdminAccess error={accessError ?? auth.error} />;
 }
@@ -46,14 +51,16 @@ type Credentials = {
 function LocalAdminAccess({ error }: { error: string | null }) {
   const access = useLocalAdminSignIn();
   return (
-    <main className="admin-access" aria-labelledby="admin-access-title">
+    <Layout className="admin-access" role="main" aria-labelledby="admin-access-title">
       <AdminAccessIntro />
-      <section className="admin-access-panel">
-        <AdminAccessHeading />
-        <AdminCredentialsForm {...access} error={error} />
-        <p className="admin-access-note">普通训练账号不能访问后台数据或治理操作。</p>
-      </section>
-    </main>
+      <Layout.Content className="admin-access-login" style={centeredContentStyle}>
+        <Card className="admin-access-panel" styles={cardBodyWithoutPadding} variant="borderless">
+          <AdminAccessHeading />
+          <AdminCredentialsForm {...access} error={error} />
+          <p className="admin-access-note">普通训练账号不能访问后台数据或治理操作。</p>
+        </Card>
+      </Layout.Content>
+    </Layout>
   );
 }
 
@@ -61,8 +68,7 @@ function useLocalAdminSignIn() {
   const auth = useAuth();
   const [credentials, setCredentials] = useState<Credentials>({ email: '', password: '' });
   const [isSubmitting, setSubmitting] = useState(false);
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const submit = async () => {
     setSubmitting(true);
     try {
       await auth.signInWithPassword(credentials);
@@ -75,7 +81,7 @@ function useLocalAdminSignIn() {
 
 function AdminAccessIntro() {
   return (
-    <section className="admin-access-intro" aria-label="管理后台说明">
+    <Layout.Content className="admin-access-intro" aria-label="管理后台说明">
       <p className="eyebrow">INTERVIEW AGENT · GOVERNANCE</p>
       <h1>面试资产与运行治理</h1>
       <p>审核训练内容、监测 Agent 运行，并保留可追溯的治理记录。此入口只向已授权的后台角色开放。</p>
@@ -89,7 +95,7 @@ function AdminAccessIntro() {
           <dd>仅保存在当前浏览器会话</dd>
         </div>
       </dl>
-    </section>
+    </Layout.Content>
   );
 }
 
@@ -109,13 +115,19 @@ type AdminCredentialsFormProps = ReturnType<typeof useLocalAdminSignIn> & {
 
 function AdminCredentialsForm(props: AdminCredentialsFormProps) {
   return (
-    <form className="admin-access-form" aria-busy={props.isSubmitting} onSubmit={(event) => void props.submit(event)}>
+    <Form
+      className="admin-access-form"
+      layout="vertical"
+      requiredMark={false}
+      aria-busy={props.isSubmitting}
+      onFinish={() => void props.submit()}
+    >
       <AdminCredentialFields credentials={props.credentials} setCredentials={props.setCredentials} />
-      {props.error ? <p className="admin-access-error" role="alert">{props.error}</p> : null}
-      <button className="button admin-access-submit" type="submit" disabled={props.isSubmitting}>
+      {props.error ? <Alert className="admin-access-error" message={props.error} showIcon type="error" /> : null}
+      <Button block className="admin-access-submit" disabled={props.isSubmitting} htmlType="submit" loading={props.isSubmitting} type="primary">
         {props.isSubmitting ? '正在验证…' : '安全登录'}
-      </button>
-    </form>
+      </Button>
+    </Form>
   );
 }
 
@@ -127,39 +139,32 @@ type AdminCredentialFieldsProps = {
 function AdminCredentialFields({ credentials, setCredentials }: AdminCredentialFieldsProps) {
   return (
     <>
-      <label htmlFor="admin-email">
-        <span className="field-label-title">
-          <ConsoleIcon name="mail" size={15} />
-          邮箱
-        </span>
-        <input
+      <Form.Item label="邮箱" required>
+        <Input
           id="admin-email"
-          type="email"
           autoComplete="username"
           maxLength={320}
+          prefix={<MailOutlined />}
+          placeholder="admin@example.com"
           required
+          type="email"
           value={credentials.email}
           onChange={(event) => setCredentials((current) => ({ ...current, email: event.target.value }))}
-          placeholder="admin@example.com"
         />
-      </label>
-      <label htmlFor="admin-password">
-        <span className="field-label-title">
-          <ConsoleIcon name="lock" size={15} />
-          密码
-        </span>
-        <input
+      </Form.Item>
+      <Form.Item label="密码" required>
+        <Input.Password
           id="admin-password"
-          type="password"
           autoComplete="current-password"
           minLength={12}
           maxLength={128}
+          prefix={<LockOutlined />}
           required
           value={credentials.password}
           onChange={(event) => setCredentials((current) => ({ ...current, password: event.target.value }))}
           placeholder="输入你的密码"
         />
-      </label>
+      </Form.Item>
     </>
   );
 }
@@ -167,15 +172,30 @@ function AdminCredentialFields({ credentials, setCredentials }: AdminCredentialF
 function FederatedAdminAccess({ error }: { error: string | null }) {
   const auth = useAuth();
   return (
-    <main className="auth-state" aria-live="polite">
-      <section className="auth-card">
-        <div className="eyebrow">Secure Access</div>
-        <h1>登录 Interview Agent 治理后台</h1>
-        <p>{error ?? '使用组织身份登录。系统会在登录后校验后台角色。'}</p>
-        <button className="button" type="button" onClick={() => void auth.signIn()}>
-          使用组织账号登录
-        </button>
-      </section>
-    </main>
+    <Layout className="auth-state" role="main" aria-live="polite">
+      <Layout.Content style={centeredContentStyle}>
+        <Card className="auth-card" styles={cardBodyWithoutPadding} variant="borderless">
+          <div className="eyebrow">Secure Access</div>
+          <h1>登录 Interview Agent 治理后台</h1>
+          {error ? (
+            <Alert message={error} showIcon type="error" />
+          ) : (
+            <p>使用组织身份登录。系统会在登录后校验后台角色。</p>
+          )}
+          <Button icon={<SafetyCertificateOutlined />} type="primary" onClick={() => void auth.signIn()}>
+            使用组织账号登录
+          </Button>
+        </Card>
+      </Layout.Content>
+    </Layout>
   );
 }
+
+const centeredContentStyle = {
+  display: 'grid',
+  placeItems: 'center',
+};
+
+const cardBodyWithoutPadding = {
+  body: { padding: 0 },
+};

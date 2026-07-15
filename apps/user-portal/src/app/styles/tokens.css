@@ -1,39 +1,40 @@
 :root {
   color-scheme: light;
-  --canvas: #f3f5fa;
+  --canvas: #fbfbfa;
   --background: var(--canvas);
   --surface: #ffffff;
-  --surface-subtle: #eef2f8;
+  --surface-subtle: #f5f7fa;
   --surface-muted: var(--surface-subtle);
   --surface-strong: #e2e8f3;
-  --outline: #dbe2ef;
+  --outline: #e0e5ec;
   --outline-strong: #b8c4d8;
   --ink: #0f172a;
   --text: var(--ink);
   --text-muted: #5c677d;
   --text-subtle: #8793a8;
-  --navy: #0b1426;
-  --navy-strong: #060d1a;
-  --navy-mid: #15233d;
-  --primary: #2f62ff;
-  --primary-strong: #1d4ed8;
-  --primary-soft: #eaf0ff;
-  --primary-glow: rgba(47, 98, 255, 0.16);
-  --success: #0f8a63;
-  --success-soft: #e6f7f0;
+  --navy: #071525;
+  --navy-strong: #040c16;
+  --navy-mid: #11253f;
+  --primary: #155eef;
+  --primary-strong: #0b4fd6;
+  --primary-soft: #edf3ff;
+  --primary-glow: rgba(21, 94, 239, 0.16);
+  --success: #12b981;
+  --success-soft: #eafaf3;
   --danger: #c93737;
   --danger-soft: #fff1f1;
   --warning: #b56a12;
   --warning-soft: #fff6e8;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 24px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
   --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.05);
   --shadow-raised: 0 8px 24px rgba(15, 23, 42, 0.08), 0 24px 48px rgba(15, 23, 42, 0.06);
   --shadow-focus: 0 0 0 3px var(--primary-glow);
-  --font-sans: var(--font-ui), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans:
+    var(--font-ui), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', monospace;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -49,9 +50,11 @@ html {
 body {
   min-width: 320px;
   margin: 0;
+  /* Agent 工作台底：冷色网格光 + 微弱信号色 */
   background:
-    radial-gradient(ellipse 80% 50% at 100% -10%, rgba(47, 98, 255, 0.09), transparent 50%),
-    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(15, 138, 99, 0.04), transparent 45%),
+    radial-gradient(ellipse 70% 45% at 100% -8%, rgba(47, 98, 255, 0.12), transparent 52%),
+    radial-gradient(ellipse 45% 35% at 0% 100%, rgba(34, 197, 94, 0.05), transparent 48%),
+    radial-gradient(ellipse 40% 30% at 70% 80%, rgba(99, 102, 241, 0.04), transparent 50%),
     var(--canvas);
   color: var(--text);
   font-family: var(--font-sans);

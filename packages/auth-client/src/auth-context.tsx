@@ -55,6 +55,7 @@ export function AuthProvider({ client, children }: AuthProviderProps) {
 }
 
 function useAuthController(client: BrowserAuthClient) {
+  // 首屏固定 loading，避免 SSR 与 sessionStorage 水合不一致；客户端 effect 再恢复会话
   const [state, setState] = useState<AuthState>(INITIAL_STATE);
   useEffect(() => initializeAuth(client, setState), [client]);
   const signIn = useCallback(() => runAuthAction(client.signIn.bind(client), setState), [client]);
@@ -79,12 +80,21 @@ function initializeAuth(client: BrowserAuthClient, setState: (state: AuthState) 
   const update = (state: AuthState) => {
     if (active) setState(state);
   };
-  void client
-    .initialize()
-    .then(update)
-    .catch((error: unknown) => {
-      update(failure(error));
-    });
+  // 客户端挂载后立即同步可恢复会话（local / development 几乎无感）
+  try {
+    const bootstrapped = client.bootstrapState();
+    update(bootstrapped);
+    if (bootstrapped.status === 'loading') {
+      void client
+        .initialize()
+        .then(update)
+        .catch((error: unknown) => {
+          update(failure(error));
+        });
+    }
+  } catch (error: unknown) {
+    update(failure(error));
+  }
   const unsubscribe = client.subscribe(update);
   return () => {
     active = false;
@@ -96,7 +106,6 @@ async function runAuthAction(
   action: () => Promise<AuthState | void>,
   setState: (state: AuthState) => void,
 ) {
-  setState(INITIAL_STATE);
   try {
     const state = await action();
     if (state) setState(state);

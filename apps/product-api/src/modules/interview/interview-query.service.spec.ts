@@ -2,7 +2,7 @@
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { PrismaService } from '../../common/database/prisma.service';
-import type { InterviewEventBus } from '../../common/events/interview-event.bus';
+import type { InterviewEventBus } from './realtime/interview-event.bus';
 import { InterviewQueryService } from './interview-query.service';
 
 const context = (overrides: Partial<ProductRequestContext> = {}): ProductRequestContext => ({

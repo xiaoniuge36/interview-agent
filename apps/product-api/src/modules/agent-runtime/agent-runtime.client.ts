@@ -1,4 +1,4 @@
-﻿import { Injectable, Logger } from '@nestjs/common';
+﻿import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   AgentRuntimeNextRequestSchema,
@@ -6,6 +6,7 @@ import {
 } from '@interview-agent/contracts';
 import { performance } from 'node:perf_hooks';
 import type { Environment } from '../../common/config/environment';
+import type { ProductRequestContext } from '../../common/context/request-context';
 import { invocationError, localFallback, runtimeResult } from './agent-runtime.fallback';
 import { httpFailure, parseRuntimeDecision, unavailableFailure } from './agent-runtime.response';
 import type {
@@ -14,6 +15,7 @@ import type {
   RuntimeFailure,
   RuntimeInvocationOutcome,
 } from './agent-runtime.types';
+import { UserModelRuntimeClient } from './user-model-runtime.client';
 
 const CONTRACT_VERSION = 'interview-runtime.v1' as const;
 const MAX_RETRY_DELAY_MS = 5_000;
@@ -31,7 +33,10 @@ export class AgentRuntimeClient {
   private readonly fallbackEnabled: boolean;
   private readonly token: string;
 
-  constructor(config: ConfigService<Environment, true>) {
+  constructor(
+    config: ConfigService<Environment, true>,
+    @Optional() private readonly userModels?: UserModelRuntimeClient,
+  ) {
     this.baseUrl = config.get('AGENT_RUNTIME_URL', { infer: true }).replace(/\/$/, '');
     this.timeoutMs = config.get('AGENT_RUNTIME_TIMEOUT_MS', { infer: true });
     this.maxAttempts = config.get('AGENT_RUNTIME_MAX_ATTEMPTS', { infer: true });
@@ -40,7 +45,8 @@ export class AgentRuntimeClient {
     this.token = config.get('INTERNAL_AGENT_TOKEN', { infer: true });
   }
 
-  async next(input: AgentNextInput): Promise<AgentNextResult> {
+  async next(input: AgentNextInput, context?: ProductRequestContext): Promise<AgentNextResult> {
+    if (context && this.userModels) return this.userModels.next({ context, input });
     const startedAt = performance.now();
     const request = AgentRuntimeNextRequestSchema.parse({
       contractVersion: CONTRACT_VERSION,

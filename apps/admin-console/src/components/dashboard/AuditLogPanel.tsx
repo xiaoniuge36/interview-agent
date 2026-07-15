@@ -1,4 +1,5 @@
 import type { AuditLogView } from '@interview-agent/contracts';
+import { Card, Empty, Space, Table, Tag, Typography, type TableColumnsType } from 'antd';
 import { useDeferredValue, useMemo, useState } from 'react';
 import type { SectionState } from '@/hooks/useAdminDashboard';
 import { AdminPagination, AdminTableToolbar } from './AdminTableControls';
@@ -15,22 +16,74 @@ const RESULT_OPTIONS = [
   { value: 'success', label: '成功' },
   { value: 'failure', label: '失败' },
 ] as const;
+const RESULT_COLORS: Record<AuditLogView['result'], string> = {
+  success: 'success',
+  failure: 'error',
+};
+
+const AUDIT_COLUMNS: TableColumnsType<AuditLogView> = [
+  {
+    title: '动作 / Trace ID',
+    key: 'action',
+    width: 260,
+    render: (_, log) => (
+      <Space direction="vertical" size={0}>
+        <Typography.Text strong>{log.action}</Typography.Text>
+        <Typography.Text code copyable={{ text: log.traceId }}>
+          {log.traceId}
+        </Typography.Text>
+      </Space>
+    ),
+  },
+  {
+    title: '资源',
+    key: 'resource',
+    width: 230,
+    render: (_, log) => `${log.resourceType} · ${log.resourceId}`,
+  },
+  {
+    title: '操作人',
+    key: 'actor',
+    width: 180,
+    render: (_, log) => `${log.actorId} · ${log.actorRole}`,
+  },
+  {
+    title: '结果',
+    key: 'result',
+    width: 100,
+    render: (_, log) => (
+      <Tag color={RESULT_COLORS[log.result]}>{log.result === 'failure' ? '失败' : '成功'}</Tag>
+    ),
+  },
+  {
+    title: '时间',
+    key: 'createdAt',
+    width: 180,
+    render: (_, log) => (
+      <Typography.Text type="secondary">
+        <time dateTime={log.createdAt}>{DATE_FORMATTER.format(new Date(log.createdAt))}</time>
+      </Typography.Text>
+    ),
+  },
+];
 
 export function AuditLogPanel({ state }: { state: SectionState<AuditLogView[]> }) {
   return (
-    <section id="section-6" className="card" aria-labelledby="audit-heading">
-      <div className="section-heading compact-heading">
-        <div>
-          <div className="eyebrow">Audit Trail</div>
-          <h2 id="audit-heading">审计日志</h2>
+    <section className="admin-page" id="section-6" aria-labelledby="audit-heading">
+      <Card className="admin-dense-card admin-table-card" size="small">
+        <div className="admin-page-heading">
+          <div>
+            <div className="eyebrow">Audit Trail</div>
+            <h2 id="audit-heading">审计日志</h2>
+          </div>
+          <p>记录治理动作、操作者、结果与跨服务追踪标识。</p>
         </div>
-        <p>记录治理动作、操作者、结果与跨服务追踪标识。</p>
-      </div>
-      {state.status === 'ready' ? (
-        <ReadyAuditTable logs={state.data} />
-      ) : (
-        <SectionFeedback state={state} loadingMessage="正在加载审计日志" />
-      )}
+        {state.status === 'ready' ? (
+          <ReadyAuditTable logs={state.data} />
+        ) : (
+          <SectionFeedback state={state} loadingMessage="正在加载审计日志" />
+        )}
+      </Card>
     </section>
   );
 }
@@ -79,51 +132,17 @@ function useAuditFilters(logs: AuditLogView[]) {
 }
 
 function AuditTable({ logs }: { logs: AuditLogView[] }) {
-  if (!logs.length) return <div className="empty-state compact-empty">没有匹配的审计日志。</div>;
+  if (!logs.length) {
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的记录" />;
+  }
   return (
-    <div className="table-scroll">
-      <table className="data-table">
-        <caption className="visually-hidden">治理审计日志</caption>
-        <thead>
-          <tr>
-            <th scope="col">动作</th>
-            <th scope="col">资源</th>
-            <th scope="col">操作者</th>
-            <th scope="col">结果</th>
-            <th scope="col">时间</th>
-          </tr>
-        </thead>
-        <tbody>
-          {logs.map((log) => (
-            <AuditRow key={log.id} log={log} />
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function AuditRow({ log }: { log: AuditLogView }) {
-  return (
-    <tr>
-      <td>
-        <strong>{log.action}</strong>
-        <code>{log.traceId}</code>
-      </td>
-      <td>
-        {log.resourceType} · {log.resourceId}
-      </td>
-      <td>
-        {log.actorId} · {log.actorRole}
-      </td>
-      <td>
-        <span className={log.result === 'failure' ? 'status danger' : 'status'}>
-          {log.result === 'failure' ? '失败' : '成功'}
-        </span>
-      </td>
-      <td>
-        <time dateTime={log.createdAt}>{DATE_FORMATTER.format(new Date(log.createdAt))}</time>
-      </td>
-    </tr>
+    <Table<AuditLogView>
+      columns={AUDIT_COLUMNS}
+      dataSource={logs}
+      pagination={false}
+      rowKey="id"
+      scroll={{ x: 900 }}
+      size="middle"
+    />
   );
 }

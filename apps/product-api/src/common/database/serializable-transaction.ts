@@ -16,7 +16,9 @@ export async function runSerializable<T>(
       });
     } catch (error) {
       lastError = error;
-      if (!isSerializationConflict(error) || attempt === MAX_SERIALIZABLE_ATTEMPTS) throw error;
+      if (!isRetryableTransactionError(error) || attempt === MAX_SERIALIZABLE_ATTEMPTS) {
+        throw error;
+      }
       await delay(RETRY_BASE_DELAY_MS * attempt);
     }
   }
@@ -27,8 +29,20 @@ export function isUniqueConstraintError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
 }
 
+function isRetryableTransactionError(error: unknown) {
+  return isSerializationConflict(error) || isTransactionStartTimeout(error);
+}
+
 function isSerializationConflict(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034';
+}
+
+function isTransactionStartTimeout(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2028' &&
+    error.message.includes('Unable to start a transaction in the given time')
+  );
 }
 
 function delay(milliseconds: number) {

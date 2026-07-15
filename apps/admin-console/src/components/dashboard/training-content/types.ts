@@ -1,12 +1,9 @@
-import type { CandidateQuestionDetail, CandidateReview } from '@interview-agent/contracts';
-import type { SectionState } from '@/hooks/useAdminDashboard';
+import type { CandidateQuestionDetail } from '@interview-agent/contracts';
 
 export type ChangeHandler = () => void;
 
 export type CandidateEditorProps = {
-  candidates: SectionState<CandidateReview[]>;
-  selectedCandidateId: string | null;
-  onCandidateSelect: (candidateId: string) => void;
+  candidateId: string;
   onChanged: ChangeHandler;
 };
 

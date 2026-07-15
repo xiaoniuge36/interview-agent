@@ -8,4 +8,5 @@ export * from './schemas/practice';
 export * from './schemas/interview';
 export * from './schemas/report';
 export * from './schemas/admin';
+export * from './schemas/model-credential';
 export * from './fixtures/seed-questions';
