@@ -42,6 +42,16 @@ describe('RolesGuard', () => {
     expect(guard.canActivate(contextFor(userContext))).toBe(true);
   });
 
+  it('allows a platform administrator through an administrator route', () => {
+    const guard = createGuard({ [ROLES_METADATA_KEY]: ['admin'] });
+    const platformContext: ProductRequestContext = {
+      ...userContext,
+      actor: { ...userContext.actor, role: 'platform_admin' },
+    };
+
+    expect(guard.canActivate(contextFor(platformContext))).toBe(true);
+  });
+
   it('denies a missing or mismatched identity', () => {
     const guard = createGuard({ [ROLES_METADATA_KEY]: ['admin'] });
     expect(() => guard.canActivate(contextFor(userContext))).toThrow(ForbiddenException);

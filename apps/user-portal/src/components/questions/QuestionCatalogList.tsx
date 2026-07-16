@@ -1,7 +1,9 @@
 import type { QuestionCatalogResponse } from '@interview-agent/contracts';
+import type { CSSProperties } from 'react';
 import type { CatalogQuestion } from './useQuestionPicker';
 
 const MAX_VISIBLE_TAGS = 4;
+const QUESTION_CARD_ANIMATION_STEPS = 10;
 
 type QuestionCatalogListProps = {
   catalog: QuestionCatalogResponse | null;
@@ -47,9 +49,12 @@ function QuestionCatalogCard({ question, number, selected, onToggle }: {
   onToggle: () => void;
 }) {
   return (
-    <article className={selected ? 'question-catalog-card selected' : 'question-catalog-card'}>
+    <article
+      className={selected ? 'question-catalog-card selected' : 'question-catalog-card'}
+      style={{ '--question-index': number % QUESTION_CARD_ANIMATION_STEPS } as CSSProperties}
+    >
       <button className="question-select-control" type="button" onClick={onToggle} aria-pressed={selected}>
-        <span>{selected ? '✓' : '+'}</span>{selected ? '已加入题单' : '加入题单'}
+        <span aria-hidden="true">{selected ? '✓' : '+'}</span>{selected ? '已加入' : '加入题单'}
       </button>
       <div className="question-card-number">Q{String(number).padStart(2, '0')}</div>
       <div className="question-card-content">

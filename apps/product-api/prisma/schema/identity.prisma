@@ -38,8 +38,12 @@ model User {
   tenantId  String
   subject   String
   role      ActorRole @default(user)
+  status    AccountStatus @default(active)
   email     String?
   name      String?
+  disabledAt DateTime?
+  disabledByUserId String?
+  lastSignedInAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -56,6 +60,8 @@ model User {
   @@unique([tenantId, id])
   @@unique([tenantId, subject])
   @@index([tenantId, role])
+  @@index([status, createdAt])
+  @@index([lastSignedInAt])
 }
 
 model UserProfile {

@@ -19,6 +19,7 @@ const actorFor = (role: Role, scopes: Action[] = [PROFILE_READ, PROFILE_WRITE]):
 const ownedResource: ResourceRef = { tenantId: TENANT_ID, ownerId: USER_ID };
 
 DescribePolicy();
+DescribePlatformPolicy();
 
 function DescribePolicy() {
   describe('PolicyService', () => {
@@ -66,6 +67,20 @@ function DescribePolicy() {
       expect(() => policy.assert(actorFor('user'), PROFILE_READ, { tenantId: TENANT_ID })).toThrow(
         ForbiddenException,
       );
+    });
+  });
+}
+
+function DescribePlatformPolicy() {
+  describe('PolicyService platform boundary', () => {
+    it('allows platform-only scopes across tenants without widening business resources', () => {
+      const policy = new PolicyService();
+      const platformActor = actorFor('platform_admin', ['account:read', PROFILE_READ]);
+
+      expect(
+        policy.can(platformActor, 'account:read', { tenantId: OTHER_TENANT_ID, platform: true }),
+      ).toBe(true);
+      expect(policy.can(platformActor, PROFILE_READ, { tenantId: OTHER_TENANT_ID })).toBe(false);
     });
   });
 }

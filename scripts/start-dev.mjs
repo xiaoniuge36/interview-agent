@@ -2,6 +2,7 @@
 
 import { existsSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -120,6 +121,48 @@ function runInfrastructure() {
   return true;
 }
 
+async function ensurePortsAvailable() {
+  const occupied = [];
+  for (const service of services) {
+    const probe = createServer();
+    try {
+      await listenOnPort(probe, service.port);
+    } catch (error) {
+      if (error?.code === 'EADDRINUSE' || error?.code === 'EACCES') {
+        occupied.push(`${service.label} ${service.port}`);
+      } else {
+        fail(`无法检查端口 ${service.port}：${error.message}`);
+        return false;
+      }
+    } finally {
+      if (probe.listening) probe.close();
+    }
+  }
+
+  if (occupied.length > 0) {
+    fail(`以下端口已被占用：${occupied.join('、')}。请先停止对应的旧开发服务。`);
+    return false;
+  }
+
+  return true;
+}
+
+function listenOnPort(server, port) {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const onError = (error) => {
+      server.removeListener('listening', onListening);
+      rejectPromise(error);
+    };
+    const onListening = () => {
+      server.removeListener('error', onError);
+      resolvePromise();
+    };
+    server.once('error', onError);
+    server.once('listening', onListening);
+    server.listen(port, '127.0.0.1');
+  });
+}
+
 function writeOutput(label, chunk, pending) {
   const lines = `${pending}${chunk.toString()}`.split(/\r?\n/);
   const nextPending = lines.pop() ?? '';
@@ -188,7 +231,11 @@ if (args.has('--help')) {
   printHelp();
 } else if (![...args].every((arg) => arg === '--infra')) {
   fail('存在未知参数，请使用 --help 查看支持的选项。');
-} else if (ensurePrerequisites() && (!args.has('--infra') || runInfrastructure())) {
+} else if (
+  ensurePrerequisites() &&
+  (await ensurePortsAvailable()) &&
+  (!args.has('--infra') || runInfrastructure())
+) {
   console.log('\nInterview Agent 开发环境启动中……');
   console.log('前端页面会在依赖就绪后自动可用，按 Ctrl+C 可全部停止。\n');
   for (const service of services) startService(service);

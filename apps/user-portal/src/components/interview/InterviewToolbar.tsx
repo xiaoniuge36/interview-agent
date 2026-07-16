@@ -1,4 +1,5 @@
 import type { JobIntentPayload } from '@interview-agent/contracts';
+import Link from 'next/link';
 import type { InterviewController } from '@/hooks/useInterviewController';
 
 type InterviewToolbarProps = {
@@ -33,7 +34,9 @@ export function InterviewToolbar({ jobs, controller }: InterviewToolbarProps) {
       >
         {controller.state.session ? '重新开始本轮' : '开始模拟面试'}
       </button>
+      <Link className="button secondary" href="/settings">
+        AI 模型设置
+      </Link>
     </div>
   );
 }
-

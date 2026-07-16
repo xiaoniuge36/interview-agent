@@ -24,7 +24,9 @@ async function bootstrapLocalAdmin() {
 
   const configuration = readLocalAdminConfiguration();
   if (!configuration) {
-    console.info('Skipped local administrator bootstrap because LOCAL_ADMIN_EMAIL is not configured.');
+    console.info(
+      'Skipped local administrator bootstrap because LOCAL_ADMIN_EMAIL is not configured.',
+    );
     return;
   }
 
@@ -46,12 +48,12 @@ async function upsertLocalAdmin(configuration: LocalAdminConfiguration) {
       create: {
         tenantId: tenant.id,
         subject: LOCAL_ADMIN_SUBJECT,
-        role: 'admin',
+        role: 'platform_admin',
         email: configuration.email,
         name: configuration.name,
       },
       update: {
-        role: 'admin',
+        role: 'platform_admin',
         email: configuration.email,
         name: configuration.name,
       },

@@ -7,7 +7,7 @@ import { AdminApiError, adminRequest } from '@/lib/api';
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
 
-export type SectionAccess = 'required' | 'admin-only';
+export type SectionAccess = 'required' | 'admin-only' | 'platform-only';
 export type SectionState<T> =
   | { status: 'loading' }
   | { status: 'ready'; data: T }

@@ -8,5 +8,6 @@
 @import './styles/management-overview.css';
 @import './styles/management-tables.css';
 @import './styles/states.css';
+@import './styles/admin-access.css';
 @import './styles/responsive.css';
 @import './styles/antd-admin.css';

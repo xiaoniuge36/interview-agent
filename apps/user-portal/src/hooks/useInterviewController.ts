@@ -1,6 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type Dispatch } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type Dispatch,
+} from 'react';
 import type {
   AgentStreamEvent,
   InterviewSession,
@@ -19,8 +27,10 @@ import {
   getInterviewReport,
   startInterview,
 } from '@/lib/interview-api';
+import { listModelCredentials } from '@/lib/model-credentials-api';
 import { interviewPlanForJob } from '@/lib/interview-roles';
 import { subscribeInterviewEvents } from '@/lib/interview-stream';
+import { hasUsableInterviewModel } from '@/components/interview/interview-readiness';
 
 const MILLISECONDS_PER_SECOND = 1_000;
 const INTERNAL_ERROR_TERMS = /Product API|Agent Runtime|\bSSE\b|\bRuntime\b/iu;
@@ -125,9 +135,18 @@ function useInterviewStream(dispatch: Dispatch<InterviewAction>) {
 }
 
 async function executeStart(context: StartContext) {
-  context.disconnect();
-  context.dispatch({ type: 'reset' });
+  context.dispatch({ type: 'busy', busy: true });
   try {
+    const credentials = await listModelCredentials();
+    if (!hasUsableInterviewModel(credentials)) {
+      context.dispatch({
+        type: 'failure',
+        message: '开始模拟前，请先在模型设置中连接、测试并设为默认模型。',
+      });
+      return;
+    }
+    context.disconnect();
+    context.dispatch({ type: 'reset' });
     const started = await startInterview({
       ...(context.selectedJobId ? { jobIntentId: context.selectedJobId } : {}),
       title: context.interviewPlan.title,
@@ -269,4 +288,3 @@ function errorMessage(error: unknown): string {
 }
 
 export type InterviewController = ReturnType<typeof useInterviewController>;
-

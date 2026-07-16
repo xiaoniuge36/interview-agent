@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   canStartQuestionSelection,
   clearQuestionSelection,
+  composeQuestionSelection,
+  composeQuestionSelectionWithFeedback,
   toggleQuestionSelection,
 } from './question-picker-model';
 
@@ -24,5 +26,25 @@ describe('自选题单状态', () => {
     expect(canStartQuestionSelection([])).toBe(false);
     expect(canStartQuestionSelection(['q-1'])).toBe(true);
     expect(clearQuestionSelection()).toEqual([]);
+  });
+
+  it('快速组卷按候选顺序去重并遵守目标数量', () => {
+    expect(composeQuestionSelection(['q-1'], ['q-1', 'q-2', 'q-2', 'q-3'], 3)).toEqual([
+      'q-1',
+      'q-2',
+      'q-3',
+    ]);
+  });
+
+  it('快速组卷不会超过题单上限', () => {
+    const candidates = Array.from({ length: 12 }, (_, index) => `q-${index}`);
+    expect(composeQuestionSelection([], candidates, 12)).toEqual(candidates.slice(0, 10));
+  });
+
+  it('快速组卷反馈使用实际生成的题目数', () => {
+    expect(composeQuestionSelectionWithFeedback([], ['q-1', 'q-2'], 5)).toEqual({
+      ids: ['q-1', 'q-2'],
+      message: '已按当前推荐顺序生成 2 题训练单。',
+    });
   });
 });

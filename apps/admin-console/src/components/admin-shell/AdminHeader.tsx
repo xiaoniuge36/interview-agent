@@ -23,7 +23,12 @@ import {
   type MenuProps,
 } from 'antd';
 import { useMemo, useState } from 'react';
-import { ADMIN_NAV_ITEMS, getAdminNavigationItem, type AdminView } from '@/components/admin-navigation';
+import {
+  ADMIN_NAV_ITEMS,
+  canAccessAdminView,
+  getAdminNavigationItem,
+  type AdminView,
+} from '@/components/admin-navigation';
 
 const { Header } = Layout;
 const MAX_SEARCH_RESULTS = 5;
@@ -41,6 +46,7 @@ type AdminHeaderProps = {
 
 export function AdminHeader(props: AdminHeaderProps) {
   const activeItem = getAdminNavigationItem(props.activeView);
+  const auth = useAuth();
   return (
     <Header className="admin-layout-header" aria-busy={props.isRefreshing}>
       <div className="admin-header-context">
@@ -56,7 +62,7 @@ export function AdminHeader(props: AdminHeaderProps) {
         </div>
       </div>
       <Space className="admin-header-actions" size="middle">
-        <HeaderSearch onViewChange={props.onViewChange} />
+        <HeaderSearch role={auth.identity?.role} onViewChange={props.onViewChange} />
         <RefreshSummary isRefreshing={props.isRefreshing} lastUpdatedAt={props.lastUpdatedAt} />
         <Button icon={<ReloadOutlined />} loading={props.isRefreshing} onClick={props.onRefresh}>
           刷新
@@ -67,9 +73,12 @@ export function AdminHeader(props: AdminHeaderProps) {
   );
 }
 
-function HeaderSearch({ onViewChange }: Pick<AdminHeaderProps, 'onViewChange'>) {
+function HeaderSearch({
+  role,
+  onViewChange,
+}: Pick<AdminHeaderProps, 'onViewChange'> & { role: string | undefined }) {
   const [query, setQuery] = useState('');
-  const matches = useMemo(() => findNavigationMatches(query), [query]);
+  const matches = useMemo(() => findNavigationMatches(query, role), [query, role]);
   return (
     <AutoComplete
       className="admin-header-search"
@@ -118,18 +127,23 @@ function SessionControl() {
   );
 }
 
-function findNavigationMatches(query: string) {
+function findNavigationMatches(query: string, role: string | undefined) {
   const keyword = query.trim().toLowerCase();
   if (!keyword) return [];
-  return ADMIN_NAV_ITEMS.filter(
-    (item) =>
+  return ADMIN_NAV_ITEMS.filter((item) => {
+    if (!canAccessAdminView(role, item.id)) return false;
+    return (
       item.label.toLowerCase().includes(keyword) ||
       item.helper.toLowerCase().includes(keyword) ||
-      item.heading.toLowerCase().includes(keyword),
-  ).slice(0, MAX_SEARCH_RESULTS);
+      item.heading.toLowerCase().includes(keyword)
+    );
+  }).slice(0, MAX_SEARCH_RESULTS);
 }
 
-async function signOut(signOutAction: () => Promise<void>, setSigningOut: (value: boolean) => void) {
+async function signOut(
+  signOutAction: () => Promise<void>,
+  setSigningOut: (value: boolean) => void,
+) {
   setSigningOut(true);
   try {
     await signOutAction();

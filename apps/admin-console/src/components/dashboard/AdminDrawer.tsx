@@ -1,7 +1,7 @@
 'use client';
 
 import { Drawer, Typography } from 'antd';
-import type { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
 type AdminDrawerProps = {
   children: ReactNode;

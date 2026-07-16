@@ -196,7 +196,7 @@ export class CandidateReviewService {
 
   private assertPublishPermission(context: ProductRequestContext) {
     this.assertReviewPermission(context);
-    if (context.actor.role !== 'admin') {
+    if (context.actor.role !== 'admin' && context.actor.role !== 'platform_admin') {
       throw new ForbiddenException({
         code: 'ROLE_NOT_ALLOWED',
         message: '当前身份无权访问该资源。',
@@ -223,7 +223,11 @@ function candidateUpdateData(
 }
 
 function assertBatchReviewable(
-  candidates: Array<{ id: string; importTaskId: string | null; publishedQuestionId: string | null }>,
+  candidates: Array<{
+    id: string;
+    importTaskId: string | null;
+    publishedQuestionId: string | null;
+  }>,
   candidateIds: string[],
 ) {
   if (candidates.length !== new Set(candidateIds).size) {

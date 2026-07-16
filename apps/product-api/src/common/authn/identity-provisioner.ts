@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import type { Actor, Role } from '@interview-agent/contracts';
 import type { Prisma } from '@prisma/client';
 import { actorFromIdentity } from '../context/request-context';
@@ -6,7 +6,7 @@ import { PrismaService } from '../database/prisma.service';
 import { runSerializable } from '../database/serializable-transaction';
 
 const ACTOR_SELECT = { id: true, subject: true, role: true, tenantId: true } as const;
-const IDENTITY_SELECT = { ...ACTOR_SELECT, email: true, name: true } as const;
+const IDENTITY_SELECT = { ...ACTOR_SELECT, email: true, name: true, status: true } as const;
 
 export type IdentityProvisioningInput = {
   subject: string;
@@ -23,6 +23,7 @@ type StoredIdentity = {
   role: string;
   email: string | null;
   name: string | null;
+  status: string;
 };
 
 @Injectable()
@@ -39,8 +40,9 @@ export class IdentityProvisioner {
     const user = await this.findUser(tenant.id, input.subject);
     if (!user) return this.createUser(tenant.id, input);
 
+    if (user.status === 'disabled') throw accountDisabled();
+
     const changes = changedUserData(user, input);
-    if (!Object.keys(changes).length) return actorFor(user);
     const updated = await this.prisma.user.update({
       where: { tenantId_id: { tenantId: user.tenantId, id: user.id } },
       data: changes,
@@ -96,25 +98,33 @@ function userCreateData(tenantId: string, input: IdentityProvisioningInput) {
     role: input.role,
     email: input.email ?? null,
     name: input.name ?? null,
+    lastSignedInAt: new Date(),
   };
 }
 
 function userInputData(input: IdentityProvisioningInput) {
   return {
-    role: input.role,
     ...(input.email === undefined ? {} : { email: input.email }),
     ...(input.name === undefined ? {} : { name: input.name }),
+    lastSignedInAt: new Date(),
   };
 }
 
 function changedUserData(user: StoredIdentity, input: IdentityProvisioningInput) {
   return {
-    ...(user.role === input.role ? {} : { role: input.role }),
     ...(input.email === undefined || user.email === input.email ? {} : { email: input.email }),
     ...(input.name === undefined || user.name === input.name ? {} : { name: input.name }),
+    lastSignedInAt: new Date(),
   };
 }
 
 function actorFor(user: Pick<StoredIdentity, 'id' | 'subject' | 'tenantId' | 'role'>): Actor {
   return actorFromIdentity({ ...user, role: user.role as Role });
+}
+
+function accountDisabled() {
+  return new ForbiddenException({
+    code: 'ACCOUNT_DISABLED',
+    message: '该账号已被停用。',
+  });
 }

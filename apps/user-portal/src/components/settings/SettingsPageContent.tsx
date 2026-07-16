@@ -5,13 +5,11 @@ import { useState } from 'react';
 import { useAuth } from '@interview-agent/auth-client';
 import { ModelConnectionsPanel } from './ModelConnectionsPanel';
 
-type SettingsTab = 'models' | 'account' | 'notifications';
+type SettingsTab = 'models' | 'account';
 
-const ANSWER_STYLE_DEFAULT = 50;
 const SETTINGS_LABELS: Record<SettingsTab, string> = {
   models: 'AI 模型',
-  account: '账户与安全',
-  notifications: '通知',
+  account: '账号与会话',
 };
 
 export function SettingsPageContent() {
@@ -29,6 +27,7 @@ export function SettingsPageContent() {
         tab={tab}
         createRequest={createRequest}
         displayName={auth.identity?.displayName}
+        showSignOut={auth.mode !== 'development'}
         onSignOut={() => void auth.signOut()}
       />
     </div>
@@ -41,7 +40,7 @@ function SettingsHeader({ showAdd, onAdd }: { showAdd: boolean; onAdd: () => voi
       <div>
         <h1 className="h1">设置中心</h1>
         <p className="muted-text">
-          在这里管理你的 AI 模型连接、账号安全与通知偏好，保障你的使用体验与数据安全。
+          管理你的 AI 模型连接与当前登录会话，所有状态都以服务端真实结果为准。
         </p>
       </div>
       {showAdd ? (
@@ -80,120 +79,78 @@ function SettingsBody({
   tab,
   createRequest,
   displayName,
+  showSignOut,
   onSignOut,
 }: {
   tab: SettingsTab;
   createRequest: number;
   displayName: string | undefined;
+  showSignOut: boolean;
   onSignOut: () => void;
 }) {
   if (tab === 'models')
     return (
       <>
         <ModelConnectionsPanel createRequest={createRequest} />
-        <ModelBehaviorPreferences />
+        <ModelUsageRules />
       </>
     );
-  if (tab === 'account')
-    return <AccountSecurityPanel displayName={displayName} onSignOut={onSignOut} />;
-  return <NotificationPanel />;
+  return (
+    <AccountSecurityPanel
+      displayName={displayName}
+      showSignOut={showSignOut}
+      onSignOut={onSignOut}
+    />
+  );
 }
 
-function ModelBehaviorPreferences() {
-  const [style, setStyle] = useState(ANSWER_STYLE_DEFAULT);
-  const [allowLearning, setAllowLearning] = useState(false);
+function ModelUsageRules() {
   return (
     <section
       className="settings-section behavior-preferences"
-      aria-labelledby="behavior-preferences-heading"
+      aria-labelledby="model-usage-heading"
     >
-      <BehaviorHeader />
-      <DefaultModelRow />
-      <AnswerStyleRow style={style} onChange={setStyle} />
-      <DataUsageRow checked={allowLearning} onChange={setAllowLearning} />
+      <header>
+        <h2 id="model-usage-heading" className="h2">
+          Agent 模型使用规则
+        </h2>
+        <p>只有设为默认且测试通过的连接，才会用于你的 AI 评价与模拟面试。</p>
+      </header>
+      <UsageRule
+        title="按次调用"
+        copy="密钥只在服务端为当前任务短暂解密，不会返回浏览器，也不会发送给其他用户。"
+      />
+      <UsageRule
+        title="变更后重新验证"
+        copy="修改模型名称、Base URL 或 API Key 后，连接会自动回到待测试状态。"
+      />
+      <UsageRule
+        title="失败可追溯"
+        copy="测试失败会保存脱敏错误码和测试时间，回答与训练记录不会因此丢失。"
+      />
     </section>
   );
 }
 
-function BehaviorHeader() {
-  return (
-    <header>
-      <h2 id="behavior-preferences-heading" className="h2">
-        模型行为偏好
-      </h2>
-      <p>偏好仅在当前浏览器会话中生效，不会覆盖你的模型连接配置。</p>
-    </header>
-  );
-}
-
-function DefaultModelRow() {
+function UsageRule({ title, copy }: { title: string; copy: string }) {
   return (
     <div className="behavior-row">
       <div>
-        <strong>默认使用模型</strong>
-        <span>Agent 会优先使用你标记为默认的已验证连接。</span>
+        <strong>{title}</strong>
+        <span>{copy}</span>
       </div>
-      <span className="behavior-select">
-        默认模型 <span aria-hidden="true">⌄</span>
-      </span>
+      <span className="chip success">已生效</span>
     </div>
-  );
-}
-
-function AnswerStyleRow({ style, onChange }: { style: number; onChange: (style: number) => void }) {
-  return (
-    <label className="behavior-row behavior-range">
-      <span>
-        <strong>回答风格</strong>
-        <span>根据练习需要调整回答的简洁程度。</span>
-      </span>
-      <span className="range-control">
-        <span>更精简</span>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={style}
-          onChange={(event) => onChange(Number(event.target.value))}
-          aria-label="回答风格"
-        />
-        <span>更详细</span>
-      </span>
-    </label>
-  );
-}
-
-function DataUsageRow({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <label className="behavior-row behavior-toggle">
-      <span>
-        <strong>数据使用许可</strong>
-        <span>允许模型利用本次对话上下文，生成更连贯的训练反馈。</span>
-      </span>
-      <span>
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(event) => onChange(event.target.checked)}
-        />
-        <i aria-hidden="true" />
-        <b>{checked ? '已开启' : '未开启'}</b>
-      </span>
-    </label>
   );
 }
 
 function AccountSecurityPanel({
   displayName,
+  showSignOut,
   onSignOut,
 }: {
   displayName: string | undefined;
+  showSignOut: boolean;
   onSignOut: () => void;
 }) {
   return (
@@ -206,7 +163,7 @@ function AccountSecurityPanel({
           账户与安全
         </h2>
         <p className="muted-text">
-          个人背景与求职目标统一维护在 Agent 档案中；模型密钥始终只以加密形式保存于服务端。
+          登录身份名称由账号系统提供；个人背景与求职目标独立维护在 Agent 档案中。
         </p>
       </header>
       <div className="account-settings-row">
@@ -223,68 +180,14 @@ function AccountSecurityPanel({
           <span>登录会话</span>
           <strong>当前设备已登录</strong>
         </div>
-        <button className="text-button danger" type="button" onClick={onSignOut}>
-          退出登录
-        </button>
+        {showSignOut ? (
+          <button className="text-button danger" type="button" onClick={onSignOut}>
+            退出登录
+          </button>
+        ) : (
+          <span className="muted-text small-text">开发身份固定</span>
+        )}
       </div>
     </section>
-  );
-}
-
-function NotificationPanel() {
-  const [practiceReminder, setPracticeReminder] = useState(true);
-  const [reportReminder, setReportReminder] = useState(false);
-  return (
-    <section
-      className="settings-section settings-placeholder"
-      aria-labelledby="notification-settings-heading"
-    >
-      <header>
-        <h2 id="notification-settings-heading" className="h2">
-          通知偏好
-        </h2>
-        <p className="muted-text">
-          以下开关仅影响当前浏览器会话中的提醒展示，不会替你发送外部消息。
-        </p>
-      </header>
-      <SettingsToggle
-        label="练习提醒"
-        description="在下一次打开工作台时提示未完成的练习。"
-        checked={practiceReminder}
-        onChange={setPracticeReminder}
-      />
-      <SettingsToggle
-        label="复盘提醒"
-        description="在报告生成后，在工作台中展示复盘入口。"
-        checked={reportReminder}
-        onChange={setReportReminder}
-      />
-    </section>
-  );
-}
-
-function SettingsToggle({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <label className="account-settings-row settings-toggle-row">
-      <span>
-        <strong>{label}</strong>
-        <small>{description}</small>
-      </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-    </label>
   );
 }

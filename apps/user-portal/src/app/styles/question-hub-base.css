@@ -89,6 +89,21 @@
   color: #fff;
   font-weight: 750;
 }
+.question-search-form button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.question-search-form button kbd {
+  padding: 3px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1;
+}
 .question-search-meta {
   display: flex;
   flex-wrap: wrap;

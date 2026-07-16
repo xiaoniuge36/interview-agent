@@ -15,9 +15,21 @@ export const metadata: Metadata = {
   description: '面向互联网全岗位的 AI 面试训练平台，帮助你把真实经历练成有说服力的能力证据。',
 };
 
+const THEME_BOOTSTRAP_SCRIPT = `(()=>{try{const key='offerpilot:theme-preferences:v1';const value=JSON.parse(localStorage.getItem(key)||'{}');const themes=['dawn','ocean','night'];const accents=['coral','blue','teal','amber'];const root=document.documentElement;root.dataset.theme=themes.includes(value.theme)?value.theme:'dawn';root.dataset.accent=accents.includes(value.accent)?value.accent:'coral';root.dataset.motion=value.motion===false?'off':'on';}catch{}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN" className={uiFont.variable}>
+    <html
+      lang="zh-CN"
+      className={uiFont.variable}
+      data-theme="dawn"
+      data-accent="coral"
+      data-motion="on"
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+      </head>
       <body>
         <WebProviders>{children}</WebProviders>
       </body>

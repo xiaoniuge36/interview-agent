@@ -8,6 +8,7 @@ import { jwtVerify } from 'jose';
 import type { ConfigService } from '@nestjs/config';
 import type { Environment } from '../config/environment';
 import type { PrismaService } from '../database/prisma.service';
+import { hashPassword } from './password-hash';
 import { LocalAuthService } from './local-auth.service';
 
 const JWT_SECRET = 'local-auth-test-secret-with-at-least-thirty-two-bytes';
@@ -59,7 +60,7 @@ describe('LocalAuthService', () => {
 
     expect(database.user.findUnique).toHaveBeenCalledWith({
       where: { tenantId_id: { tenantId: 'tenant-1', id: 'user-1' } },
-      select: { subject: true, role: true, email: true, name: true },
+      select: { subject: true, role: true, email: true, name: true, status: true },
     });
   });
 
@@ -70,6 +71,32 @@ describe('LocalAuthService', () => {
     await expect(service.register(registration)).rejects.toBeInstanceOf(
       ServiceUnavailableException,
     );
+  });
+});
+
+describe('LocalAuthService account status', () => {
+  it('拒绝已被禁用的本地账号登录', async () => {
+    const database = localAuthDatabase();
+    const service = localAuthService(database);
+    database.localCredential.findUnique.mockResolvedValue({
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      passwordHash: await hashPassword(registration.password),
+    });
+    database.tenant.findUnique.mockResolvedValue({ slug: 'member-avery' });
+    database.user.findUnique.mockResolvedValue({
+      subject: 'local:user-1',
+      role: 'user',
+      email: registration.email,
+      name: registration.name,
+      status: 'disabled',
+    });
+
+    await expect(
+      service.signIn({ email: registration.email, password: registration.password }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'ACCOUNT_DISABLED' }),
+    });
   });
 });
 
@@ -120,7 +147,7 @@ function localAuthDatabase() {
     ),
     localCredential: { findUnique: jest.fn() },
     tenant: { findUnique: jest.fn() },
-    user: { findUnique: jest.fn() },
+    user: { findUnique: jest.fn(), update: jest.fn() },
   };
 }
 
@@ -134,6 +161,13 @@ async function registerThenSignIn(service: LocalAuthService, database: LocalAuth
   });
   database.tenant.findUnique.mockResolvedValue({ slug: 'member-avery' });
   database.user.findUnique.mockResolvedValue({
+    subject: 'local:user-1',
+    role: 'user',
+    email: registration.email,
+    name: registration.name,
+    status: 'active',
+  });
+  database.user.update.mockResolvedValue({
     subject: 'local:user-1',
     role: 'user',
     email: registration.email,

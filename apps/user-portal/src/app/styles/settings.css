@@ -85,6 +85,7 @@
   min-width: 0;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
 }
 .provider-badge {
@@ -128,6 +129,15 @@
   border-color: #f0d8a9;
   background: #fff8ea;
   color: #a76608;
+}
+
+.credential-default {
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
 }
 .credential-more {
   width: 36px;
@@ -197,6 +207,15 @@
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 14px;
+}
+
+.credential-action-message {
+  margin: 0;
+  padding: 10px 24px 14px;
+  border-top: 1px solid #edf0f5;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 .connection-action {
   min-height: 42px;

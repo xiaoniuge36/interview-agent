@@ -2,12 +2,14 @@ import type { ConsoleIconName } from './ConsoleIcon';
 
 export const ADMIN_VIEW_IDS = [
   'overview',
+  'analytics',
   'imports',
   'questions',
   'content',
   'models',
   'runtime',
   'audit',
+  'accounts',
 ] as const;
 
 export type AdminView = (typeof ADMIN_VIEW_IDS)[number];
@@ -30,7 +32,7 @@ export type AdminNavigationItem = {
 };
 
 export type AdminNavigationGroup = {
-  id: 'overview' | 'content' | 'observability';
+  id: 'overview' | 'content' | 'observability' | 'platform';
   label: string;
   items: readonly AdminNavigationItem[];
 };
@@ -42,6 +44,13 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavigationItem[] = [
     helper: '关键指标',
     heading: '运营与治理全局视图',
     icon: 'overview',
+  },
+  {
+    id: 'analytics',
+    label: '数据看板',
+    helper: '全站运营数据',
+    heading: '平台运营数据看板',
+    icon: 'analytics',
   },
   {
     id: 'imports',
@@ -85,13 +94,20 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavigationItem[] = [
     heading: '治理审计与可追溯记录',
     icon: 'audit',
   },
+  {
+    id: 'accounts',
+    label: '账号管理',
+    helper: '全站账号治理',
+    heading: '平台账号管理',
+    icon: 'accounts',
+  },
 ];
 
 export const ADMIN_NAV_GROUPS: readonly AdminNavigationGroup[] = [
   {
     id: 'overview',
     label: '运营总览',
-    items: ADMIN_NAV_ITEMS.filter((item) => item.id === 'overview'),
+    items: ADMIN_NAV_ITEMS.filter((item) => ['overview', 'analytics'].includes(item.id)),
   },
   {
     id: 'content',
@@ -102,6 +118,11 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavigationGroup[] = [
     id: 'observability',
     label: '系统观测',
     items: ADMIN_NAV_ITEMS.filter((item) => ['models', 'runtime', 'audit'].includes(item.id)),
+  },
+  {
+    id: 'platform',
+    label: '平台治理',
+    items: ADMIN_NAV_ITEMS.filter((item) => item.id === 'accounts'),
   },
 ];
 
@@ -116,9 +137,24 @@ const LEGACY_HASHES: Readonly<Record<string, AdminView>> = {
 };
 
 const IMPORT_TASK_ID_MAX_LENGTH = 160;
+const REVIEWER_VIEWS = new Set<AdminView>(['overview', 'imports', 'questions', 'content']);
 
 export function isAdminView(value: string): value is AdminView {
   return ADMIN_VIEW_IDS.some((view) => view === value);
+}
+
+export function isPlatformView(view: AdminView): boolean {
+  return view === 'analytics' || view === 'accounts';
+}
+
+export function canAccessAdminView(role: string | undefined, view: AdminView): boolean {
+  if (role === 'platform_admin') return true;
+  if (role === 'admin') return !isPlatformView(view);
+  return role === 'question_reviewer' && REVIEWER_VIEWS.has(view);
+}
+
+export function resolveAdminViewForRole(role: string | undefined, view: AdminView): AdminView {
+  return canAccessAdminView(role, view) ? view : 'overview';
 }
 
 export function adminViewFromHash(hash: string): AdminView {

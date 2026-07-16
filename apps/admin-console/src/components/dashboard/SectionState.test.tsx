@@ -33,4 +33,14 @@ describe('SectionFeedback', () => {
     expect(markup).not.toContain('ant-alert');
     expect(markup).not.toContain('服务暂时不可用');
   });
+
+  it('uses a platform-specific permission message for global governance pages', () => {
+    const markup = renderToStaticMarkup(
+      createElement(SectionFeedback, {
+        state: { status: 'forbidden', access: 'platform-only' },
+      }),
+    );
+
+    expect(markup).toContain('仅平台管理员可见');
+  });
 });

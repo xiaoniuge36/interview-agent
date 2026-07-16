@@ -1,45 +1,131 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req, Res } from '@nestjs/common';
 import {
   AgentRunListQuerySchema,
+  AccountListQuerySchema,
   AuditLogListQuerySchema,
   BatchCandidateReviewInputSchema,
   CandidateReviewListQuerySchema,
   ModelProfileListQuerySchema,
+  PlatformDashboardQuerySchema,
   PublishCandidateQuestionInputSchema,
   QuestionListQuerySchema,
+  ResetLocalPasswordInputSchema,
+  UpdateAccountRoleInputSchema,
+  UpdateAccountStatusInputSchema,
   UpdateCandidateQuestionInputSchema,
 } from '@interview-agent/contracts';
 import type { Response } from 'express';
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
-import { CandidateReviewService } from '../content-review/candidate-review.service';
 import {
+  renderAccountExportCsv,
   renderAgentRunExportCsv,
   renderAuditLogExportCsv,
   renderCandidateExportCsv,
   renderModelProfileExportCsv,
   renderQuestionExportCsv,
 } from './admin-export-csv';
-import { AdminQueryService } from './admin-query.service';
-import { AdminService } from './admin.service';
+import {
+  ADMIN_CONTROLLER_SERVICES,
+  type AdminControllerServices,
+} from './admin-controller-services';
 
 @Roles('admin', 'question_reviewer')
 @Controller('admin')
 export class AdminController {
   constructor(
-    private readonly service: AdminService,
-    private readonly candidatesService: CandidateReviewService,
-    private readonly queryService: AdminQueryService,
+    @Inject(ADMIN_CONTROLLER_SERVICES)
+    private readonly services: AdminControllerServices,
   ) {}
+
+  @Roles('platform_admin')
+  @Get('platform/dashboard')
+  platformDashboard(@Req() request: ProductRequest, @Query() query: unknown) {
+    return this.services.platformDashboard.dashboard(
+      request.context,
+      PlatformDashboardQuerySchema.parse(query),
+    );
+  }
+
+  @Roles('platform_admin')
+  @Get('accounts/query')
+  queryAccounts(@Req() request: ProductRequest, @Query() query: unknown) {
+    return this.services.accounts.query(request.context, AccountListQuerySchema.parse(query));
+  }
+
+  @Roles('platform_admin')
+  @Get('accounts/export')
+  async exportAccounts(
+    @Req() request: ProductRequest,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const rows = await this.services.accounts.export(
+      request.context,
+      AccountListQuerySchema.parse(query),
+    );
+    return sendCsv(response, 'accounts.csv', renderAccountExportCsv(rows));
+  }
+
+  @Roles('platform_admin')
+  @Get('accounts/:id')
+  accountDetail(@Req() request: ProductRequest, @Param('id') accountId: string) {
+    return this.services.accounts.detail(request.context, accountId);
+  }
+
+  @Roles('platform_admin')
+  @Patch('accounts/:id/role')
+  updateAccountRole(
+    @Req() request: ProductRequest,
+    @Param('id') accountId: string,
+    @Body() body: unknown,
+  ) {
+    return this.services.accounts.updateRole(
+      request.context,
+      accountId,
+      UpdateAccountRoleInputSchema.parse(body),
+    );
+  }
+
+  @Roles('platform_admin')
+  @Patch('accounts/:id/status')
+  updateAccountStatus(
+    @Req() request: ProductRequest,
+    @Param('id') accountId: string,
+    @Body() body: unknown,
+  ) {
+    return this.services.accounts.updateStatus(
+      request.context,
+      accountId,
+      UpdateAccountStatusInputSchema.parse(body),
+    );
+  }
+
+  @Roles('platform_admin')
+  @Patch('accounts/:id/local-password')
+  resetAccountLocalPassword(
+    @Req() request: ProductRequest,
+    @Param('id') accountId: string,
+    @Body() body: unknown,
+  ) {
+    return this.services.accounts.resetLocalPassword(
+      request.context,
+      accountId,
+      ResetLocalPasswordInputSchema.parse(body),
+    );
+  }
 
   @Get('dashboard')
   dashboard(@Req() request: ProductRequest) {
-    return this.service.dashboard(request.context);
+    return this.services.admin.dashboard(request.context);
   }
 
   @Get('questions/query')
   queryQuestions(@Req() request: ProductRequest, @Query() query: unknown) {
-    return this.queryService.queryQuestions(request.context, QuestionListQuerySchema.parse(query));
+    return this.services.query.queryQuestions(
+      request.context,
+      QuestionListQuerySchema.parse(query),
+    );
   }
 
   @Get('questions/export')
@@ -48,7 +134,7 @@ export class AdminController {
     @Query() query: unknown,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const rows = await this.queryService.exportQuestions(
+    const rows = await this.services.query.exportQuestions(
       request.context,
       QuestionListQuerySchema.parse(query),
     );
@@ -57,12 +143,12 @@ export class AdminController {
 
   @Get('questions')
   questions(@Req() request: ProductRequest) {
-    return this.service.questions(request.context);
+    return this.services.admin.questions(request.context);
   }
 
   @Get('candidates/query')
   queryCandidates(@Req() request: ProductRequest, @Query() query: unknown) {
-    return this.queryService.queryCandidates(
+    return this.services.query.queryCandidates(
       request.context,
       CandidateReviewListQuerySchema.parse(query),
     );
@@ -74,7 +160,7 @@ export class AdminController {
     @Query() query: unknown,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const rows = await this.queryService.exportCandidates(
+    const rows = await this.services.query.exportCandidates(
       request.context,
       CandidateReviewListQuerySchema.parse(query),
     );
@@ -83,12 +169,12 @@ export class AdminController {
 
   @Get('candidates')
   candidates(@Req() request: ProductRequest) {
-    return this.service.candidates(request.context);
+    return this.services.admin.candidates(request.context);
   }
 
   @Patch('candidates/batch-review')
   batchReviewCandidates(@Req() request: ProductRequest, @Body() body: unknown) {
-    return this.candidatesService.batchReview(
+    return this.services.candidates.batchReview(
       request.context,
       BatchCandidateReviewInputSchema.parse(body),
     );
@@ -96,7 +182,7 @@ export class AdminController {
 
   @Get('candidates/:id')
   candidate(@Req() request: ProductRequest, @Param('id') candidateId: string) {
-    return this.candidatesService.detail(request.context, candidateId);
+    return this.services.candidates.detail(request.context, candidateId);
   }
 
   @Patch('candidates/:id')
@@ -105,7 +191,7 @@ export class AdminController {
     @Param('id') candidateId: string,
     @Body() body: unknown,
   ) {
-    return this.candidatesService.update(
+    return this.services.candidates.update(
       request.context,
       candidateId,
       UpdateCandidateQuestionInputSchema.parse(body),
@@ -119,7 +205,7 @@ export class AdminController {
     @Param('id') candidateId: string,
     @Body() body: unknown,
   ) {
-    return this.candidatesService.publish(
+    return this.services.candidates.publish(
       request.context,
       candidateId,
       PublishCandidateQuestionInputSchema.parse(body),
@@ -129,7 +215,7 @@ export class AdminController {
   @Roles('admin')
   @Get('model-profiles/query')
   queryModelProfiles(@Req() request: ProductRequest, @Query() query: unknown) {
-    return this.queryService.queryModelProfiles(
+    return this.services.query.queryModelProfiles(
       request.context,
       ModelProfileListQuerySchema.parse(query),
     );
@@ -142,7 +228,7 @@ export class AdminController {
     @Query() query: unknown,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const rows = await this.queryService.exportModelProfiles(
+    const rows = await this.services.query.exportModelProfiles(
       request.context,
       ModelProfileListQuerySchema.parse(query),
     );
@@ -152,13 +238,16 @@ export class AdminController {
   @Roles('admin')
   @Get('model-profiles')
   modelProfiles(@Req() request: ProductRequest) {
-    return this.service.modelProfiles(request.context);
+    return this.services.admin.modelProfiles(request.context);
   }
 
   @Roles('admin')
   @Get('agent-runs/query')
   queryAgentRuns(@Req() request: ProductRequest, @Query() query: unknown) {
-    return this.queryService.queryAgentRuns(request.context, AgentRunListQuerySchema.parse(query));
+    return this.services.query.queryAgentRuns(
+      request.context,
+      AgentRunListQuerySchema.parse(query),
+    );
   }
 
   @Roles('admin')
@@ -168,7 +257,7 @@ export class AdminController {
     @Query() query: unknown,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const rows = await this.queryService.exportAgentRuns(
+    const rows = await this.services.query.exportAgentRuns(
       request.context,
       AgentRunListQuerySchema.parse(query),
     );
@@ -178,13 +267,16 @@ export class AdminController {
   @Roles('admin')
   @Get('agent-runs')
   agentRuns(@Req() request: ProductRequest) {
-    return this.service.agentRuns(request.context);
+    return this.services.admin.agentRuns(request.context);
   }
 
   @Roles('admin')
   @Get('audit-logs/query')
   queryAuditLogs(@Req() request: ProductRequest, @Query() query: unknown) {
-    return this.queryService.queryAuditLogs(request.context, AuditLogListQuerySchema.parse(query));
+    return this.services.query.queryAuditLogs(
+      request.context,
+      AuditLogListQuerySchema.parse(query),
+    );
   }
 
   @Roles('admin')
@@ -194,7 +286,7 @@ export class AdminController {
     @Query() query: unknown,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const rows = await this.queryService.exportAuditLogs(
+    const rows = await this.services.query.exportAuditLogs(
       request.context,
       AuditLogListQuerySchema.parse(query),
     );
@@ -204,7 +296,7 @@ export class AdminController {
   @Roles('admin')
   @Get('audit-logs')
   auditLogs(@Req() request: ProductRequest) {
-    return this.service.auditLogs(request.context);
+    return this.services.admin.auditLogs(request.context);
   }
 }
 

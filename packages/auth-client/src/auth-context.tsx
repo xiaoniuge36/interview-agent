@@ -106,6 +106,7 @@ async function runAuthAction(
   action: () => Promise<AuthState | void>,
   setState: (state: AuthState) => void,
 ) {
+  setState(INITIAL_STATE);
   try {
     const state = await action();
     if (state) setState(state);

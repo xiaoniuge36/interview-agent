@@ -5,6 +5,7 @@ export const RoleSchema = z.enum([
   'user',
   'question_reviewer',
   'admin',
+  'platform_admin',
   'support',
   'agent_runtime',
 ]);
@@ -33,6 +34,9 @@ export const ActionSchema = z.enum([
   'model_credential:test',
   'model:manage',
   'audit:read',
+  'analytics:read',
+  'account:read',
+  'account:write',
   'support:access',
 ]);
 

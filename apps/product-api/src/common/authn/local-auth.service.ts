@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   ServiceUnavailableException,
   UnauthorizedException,
@@ -104,11 +105,17 @@ export class LocalAuthService {
         where: {
           tenantId_id: { tenantId: credential.tenantId, id: credential.userId },
         },
-        select: { subject: true, role: true, email: true, name: true },
+        select: { subject: true, role: true, email: true, name: true, status: true },
       }),
     ]);
     if (!tenant || !user) throw invalidCredentials();
-    return this.createSession({ tenant, user });
+    if (user.status === 'disabled') throw accountDisabled();
+    const updatedUser = await this.prisma.user.update({
+      where: { tenantId_id: { tenantId: credential.tenantId, id: credential.userId } },
+      data: { lastSignedInAt: new Date() },
+      select: { subject: true, role: true, email: true, name: true },
+    });
+    return this.createSession({ tenant, user: updatedUser });
   }
 
   private async createSession(account: SessionAccount): Promise<LocalAuthSession> {
@@ -164,5 +171,12 @@ function invalidCredentials() {
   return new UnauthorizedException({
     code: 'INVALID_CREDENTIALS',
     message: '邮箱或密码不正确。',
+  });
+}
+
+function accountDisabled() {
+  return new ForbiddenException({
+    code: 'ACCOUNT_DISABLED',
+    message: '该账号已被停用。',
   });
 }

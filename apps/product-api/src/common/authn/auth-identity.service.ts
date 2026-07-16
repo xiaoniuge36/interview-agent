@@ -16,11 +16,11 @@ const TenantClaimSchema = z
 const IdentityClaimsSchema = z.object({
   sub: z.string().trim().min(1).max(IDENTITY_TEXT_MAX_LENGTH),
   tenant_id: TenantClaimSchema,
-  role: z.enum(['user', 'question_reviewer', 'admin', 'support']),
+  role: z.enum(['user', 'question_reviewer', 'admin', 'platform_admin', 'support']),
   email: z.string().email().max(EMAIL_MAX_LENGTH).optional(),
   name: z.string().trim().min(1).max(IDENTITY_TEXT_MAX_LENGTH).optional(),
 });
-const DevelopmentActorSchema = z.enum(['user', 'admin']);
+const DevelopmentActorSchema = z.enum(['user', 'admin', 'platform_admin']);
 
 type IdentityClaims = z.infer<typeof IdentityClaimsSchema>;
 
@@ -52,12 +52,7 @@ export class AuthIdentityService {
     if (!result.success) {
       throw unauthorized('INVALID_DEVELOPMENT_IDENTITY', '开发身份仅允许 user 或 admin。');
     }
-    return {
-      sub: result.data === 'admin' ? 'demo-admin' : 'demo-user',
-      tenant_id: 'demo',
-      role: result.data,
-      name: result.data === 'admin' ? 'Demo Admin' : 'Demo User',
-    };
+    return developmentIdentity(result.data);
   }
 
   private async tokenIdentity(
@@ -98,6 +93,23 @@ export class AuthIdentityService {
     });
     return verified.payload;
   }
+}
+
+function developmentIdentity(role: z.infer<typeof DevelopmentActorSchema>): IdentityClaims {
+  if (role === 'platform_admin') {
+    return {
+      sub: 'demo-platform-admin',
+      tenant_id: 'demo',
+      role,
+      name: 'Demo Platform Admin',
+    };
+  }
+  return {
+    sub: role === 'admin' ? 'demo-admin' : 'demo-user',
+    tenant_id: 'demo',
+    role,
+    name: role === 'admin' ? 'Demo Admin' : 'Demo User',
+  };
 }
 
 function provisioningInput(identity: IdentityClaims): IdentityProvisioningInput {

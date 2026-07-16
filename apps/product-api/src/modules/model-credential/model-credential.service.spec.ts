@@ -1,4 +1,5 @@
 import type { ProductRequestContext } from '../../common/context/request-context';
+import { ModelProviderError } from './model-provider.client';
 import { ModelCredentialService } from './model-credential.service';
 
 const context: ProductRequestContext = {
@@ -38,8 +39,10 @@ function createService() {
   const transaction = {
     userModelCredential: {
       updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      findFirst: jest.fn().mockResolvedValue(credentialRecord),
       create: jest.fn().mockResolvedValue(credentialRecord),
       update: jest.fn().mockResolvedValue({ ...credentialRecord, status: 'verified' }),
+      delete: jest.fn().mockResolvedValue(credentialRecord),
     },
   };
   const prisma = {
@@ -68,7 +71,7 @@ function createService() {
   return { service, transaction, prisma, crypto, provider };
 }
 
-describe('ModelCredentialService', () => {
+describe('ModelCredentialService storage', () => {
   it('encrypts a user key before persisting and returns only a masked view', async () => {
     const { service, transaction, crypto } = createService();
 
@@ -82,7 +85,10 @@ describe('ModelCredentialService', () => {
     expect(crypto.encrypt).toHaveBeenCalledWith('sk-real-secret');
     expect(transaction.userModelCredential.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ ciphertext: Buffer.from('ciphertext'), keyHint: '••••cret' }),
+        data: expect.objectContaining({
+          ciphertext: Buffer.from('ciphertext'),
+          keyHint: '••••cret',
+        }),
       }),
     );
     expect(result).toEqual(expect.objectContaining({ id: 'credential-1', keyHint: '••••7K9m' }));
@@ -106,7 +112,9 @@ describe('ModelCredentialService', () => {
     );
     expect(result.apiKey).toBe('sk-real-secret');
   });
+});
 
+describe('ModelCredentialService connection tests', () => {
   it('tests an owned connection with decrypted key and persists the verified status', async () => {
     const { service, transaction, provider } = createService();
 
@@ -119,5 +127,63 @@ describe('ModelCredentialService', () => {
       expect.objectContaining({ data: expect.objectContaining({ status: 'verified' }) }),
     );
     expect(result).toEqual(expect.objectContaining({ status: 'verified' }));
+  });
+
+  it('persists a failed connection test and returns an actionable provider error', async () => {
+    const { service, transaction, provider } = createService();
+    provider.testConnection.mockRejectedValue(new ModelProviderError('MODEL_PROVIDER_AUTH_FAILED'));
+
+    await expect(service.testConnection(context, 'credential-1')).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'MODEL_PROVIDER_AUTH_FAILED',
+        message: '模型服务拒绝了当前密钥，请检查 API Key 后重试。',
+      }),
+    });
+    expect(transaction.userModelCredential.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'failed',
+          lastErrorCode: 'MODEL_PROVIDER_AUTH_FAILED',
+          lastTestedAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
+});
+
+describe('ModelCredentialService lifecycle', () => {
+  it('requires a new test after changing model connection details', async () => {
+    const { service, transaction } = createService();
+
+    await service.update(context, 'credential-1', {
+      model: 'gpt-4.1-mini',
+      baseUrl: 'https://gateway.example.com/v1',
+    });
+
+    expect(transaction.userModelCredential.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          model: 'gpt-4.1-mini',
+          baseUrl: 'https://gateway.example.com/v1',
+          status: 'unverified',
+          lastErrorCode: null,
+          lastTestedAt: null,
+        }),
+      }),
+    );
+  });
+
+  it('promotes another verified connection after deleting the default one', async () => {
+    const { service, transaction } = createService();
+    transaction.userModelCredential.findFirst
+      .mockResolvedValueOnce(credentialRecord)
+      .mockResolvedValueOnce({ ...credentialRecord, id: 'credential-2', isDefault: false });
+
+    await service.remove(context, 'credential-1');
+
+    expect(transaction.userModelCredential.update).toHaveBeenCalledWith({
+      where: { tenantId_id: { tenantId: 'tenant-1', id: 'credential-2' } },
+      data: { isDefault: true },
+    });
   });
 });

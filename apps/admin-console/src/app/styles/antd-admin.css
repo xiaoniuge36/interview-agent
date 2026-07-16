@@ -195,6 +195,24 @@
   justify-content: flex-end;
 }
 
+.platform-analytics-content {
+  display: grid;
+  gap: 12px;
+}
+
+.platform-analytics-subtitle {
+  margin-top: 18px;
+}
+
+.account-table-toolbar .ant-select,
+.account-table-toolbar .ant-input {
+  min-width: 132px;
+}
+
+.account-table-toolbar .ant-input {
+  min-width: 220px;
+}
+
 .admin-table-pagination {
   justify-content: flex-end;
   padding-top: 12px;

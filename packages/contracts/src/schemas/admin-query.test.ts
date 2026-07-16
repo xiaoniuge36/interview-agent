@@ -100,6 +100,73 @@ test('audit log query supports result filtering', () => {
   assert.deepEqual(parsed, { page: 1, pageSize: 20, result: 'failure' });
 });
 
+test('platform dashboard contracts default the period and validate real aggregate metrics', () => {
+  assert.deepEqual(getSchema('PlatformDashboardQuerySchema').parse({}), { period: '7d' });
+  const dashboard = {
+    period: '7d',
+    range: { startAt: '2026-07-09T00:00:00.000Z', endAt: '2026-07-16T00:00:00.000Z' },
+    accounts: {
+      total: 8,
+      created: 3,
+      active: 2,
+      disabled: 1,
+      tenants: 5,
+      admin: 2,
+      users: 6,
+    },
+    content: { imports: 4, pendingCandidates: 3, publishedQuestions: 7, failedImports: 1 },
+    training: { interviews: 6, reports: 4, practiceSubmissions: 5, practiceReports: 3 },
+    runtime: {
+      runs: 10,
+      successRate: 90,
+      schemaPassRate: 80,
+      averageLatencyMs: 342,
+      fallbacks: 1,
+      recentFailures: [],
+    },
+  };
+
+  assert.deepEqual(getSchema('PlatformDashboardSchema').parse(dashboard), dashboard);
+  assert.equal(
+    getSchema('PlatformDashboardSchema').safeParse({
+      ...dashboard,
+      runtime: { ...dashboard.runtime, successRate: 101 },
+    }).success,
+    false,
+  );
+});
+
+test('account governance contracts normalize filters and reject unmanaged roles', () => {
+  assert.deepEqual(
+    getSchema('AccountListQuerySchema').parse({
+      keyword: '  Avery  ',
+      kind: 'admin',
+      role: 'platform_admin',
+      status: 'disabled',
+      authSource: 'local',
+      tenantKeyword: '  system  ',
+    }),
+    {
+      page: 1,
+      pageSize: 20,
+      keyword: 'Avery',
+      kind: 'admin',
+      role: 'platform_admin',
+      status: 'disabled',
+      authSource: 'local',
+      tenantKeyword: 'system',
+    },
+  );
+  assert.equal(
+    getSchema('UpdateAccountRoleInputSchema').safeParse({ role: 'agent_runtime' }).success,
+    false,
+  );
+  assert.equal(
+    getSchema('ResetLocalPasswordInputSchema').safeParse({ password: '' }).success,
+    false,
+  );
+});
+
 test('admin page schema validates the item collection and metadata', () => {
   const schema = createPageSchema(contracts.QuestionSchema);
   const parsed = schema.parse({

@@ -206,16 +206,25 @@ function userManagerSettings(config: OidcConfig): UserManagerSettings {
 }
 
 function developmentState(config: BrowserAuthConfig): AuthState {
-  const isAdmin = config.developmentActor === 'admin';
+  const identity = developmentIdentity(config.developmentActor);
   return {
     status: 'authenticated',
     identity: {
-      subject: isAdmin ? 'demo-admin' : 'demo-user',
-      displayName: isAdmin ? 'Demo Admin' : 'Demo User',
+      subject: identity.subject,
+      displayName: identity.displayName,
       role: config.developmentActor,
     },
     error: null,
   };
+}
+
+function developmentIdentity(actor: BrowserAuthConfig['developmentActor']) {
+  if (actor === 'platform_admin') {
+    return { subject: 'demo-platform-admin', displayName: 'Demo Platform Admin' };
+  }
+  return actor === 'admin'
+    ? { subject: 'demo-admin', displayName: 'Demo Admin' }
+    : { subject: 'demo-user', displayName: 'Demo User' };
 }
 
 function authenticatedState(user: User): AuthState {

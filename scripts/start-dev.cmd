@@ -1,5 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0.."
-pnpm dev:local %*
-if errorlevel 1 pause
+call pnpm dev:local %*
+set "exitCode=%errorlevel%"
+if not "%exitCode%"=="0" pause
+exit /b %exitCode%

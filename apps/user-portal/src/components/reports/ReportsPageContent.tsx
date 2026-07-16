@@ -1,9 +1,18 @@
 'use client';
 
 import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 import { WorkspaceGate } from '@/components/workspace/WorkspaceGate';
+import { interviewStageLabel } from '@/components/interview/interview-labels';
+import { getInterviewReport, listInterviews } from '@/lib/interview-api';
 import { interviewPlanForJob } from '@/lib/interview-roles';
-import type { JobIntentPayload, ProfilePayload } from '@interview-agent/contracts';
+import type {
+  InterviewReport,
+  InterviewSession,
+  JobIntentPayload,
+  ProfilePayload,
+} from '@interview-agent/contracts';
+import { latestReportReadyInterview } from './reports-model';
 
 const FOCUS_PREVIEW = 3;
 
@@ -21,6 +30,7 @@ function ReportsBody(props: { profile: ProfilePayload; jobs: JobIntentPayload[] 
   const hasProfile = Boolean(props.profile.profile);
   const hasJob = Boolean(job);
   const focusPreview = plan.focusTags.slice(0, FOCUS_PREVIEW).join(' · ') || '—';
+  const latest = useLatestInterviewReport();
 
   return (
     <div className="workspace page-workspace">
@@ -33,10 +43,51 @@ function ReportsBody(props: { profile: ProfilePayload; jobs: JobIntentPayload[] 
           jobRole={job?.intent.targetRole}
           focusPreview={focusPreview}
         />
-        <EmptyReportPanel />
+        <ReportDelivery state={latest} />
       </div>
     </div>
   );
+}
+
+type LatestReportState = {
+  interview: InterviewSession | null;
+  report: InterviewReport | null;
+  status: 'empty' | 'loading' | 'ready' | 'error';
+  reload: () => void;
+};
+
+function useLatestInterviewReport(): LatestReportState {
+  const [interview, setInterview] = useState<InterviewSession | null>(null);
+  const [report, setReport] = useState<InterviewReport | null>(null);
+  const [status, setStatus] = useState<LatestReportState['status']>('loading');
+  const [request, setRequest] = useState(0);
+  const reload = useCallback(() => setRequest((value) => value + 1), []);
+  useEffect(() => {
+    let active = true;
+    setStatus('loading');
+    void listInterviews()
+      .then(async (interviews) => {
+        const latest = latestReportReadyInterview(interviews);
+        if (!active) return;
+        setInterview(latest);
+        if (!latest) {
+          setReport(null);
+          setStatus('empty');
+          return;
+        }
+        const next = await getInterviewReport(latest.id);
+        if (!active) return;
+        setReport(next);
+        setStatus('ready');
+      })
+      .catch(() => {
+        if (active) setStatus('error');
+      });
+    return () => {
+      active = false;
+    };
+  }, [request]);
+  return { interview, report, status, reload };
 }
 
 function ReportsIntro() {
@@ -80,12 +131,7 @@ function ContextPanel(props: {
           ready={props.hasJob}
           href="/job"
         />
-        <ContextRow
-          label="重点能力"
-          value={props.focusPreview}
-          ready={props.hasJob}
-          href="/job"
-        />
+        <ContextRow label="重点能力" value={props.focusPreview} ready={props.hasJob} href="/job" />
       </div>
     </section>
   );
@@ -114,12 +160,93 @@ function EmptyReportPanel() {
   );
 }
 
-function ContextRow(props: {
-  label: string;
-  value: string;
-  ready: boolean;
-  href: string;
+function ReportDelivery({ state }: { state: LatestReportState }) {
+  if (state.status === 'empty') return <EmptyReportPanel />;
+  if (state.status === 'loading') {
+    return <ReportState title="正在读取最近报告" copy="评分、证据和下一步行动正在同步。" />;
+  }
+  if (state.status === 'error' || !state.report || !state.interview) {
+    return (
+      <ReportState
+        title="报告暂时没有加载成功"
+        copy="面试记录仍然保留，可以重新读取。"
+        action={{ label: '重新加载', onClick: state.reload }}
+      />
+    );
+  }
+  return <LatestReportPanel report={state.report} interview={state.interview} />;
+}
+
+function LatestReportPanel({
+  report,
+  interview,
+}: {
+  report: InterviewReport;
+  interview: InterviewSession;
 }) {
+  return (
+    <section className="panel stack latest-report-panel" aria-labelledby="latest-report-heading">
+      <div className="eyebrow">最近完成 · {new Date(report.createdAt).toLocaleDateString()}</div>
+      <div className="latest-report-heading">
+        <div>
+          <h2 id="latest-report-heading" className="h2">
+            {interview.title}
+          </h2>
+          <p className="muted-text">{report.overall.summary}</p>
+        </div>
+        <div className="report-placeholder-score" aria-label={`总分 ${report.overall.score}`}>
+          {Math.round(report.overall.score)}
+        </div>
+      </div>
+      <div className="score-list">
+        {report.stageScores.map((item) => (
+          <div className="score-row" key={item.stage}>
+            <span>{interviewStageLabel(item.stage)}</span>
+            <strong>{Math.round(item.score)}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="latest-report-actions">
+        <strong>下一轮行动</strong>
+        <div>
+          {report.nextActions.map((item) => (
+            <span className="chip" key={item}>
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+      <Link className="button secondary" href="/interview">
+        再开一场面试
+      </Link>
+    </section>
+  );
+}
+
+function ReportState({
+  title,
+  copy,
+  action,
+}: {
+  title: string;
+  copy: string;
+  action?: { label: string; onClick: () => void };
+}) {
+  return (
+    <section className="panel stack report-empty-panel" aria-live="polite">
+      <div className="eyebrow">本轮报告</div>
+      <h2 className="h2">{title}</h2>
+      <p className="muted-text">{copy}</p>
+      {action ? (
+        <button className="button secondary" type="button" onClick={action.onClick}>
+          {action.label}
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+function ContextRow(props: { label: string; value: string; ready: boolean; href: string }) {
   return (
     <Link className="report-context-row" href={props.href}>
       <span>

@@ -22,12 +22,25 @@ export function SectionFeedback<T>(props: SectionFeedbackProps<T>) {
   return <ErrorState />;
 }
 
-function ForbiddenState({ access }: { access: 'required' | 'admin-only' }) {
+function ForbiddenState({ access }: { access: 'required' | 'admin-only' | 'platform-only' }) {
+  if (access === 'platform-only') {
+    return (
+      <Result
+        status="403"
+        subTitle="数据看板与账号治理仅对平台管理员开放，请联系平台管理员调整角色。"
+        title="仅平台管理员可见"
+      />
+    );
+  }
   const adminOnly = access === 'admin-only';
   return (
     <Result
       status="403"
-      subTitle={adminOnly ? '当前账号可继续审核题库，但没有模型、运行或审计权限。' : '当前账号缺少题库治理权限，请联系管理员调整角色。'}
+      subTitle={
+        adminOnly
+          ? '当前账号可继续审核题库，但没有模型、运行或审计权限。'
+          : '当前账号缺少题库治理权限，请联系管理员调整角色。'
+      }
       title={adminOnly ? '仅管理员可见' : '无权访问该治理区域'}
     />
   );

@@ -19,7 +19,7 @@ export class RolesGuard implements CanActivate {
     if (!allowed?.length) throw roleDenied('ROUTE_ROLE_POLICY_MISSING');
 
     const request = context.switchToHttp().getRequest<ProductRequest>();
-    if (request.context && allowed.includes(request.context.actor.role)) return true;
+    if (request.context && hasRouteAccess(request.context.actor.role, allowed)) return true;
     throw roleDenied('ROLE_NOT_ALLOWED');
   }
 
@@ -31,6 +31,10 @@ export class RolesGuard implements CanActivate {
       ]),
     );
   }
+}
+
+function hasRouteAccess(role: Role, allowed: Role[]): boolean {
+  return allowed.includes(role) || (role === 'platform_admin' && allowed.includes('admin'));
 }
 
 function roleDenied(code: string) {

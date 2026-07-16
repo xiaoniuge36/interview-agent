@@ -2,28 +2,75 @@
 
 import {
   QuestionCatalogQuerySchema,
+  type PracticeRecommendation,
   type QuestionCatalogQuery,
   type QuestionCatalogResponse,
 } from '@interview-agent/contracts';
 import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { getQuestionCatalog } from '@/lib/question-catalog-api';
+import { getPracticeRecommendations, getQuestionCatalog } from '@/lib/question-catalog-api';
 import { createPracticeSession } from '@/lib/practice-api';
-import { toggleQuestionSelection } from './question-picker-model';
+import {
+  composeQuestionSelectionWithFeedback,
+  toggleQuestionSelection,
+} from './question-picker-model';
+
+const QUICK_COMPOSE_TARGET_COUNT = 5;
 
 export type CatalogQuestion = QuestionCatalogResponse['items'][number];
 
 export function useQuestionPicker() {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryKey = searchParams.toString();
   const query = catalogQueryFromString(queryKey);
   const catalogState = useCatalog(queryKey);
   const selection = useQuestionSelection();
-  const [startError, setStartError] = useState('');
-  const [starting, setStarting] = useState(false);
+  const recommendations = useRecommendations();
+  const navigation = useQuestionNavigation(queryKey);
+  const { run, error: startError, busyKey } = usePracticeStarter();
+  const { selected, compose } = selection;
 
+  const start = useCallback(() => {
+    if (!selected.length) return;
+    return run({
+      key: 'selection',
+      title: `自主练习 · ${selected.length} 题`,
+      questionIds: selected.map((item) => item.id),
+      failureMessage: '题单创建失败，已选题目仍为你保留，请稍后重试。',
+    });
+  }, [run, selected]);
+
+  const startRecommendation = useCallback((recommendation: PracticeRecommendation) => {
+    return run({
+      key: recommendation.id,
+      title: recommendation.title,
+      questionIds: recommendation.questionIds,
+      failureMessage: '推荐题单未能创建，不影响你继续自主选题。',
+    });
+  }, [run]);
+
+  const quickCompose = useCallback(() => {
+    compose(catalogState.catalog?.items ?? []);
+  }, [catalogState.catalog?.items, compose]);
+
+  return {
+    query,
+    ...catalogState,
+    ...selection,
+    ...recommendations,
+    ...navigation,
+    quickCompose,
+    start,
+    startRecommendation,
+    startError,
+    starting: busyKey === 'selection',
+    recommendationStartingId: busyKey,
+  };
+}
+
+function useQuestionNavigation(queryKey: string) {
+  const router = useRouter();
+  const pathname = usePathname();
   const updateFilter = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(queryKey);
     if (value) params.set(key, value);
@@ -31,32 +78,12 @@ export function useQuestionPicker() {
     params.delete('page');
     router.replace(withQuery(pathname, params), { scroll: false });
   }, [pathname, queryKey, router]);
-
   const changePage = useCallback((page: number) => {
     const params = new URLSearchParams(queryKey);
     params.set('page', String(page));
     router.replace(withQuery(pathname, params));
   }, [pathname, queryKey, router]);
-
-  const start = useCallback(async () => {
-    if (!selection.selected.length) return;
-    setStartError('');
-    setStarting(true);
-    try {
-      const session = await createPracticeSession({
-        title: `自主练习 · ${selection.selected.length} 题`,
-        mode: 'manual',
-        questionIds: selection.selected.map((item) => item.id),
-      });
-      router.push(`/practice?session=${session.id}`);
-    } catch {
-      setStartError('题单创建失败，已选题目仍为你保留，请稍后重试。');
-    } finally {
-      setStarting(false);
-    }
-  }, [router, selection.selected]);
-
-  return { query, ...catalogState, ...selection, updateFilter, changePage, start, startError, starting };
+  return { updateFilter, changePage };
 }
 
 function useCatalog(queryKey: string) {
@@ -95,9 +122,74 @@ function useQuestionSelection() {
     setSelected((current) => current.filter((item) => item.id !== id));
     setSelectionMessage('');
   }, []);
+  const compose = useCallback((candidates: CatalogQuestion[]) => {
+    setSelected((current) => {
+      const result = composeQuestionSelectionWithFeedback(
+        current.map((item) => item.id),
+        candidates.map((item) => item.id),
+        QUICK_COMPOSE_TARGET_COUNT,
+      );
+      const questions = new Map([...current, ...candidates].map((item) => [item.id, item]));
+      setSelectionMessage(result.message);
+      return result.ids.flatMap((id) => {
+        const question = questions.get(id);
+        return question ? [question] : [];
+      });
+    });
+  }, []);
   const clear = useCallback(() => { setSelected([]); setSelectionMessage(''); }, []);
-  return { selected, selectionMessage, toggle, remove, clear };
+  return { selected, selectionMessage, toggle, remove, compose, clear };
 }
+
+function useRecommendations() {
+  const [recommendation, setRecommendation] = useState<PracticeRecommendation | null>(null);
+  const [recommendationLoading, setRecommendationLoading] = useState(true);
+  const [recommendationError, setRecommendationError] = useState('');
+  const reloadRecommendation = useCallback(async () => {
+    setRecommendationError('');
+    setRecommendationLoading(true);
+    try {
+      const items = await getPracticeRecommendations();
+      setRecommendation(items[0] ?? null);
+    } catch {
+      setRecommendationError('Agent 推荐暂时不可用，不影响你自主选题。');
+    } finally {
+      setRecommendationLoading(false);
+    }
+  }, []);
+  useEffect(() => { void reloadRecommendation(); }, [reloadRecommendation]);
+  return { recommendation, recommendationLoading, recommendationError, reloadRecommendation };
+}
+
+function usePracticeStarter() {
+  const router = useRouter();
+  const [error, setError] = useState('');
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const run = useCallback(async (input: PracticeStartInput) => {
+    setError('');
+    setBusyKey(input.key);
+    try {
+      const session = await createPracticeSession({
+        title: input.title,
+        mode: 'manual',
+        questionIds: input.questionIds,
+      });
+      router.push(`/practice?session=${session.id}`);
+    } catch {
+      setError(input.failureMessage);
+    } finally {
+      setBusyKey(null);
+    }
+  }, [router]);
+  return { error, busyKey, run };
+}
+
+type PracticeStartInput = {
+  key: string;
+  title: string;
+  questionIds: string[];
+  failureMessage: string;
+};
 
 function catalogQueryFromString(value: string): QuestionCatalogQuery {
   const params = new URLSearchParams(value);

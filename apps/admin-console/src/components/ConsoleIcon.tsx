@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 
 export type ConsoleIconName =
   | 'overview'
+  | 'analytics'
+  | 'accounts'
   | 'import'
   | 'review'
   | 'workspace'
@@ -42,6 +44,22 @@ const ICON_CONTENT: Record<ConsoleIconName, ReactNode> = {
       <rect x="14" y="4" width="6" height="6" rx="1" />
       <rect x="4" y="14" width="6" height="6" rx="1" />
       <rect x="14" y="14" width="6" height="6" rx="1" />
+    </>
+  ),
+  analytics: (
+    <>
+      <path d="M4 20V4M4 20h16" />
+      <path d="m7 16 3.4-4 3 2 4.6-6" />
+      <circle cx="7" cy="16" r="1" />
+      <circle cx="10.4" cy="12" r="1" />
+      <circle cx="13.4" cy="14" r="1" />
+      <circle cx="18" cy="8" r="1" />
+    </>
+  ),
+  accounts: (
+    <>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 9h5M18.5 6.5v5" />
     </>
   ),
   import: (

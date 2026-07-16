@@ -72,6 +72,30 @@ describe('CandidateReviewService', () => {
     expectPublishedBatchRejected());
 });
 
+describe('CandidateReviewService platform access', () => {
+  it('allows a platform administrator to publish an approved candidate', async () => {
+    const database = candidateDatabase();
+    database.transaction.candidateQuestion.findFirst.mockResolvedValue(
+      candidateRecord({ status: 'approved' }),
+    );
+    database.transaction.question.findFirst.mockResolvedValue(null);
+    database.transaction.question.create.mockResolvedValue(publishedQuestion());
+    const service = new CandidateReviewService(
+      database as unknown as PrismaService,
+      new PolicyService(),
+      { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
+    );
+    const platformContext: ProductRequestContext = {
+      ...context,
+      actor: { ...context.actor, role: 'platform_admin' },
+    };
+
+    await expect(
+      service.publish(platformContext, 'candidate-1', { visibility: 'tenant' }),
+    ).resolves.toEqual(publishedQuestion());
+  });
+});
+
 function candidateDatabase() {
   const transaction = {
     candidateQuestion: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
@@ -176,7 +200,11 @@ async function expectMixedSourceBatchRejected() {
 async function expectPublishedBatchRejected() {
   const database = candidateDatabase();
   database.transaction.candidateQuestion.findMany.mockResolvedValue([
-    candidateRecord({ id: 'candidate-1', importTaskId: 'import-1', publishedQuestionId: 'question-1' }),
+    candidateRecord({
+      id: 'candidate-1',
+      importTaskId: 'import-1',
+      publishedQuestionId: 'question-1',
+    }),
   ]);
   const service = new CandidateReviewService(
     database as unknown as PrismaService,

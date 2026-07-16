@@ -13,6 +13,15 @@ describe('buildAuthHeaders', () => {
     expect(headers.has('Authorization')).toBe(false);
   });
 
+  it('支持平台管理员的开发身份头', () => {
+    const headers = buildAuthHeaders({
+      mode: 'development',
+      developmentActor: 'platform_admin',
+    });
+
+    expect(headers.get('x-development-actor')).toBe('platform_admin');
+  });
+
   it('oidc 模式仅发送 bearer token', () => {
     const headers = buildAuthHeaders({
       mode: 'oidc',

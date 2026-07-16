@@ -12,23 +12,34 @@ type ModelCredentialCardProps = {
 };
 
 export function ModelCredentialCard({ credential, onChanged, onEdit }: ModelCredentialCardProps) {
-  const { busy, remove, test } = useCredentialActions(credential.id, onChanged);
+  const { busy, message, remove, test } = useCredentialActions(credential.id, onChanged);
   return (
     <article className="credential-card">
       <CredentialHeader credential={credential} onEdit={onEdit} busy={busy} />
       <CredentialFacts credential={credential} />
       <CredentialActions onEdit={onEdit} onRemove={remove} onTest={test} busy={busy} />
+      {message ? (
+        <p className="credential-action-message" role="status">
+          {message}
+        </p>
+      ) : null}
     </article>
   );
 }
 
 function useCredentialActions(id: string, onChanged: () => Promise<void>) {
   const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
   const test = async () => {
     setBusy(true);
+    setMessage('');
     try {
       await testModelCredential(id);
       await onChanged();
+      setMessage('连接测试成功，已可用于 Agent 任务。');
+    } catch (reason) {
+      setMessage(messageOf(reason));
+      await refreshAfterFailure(onChanged);
     } finally {
       setBusy(false);
     }
@@ -36,14 +47,17 @@ function useCredentialActions(id: string, onChanged: () => Promise<void>) {
   const remove = async () => {
     if (!window.confirm('删除后 Agent 将不能再使用此模型连接，确定继续吗？')) return;
     setBusy(true);
+    setMessage('');
     try {
       await removeModelCredential(id);
       await onChanged();
+    } catch (reason) {
+      setMessage(messageOf(reason));
     } finally {
       setBusy(false);
     }
   };
-  return { busy, remove, test };
+  return { busy, message, remove, test };
 }
 
 function CredentialHeader({
@@ -64,6 +78,7 @@ function CredentialHeader({
         <span className={`credential-status ${credential.status}`}>
           {statusLabel(credential.status)}
         </span>
+        {credential.isDefault ? <span className="credential-default">默认</span> : null}
       </div>
       <button
         className="credential-more"
@@ -87,6 +102,9 @@ function CredentialFacts({ credential }: { credential: ModelCredentialView }) {
       <CredentialFact label="模型名称" value={credential.model} />
       <CredentialFact label="密钥" value={credential.keyHint} secret />
       <CredentialFact label="上次测试时间" value={testedAt} />
+      {credential.lastErrorCode ? (
+        <CredentialFact label="上次失败" value={credential.lastErrorCode} />
+      ) : null}
     </div>
   );
 }
@@ -155,4 +173,16 @@ function statusLabel(status: ModelCredentialView['status']) {
   return { verified: '连接正常', unverified: '待测试', disabled: '已停用', failed: '连接失败' }[
     status
   ];
+}
+
+async function refreshAfterFailure(onChanged: () => Promise<void>) {
+  try {
+    await onChanged();
+  } catch {
+    // 保留原始测试错误；列表可由用户稍后重新加载。
+  }
+}
+
+function messageOf(reason: unknown) {
+  return reason instanceof Error ? reason.message : '操作失败，请稍后重试。';
 }

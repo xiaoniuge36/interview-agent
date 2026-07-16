@@ -2,8 +2,14 @@ enum ActorRole {
   user
   question_reviewer
   admin
+  platform_admin
   support
   agent_runtime
+}
+
+enum AccountStatus {
+  active
+  disabled
 }
 
 enum AuditResult {

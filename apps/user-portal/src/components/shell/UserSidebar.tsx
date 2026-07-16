@@ -6,6 +6,7 @@ import { useAuth } from '@interview-agent/auth-client';
 import { NavigationIcon } from './NavigationIcon';
 import { NAV_ITEMS, navIdFromPathname } from './navigation';
 import { sidebarAccountActions } from './sidebar-account-actions';
+import { ThemeMenu } from '../theme/ThemeMenu';
 
 export function UserSidebar() {
   const pathname = usePathname();
@@ -17,6 +18,7 @@ export function UserSidebar() {
       <SidebarBrand />
       <SidebarUserSummary name={name} />
       <SidebarNavigation active={navIdFromPathname(pathname)} />
+      <ThemeMenu variant="sidebar" />
       <SidebarAccount
         name={name}
         showSignOut={accountActions.includes('sign_out')}

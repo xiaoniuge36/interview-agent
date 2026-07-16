@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   AgentRuntimeNextRequestSchema,
+  ActionSchema,
   QuestionSchema,
+  RoleSchema,
   SubmitInterviewAnswerInputSchema,
   seedQuestions,
 } from './index';
@@ -49,4 +51,11 @@ test('answer input trims content and rejects blank answers', () => {
     SubmitInterviewAnswerInputSchema.safeParse({ answer: '   ', expectedVersion: 0 }).success,
     false,
   );
+});
+
+test('platform governance roles and scopes are part of the shared contract', () => {
+  assert.equal(RoleSchema.parse('platform_admin'), 'platform_admin');
+  assert.equal(ActionSchema.parse('analytics:read'), 'analytics:read');
+  assert.equal(ActionSchema.parse('account:read'), 'account:read');
+  assert.equal(ActionSchema.parse('account:write'), 'account:write');
 });

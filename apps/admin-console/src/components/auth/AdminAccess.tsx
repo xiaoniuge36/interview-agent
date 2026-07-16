@@ -5,7 +5,7 @@ import { LockOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-desi
 import { Alert, Button, Card, Form, Input, Layout } from 'antd';
 import { useAuth } from '@interview-agent/auth-client';
 
-const CONSOLE_ROLES = new Set(['admin', 'question_reviewer']);
+const CONSOLE_ROLES = new Set(['admin', 'question_reviewer', 'platform_admin']);
 
 type AdminAccessProps = {
   children: ReactNode;
@@ -25,7 +25,7 @@ export function AdminAccess({ children }: AdminAccessProps) {
     const subject = auth.identity?.subject;
     if (hasConsoleAccess || !subject || rejectedSubject.current === subject) return;
     rejectedSubject.current = subject;
-    setAccessError('当前账号没有管理后台权限，请使用管理员或题库审核员账号登录。');
+    setAccessError('该账号没有管理后台权限。请使用管理员、题库审核员或平台管理员账号登录。');
     void auth.signOut();
   }, [auth, hasConsoleAccess]);
 
@@ -57,7 +57,7 @@ function LocalAdminAccess({ error }: { error: string | null }) {
         <Card className="admin-access-panel" styles={cardBodyWithoutPadding} variant="borderless">
           <AdminAccessHeading />
           <AdminCredentialsForm {...access} error={error} />
-          <p className="admin-access-note">普通训练账号不能访问后台数据或治理操作。</p>
+          <AdminAccessTrust />
         </Card>
       </Layout.Content>
     </Layout>
@@ -82,6 +82,10 @@ function useLocalAdminSignIn() {
 function AdminAccessIntro() {
   return (
     <Layout.Content className="admin-access-intro" aria-label="管理后台说明">
+      <div className="admin-access-emblem">
+        <SafetyCertificateOutlined />
+        <span>治理控制台</span>
+      </div>
       <p className="eyebrow">INTERVIEW AGENT · GOVERNANCE</p>
       <h1>面试资产与运行治理</h1>
       <p>审核训练内容、监测 Agent 运行，并保留可追溯的治理记录。此入口只向已授权的后台角色开放。</p>
@@ -102,9 +106,14 @@ function AdminAccessIntro() {
 function AdminAccessHeading() {
   return (
     <>
-      <p className="eyebrow">受保护访问</p>
+      <div className="admin-access-chip">
+        <SafetyCertificateOutlined />
+        <span>受保护访问</span>
+      </div>
       <h2 id="admin-access-title">登录治理后台</h2>
-      <p className="admin-access-description">使用由系统管理员初始化的本地后台账号继续。</p>
+      <p className="admin-access-description">
+        使用已获授权的后台账号继续管理内容、运行与平台数据。
+      </p>
     </>
   );
 }
@@ -122,10 +131,22 @@ function AdminCredentialsForm(props: AdminCredentialsFormProps) {
       aria-busy={props.isSubmitting}
       onFinish={() => void props.submit()}
     >
-      <AdminCredentialFields credentials={props.credentials} setCredentials={props.setCredentials} />
-      {props.error ? <Alert className="admin-access-error" message={props.error} showIcon type="error" /> : null}
-      <Button block className="admin-access-submit" disabled={props.isSubmitting} htmlType="submit" loading={props.isSubmitting} type="primary">
-        {props.isSubmitting ? '正在验证…' : '安全登录'}
+      <AdminCredentialFields
+        credentials={props.credentials}
+        setCredentials={props.setCredentials}
+      />
+      {props.error ? (
+        <Alert className="admin-access-error" message={props.error} showIcon type="error" />
+      ) : null}
+      <Button
+        block
+        className="admin-access-submit"
+        disabled={props.isSubmitting}
+        htmlType="submit"
+        loading={props.isSubmitting}
+        type="primary"
+      >
+        {props.isSubmitting ? '正在验证…' : '登录管理后台'}
       </Button>
     </Form>
   );
@@ -142,6 +163,7 @@ function AdminCredentialFields({ credentials, setCredentials }: AdminCredentialF
       <Form.Item label="邮箱" required>
         <Input
           id="admin-email"
+          className="admin-access-input"
           autoComplete="username"
           maxLength={320}
           prefix={<MailOutlined />}
@@ -149,23 +171,37 @@ function AdminCredentialFields({ credentials, setCredentials }: AdminCredentialF
           required
           type="email"
           value={credentials.email}
-          onChange={(event) => setCredentials((current) => ({ ...current, email: event.target.value }))}
+          onChange={(event) =>
+            setCredentials((current) => ({ ...current, email: event.target.value }))
+          }
         />
       </Form.Item>
       <Form.Item label="密码" required>
         <Input.Password
           id="admin-password"
+          className="admin-access-input"
           autoComplete="current-password"
           minLength={12}
           maxLength={128}
           prefix={<LockOutlined />}
           required
           value={credentials.password}
-          onChange={(event) => setCredentials((current) => ({ ...current, password: event.target.value }))}
+          onChange={(event) =>
+            setCredentials((current) => ({ ...current, password: event.target.value }))
+          }
           placeholder="输入你的密码"
         />
       </Form.Item>
     </>
+  );
+}
+
+function AdminAccessTrust() {
+  return (
+    <div className="admin-access-trust">
+      <SafetyCertificateOutlined />
+      <span>普通训练账号没有后台权限；会话仅保存在当前浏览器窗口。</span>
+    </div>
   );
 }
 
@@ -182,7 +218,11 @@ function FederatedAdminAccess({ error }: { error: string | null }) {
           ) : (
             <p>使用组织身份登录。系统会在登录后校验后台角色。</p>
           )}
-          <Button icon={<SafetyCertificateOutlined />} type="primary" onClick={() => void auth.signIn()}>
+          <Button
+            icon={<SafetyCertificateOutlined />}
+            type="primary"
+            onClick={() => void auth.signIn()}
+          >
             使用组织账号登录
           </Button>
         </Card>

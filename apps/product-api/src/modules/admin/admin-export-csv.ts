@@ -1,4 +1,5 @@
 import type {
+  AccountView,
   AgentRunView,
   AuditLogView,
   CandidateReview,
@@ -30,6 +31,10 @@ export function renderAgentRunExportCsv(rows: AgentRunView[]): string {
 
 export function renderAuditLogExportCsv(rows: AuditLogView[]): string {
   return renderCsv(auditLogColumns, rows);
+}
+
+export function renderAccountExportCsv(rows: AccountView[]): string {
+  return renderCsv(accountColumns, rows);
 }
 
 const importTaskColumns: readonly CsvColumn<ImportTask>[] = [
@@ -96,4 +101,16 @@ const auditLogColumns: readonly CsvColumn<AuditLogView>[] = [
   { header: 'Trace ID', value: (log) => log.traceId },
   { header: '结果', value: (log) => log.result },
   { header: '创建时间', value: (log) => log.createdAt },
+];
+
+const accountColumns: readonly CsvColumn<AccountView>[] = [
+  { header: '账号 ID', value: (account) => account.id },
+  { header: '姓名', value: (account) => account.name },
+  { header: '邮箱', value: (account) => account.email },
+  { header: '角色', value: (account) => account.role },
+  { header: '状态', value: (account) => account.status },
+  { header: '认证来源', value: (account) => account.authSource },
+  { header: '租户', value: (account) => account.tenant.name },
+  { header: '最近登录', value: (account) => account.lastSignedInAt },
+  { header: '创建时间', value: (account) => account.createdAt },
 ];

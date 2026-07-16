@@ -165,6 +165,10 @@
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .latest-report-heading {
+    flex-direction: column-reverse;
+  }
 }
 @media (max-width: 820px) {
   .sidebar-shell {

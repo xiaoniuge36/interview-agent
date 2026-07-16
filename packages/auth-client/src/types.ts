@@ -1,5 +1,5 @@
 export type AuthMode = 'development' | 'oidc' | 'local';
-export type DevelopmentActor = 'user' | 'admin';
+export type DevelopmentActor = 'user' | 'admin' | 'platform_admin';
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'error';
 
 export type AuthIdentity = {

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadGatewayException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
   ModelCredentialListSchema,
@@ -11,7 +11,7 @@ import {
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { CredentialCryptoService } from './credential-crypto.service';
 import { ModelCredentialInfrastructure } from './model-credential-infrastructure';
-import { ModelProviderClient } from './model-provider.client';
+import { ModelProviderClient, ModelProviderError } from './model-provider.client';
 
 const KEY_HINT_VISIBLE_CHARACTERS = 4;
 
@@ -101,6 +101,7 @@ export class ModelCredentialService {
       await transaction.userModelCredential.delete({
         where: { tenantId_id: { tenantId: context.tenantId, id: credentialId } },
       });
+      if (current.isDefault) await promoteFallbackDefault(transaction, context);
       await this.infrastructure.audit.record(
         context,
         auditEvent('delete', credentialId, current),
@@ -134,12 +135,16 @@ export class ModelCredentialService {
       where: { ...ownerScope(context), id: credentialId },
     });
     if (!current) throw credentialNotFound();
-    await this.provider.testConnection({
-      provider: current.provider as ModelProvider,
-      model: current.model,
-      baseUrl: current.baseUrl,
-      apiKey: this.crypto.decrypt(current),
-    });
+    try {
+      await this.provider.testConnection({
+        provider: current.provider as ModelProvider,
+        model: current.model,
+        baseUrl: current.baseUrl,
+        apiKey: this.crypto.decrypt(current),
+      });
+    } catch (error) {
+      throw await this.persistTestFailure(context, current, error);
+    }
     return this.infrastructure.prisma.$transaction(async (transaction) => {
       const stored = await transaction.userModelCredential.update({
         where: { tenantId_id: { tenantId: context.tenantId, id: credentialId } },
@@ -152,6 +157,26 @@ export class ModelCredentialService {
       );
       return ModelCredentialViewSchema.parse(mapCredential(stored));
     }, serializable());
+  }
+
+  private async persistTestFailure(
+    context: ProductRequestContext,
+    current: { id: string; provider: string; model: string },
+    error: unknown,
+  ) {
+    const code = modelTestErrorCode(error);
+    await this.infrastructure.prisma.$transaction(async (transaction) => {
+      await transaction.userModelCredential.update({
+        where: { tenantId_id: { tenantId: context.tenantId, id: current.id } },
+        data: { status: 'failed', lastTestedAt: new Date(), lastErrorCode: code },
+      });
+      await this.infrastructure.audit.record(
+        context,
+        auditEvent('test_failed', current.id, current),
+        transaction,
+      );
+    }, serializable());
+    return new BadGatewayException({ code, message: modelTestErrorMessage(code) });
   }
 
   private assertAccess(
@@ -178,10 +203,15 @@ function encryptedUpdate(crypto: CredentialCryptoService, apiKey: string) {
 }
 
 function plainUpdate(input: UpdateModelCredentialInput) {
+  const connectionChanged =
+    input.apiKey !== undefined || input.model !== undefined || input.baseUrl !== undefined;
   return {
     ...(input.model ? { model: input.model } : {}),
     ...(input.baseUrl !== undefined ? { baseUrl: input.baseUrl } : {}),
     ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
+    ...(connectionChanged
+      ? { status: 'unverified' as const, lastTestedAt: null, lastErrorCode: null }
+      : {}),
     ...(input.status ? { status: input.status } : {}),
   };
 }
@@ -193,7 +223,27 @@ function clearDefault(transaction: Prisma.TransactionClient, context: ProductReq
   });
 }
 
-function findOwned(transaction: Prisma.TransactionClient, context: ProductRequestContext, id: string) {
+async function promoteFallbackDefault(
+  transaction: Prisma.TransactionClient,
+  context: ProductRequestContext,
+) {
+  const fallback = await transaction.userModelCredential.findFirst({
+    where: { ...ownerScope(context), status: 'verified' },
+    orderBy: { updatedAt: 'desc' },
+    select: { id: true },
+  });
+  if (!fallback) return;
+  await transaction.userModelCredential.update({
+    where: { tenantId_id: { tenantId: context.tenantId, id: fallback.id } },
+    data: { isDefault: true },
+  });
+}
+
+function findOwned(
+  transaction: Prisma.TransactionClient,
+  context: ProductRequestContext,
+  id: string,
+) {
   return transaction.userModelCredential.findFirst({ where: { ...ownerScope(context), id } });
 }
 
@@ -218,7 +268,11 @@ function mapCredential(record: {
   };
 }
 
-function auditEvent(action: string, credentialId: string, record: { provider: string; model: string }) {
+function auditEvent(
+  action: string,
+  credentialId: string,
+  record: { provider: string; model: string },
+) {
   return {
     action: `model_credential.${action}`,
     resourceType: 'UserModelCredential',
@@ -233,4 +287,21 @@ function serializable() {
 
 function credentialNotFound() {
   return new NotFoundException('模型连接不存在。');
+}
+
+function modelTestErrorCode(error: unknown) {
+  return error instanceof ModelProviderError ? error.code : 'MODEL_CONNECTION_TEST_FAILED';
+}
+
+function modelTestErrorMessage(code: string) {
+  if (code === 'MODEL_PROVIDER_AUTH_FAILED') {
+    return '模型服务拒绝了当前密钥，请检查 API Key 后重试。';
+  }
+  if (code === 'MODEL_PROVIDER_RATE_LIMITED') {
+    return '模型服务当前请求过多，请稍后再次测试。';
+  }
+  if (code === 'MODEL_BASE_URL_REQUIRED') {
+    return '自定义模型连接缺少 Base URL。';
+  }
+  return '模型连接测试失败，请检查模型名称、端点和密钥后重试。';
 }
