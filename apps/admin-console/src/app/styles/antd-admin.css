@@ -156,9 +156,35 @@
 }
 
 .admin-table-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+.admin-table-toolbar-fields,
+.admin-table-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-table-toolbar-fields {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.admin-table-toolbar .ant-form-item {
+  margin-bottom: 0;
+}
+
+.admin-table-toolbar-actions {
+  justify-content: flex-end;
+}
+
+.admin-table-result {
+  grid-column: 1 / -1;
 }
 
 .admin-table-search {
@@ -207,6 +233,24 @@
   margin-bottom: 16px;
 }
 
+.admin-batch-review-bar {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #f6faff;
+  border: 1px solid #91caff;
+  border-radius: 6px;
+}
+
+.admin-batch-review-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .admin-candidate-editor,
 .admin-candidate-form {
   display: grid;
@@ -215,6 +259,14 @@
 
 .admin-rubric-card {
   margin: 4px 0 12px;
+}
+
+.admin-rubric-list {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
 }
 
 .admin-form-actions {
@@ -230,11 +282,29 @@
   gap: 2px;
 }
 
+.admin-section-loading {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+}
+
 .admin-section-spin {
-  display: flex;
+  text-align: center;
+}
+
+.admin-import-review-context {
+  margin-bottom: 12px;
+}
+
+.admin-import-review-loading {
+  display: grid;
   min-height: 120px;
-  align-items: center;
-  justify-content: center;
+  place-items: center;
+}
+
+.admin-import-source-content {
+  margin-bottom: 0;
+  white-space: pre-wrap;
 }
 
 .admin-error-description {
@@ -288,10 +358,18 @@
   }
 
   .admin-layout-header,
-  .admin-page-heading-actions,
-  .admin-table-toolbar {
+  .admin-page-heading-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .admin-table-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-table-toolbar-fields,
+  .admin-table-toolbar-actions {
+    justify-content: flex-start;
   }
 
   .admin-layout-header {

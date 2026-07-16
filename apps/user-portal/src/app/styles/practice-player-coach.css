@@ -1,0 +1,230 @@
+.practice-coach-panel {
+  position: sticky;
+  top: 18px;
+  overflow: hidden;
+  border-radius: 14px;
+}
+.practice-coach-panel > header {
+  padding: 19px 20px;
+  background: linear-gradient(145deg, #10243c, #091725);
+}
+.practice-coach-panel > header span {
+  color: #64d9bf;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.practice-coach-panel > header h2 {
+  margin: 5px 0 0;
+  color: #fff;
+  font-size: 18px;
+}
+.practice-coach-section {
+  padding: 19px 20px;
+  border-top: 1px solid #e1e7ef;
+}
+.practice-coach-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.practice-coach-heading > span {
+  color: #86a0c7;
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+.practice-coach-heading strong {
+  color: #293950;
+  font-size: 12px;
+}
+.practice-coach-heading i {
+  margin-left: auto;
+  border-radius: 4px;
+  padding: 3px 5px;
+  background: #e4f8f2;
+  color: #087963;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 900;
+}
+.practice-coach-locked p,
+.practice-ai-ready p {
+  margin: 12px 0;
+  color: #758399;
+  font-size: 11px;
+  line-height: 1.65;
+}
+.practice-coach-locked button,
+.practice-ai-ready button {
+  width: 100%;
+  min-height: 39px;
+  border: 1px solid #cbd7e8;
+  border-radius: 8px;
+  background: #fff;
+  color: #2459b8;
+  font-size: 10px;
+  font-weight: 800;
+}
+.practice-ai-ready button {
+  border: 0;
+  background: #155de1;
+  color: #fff;
+}
+.practice-coach-locked button:disabled,
+.practice-ai-ready button:disabled {
+  opacity: 0.5;
+}
+.practice-solution-content > p {
+  margin: 13px 0;
+  color: #53627a;
+  font-size: 11px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.practice-rubric-list {
+  display: grid;
+  gap: 7px;
+}
+.practice-rubric-list > div {
+  display: grid;
+  gap: 3px;
+  padding: 9px;
+  border-radius: 8px;
+  background: #f5f7fa;
+}
+.practice-rubric-list strong {
+  color: #42516a;
+  font-size: 10px;
+}
+.practice-rubric-list span {
+  color: #8490a2;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.practice-evaluation-result {
+  display: grid;
+  gap: 12px;
+  margin-top: 13px;
+}
+.practice-evaluation-score {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.practice-evaluation-score strong {
+  color: #155cda;
+  font-size: 30px;
+  letter-spacing: -0.05em;
+}
+.practice-evaluation-score span {
+  color: #75849a;
+  font-size: 9px;
+}
+.practice-evaluation-result > p {
+  margin: 0;
+  color: #53627a;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.practice-evaluation-result > div > strong {
+  color: #34445b;
+  font-size: 10px;
+}
+.practice-evaluation-result ul {
+  margin: 7px 0 0;
+  padding-left: 16px;
+  color: #7b5b2b;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.practice-rubric-scores {
+  display: grid;
+  gap: 5px;
+}
+.practice-rubric-scores span {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f2f5f9;
+  font-size: 9px;
+}
+.practice-rubric-scores b {
+  color: #53647b;
+}
+.practice-rubric-scores i {
+  color: #1c60d5;
+  font-style: normal;
+  font-weight: 900;
+}
+.practice-evaluation-result blockquote {
+  margin: 0;
+  padding: 11px;
+  border-left: 2px solid #3cc9aa;
+  background: #edf9f6;
+  color: #285d54;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.practice-evaluation-result blockquote span {
+  display: block;
+  margin-bottom: 4px;
+  color: #11806a;
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.practice-coach-issue {
+  margin-top: 11px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff1f1;
+}
+.practice-coach-issue strong {
+  color: #9e3434;
+  font-size: 10px;
+}
+.practice-coach-issue p {
+  margin: 5px 0;
+  color: #a55757;
+  font-size: 9px;
+  line-height: 1.55;
+}
+.practice-coach-issue a {
+  color: #1d5dc9;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.practice-round-actions {
+  width: min(1430px, calc(100% - 130px));
+  margin: 18px 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px solid #cfdbea;
+  border-radius: 13px;
+  background: #fff;
+}
+.practice-round-actions strong {
+  color: #26364d;
+  font-size: 12px;
+}
+.practice-round-actions p {
+  margin: 4px 0 0;
+  color: #7a879a;
+  font-size: 10px;
+}
+.practice-round-actions > div:last-child {
+  display: flex;
+  gap: 8px;
+}
+.practice-round-actions button.secondary {
+  border: 1px solid #ccd8e8;
+  background: #fff;
+  color: #3a5f9e;
+}

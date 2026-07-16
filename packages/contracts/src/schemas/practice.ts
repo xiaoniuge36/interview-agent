@@ -39,7 +39,21 @@ export const PracticeEvaluationSchema = z.object({
       }),
     )
     .max(CONTRACT_LIMITS.list),
+  followUpQuestion: z
+    .string()
+    .min(1)
+    .max(CONTRACT_LIMITS.mediumText)
+    .nullable()
+    .default(null),
   createdAt: z.string().datetime(),
+});
+
+export const PracticeItemSolutionSchema = z.object({
+  referenceAnswer: z.string().min(1).max(CONTRACT_LIMITS.longText),
+  rubric: z.array(RubricPointSchema).min(1).max(CONTRACT_LIMITS.list),
+});
+export const PracticeItemFeedbackSchema = PracticeItemSolutionSchema.extend({
+  evaluation: PracticeEvaluationSchema,
 });
 
 export const PracticeQuestionSchema = QuestionSchema.pick({
@@ -118,5 +132,7 @@ export type SubmitPracticeAnswer = z.infer<typeof SubmitPracticeAnswerSchema>;
 export type PracticeSession = z.infer<typeof PracticeSessionSchema>;
 export type PracticeSessionItem = z.infer<typeof PracticeSessionItemSchema>;
 export type PracticeEvaluation = z.infer<typeof PracticeEvaluationSchema>;
+export type PracticeItemSolution = z.infer<typeof PracticeItemSolutionSchema>;
+export type PracticeItemFeedback = z.infer<typeof PracticeItemFeedbackSchema>;
 export type PracticeReport = z.infer<typeof PracticeReportSchema>;
 export type MasteryProfile = z.infer<typeof MasteryProfileSchema>;

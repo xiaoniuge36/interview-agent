@@ -1,12 +1,10 @@
 import type { AuditLogView } from '@interview-agent/contracts';
 import { Card, Empty, Space, Table, Tag, Typography, type TableColumnsType } from 'antd';
-import { useDeferredValue, useMemo, useState } from 'react';
-import type { SectionState } from '@/hooks/useAdminDashboard';
+import { useAdminListExport } from '@/hooks/useAdminListExport';
+import { useAdminPagedList, type AdminPagedListController } from '@/hooks/useAdminPagedList';
 import { AdminPagination, AdminTableToolbar } from './AdminTableControls';
-import { filterAuditLogs, paginateRecords } from './admin-records';
 import { SectionFeedback } from './SectionState';
 
-const PAGE_SIZE = 12;
 const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
   dateStyle: 'short',
   timeStyle: 'medium',
@@ -20,6 +18,100 @@ const RESULT_COLORS: Record<AuditLogView['result'], string> = {
   success: 'success',
   failure: 'error',
 };
+
+export function AuditLogPanel({ active, refreshKey }: { active: boolean; refreshKey: number }) {
+  const list = useAdminPagedList('audit-logs', { enabled: active, reloadKey: refreshKey });
+  const { exportList, isExporting } = useAdminListExport('audit-logs', list.submittedQuery);
+  return (
+    <section className="admin-page" id="section-6" aria-labelledby="audit-heading">
+      <Card className="admin-dense-card admin-table-card" size="small">
+        <div className="admin-page-heading">
+          <div>
+            <div className="eyebrow">Audit Trail</div>
+            <h2 id="audit-heading">审计日志</h2>
+          </div>
+          <p>记录治理动作、操作者、结果与跨服务追踪标识。</p>
+        </div>
+        <AuditListContent exportList={exportList} isExporting={isExporting} list={list} />
+      </Card>
+    </section>
+  );
+}
+
+type AuditListContentProps = {
+  exportList: () => Promise<void>;
+  isExporting: boolean;
+  list: AdminPagedListController<'audit-logs'>;
+};
+
+function AuditListContent({ exportList, isExporting, list }: AuditListContentProps) {
+  if (list.state.status !== 'ready')
+    return <SectionFeedback state={list.state} loadingMessage="正在加载审计日志" />;
+  const page = list.state.data;
+  return (
+    <>
+      <AuditToolbar
+        exportList={exportList}
+        isExporting={isExporting}
+        list={list}
+        total={page.total}
+      />
+      <AuditTable logs={page.items} />
+      <AdminPagination
+        page={page.page}
+        pageSize={page.pageSize}
+        total={page.total}
+        onChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
+      />
+    </>
+  );
+}
+
+type AuditToolbarProps = AuditListContentProps & { total: number };
+
+function AuditToolbar({ exportList, isExporting, list, total }: AuditToolbarProps) {
+  return (
+    <AdminTableToolbar
+      filters={[
+        {
+          label: '结果',
+          value: list.draftQuery.result ?? 'all',
+          options: RESULT_OPTIONS,
+          onChange: (value) =>
+            list.setDraftQuery((current) => ({
+              ...current,
+              result: value === 'all' ? undefined : (value as AuditLogView['result']),
+            })),
+        },
+      ]}
+      isExporting={isExporting}
+      isLoading={list.isLoading}
+      query={list.draftQuery.keyword ?? ''}
+      resultLabel={`共 ${total} 条`}
+      searchLabel="搜索动作、资源、操作者或 Trace ID"
+      onExport={() => void exportList()}
+      onQuery={list.query}
+      onQueryChange={(keyword) => list.setDraftQuery((current) => ({ ...current, keyword }))}
+      onReset={list.reset}
+    />
+  );
+}
+
+function AuditTable({ logs }: { logs: AuditLogView[] }) {
+  if (!logs.length)
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的记录" />;
+  return (
+    <Table<AuditLogView>
+      columns={AUDIT_COLUMNS}
+      dataSource={logs}
+      pagination={false}
+      rowKey="id"
+      scroll={{ x: 900 }}
+      size="middle"
+    />
+  );
+}
 
 const AUDIT_COLUMNS: TableColumnsType<AuditLogView> = [
   {
@@ -66,83 +158,3 @@ const AUDIT_COLUMNS: TableColumnsType<AuditLogView> = [
     ),
   },
 ];
-
-export function AuditLogPanel({ state }: { state: SectionState<AuditLogView[]> }) {
-  return (
-    <section className="admin-page" id="section-6" aria-labelledby="audit-heading">
-      <Card className="admin-dense-card admin-table-card" size="small">
-        <div className="admin-page-heading">
-          <div>
-            <div className="eyebrow">Audit Trail</div>
-            <h2 id="audit-heading">审计日志</h2>
-          </div>
-          <p>记录治理动作、操作者、结果与跨服务追踪标识。</p>
-        </div>
-        {state.status === 'ready' ? (
-          <ReadyAuditTable logs={state.data} />
-        ) : (
-          <SectionFeedback state={state} loadingMessage="正在加载审计日志" />
-        )}
-      </Card>
-    </section>
-  );
-}
-
-function ReadyAuditTable({ logs }: { logs: AuditLogView[] }) {
-  const table = useAuditFilters(logs);
-  return (
-    <>
-      <AdminTableToolbar
-        query={table.query}
-        searchLabel="搜索动作、资源、操作者或 Trace ID"
-        resultLabel={`筛选出 ${table.pagination.total} 条`}
-        filters={[table.resultFilter]}
-        onQueryChange={table.changeQuery}
-      />
-      <AuditTable logs={table.pagination.items} />
-      <AdminPagination {...table.pagination} onChange={table.setPage} />
-    </>
-  );
-}
-
-function useAuditFilters(logs: AuditLogView[]) {
-  const [query, setQuery] = useState('');
-  const [result, setResult] = useState<AuditLogView['result'] | 'all'>('all');
-  const [page, setPage] = useState(1);
-  const deferredQuery = useDeferredValue(query);
-  const filtered = useMemo(
-    () => filterAuditLogs(logs, { query: deferredQuery, result }),
-    [deferredQuery, logs, result],
-  );
-  const changeResult = (value: string) => {
-    setResult(value as AuditLogView['result'] | 'all');
-    setPage(1);
-  };
-  const changeQuery = (value: string) => {
-    setQuery(value);
-    setPage(1);
-  };
-  return {
-    query,
-    changeQuery,
-    setPage,
-    pagination: paginateRecords(filtered, page, PAGE_SIZE),
-    resultFilter: { label: '结果', value: result, options: RESULT_OPTIONS, onChange: changeResult },
-  };
-}
-
-function AuditTable({ logs }: { logs: AuditLogView[] }) {
-  if (!logs.length) {
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的记录" />;
-  }
-  return (
-    <Table<AuditLogView>
-      columns={AUDIT_COLUMNS}
-      dataSource={logs}
-      pagination={false}
-      rowKey="id"
-      scroll={{ x: 900 }}
-      size="middle"
-    />
-  );
-}

@@ -3,6 +3,7 @@ import {
   ADMIN_NAV_GROUPS,
   ADMIN_NAV_ITEMS,
   ADMIN_VIEW_IDS,
+  adminViewLocationFromHash,
   adminViewFromHash,
   adminViewHash,
   getAdminNavigationItem,
@@ -21,6 +22,16 @@ describe('admin navigation', () => {
     expect(adminViewFromHash('#section-0')).toBe('overview');
     expect(adminViewFromHash('#section-4')).toBe('models');
     expect(adminViewFromHash('#section-6')).toBe('audit');
+  });
+
+  it('keeps an import task filter when navigating directly to the review workbench', () => {
+    expect(adminViewLocationFromHash('#content?importTaskId=import-1')).toEqual({
+      view: 'content',
+      params: { importTaskId: 'import-1' },
+    });
+    expect(adminViewHash('content', { importTaskId: 'import-1' })).toBe(
+      '#content?importTaskId=import-1',
+    );
   });
 
   it('falls back to overview for an unknown view', () => {

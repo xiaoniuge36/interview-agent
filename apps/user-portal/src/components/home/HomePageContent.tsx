@@ -1,17 +1,8 @@
 'use client';
 
-import { HeroSection } from './HeroSection';
-import { WorkspaceGate } from '@/components/workspace/WorkspaceGate';
+import { QuestionHubPage } from './question-hub/QuestionHubPage';
 
-/** 首页只保留用户此刻最需要的准备路径，行动入口由 HeroSection 根据真实数据生成。 */
+/** 首页以自主题库为主入口，档案与岗位只增强右侧 Agent 推荐。 */
 export function HomePageContent() {
-  return (
-    <WorkspaceGate>
-      {(data) => (
-        <div className="home-workspace">
-          <HeroSection profile={data.profile} jobs={data.jobs} interviews={data.interviews} />
-        </div>
-      )}
-    </WorkspaceGate>
-  );
+  return <QuestionHubPage />;
 }

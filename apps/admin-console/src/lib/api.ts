@@ -5,11 +5,26 @@ import { authClient } from './auth';
 const DEFAULT_API_BASE = 'http://localhost:3001/api';
 const API_BASE = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE);
 const HTTP_UNAUTHORIZED = 401;
+const ADMIN_API_ERROR_EVENT = 'admin-api-error';
+const ASCII_CONTROL_CHARACTER_END = 31;
+const ASCII_DELETE_CHARACTER = 127;
+const MAX_DOWNLOAD_FILE_NAME_LENGTH = 180;
 
 export type AdminApiRequest<T> = {
   path: string;
   schema: ZodType<T>;
   init?: RequestInit;
+};
+
+export type AdminApiBlobRequest = {
+  path: string;
+  fallbackFileName: string;
+  init?: RequestInit;
+};
+
+export type AdminDownloadedFile = {
+  blob: Blob;
+  fileName: string;
 };
 
 export type AdminApiDependencies = {
@@ -40,6 +55,20 @@ export class AdminApiError extends Error {
   }
 }
 
+export function isAdminSessionExpired(error: unknown): boolean {
+  return error instanceof AdminApiError && error.status === HTTP_UNAUTHORIZED;
+}
+
+export function subscribeAdminApiErrors(listener: (error: AdminApiError) => void): () => void {
+  if (typeof window === 'undefined') return () => undefined;
+  const handler = (event: Event) => {
+    const error = (event as CustomEvent<unknown>).detail;
+    if (error instanceof AdminApiError) listener(error);
+  };
+  window.addEventListener(ADMIN_API_ERROR_EVENT, handler);
+  return () => window.removeEventListener(ADMIN_API_ERROR_EVENT, handler);
+}
+
 const DEFAULT_DEPENDENCIES: AdminApiDependencies = {
   baseUrl: API_BASE,
   getAuthHeaders: () => authClient.getRequestHeaders(),
@@ -47,7 +76,11 @@ const DEFAULT_DEPENDENCIES: AdminApiDependencies = {
 };
 
 export function adminRequest<T>(request: AdminApiRequest<T>): Promise<T> {
-  return requestAdminJson(request, DEFAULT_DEPENDENCIES);
+  return reportAdminApiFailure(() => requestAdminJson(request, DEFAULT_DEPENDENCIES));
+}
+
+export function adminDownload(request: AdminApiBlobRequest): Promise<AdminDownloadedFile> {
+  return reportAdminApiFailure(() => requestAdminBlob(request, DEFAULT_DEPENDENCIES));
 }
 
 export async function requestAdminJson<T>(
@@ -69,6 +102,24 @@ export async function requestAdminJson<T>(
   });
 }
 
+export async function requestAdminBlob(
+  request: AdminApiBlobRequest,
+  dependencies: AdminApiDependencies,
+): Promise<AdminDownloadedFile> {
+  assertInternalPath(request.path);
+  const init = withAcceptHeader(request.init, 'text/csv');
+  const headers = await authenticatedHeaders(init, dependencies);
+  const response = await callApi({ path: request.path, init }, headers, dependencies);
+  if (!response.ok) throw responseError(response, await readJson(response));
+  return {
+    blob: await response.blob(),
+    fileName: resolveDownloadFileName(
+      response.headers.get('Content-Disposition'),
+      request.fallbackFileName,
+    ),
+  };
+}
+
 async function authenticatedHeaders(
   init: RequestInit | undefined,
   dependencies: AdminApiDependencies,
@@ -76,7 +127,7 @@ async function authenticatedHeaders(
   try {
     const headers = await dependencies.getAuthHeaders();
     new Headers(init?.headers).forEach((value, key) => headers.set(key, value));
-    headers.set('Accept', 'application/json');
+    if (!headers.has('Accept')) headers.set('Accept', 'application/json');
     if (init?.body && !headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');
     }
@@ -86,8 +137,14 @@ async function authenticatedHeaders(
   }
 }
 
-async function callApi<T>(
-  request: AdminApiRequest<T>,
+function withAcceptHeader(init: RequestInit | undefined, accept: string): RequestInit {
+  const headers = new Headers(init?.headers);
+  headers.set('Accept', accept);
+  return { ...init, headers };
+}
+
+async function callApi(
+  request: Pick<AdminApiRequest<unknown>, 'path' | 'init'>,
   headers: Headers,
   dependencies: AdminApiDependencies,
 ): Promise<Response> {
@@ -149,6 +206,20 @@ function authenticationError(cause: unknown): AdminApiError {
   });
 }
 
+async function reportAdminApiFailure<T>(request: () => Promise<T>): Promise<T> {
+  try {
+    return await request();
+  } catch (error) {
+    if (error instanceof AdminApiError) emitAdminApiError(error);
+    throw error;
+  }
+}
+
+function emitAdminApiError(error: AdminApiError): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(ADMIN_API_ERROR_EVENT, { detail: error }));
+}
+
 function normalizeBaseUrl(value: string): string {
   return value.trim().replace(/\/+$/, '');
 }
@@ -164,4 +235,49 @@ function assertInternalPath(path: string): void {
 
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError';
+}
+
+function resolveDownloadFileName(
+  contentDisposition: string | null,
+  fallbackFileName: string,
+): string {
+  const encodedName = contentDisposition?.match(/(?:^|;)\s*filename\*\s*=\s*([^;]+)/i)?.[1];
+  const plainName = contentDisposition?.match(
+    /(?:^|;)\s*filename\s*=\s*("(?:[^"\\]|\\.)*"|[^;]+)/i,
+  )?.[1];
+  const decodedName = encodedName
+    ? decodeAttachmentName(encodedName)
+    : plainName
+      ? decodeAttachmentName(plainName)
+      : undefined;
+  return sanitizeDownloadFileName(decodedName ?? fallbackFileName, fallbackFileName);
+}
+
+function decodeAttachmentName(value: string): string {
+  const normalized = value.trim().replace(/^"|"$/g, '');
+  const encodedValue = normalized.replace(/^[^']*'[^']*'/, '');
+  try {
+    return decodeURIComponent(encodedValue);
+  } catch {
+    return normalized;
+  }
+}
+
+function sanitizeDownloadFileName(value: string, fallbackFileName: string): string {
+  if (value.includes('/') || value.includes('\\') || value.includes('..')) return fallbackFileName;
+  const safe = removeControlCharacters(value)
+    .trim()
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/^\.+/, '');
+  if (!safe || safe === '_') return fallbackFileName;
+  return safe.slice(0, MAX_DOWNLOAD_FILE_NAME_LENGTH);
+}
+
+function removeControlCharacters(value: string): string {
+  return Array.from(value)
+    .filter((character) => {
+      const code = character.charCodeAt(0);
+      return code > ASCII_CONTROL_CHARACTER_END && code !== ASCII_DELETE_CHARACTER;
+    })
+    .join('');
 }

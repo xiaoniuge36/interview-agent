@@ -2,7 +2,7 @@ import type { ProductRequestContext } from '../../common/context/request-context
 import type { PrismaService } from '../../common/database/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { CandidateReviewService } from './candidate-review.service';
 
 const context: ProductRequestContext = {
@@ -64,11 +64,17 @@ describe('CandidateReviewService', () => {
 
   it('increments the persisted revision before recording an approval transition', () =>
     expectPersistedRevisionAudit());
+  it('reviews same-source candidates atomically and records every transition', () =>
+    expectBatchReview());
+  it('rejects batch reviews that mix import sources before writing', () =>
+    expectMixedSourceBatchRejected());
+  it('rejects batch reviews that include published candidates before writing', () =>
+    expectPublishedBatchRejected());
 });
 
 function candidateDatabase() {
   const transaction = {
-    candidateQuestion: { findFirst: jest.fn(), update: jest.fn() },
+    candidateQuestion: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     question: { findFirst: jest.fn(), findUnique: jest.fn(), create: jest.fn() },
   };
   return {
@@ -105,6 +111,92 @@ async function expectPersistedRevisionAudit() {
     }),
     database.transaction,
   );
+}
+
+type BatchReviewService = {
+  batchReview: (
+    context: ProductRequestContext,
+    input: { candidateIds: string[]; status: 'approved'; reviewNotes: string | null },
+  ) => Promise<{ updatedCount: number }>;
+};
+
+async function expectBatchReview() {
+  const database = candidateDatabase();
+  const audit = { record: jest.fn().mockResolvedValue({}) };
+  database.transaction.candidateQuestion.findMany.mockResolvedValue([
+    candidateRecord({ id: 'candidate-1', importTaskId: 'import-1', revision: 1 }),
+    candidateRecord({ id: 'candidate-2', importTaskId: 'import-1', revision: 3 }),
+  ]);
+  database.transaction.candidateQuestion.update
+    .mockResolvedValueOnce(candidateRecord({ id: 'candidate-1', status: 'approved', revision: 2 }))
+    .mockResolvedValueOnce(candidateRecord({ id: 'candidate-2', status: 'approved', revision: 4 }));
+  const service = new CandidateReviewService(
+    database as unknown as PrismaService,
+    new PolicyService(),
+    audit as unknown as AuditService,
+  ) as unknown as BatchReviewService;
+
+  await expect(
+    service.batchReview(context, {
+      candidateIds: ['candidate-1', 'candidate-2'],
+      status: 'approved',
+      reviewNotes: '内容准确。',
+    }),
+  ).resolves.toEqual({ updatedCount: 2 });
+
+  expect(database.transaction.candidateQuestion.update).toHaveBeenCalledWith({
+    where: { id: 'candidate-1' },
+    data: { status: 'approved', reviewNotes: '内容准确。', revision: { increment: 1 } },
+  });
+  expect(audit.record).toHaveBeenCalledTimes(2);
+}
+
+async function expectMixedSourceBatchRejected() {
+  const database = candidateDatabase();
+  database.transaction.candidateQuestion.findMany.mockResolvedValue([
+    candidateRecord({ id: 'candidate-1', importTaskId: 'import-1' }),
+    candidateRecord({ id: 'candidate-2', importTaskId: 'import-2' }),
+  ]);
+  const service = new CandidateReviewService(
+    database as unknown as PrismaService,
+    new PolicyService(),
+    { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
+  ) as unknown as BatchReviewService;
+
+  await expect(
+    service.batchReview(context, {
+      candidateIds: ['candidate-1', 'candidate-2'],
+      status: 'approved',
+      reviewNotes: null,
+    }),
+  ).rejects.toBeInstanceOf(BadRequestException);
+  expect(database.transaction.candidateQuestion.update).not.toHaveBeenCalled();
+}
+
+async function expectPublishedBatchRejected() {
+  const database = candidateDatabase();
+  database.transaction.candidateQuestion.findMany.mockResolvedValue([
+    candidateRecord({ id: 'candidate-1', importTaskId: 'import-1', publishedQuestionId: 'question-1' }),
+  ]);
+  const service = new CandidateReviewService(
+    database as unknown as PrismaService,
+    new PolicyService(),
+    { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
+  ) as unknown as BatchReviewService;
+
+  const error = await service
+    .batchReview(context, {
+      candidateIds: ['candidate-1'],
+      status: 'approved',
+      reviewNotes: null,
+    })
+    .then(
+      () => null,
+      (reason: unknown) => reason,
+    );
+
+  expect(error).toBeInstanceOf(ConflictException);
+  expect(database.transaction.candidateQuestion.update).not.toHaveBeenCalled();
 }
 
 function publishedQuestion() {

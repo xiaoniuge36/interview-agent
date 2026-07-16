@@ -1,4 +1,11 @@
-export type NavigationId = 'home' | 'profile' | 'practice' | 'interview' | 'reports' | 'settings';
+export type NavigationId =
+  | 'home'
+  | 'questions'
+  | 'profile'
+  | 'practice'
+  | 'interview'
+  | 'reports'
+  | 'settings';
 
 export type IconName = 'grid' | 'user' | 'target' | 'book' | 'mic' | 'chart' | 'settings';
 
@@ -18,9 +25,17 @@ export const NAV_ITEMS: NavigationItem[] = [
     id: 'home',
     href: '/home',
     label: '首页',
-    title: 'Agent 工作台',
-    helper: '查看今天的准备重点',
+    title: '题库大厅',
+    helper: '搜索专题与继续最近练习',
     icon: 'grid',
+  },
+  {
+    id: 'questions',
+    href: '/questions',
+    label: '自主刷题',
+    title: '独立选题',
+    helper: '筛选并组合 1–10 道题',
+    icon: 'book',
   },
   {
     id: 'profile',
@@ -43,10 +58,10 @@ export const NAV_ITEMS: NavigationItem[] = [
   {
     id: 'practice',
     href: '/practice',
-    label: '专项练习',
-    title: '专项练习',
-    helper: '打磨需要加强的表达',
-    icon: 'book',
+    label: '练习空间',
+    title: '沉浸式作答',
+    helper: '继续当前题单与逐题复盘',
+    icon: 'target',
     step: 3,
   },
   {

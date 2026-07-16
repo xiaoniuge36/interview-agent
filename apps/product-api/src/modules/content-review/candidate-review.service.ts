@@ -8,7 +8,9 @@ import {
 import type { Prisma } from '@prisma/client';
 import {
   CandidateQuestionDetailSchema,
+  BatchCandidateReviewResultSchema,
   QuestionSchema,
+  type BatchCandidateReviewInput,
   type CandidateQuestionDetail,
   type PublishCandidateQuestionInput,
   type UpdateCandidateQuestionInput,
@@ -63,6 +65,41 @@ export class CandidateReviewService {
         transaction,
       );
       return mapCandidate(updated);
+    });
+  }
+
+  async batchReview(context: ProductRequestContext, input: BatchCandidateReviewInput) {
+    this.assertReviewPermission(context);
+    return runSerializable(this.prisma, async (transaction) => {
+      const candidates = await transaction.candidateQuestion.findMany({
+        where: { tenantId: context.tenantId, id: { in: input.candidateIds } },
+      });
+      assertBatchReviewable(candidates, input.candidateIds);
+      for (const candidate of candidates) {
+        const updated = await transaction.candidateQuestion.update({
+          where: { id: candidate.id },
+          data: {
+            status: input.status,
+            reviewNotes: input.reviewNotes,
+            revision: { increment: 1 },
+          },
+        });
+        await this.audit.record(
+          context,
+          {
+            action: 'candidate:review',
+            resourceType: 'CandidateQuestion',
+            resourceId: candidate.id,
+            stateTransition: {
+              from: candidate.status,
+              to: updated.status,
+              version: updated.revision,
+            },
+          },
+          transaction,
+        );
+      }
+      return BatchCandidateReviewResultSchema.parse({ updatedCount: candidates.length });
     });
   }
 
@@ -183,6 +220,24 @@ function candidateUpdateData(
   if (input.reviewNotes !== undefined) data.reviewNotes = input.reviewNotes;
   if (input.status !== undefined) data.status = input.status;
   return data;
+}
+
+function assertBatchReviewable(
+  candidates: Array<{ id: string; importTaskId: string | null; publishedQuestionId: string | null }>,
+  candidateIds: string[],
+) {
+  if (candidates.length !== new Set(candidateIds).size) {
+    throw new NotFoundException({ code: 'CANDIDATE_QUESTION_NOT_FOUND' });
+  }
+  if (candidates.some((candidate) => candidate.publishedQuestionId)) {
+    throw publishedCandidateConflict();
+  }
+  if (new Set(candidates.map((candidate) => candidate.importTaskId)).size !== 1) {
+    throw new BadRequestException({
+      code: 'CANDIDATE_BATCH_SOURCE_MISMATCH',
+      message: '批量审核仅支持同一来源资料的候选题。',
+    });
+  }
 }
 
 function mapCandidate(record: {

@@ -8,12 +8,12 @@ import {
   type ModelProvider,
   type UpdateModelCredentialInput,
 } from '@interview-agent/contracts';
-import { AuditService } from '../../common/audit/audit.service';
-import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
-import { PrismaService } from '../../common/database/prisma.service';
 import { CredentialCryptoService } from './credential-crypto.service';
+import { ModelCredentialInfrastructure } from './model-credential-infrastructure';
 import { ModelProviderClient } from './model-provider.client';
+
+const KEY_HINT_VISIBLE_CHARACTERS = 4;
 
 export type ResolvedModelCredential = {
   id: string;
@@ -26,16 +26,14 @@ export type ResolvedModelCredential = {
 @Injectable()
 export class ModelCredentialService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly policy: PolicyService,
-    private readonly audit: AuditService,
+    private readonly infrastructure: ModelCredentialInfrastructure,
     private readonly crypto: CredentialCryptoService,
     private readonly provider: ModelProviderClient,
   ) {}
 
   async list(context: ProductRequestContext): Promise<ModelCredentialView[]> {
     this.assertAccess(context, 'model_credential:read');
-    const records = await this.prisma.userModelCredential.findMany({
+    const records = await this.infrastructure.prisma.userModelCredential.findMany({
       where: ownerScope(context),
       orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
     });
@@ -49,7 +47,7 @@ export class ModelCredentialService {
     this.assertAccess(context, 'model_credential:write');
     const encrypted = this.crypto.encrypt(input.apiKey);
     const keyHint = maskedKey(input.apiKey);
-    return this.prisma.$transaction(async (transaction) => {
+    return this.infrastructure.prisma.$transaction(async (transaction) => {
       if (input.isDefault) await clearDefault(transaction, context);
       const stored = await transaction.userModelCredential.create({
         data: {
@@ -62,7 +60,11 @@ export class ModelCredentialService {
           isDefault: input.isDefault,
         },
       });
-      await this.audit.record(context, auditEvent('create', stored.id, input), transaction);
+      await this.infrastructure.audit.record(
+        context,
+        auditEvent('create', stored.id, input),
+        transaction,
+      );
       return ModelCredentialViewSchema.parse(mapCredential(stored));
     }, serializable());
   }
@@ -73,7 +75,7 @@ export class ModelCredentialService {
     input: UpdateModelCredentialInput,
   ): Promise<ModelCredentialView> {
     this.assertAccess(context, 'model_credential:write');
-    return this.prisma.$transaction(async (transaction) => {
+    return this.infrastructure.prisma.$transaction(async (transaction) => {
       const current = await findOwned(transaction, context, credentialId);
       if (!current) throw credentialNotFound();
       if (input.isDefault) await clearDefault(transaction, context);
@@ -82,26 +84,34 @@ export class ModelCredentialService {
         where: { tenantId_id: { tenantId: context.tenantId, id: credentialId } },
         data: { ...secretData, ...plainUpdate(input) },
       });
-      await this.audit.record(context, auditEvent('update', stored.id, stored), transaction);
+      await this.infrastructure.audit.record(
+        context,
+        auditEvent('update', stored.id, stored),
+        transaction,
+      );
       return ModelCredentialViewSchema.parse(mapCredential(stored));
     }, serializable());
   }
 
   async remove(context: ProductRequestContext, credentialId: string): Promise<void> {
     this.assertAccess(context, 'model_credential:write');
-    await this.prisma.$transaction(async (transaction) => {
+    await this.infrastructure.prisma.$transaction(async (transaction) => {
       const current = await findOwned(transaction, context, credentialId);
       if (!current) throw credentialNotFound();
       await transaction.userModelCredential.delete({
         where: { tenantId_id: { tenantId: context.tenantId, id: credentialId } },
       });
-      await this.audit.record(context, auditEvent('delete', credentialId, current), transaction);
+      await this.infrastructure.audit.record(
+        context,
+        auditEvent('delete', credentialId, current),
+        transaction,
+      );
     }, serializable());
   }
 
   async resolveDefault(context: ProductRequestContext): Promise<ResolvedModelCredential | null> {
     this.assertAccess(context, 'model_credential:read');
-    const current = await this.prisma.userModelCredential.findFirst({
+    const current = await this.infrastructure.prisma.userModelCredential.findFirst({
       where: { ...ownerScope(context), isDefault: true, status: 'verified' },
       orderBy: { updatedAt: 'desc' },
     });
@@ -120,7 +130,7 @@ export class ModelCredentialService {
     credentialId: string,
   ): Promise<ModelCredentialView> {
     this.assertAccess(context, 'model_credential:test');
-    const current = await this.prisma.userModelCredential.findFirst({
+    const current = await this.infrastructure.prisma.userModelCredential.findFirst({
       where: { ...ownerScope(context), id: credentialId },
     });
     if (!current) throw credentialNotFound();
@@ -130,12 +140,16 @@ export class ModelCredentialService {
       baseUrl: current.baseUrl,
       apiKey: this.crypto.decrypt(current),
     });
-    return this.prisma.$transaction(async (transaction) => {
+    return this.infrastructure.prisma.$transaction(async (transaction) => {
       const stored = await transaction.userModelCredential.update({
         where: { tenantId_id: { tenantId: context.tenantId, id: credentialId } },
         data: { status: 'verified', lastTestedAt: new Date(), lastErrorCode: null },
       });
-      await this.audit.record(context, auditEvent('test', stored.id, stored), transaction);
+      await this.infrastructure.audit.record(
+        context,
+        auditEvent('test', stored.id, stored),
+        transaction,
+      );
       return ModelCredentialViewSchema.parse(mapCredential(stored));
     }, serializable());
   }
@@ -144,7 +158,7 @@ export class ModelCredentialService {
     context: ProductRequestContext,
     action: 'model_credential:read' | 'model_credential:write' | 'model_credential:test',
   ) {
-    this.policy.assert(context.actor, action, {
+    this.infrastructure.policy.assert(context.actor, action, {
       tenantId: context.tenantId,
       ownerId: context.actor.id,
     });
@@ -156,7 +170,7 @@ function ownerScope(context: ProductRequestContext) {
 }
 
 function maskedKey(value: string) {
-  return `••••${value.slice(-4)}`;
+  return `••••${value.slice(-KEY_HINT_VISIBLE_CHARACTERS)}`;
 }
 
 function encryptedUpdate(crypto: CredentialCryptoService, apiKey: string) {

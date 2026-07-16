@@ -170,6 +170,7 @@ model EvaluationResult {
   feedback      String
   missingPoints String[]
   rubricScores  Json
+  followUpQuestion String?
   createdAt     DateTime @default(now())
 
   tenant      Tenant              @relation(fields: [tenantId], references: [id])

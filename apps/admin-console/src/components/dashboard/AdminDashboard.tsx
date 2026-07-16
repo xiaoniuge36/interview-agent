@@ -1,53 +1,47 @@
 'use client';
 
-import { useAuth } from '@interview-agent/auth-client';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { adminViewFromHash, adminViewHash, type AdminView } from '@/components/admin-navigation';
+import {
+  adminViewHash,
+  adminViewLocationFromHash,
+  type AdminView,
+  type AdminViewLocation,
+  type AdminViewParams,
+} from '@/components/admin-navigation';
 import { AdminShell } from '@/components/AdminShell';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { AdminOverview } from './AdminOverview';
 import { AuditLogPanel } from './AuditLogPanel';
-import { getAuthenticationRecovery } from './admin-session';
 import { ImportCenter } from './ImportCenter';
 import { ModelGovernance } from './ModelGovernance';
 import { QuestionReviewPanels } from './QuestionReviewPanels';
 import { RuntimeObservability } from './RuntimeObservability';
 import { TrainingContentWorkbench } from './TrainingContentWorkbench';
-import { AuthenticationFailure } from './SectionState';
 
 export function AdminDashboard() {
-  const auth = useAuth();
   const { state, isRefreshing, lastUpdatedAt, reload } = useAdminDashboard();
-  const { activeView, selectView } = useAdminView();
-  const authenticationError = state.authenticationError;
-  const recovery = getAuthenticationRecovery(auth.mode);
-  const restoreSession = () => {
-    if (recovery.action === 'sign-in') void auth.signIn();
-    else if (recovery.action === 'sign-out') void auth.signOut();
-    else reload();
-  };
+  const { activeView, params, selectView } = useAdminView();
+  const [listReloadKey, setListReloadKey] = useState(0);
+  const reloadAll = useCallback(() => {
+    reload();
+    setListReloadKey((value) => value + 1);
+  }, [reload]);
   return (
     <AdminShell
       activeView={activeView}
       isRefreshing={isRefreshing}
       lastUpdatedAt={lastUpdatedAt}
-      onRefresh={reload}
+      onRefresh={reloadAll}
       onViewChange={selectView}
     >
-      {authenticationError ? (
-        <AuthenticationFailure
-          error={authenticationError}
-          actionLabel={recovery.label}
-          onAction={restoreSession}
-        />
-      ) : (
-        <DashboardSections
-          activeView={activeView}
-          state={state}
-          onChanged={reload}
-          onNavigate={selectView}
-        />
-      )}
+      <DashboardSections
+        activeView={activeView}
+        params={params}
+        refreshKey={listReloadKey}
+        state={state}
+        onChanged={reloadAll}
+        onNavigate={selectView}
+      />
     </AdminShell>
   );
 }
@@ -56,43 +50,55 @@ type DashboardState = ReturnType<typeof useAdminDashboard>['state'];
 
 type DashboardSectionsProps = {
   activeView: AdminView;
+  params: AdminViewParams;
+  refreshKey: number;
   state: DashboardState;
   onChanged: () => void;
-  onNavigate: (view: AdminView) => void;
+  onNavigate: (view: AdminView, params?: AdminViewParams) => void;
 };
 
-function DashboardSections(props: DashboardSectionsProps) {
-  const { activeView, state } = props;
+function DashboardSections({
+  activeView,
+  onChanged,
+  onNavigate,
+  params,
+  refreshKey,
+  state,
+}: DashboardSectionsProps) {
   return (
     <div className="admin-dashboard-content" data-admin-view={activeView}>
       <DashboardView active={activeView === 'overview'} view="overview">
-        <AdminOverview
-          dashboard={state.dashboard}
-          candidates={state.candidates}
-          onNavigate={props.onNavigate}
-        />
+        <AdminOverview dashboard={state.dashboard} onNavigate={onNavigate} />
       </DashboardView>
       <DashboardView active={activeView === 'imports'} view="imports">
         <ImportCenter
+          active={activeView === 'imports'}
           dashboard={state.dashboard}
-          imports={state.imports}
-          onChanged={props.onChanged}
+          refreshKey={refreshKey}
+          onChanged={onChanged}
+          onNavigate={(importTaskId) => onNavigate('content', importTaskId ? { importTaskId } : {})}
         />
       </DashboardView>
       <DashboardView active={activeView === 'questions'} view="questions">
-        <QuestionReviewPanels questions={state.questions} />
+        <QuestionReviewPanels active={activeView === 'questions'} refreshKey={refreshKey} />
       </DashboardView>
       <DashboardView active={activeView === 'content'} view="content">
-        <TrainingContentWorkbench candidates={state.candidates} onChanged={props.onChanged} />
+        <TrainingContentWorkbench
+          active={activeView === 'content'}
+          importTaskId={params.importTaskId}
+          refreshKey={refreshKey}
+          onChanged={onChanged}
+          onClearImportTask={() => onNavigate('content')}
+        />
       </DashboardView>
       <DashboardView active={activeView === 'models'} view="models">
-        <ModelGovernance state={state.models} />
+        <ModelGovernance active={activeView === 'models'} refreshKey={refreshKey} />
       </DashboardView>
       <DashboardView active={activeView === 'runtime'} view="runtime">
-        <RuntimeObservability state={state.runs} />
+        <RuntimeObservability active={activeView === 'runtime'} refreshKey={refreshKey} />
       </DashboardView>
       <DashboardView active={activeView === 'audit'} view="audit">
-        <AuditLogPanel state={state.logs} />
+        <AuditLogPanel active={activeView === 'audit'} refreshKey={refreshKey} />
       </DashboardView>
     </div>
   );
@@ -113,10 +119,10 @@ function DashboardView({ active, children, view }: DashboardViewProps) {
 }
 
 function useAdminView() {
-  const [activeView, setActiveView] = useState<AdminView>('overview');
+  const [location, setLocation] = useState<AdminViewLocation>({ view: 'overview', params: {} });
 
   useEffect(() => {
-    const syncView = () => setActiveView(adminViewFromHash(window.location.hash));
+    const syncView = () => setLocation(adminViewLocationFromHash(window.location.hash));
     syncView();
     window.addEventListener('hashchange', syncView);
     window.addEventListener('popstate', syncView);
@@ -126,12 +132,12 @@ function useAdminView() {
     };
   }, []);
 
-  const selectView = useCallback((view: AdminView) => {
-    setActiveView(view);
-    const hash = adminViewHash(view);
+  const selectView = useCallback((view: AdminView, params: AdminViewParams = {}) => {
+    const hash = adminViewHash(view, params);
+    setLocation(adminViewLocationFromHash(hash));
     if (window.location.hash !== hash) window.history.pushState(null, '', hash);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  return { activeView, selectView };
+  return { activeView: location.view, params: location.params, selectView };
 }

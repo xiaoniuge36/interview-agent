@@ -1,5 +1,6 @@
-import { Alert, Button, Card, Form, Input, List, Select, Space } from 'antd';
+import { Alert, Button, Card, Form, Input, Space } from 'antd';
 import type { CandidateQuestionDetail } from '@interview-agent/contracts';
+import * as React from 'react';
 import { useMemo } from 'react';
 import type { CandidateFormProps } from './types';
 import { canPublishCandidate, splitTags } from './training-utils';
@@ -41,17 +42,28 @@ function CandidateContentFields(props: CandidateContentFieldsProps) {
 function CandidateReviewFields({ detail, change }: { detail: CandidateQuestionDetail; change: ChangeDetail }) {
   return (
     <>
-      <Form.Item label="审核状态">
-        <Select
-          options={[
-            { value: 'pending', label: '待审核' },
-            { value: 'needs_edit', label: '需修改' },
-            { value: 'approved', label: '已通过' },
-            { value: 'rejected', label: '已拒绝' },
-          ]}
-          value={detail.status}
-          onChange={(status) => change('status', status as CandidateQuestionDetail['status'])}
-        />
+      <Form.Item label="审核结论">
+        <Space wrap>
+          <Button
+            type={detail.status === 'approved' ? 'primary' : 'default'}
+            onClick={() => change('status', 'approved')}
+          >
+            通过
+          </Button>
+          <Button
+            type={detail.status === 'needs_edit' ? 'primary' : 'default'}
+            onClick={() => change('status', 'needs_edit')}
+          >
+            需修改
+          </Button>
+          <Button
+            danger
+            type={detail.status === 'rejected' ? 'primary' : 'default'}
+            onClick={() => change('status', 'rejected')}
+          >
+            驳回
+          </Button>
+        </Space>
       </Form.Item>
       <Form.Item label="审核备注"><Input.TextArea rows={3} value={detail.reviewNotes ?? ''} onChange={(event) => change('reviewNotes', event.target.value || null)} /></Form.Item>
     </>
@@ -61,7 +73,13 @@ function CandidateReviewFields({ detail, change }: { detail: CandidateQuestionDe
 function RubricList({ detail }: { detail: CandidateQuestionDetail }) {
   return (
     <Card className="admin-rubric-card" size="small" title="评分标准">
-      <List dataSource={detail.rubric} renderItem={(item) => <List.Item>{item.point}（{item.score} 分）</List.Item>} size="small" />
+      <ul className="admin-rubric-list">
+        {detail.rubric.map((item) => (
+          <li key={`${item.point}-${item.score}`}>
+            {item.point}（{item.score} 分）
+          </li>
+        ))}
+      </ul>
     </Card>
   );
 }
@@ -71,7 +89,7 @@ function CandidateActions(props: CandidateFormProps) {
     <Space className="admin-form-actions" wrap>
       <Button loading={props.saving} onClick={props.onSave}>保存审核</Button>
       <Button disabled={props.saving || !canPublishCandidate(props.detail.status)} loading={props.saving} type="primary" onClick={props.onPublish}>发布到题库</Button>
-      {!canPublishCandidate(props.detail.status) ? <Alert message="候选题审核通过后才能发布。" showIcon type="info" /> : null}
+      {!canPublishCandidate(props.detail.status) ? <Alert showIcon title="候选题审核通过后才能发布。" type="info" /> : null}
     </Space>
   );
 }

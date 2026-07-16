@@ -227,9 +227,45 @@
     height: 30px;
   }
   .sidebar-user-summary,
-  .sidebar-account,
   .sidebar-nav {
     display: none;
+  }
+
+  .sidebar-account {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .sidebar-account-link {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 0 !important;
+    display: grid;
+    grid-template-columns: 38px;
+  }
+
+  .sidebar-account-link > span:nth-child(2),
+  .sidebar-account-link .sidebar-chevron {
+    display: none;
+  }
+
+  .sidebar-account .sidebar-avatar {
+    width: 38px;
+    height: 38px;
+  }
+
+  .sidebar-signout {
+    width: auto;
+    min-height: 38px;
+    margin: 0;
+    padding: 0 10px;
+    background: rgba(255, 255, 255, 0.06);
   }
 
   .agent-dashboard-topbar {

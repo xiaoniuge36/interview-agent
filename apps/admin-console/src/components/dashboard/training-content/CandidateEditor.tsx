@@ -1,10 +1,11 @@
-import { Alert, Spin } from 'antd';
+import { Alert, Card, Empty, Spin, Typography } from 'antd';
 import type { CandidateQuestionDetail } from '@interview-agent/contracts';
 import { useEffect, useState } from 'react';
 import { getCandidateDetail, publishCandidate, updateCandidate } from '@/lib/training-content-api';
 import { CandidateForm } from './CandidateForm';
+import { ImportReviewContext } from './ImportReviewContext';
 import type { CandidateEditorProps, ChangeHandler } from './types';
-import { candidateUpdateInput, errorMessage } from './training-utils';
+import { candidateUpdateInput } from './training-utils';
 
 export function CandidateEditor(props: CandidateEditorProps) {
   const detailState = useCandidateDetail(props.candidateId);
@@ -18,48 +19,60 @@ type CandidateActions = ReturnType<typeof useCandidateActions>;
 function CandidateEditorContent({ actions, detailState }: { actions: CandidateActions; detailState: CandidateDetailState }) {
   return (
     <div className="admin-candidate-editor">
-      {detailState.isLoading ? <Spin tip="正在加载候选题详情…" /> : null}
-      {detailState.detail ? <CandidateForm detail={detailState.detail} onChange={detailState.setDetail} {...actions} /> : null}
-      {detailState.message ? <Alert message={detailState.message} showIcon type="error" /> : null}
-      {actions.message ? <Alert message={actions.message} showIcon type={actions.messageType} /> : null}
+      {detailState.isLoading ? <Spin description="正在加载候选题详情…" /> : null}
+      {detailState.detail ? (
+        <>
+          <CandidateSourceContext importTaskId={detailState.detail.importTaskId} />
+          <CandidateForm detail={detailState.detail} onChange={detailState.setDetail} {...actions} />
+        </>
+      ) : null}
+      {detailState.hasError ? <Empty description="暂无可展示的候选题详情。" image={Empty.PRESENTED_IMAGE_SIMPLE} /> : null}
+      {actions.message ? <Alert message={actions.message} showIcon type="success" /> : null}
     </div>
+  );
+}
+
+function CandidateSourceContext({ importTaskId }: { importTaskId: string | null }) {
+  if (importTaskId) return <ImportReviewContext active importTaskId={importTaskId} />;
+  return (
+    <Card className="admin-import-review-context" size="small" title="来源资料">
+      <Typography.Text type="secondary">非导入来源</Typography.Text>
+    </Card>
   );
 }
 
 function useCandidateDetail(candidateId: string) {
   const [detail, setDetail] = useState<CandidateQuestionDetail | null>(null);
-  const [message, setMessage] = useState('');
+  const [hasError, setHasError] = useState(false);
   const [isLoading, setLoading] = useState(false);
   useEffect(() => {
     let active = true;
     setDetail(null);
     setLoading(true);
-    setMessage('');
+    setHasError(false);
     void getCandidateDetail(candidateId)
       .then((candidate) => active && setDetail(candidate))
-      .catch((error) => active && setMessage(errorMessage(error)))
+      .catch(() => active && setHasError(true))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [candidateId]);
-  return { detail, setDetail, message, isLoading };
+  return { detail, setDetail, hasError, isLoading };
 }
 
 type CandidateActionContext = { detailState: CandidateDetailState; onChanged: ChangeHandler };
 
 function useCandidateActions(context: CandidateActionContext) {
   const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState<'error' | 'success'>('success');
   const [saving, setSaving] = useState(false);
   const execute = (action: 'save' | 'publish') => {
-    void executeCandidateAction({ ...context, action, setMessage, setMessageType, setSaving });
+    void executeCandidateAction({ ...context, action, setMessage, setSaving });
   };
-  return { onSave: () => execute('save'), onPublish: () => execute('publish'), saving, message, messageType };
+  return { onSave: () => execute('save'), onPublish: () => execute('publish'), saving, message };
 }
 
 type CandidateActionRequest = CandidateActionContext & {
   action: 'save' | 'publish';
   setMessage: (message: string) => void;
-  setMessageType: (type: 'error' | 'success') => void;
   setSaving: (saving: boolean) => void;
 };
 
@@ -76,11 +89,9 @@ async function executeCandidateAction(request: CandidateActionRequest) {
       const question = await publishCandidate(detail.id);
       request.setMessage(`已发布到题库：${question.title}`);
     }
-    request.setMessageType('success');
     request.onChanged();
-  } catch (error) {
-    request.setMessageType('error');
-    request.setMessage(errorMessage(error));
+  } catch {
+    // 统一请求层会显示操作失败提示；此处仅结束提交状态。
   } finally {
     request.setSaving(false);
   }

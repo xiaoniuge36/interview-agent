@@ -13,7 +13,7 @@ function dependencies(response: Response) {
   };
 }
 
-function request(): ApiRequest<z.infer<typeof PayloadSchema>> {
+function request(): ApiRequest<typeof PayloadSchema> {
   return { path: '/payload', schema: PayloadSchema };
 }
 

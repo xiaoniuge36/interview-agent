@@ -1,0 +1,146 @@
+.agent-recommendation-rail {
+  position: sticky;
+  top: 26px;
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid rgba(140, 177, 233, 0.18);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 90% 2%, rgba(57, 115, 236, 0.32), transparent 13rem),
+    linear-gradient(160deg, #10233b, #071421 72%);
+  color: #eef5ff;
+  box-shadow: 0 20px 42px rgba(6, 22, 39, 0.18);
+}
+.agent-rail-header {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr);
+  gap: 11px;
+}
+.agent-status-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #53e0bd;
+  box-shadow: 0 0 0 5px rgba(83, 224, 189, 0.11);
+}
+.agent-rail-header span {
+  color: #7de1c9;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.agent-rail-header h2 {
+  margin: 6px 0 0;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+}
+.agent-recommendation-card,
+.agent-rail-empty,
+.agent-rail-error {
+  display: grid;
+  gap: 15px;
+  padding: 18px;
+  border: 1px solid rgba(165, 194, 237, 0.17);
+  border-radius: 10px;
+  background: rgba(13, 39, 66, 0.66);
+}
+.agent-recommendation-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(165, 194, 237, 0.13);
+  color: #9db2ce;
+  font-size: 10px;
+  font-weight: 700;
+}
+.agent-recommendation-meta span:first-child {
+  color: #68ddc2;
+}
+.agent-recommendation-card h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+}
+.agent-reason {
+  padding: 13px 14px;
+  border-left: 2px solid #53d8bb;
+  background: rgba(84, 219, 189, 0.07);
+}
+.agent-reason span {
+  color: #6de0c6;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+}
+.agent-reason p,
+.agent-rail-empty p,
+.agent-rail-error p,
+.agent-rail-note p {
+  margin: 7px 0 0;
+  color: #bdcbe0;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.agent-recommendation-card > a {
+  color: #b8c9e2;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.agent-recommendation-card button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.agent-rail-note {
+  padding-top: 17px;
+  border-top: 1px solid rgba(168, 196, 234, 0.14);
+}
+.agent-rail-note strong {
+  font-size: 12px;
+}
+.agent-rail-note a {
+  display: inline-block;
+  margin-top: 10px;
+  color: #72dec5;
+  font-size: 12px;
+  font-weight: 750;
+}
+.agent-rail-error button {
+  width: fit-content;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #72dec5;
+  font-size: 12px;
+  font-weight: 750;
+}
+.agent-rail-empty a {
+  color: #72dec5;
+  font-size: 12px;
+  font-weight: 750;
+}
+.agent-action-error {
+  margin: -6px 0 0;
+  color: #ffbaba;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.agent-thinking {
+  display: flex;
+  gap: 4px;
+}
+.agent-thinking i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #62d9be;
+}

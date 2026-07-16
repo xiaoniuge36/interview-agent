@@ -1,12 +1,10 @@
 import type { Question } from '@interview-agent/contracts';
 import { Card, Empty, Space, Table, Tag, Typography, type TableColumnsType } from 'antd';
-import { useDeferredValue, useMemo, useState } from 'react';
-import type { SectionState } from '@/hooks/useAdminDashboard';
+import { useAdminListExport } from '@/hooks/useAdminListExport';
+import { useAdminPagedList, type AdminPagedListController } from '@/hooks/useAdminPagedList';
 import { AdminPagination, AdminTableToolbar } from './AdminTableControls';
-import { filterQuestions, paginateRecords } from './admin-records';
 import { SectionFeedback } from './SectionState';
 
-const PAGE_SIZE = 8;
 const STATUS_OPTIONS = [
   { value: 'all', label: '全部状态' },
   { value: 'published', label: '已发布' },
@@ -36,78 +34,110 @@ const QUESTION_STATUS_COLORS = {
   archived: 'default',
 } as const;
 
-export function QuestionAssetsTable({ state }: { state: SectionState<Question[]> }) {
+export function QuestionAssetsTable({
+  active,
+  refreshKey,
+}: {
+  active: boolean;
+  refreshKey: number;
+}) {
+  const list = useAdminPagedList('questions', { enabled: active, reloadKey: refreshKey });
+  const { exportList, isExporting } = useAdminListExport('questions', list.submittedQuery);
   return (
     <Card className="admin-table-card" size="small" title="正式题库">
       <Typography.Paragraph className="card-description" type="secondary">
         查看公开题目与当前租户题目的发布状态。
       </Typography.Paragraph>
-      {state.status === 'ready' ? (
-        <ReadyQuestionTable questions={state.data} />
-      ) : (
-        <SectionFeedback state={state} loadingMessage="正在加载题库" />
-      )}
+      <QuestionListContent exportList={exportList} isExporting={isExporting} list={list} />
     </Card>
   );
 }
 
-function ReadyQuestionTable({ questions }: { questions: Question[] }) {
-  const table = useQuestionTable(questions);
+type QuestionListContentProps = {
+  exportList: () => Promise<void>;
+  isExporting: boolean;
+  list: AdminPagedListController<'questions'>;
+};
+
+function QuestionListContent({ exportList, isExporting, list }: QuestionListContentProps) {
+  if (list.state.status !== 'ready')
+    return <SectionFeedback state={list.state} loadingMessage="正在加载题库" />;
+  const page = list.state.data;
   return (
     <>
-      <AdminTableToolbar
-        query={table.query}
-        searchLabel="搜索题目、正文或标签"
-        resultLabel={`筛选出 ${table.pagination.total} 条`}
-        filters={table.filters}
-        onQueryChange={table.changeQuery}
+      <QuestionToolbar
+        exportList={exportList}
+        isExporting={isExporting}
+        list={list}
+        total={page.total}
       />
-      <QuestionTable questions={table.pagination.items} />
-      <AdminPagination {...table.pagination} onChange={table.setPage} />
+      <QuestionTable questions={page.items} />
+      <AdminPagination
+        page={page.page}
+        pageSize={page.pageSize}
+        total={page.total}
+        onChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
+      />
     </>
   );
 }
 
-function useQuestionTable(questions: Question[]) {
-  const [query, setQuery] = useState('');
-  const [status, setStatus] = useState<Question['status'] | 'all'>('all');
-  const [difficulty, setDifficulty] = useState<Question['difficulty'] | 'all'>('all');
-  const [page, setPage] = useState(1);
-  const deferredQuery = useDeferredValue(query);
-  const filtered = useMemo(
-    () => filterQuestions(questions, { query: deferredQuery, status, difficulty }),
-    [deferredQuery, difficulty, questions, status],
-  );
-  const updateStatus = (value: string) => {
-    setStatus(value as Question['status'] | 'all');
-    setPage(1);
-  };
-  const updateDifficulty = (value: string) => {
-    setDifficulty(value as Question['difficulty'] | 'all');
-    setPage(1);
-  };
-  const changeQuery = (value: string) => {
-    setQuery(value);
-    setPage(1);
-  };
+type QuestionToolbarProps = QuestionListContentProps & { total: number };
 
-  return {
-    query,
-    changeQuery,
-    setPage,
-    pagination: paginateRecords(filtered, page, PAGE_SIZE),
-    filters: [
-      { label: '状态', value: status, options: STATUS_OPTIONS, onChange: updateStatus },
-      { label: '难度', value: difficulty, options: DIFFICULTY_OPTIONS, onChange: updateDifficulty },
-    ],
-  };
+function QuestionToolbar({ exportList, isExporting, list, total }: QuestionToolbarProps) {
+  return (
+    <AdminTableToolbar
+      filters={[
+        {
+          label: '状态',
+          value: list.draftQuery.status ?? 'all',
+          options: STATUS_OPTIONS,
+          onChange: (value) => updateQuestionStatus(list.setDraftQuery, value),
+        },
+        {
+          label: '难度',
+          value: list.draftQuery.difficulty ?? 'all',
+          options: DIFFICULTY_OPTIONS,
+          onChange: (value) => updateQuestionDifficulty(list.setDraftQuery, value),
+        },
+      ]}
+      isExporting={isExporting}
+      isLoading={list.isLoading}
+      query={list.draftQuery.keyword ?? ''}
+      resultLabel={`共 ${total} 条`}
+      searchLabel="搜索题目或正文"
+      onExport={() => void exportList()}
+      onQuery={list.query}
+      onQueryChange={(keyword) => list.setDraftQuery((current) => ({ ...current, keyword }))}
+      onReset={list.reset}
+    />
+  );
+}
+
+function updateQuestionStatus(
+  setDraftQuery: ReturnType<typeof useAdminPagedList<'questions'>>['setDraftQuery'],
+  value: string,
+) {
+  setDraftQuery((current) => ({
+    ...current,
+    status: value === 'all' ? undefined : (value as Question['status']),
+  }));
+}
+
+function updateQuestionDifficulty(
+  setDraftQuery: ReturnType<typeof useAdminPagedList<'questions'>>['setDraftQuery'],
+  value: string,
+) {
+  setDraftQuery((current) => ({
+    ...current,
+    difficulty: value === 'all' ? undefined : (value as Question['difficulty']),
+  }));
 }
 
 function QuestionTable({ questions }: { questions: Question[] }) {
-  if (!questions.length) {
+  if (!questions.length)
     return <Empty description="没有匹配的题目" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
-  }
-
   return (
     <Table<Question>
       columns={QUESTION_COLUMNS}

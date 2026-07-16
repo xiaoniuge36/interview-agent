@@ -18,6 +18,7 @@ import { ImportModule } from './modules/import/import.module';
 import { JobIntentModule } from './modules/job-intent/job-intent.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { PracticeModule } from './modules/practice/practice.module';
+import { QuestionCatalogModule } from './modules/question-catalog/question-catalog.module';
 
 const localEnvFiles = [resolve(process.cwd(), '.env'), resolve(process.cwd(), '../../.env')];
 
@@ -48,6 +49,7 @@ const localEnvFiles = [resolve(process.cwd(), '.env'), resolve(process.cwd(), '.
     InterviewModule,
     ImportModule,
     PracticeModule,
+    QuestionCatalogModule,
     AdminModule,
   ],
   providers: [

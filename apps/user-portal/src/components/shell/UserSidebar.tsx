@@ -5,11 +5,13 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@interview-agent/auth-client';
 import { NavigationIcon } from './NavigationIcon';
 import { NAV_ITEMS, navIdFromPathname } from './navigation';
+import { sidebarAccountActions } from './sidebar-account-actions';
 
 export function UserSidebar() {
   const pathname = usePathname();
   const auth = useAuth();
   const name = auth.identity?.displayName ?? '训练用户';
+  const accountActions = sidebarAccountActions(auth.mode);
   return (
     <aside className="user-sidebar" aria-label="主导航">
       <SidebarBrand />
@@ -17,7 +19,8 @@ export function UserSidebar() {
       <SidebarNavigation active={navIdFromPathname(pathname)} />
       <SidebarAccount
         name={name}
-        onSignOut={auth.mode === 'development' ? undefined : () => void auth.signOut()}
+        showSignOut={accountActions.includes('sign_out')}
+        onSignOut={() => void auth.signOut()}
       />
     </aside>
   );
@@ -39,7 +42,7 @@ function SidebarBrand() {
 
 function SidebarUserSummary({ name }: { name: string }) {
   return (
-    <div className="sidebar-user-summary">
+    <Link className="sidebar-user-summary" href="/settings" aria-label="打开个人设置">
       <span className="sidebar-avatar">{initial(name)}</span>
       <span>
         <strong>{name}</strong>
@@ -48,7 +51,7 @@ function SidebarUserSummary({ name }: { name: string }) {
       <span className="sidebar-chevron" aria-hidden="true">
         ⌄
       </span>
-    </div>
+    </Link>
   );
 }
 
@@ -72,13 +75,15 @@ function SidebarNavigation({ active }: { active: ReturnType<typeof navIdFromPath
 
 function SidebarAccount({
   name,
+  showSignOut,
   onSignOut,
 }: {
   name: string;
-  onSignOut: (() => void) | undefined;
+  showSignOut: boolean;
+  onSignOut: () => void;
 }) {
   return (
-    <div className="sidebar-account">
+    <div className={showSignOut ? 'sidebar-account has-signout' : 'sidebar-account'}>
       <Link className="sidebar-account-link" href="/settings">
         <span className="sidebar-avatar">{initial(name)}</span>
         <span>
@@ -89,12 +94,28 @@ function SidebarAccount({
           ›
         </span>
       </Link>
-      {onSignOut ? (
+      {showSignOut ? (
         <button className="sidebar-signout" type="button" onClick={onSignOut}>
-          退出
+          <LogoutIcon />
+          <span>退出登录</span>
         </button>
       ) : null}
     </div>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10M14 8l4 4-4 4M18 12H9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

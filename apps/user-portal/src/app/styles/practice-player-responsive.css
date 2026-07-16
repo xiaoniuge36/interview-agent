@@ -1,0 +1,122 @@
+@media (max-width: 1180px) {
+  .practice-player-layout {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+  .practice-coach-panel {
+    position: static;
+    grid-column: 2;
+  }
+  .practice-round-actions {
+    width: calc(100% - 106px);
+  }
+}
+@media (max-width: 960px) {
+  .practice-entry {
+    grid-template-columns: 1fr;
+  }
+  .practice-entry-hero {
+    min-height: 520px;
+  }
+  .practice-entry-guide {
+    min-height: 490px;
+  }
+}
+@media (max-width: 760px) {
+  .practice-player-page {
+    padding: 22px 15px 150px;
+  }
+  .practice-player-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .practice-player-progress {
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+  }
+  .practice-player-layout {
+    grid-template-columns: 1fr;
+  }
+  .practice-question-nav {
+    position: static;
+    overflow-x: auto;
+  }
+  .practice-nav-title,
+  .practice-nav-legend {
+    display: none;
+  }
+  .practice-nav-items {
+    display: flex;
+    margin: 0;
+  }
+  .practice-nav-items button {
+    flex: 0 0 68px;
+  }
+  .practice-question-stage {
+    min-height: 0;
+    padding: 22px 18px;
+  }
+  .practice-question-stage > header,
+  .practice-answer-editor > span {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .practice-answer-editor textarea {
+    min-height: 220px;
+  }
+  .practice-coach-panel {
+    grid-column: auto;
+  }
+  .practice-round-actions {
+    position: fixed;
+    z-index: 25;
+    inset: auto 10px 10px;
+    width: auto;
+    margin: 0;
+    padding: 12px;
+    box-shadow: 0 12px 32px rgba(18, 42, 76, 0.18);
+  }
+  .practice-round-actions > div:first-child {
+    display: none;
+  }
+  .practice-round-actions > div:last-child {
+    width: 100%;
+  }
+  .practice-round-actions button {
+    flex: 1;
+  }
+  .practice-entry-page {
+    padding: 24px 15px 122px;
+  }
+  .practice-entry {
+    min-height: 0;
+    border-radius: 13px;
+  }
+  .practice-entry-hero {
+    min-height: 480px;
+    padding: 28px 22px;
+  }
+  .practice-entry-hero h1 {
+    font-size: clamp(32px, 10vw, 43px);
+  }
+  .practice-entry-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .practice-entry-actions a {
+    justify-content: space-between;
+  }
+  .practice-entry-facts {
+    gap: 12px;
+  }
+  .practice-entry-facts > span {
+    padding: 0 8px;
+  }
+  .practice-entry-guide {
+    min-height: 0;
+    padding: 28px 22px;
+  }
+  .practice-entry-note {
+    margin-top: 14px;
+  }
+}

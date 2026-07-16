@@ -1,14 +1,14 @@
 ﻿import { ApiErrorEnvelopeSchema } from '@interview-agent/contracts';
-import type { ZodType } from 'zod';
+import type { output, ZodTypeAny } from 'zod';
 import { authClient } from './auth';
 
 const DEFAULT_API_BASE = 'http://localhost:3001/api';
 const API_BASE = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE);
 const IDEMPOTENT_NETWORK_ATTEMPTS = 2;
 
-export type ApiRequest<T> = {
+export type ApiRequest<TSchema extends ZodTypeAny> = {
   path: string;
-  schema: ZodType<T>;
+  schema: TSchema;
   init?: RequestInit;
 };
 
@@ -46,14 +46,16 @@ const DEFAULT_DEPENDENCIES: ApiDependencies = {
   fetch: (...args) => globalThis.fetch(...args),
 };
 
-export function apiRequest<T>(request: ApiRequest<T>): Promise<T> {
+export function apiRequest<TSchema extends ZodTypeAny>(
+  request: ApiRequest<TSchema>,
+): Promise<output<TSchema>> {
   return requestJson(request, DEFAULT_DEPENDENCIES);
 }
 
-export async function requestJson<T>(
-  request: ApiRequest<T>,
+export async function requestJson<TSchema extends ZodTypeAny>(
+  request: ApiRequest<TSchema>,
   dependencies: ApiDependencies,
-): Promise<T> {
+): Promise<output<TSchema>> {
   assertInternalPath(request.path);
   const headers = await buildHeaders(request.init, dependencies.getAuthHeaders);
   const response = await fetchWithRetry(request, headers, dependencies);
@@ -97,8 +99,8 @@ async function buildHeaders(
   return headers;
 }
 
-async function fetchWithRetry<T>(
-  request: ApiRequest<T>,
+async function fetchWithRetry<TSchema extends ZodTypeAny>(
+  request: ApiRequest<TSchema>,
   headers: Headers,
   dependencies: ApiDependencies,
 ): Promise<Response> {

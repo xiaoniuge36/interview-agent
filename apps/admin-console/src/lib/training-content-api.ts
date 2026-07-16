@@ -1,11 +1,17 @@
 ﻿import {
+  BatchCandidateReviewInputSchema,
+  BatchCandidateReviewResultSchema,
   CandidateQuestionDetailSchema,
+  ImportReviewContextSchema,
   ImportTaskSchema,
   MarkdownImportRequestSchema,
   PublishCandidateQuestionInputSchema,
   QuestionSchema,
   UpdateCandidateQuestionInputSchema,
+  type BatchCandidateReviewInput,
+  type BatchCandidateReviewResult,
   type CandidateQuestionDetail,
+  type ImportReviewContext,
   type ImportTask,
   type MarkdownImportRequest,
   type PublishCandidateQuestionInput,
@@ -27,6 +33,34 @@ export function getCandidateDetail(candidateId: string): Promise<CandidateQuesti
     path: `/admin/candidates/${candidateId}`,
     schema: CandidateQuestionDetailSchema,
   });
+}
+
+export function createBatchCandidateReviewRequest(input: BatchCandidateReviewInput) {
+  return {
+    path: '/admin/candidates/batch-review',
+    schema: BatchCandidateReviewResultSchema,
+    init: {
+      method: 'PATCH',
+      body: JSON.stringify(BatchCandidateReviewInputSchema.parse(input)),
+    },
+  };
+}
+
+export function batchReviewCandidates(
+  input: BatchCandidateReviewInput,
+): Promise<BatchCandidateReviewResult> {
+  return adminRequest(createBatchCandidateReviewRequest(input));
+}
+
+export function createImportReviewContextRequest(taskId: string) {
+  return {
+    path: `/admin/imports/${encodeURIComponent(taskId)}/review-context`,
+    schema: ImportReviewContextSchema,
+  };
+}
+
+export function getImportReviewContext(taskId: string): Promise<ImportReviewContext> {
+  return adminRequest(createImportReviewContextRequest(taskId));
 }
 
 export function updateCandidate(

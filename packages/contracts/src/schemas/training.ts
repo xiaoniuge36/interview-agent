@@ -43,14 +43,33 @@ export const CandidateReviewStatusSchema = z.enum([
   'approved',
   'rejected',
 ]);
+export const CandidateImportSourceSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+});
 export const CandidateReviewSchema = z.object({
   id: z.string().min(1),
+  importTaskId: z.string().min(1).nullable(),
+  sourceImport: CandidateImportSourceSchema.nullable().default(null),
   title: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   status: CandidateReviewStatusSchema,
   qualityScore: z.number().min(0).max(CONTRACT_LIMITS.percentage),
   tags: z.array(z.string().max(CONTRACT_LIMITS.shortText)).max(CONTRACT_LIMITS.tags),
   sourceRefs: z.array(z.string().max(CONTRACT_LIMITS.mediumText)).max(CONTRACT_LIMITS.list),
   createdAt: z.string().datetime(),
+});
+
+export const BatchCandidateReviewInputSchema = z.object({
+  candidateIds: z.array(z.string().min(1)).min(1).max(CONTRACT_LIMITS.list),
+  status: z.enum(['needs_edit', 'approved', 'rejected']),
+  reviewNotes: z.string().max(CONTRACT_LIMITS.mediumText).nullable(),
+}).refine((value) => new Set(value.candidateIds).size === value.candidateIds.length, {
+  message: 'Candidate IDs must be unique.',
+  path: ['candidateIds'],
+});
+
+export const BatchCandidateReviewResultSchema = z.object({
+  updatedCount: z.number().int().nonnegative(),
 });
 
 export const TrainingPlanSchema = z.object({
@@ -78,6 +97,8 @@ export type RubricPoint = z.infer<typeof RubricPointSchema>;
 export type Question = z.infer<typeof QuestionSchema>;
 export type CandidateQuestion = z.infer<typeof CandidateQuestionSchema>;
 export type CandidateReview = z.infer<typeof CandidateReviewSchema>;
+export type BatchCandidateReviewInput = z.infer<typeof BatchCandidateReviewInputSchema>;
+export type BatchCandidateReviewResult = z.infer<typeof BatchCandidateReviewResultSchema>;
 export type TrainingPlan = z.infer<typeof TrainingPlanSchema>;
 
 export const ImportTaskStatusSchema = z.enum([
@@ -103,6 +124,16 @@ export const ImportTaskSchema = z.object({
   failureReason: z.string().max(CONTRACT_LIMITS.mediumText).nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+});
+
+export const ImportSourceChunkSchema = z.object({
+  sequence: z.number().int().positive(),
+  content: z.string().min(1).max(CONTRACT_LIMITS.longText),
+});
+
+export const ImportReviewContextSchema = z.object({
+  task: ImportTaskSchema,
+  sourceChunks: z.array(ImportSourceChunkSchema).max(CONTRACT_LIMITS.list),
 });
 
 export const CandidateQuestionDetailSchema = z.object({
@@ -147,6 +178,7 @@ export const PublishCandidateQuestionInputSchema = z.object({
 });
 
 export type ImportTask = z.infer<typeof ImportTaskSchema>;
+export type ImportReviewContext = z.infer<typeof ImportReviewContextSchema>;
 export type CandidateQuestionDetail = z.infer<typeof CandidateQuestionDetailSchema>;
 export type MarkdownImportRequest = z.infer<typeof MarkdownImportRequestSchema>;
 export type UpdateCandidateQuestionInput = z.infer<typeof UpdateCandidateQuestionInputSchema>;

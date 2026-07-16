@@ -130,7 +130,7 @@ export function createPracticeReportData(
       weaknesses,
       nextActions,
     }),
-    structuredData: jsonValue({ evaluatorMode: 'deterministic_fallback', evaluations }),
+    structuredData: jsonValue({ evaluatorMode: 'user_model', evaluations }),
   };
 }
 

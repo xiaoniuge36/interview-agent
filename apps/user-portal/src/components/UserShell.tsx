@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { MobileBottomNav } from './shell/MobileBottomNav';
 import { UserSidebar } from './shell/UserSidebar';
 
 type UserShellProps = { children: ReactNode };
@@ -16,6 +17,7 @@ export function UserShell({ children }: UserShellProps) {
       <main className="main" id="main-content">
         <div className="page-stage">{children}</div>
       </main>
+      <MobileBottomNav />
     </div>
   );
 }

@@ -29,6 +29,7 @@ describe('ModelProviderClient', () => {
       'https://api.deepseek.com/v1/chat/completions',
       expect.objectContaining({
         headers: expect.objectContaining({ Authorization: 'Bearer sk-server-only' }),
+        signal: expect.any(AbortSignal),
       }),
     );
   });

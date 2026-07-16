@@ -1,6 +1,7 @@
 'use client';
 
 import { ProfilePanel } from './ProfilePanel';
+import { ProfileMemoryRail } from './ProfileMemoryRail';
 import { WorkspaceGate } from '@/components/workspace/WorkspaceGate';
 import Link from 'next/link';
 
@@ -8,15 +9,16 @@ export function ProfilePageContent() {
   return (
     <WorkspaceGate>
       {(data) => (
-        <div className="workspace page-workspace">
+        <div className="workspace page-workspace profile-page-workspace">
           <PageIntro
             eyebrow="能力证据库"
             title="建立候选人画像"
             copy="只填写会影响面试的问题：目标岗位、经验、技术栈和项目证据。Agent 会据此生成追问链。"
             next={{ href: '/job', label: '下一步：目标岗位' }}
           />
-          <div className="page-single">
+          <div className="profile-agent-layout">
             <ProfilePanel profile={data.profile} onChanged={data.updateProfile} />
+            <ProfileMemoryRail profile={data.profile} />
           </div>
         </div>
       )}
@@ -31,7 +33,7 @@ function PageIntro(props: {
   next: { href: string; label: string };
 }) {
   return (
-    <header className="page-intro">
+    <header className="page-intro profile-page-intro">
       <div>
         <div className="eyebrow">{props.eyebrow}</div>
         <h1 className="h2">{props.title}</h1>

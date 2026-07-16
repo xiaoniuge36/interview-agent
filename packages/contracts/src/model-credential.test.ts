@@ -41,3 +41,22 @@ test('自定义兼容端点拒绝不安全的 HTTP 地址', () => {
 
   assert.equal(parsed.success, false);
 });
+
+test('自定义兼容端点拒绝本机、私网和内嵌凭证地址', () => {
+  for (const baseUrl of [
+    'https://localhost/v1',
+    'https://127.0.0.1/v1',
+    'https://192.168.1.10/v1',
+    'https://user:password@example.com/v1',
+  ]) {
+    assert.equal(
+      CreateModelCredentialInputSchema.safeParse({
+        provider: 'openai_compatible',
+        model: 'private-model',
+        apiKey: 'sk-one-time-secret',
+        baseUrl,
+      }).success,
+      false,
+    );
+  }
+});

@@ -4,6 +4,8 @@ import { resolveReviewCandidateId } from './review-workbench-state';
 
 const CANDIDATE = {
   id: 'candidate-1',
+  importTaskId: null,
+  sourceImport: null,
   title: 'React 状态管理',
   status: 'pending',
   qualityScore: 86,

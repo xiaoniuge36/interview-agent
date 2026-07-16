@@ -4,6 +4,7 @@ export * from './schemas/context';
 export * from './schemas/profile';
 export * from './schemas/job-intent';
 export * from './schemas/training';
+export * from './schemas/question-catalog';
 export * from './schemas/practice';
 export * from './schemas/interview';
 export * from './schemas/report';

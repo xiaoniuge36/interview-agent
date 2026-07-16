@@ -2,7 +2,6 @@ import { Alert, Button, Card, Form, Input } from 'antd';
 import { useState } from 'react';
 import { importMarkdown } from '@/lib/training-content-api';
 import type { ChangeHandler } from './types';
-import { errorMessage } from './training-utils';
 
 const DEFAULT_MARKDOWN = `# 面试训练资料
 
@@ -53,9 +52,8 @@ function useMarkdownImport(props: MarkdownImportFormProps) {
       setMessage(`导入任务已创建，共生成 ${task.candidateCount} 道候选题。`);
       props.onChanged();
       props.onCompleted?.();
-    } catch (error) {
-      setMessageType('error');
-      setMessage(errorMessage(error));
+    } catch {
+      // 统一请求层会显示导入失败提示；此处仅结束提交状态。
     } finally {
       setSubmitting(false);
     }

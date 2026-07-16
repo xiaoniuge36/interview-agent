@@ -19,6 +19,11 @@ const DEFAULT_BASE_URLS: Record<Exclude<ModelProvider, 'openai_compatible'>, str
   deepseek: 'https://api.deepseek.com/v1',
   qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
 };
+const HTTP_UNAUTHORIZED = 401;
+const HTTP_FORBIDDEN = 403;
+const HTTP_TOO_MANY_REQUESTS = 429;
+const HTTP_SERVER_ERROR = 500;
+const MODEL_REQUEST_TIMEOUT_MS = 30_000;
 
 @Injectable()
 export class ModelProviderClient {
@@ -47,7 +52,10 @@ export class ModelProviderError extends Error {
 }
 
 async function sendProviderRequest(input: ModelCompletionRequest): Promise<Response> {
-  const response = await fetch(endpointFor(input), requestFor(input));
+  const response = await fetch(endpointFor(input), {
+    ...requestFor(input),
+    signal: AbortSignal.timeout(MODEL_REQUEST_TIMEOUT_MS),
+  });
   if (!response.ok) throw new ModelProviderError(errorCode(response.status));
   return response;
 }
@@ -118,9 +126,11 @@ function anthropicContent(payload: unknown) {
 }
 
 function errorCode(status: number) {
-  if (status === 401 || status === 403) return 'MODEL_PROVIDER_AUTH_FAILED';
-  if (status === 429) return 'MODEL_PROVIDER_RATE_LIMITED';
-  if (status >= 500) return 'MODEL_PROVIDER_UNAVAILABLE';
+  if (status === HTTP_UNAUTHORIZED || status === HTTP_FORBIDDEN) {
+    return 'MODEL_PROVIDER_AUTH_FAILED';
+  }
+  if (status === HTTP_TOO_MANY_REQUESTS) return 'MODEL_PROVIDER_RATE_LIMITED';
+  if (status >= HTTP_SERVER_ERROR) return 'MODEL_PROVIDER_UNAVAILABLE';
   return 'MODEL_PROVIDER_REQUEST_REJECTED';
 }
 

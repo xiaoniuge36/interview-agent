@@ -61,9 +61,7 @@ function createService() {
   };
   const provider = { testConnection: jest.fn().mockResolvedValue(undefined) };
   const service = new ModelCredentialService(
-    prisma as never,
-    policy as never,
-    audit as never,
+    { prisma, policy, audit } as never,
     crypto as never,
     provider as never,
   );

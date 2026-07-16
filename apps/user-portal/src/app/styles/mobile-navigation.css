@@ -1,0 +1,53 @@
+.mobile-bottom-nav { display: none; }
+
+@media (max-width: 820px) {
+  .mobile-bottom-nav {
+    position: fixed;
+    z-index: 60;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    min-height: 62px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 6px;
+    border: 1px solid rgba(165, 185, 216, 0.35);
+    border-radius: 17px;
+    background: rgba(7, 20, 34, 0.94);
+    box-shadow: 0 18px 42px rgba(3, 14, 27, 0.3);
+    backdrop-filter: blur(18px);
+  }
+
+  .mobile-bottom-nav a {
+    min-width: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 3px;
+    border-radius: 11px;
+    color: #9eacc1;
+    font-size: 9px;
+    font-weight: 750;
+  }
+
+  .mobile-bottom-nav a svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobile-bottom-nav a.active {
+    background: linear-gradient(145deg, rgba(48, 100, 221, 0.72), rgba(32, 77, 170, 0.55));
+    color: #ffffff;
+  }
+
+  .page-stage { padding-bottom: 82px; }
+  .question-hub-page { padding-bottom: 126px; }
+  .question-picker-page,
+  .practice-player-page { padding-bottom: 176px; }
+  .selected-question-tray,
+  .practice-round-actions { bottom: 82px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-bottom-nav { backdrop-filter: none; }
+}

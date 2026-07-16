@@ -1,4 +1,5 @@
-import { Alert, Button, Result, Spin, Typography } from 'antd';
+import { Button, Empty, Result, Spin } from 'antd';
+import * as React from 'react';
 import type { AdminApiError } from '@/lib/api';
 import type { SectionState } from '@/hooks/useAdminDashboard';
 
@@ -10,9 +11,15 @@ type SectionFeedbackProps<T> = {
 export function SectionFeedback<T>(props: SectionFeedbackProps<T>) {
   const { state } = props;
   if (state.status === 'ready') return null;
-  if (state.status === 'loading') return <Spin className="admin-section-spin" tip={props.loadingMessage ?? '正在加载数据'} />;
+  if (state.status === 'loading') {
+    return (
+      <div aria-busy="true" className="admin-section-loading" role="status">
+        <Spin className="admin-section-spin" description={props.loadingMessage ?? '正在加载数据'} />
+      </div>
+    );
+  }
   if (state.status === 'forbidden') return <ForbiddenState access={state.access} />;
-  return <ErrorState error={state.error} />;
+  return <ErrorState />;
 }
 
 function ForbiddenState({ access }: { access: 'required' | 'admin-only' }) {
@@ -26,23 +33,13 @@ function ForbiddenState({ access }: { access: 'required' | 'admin-only' }) {
   );
 }
 
-function ErrorState({ error }: { error: AdminApiError }) {
+function ErrorState() {
   return (
-    <Alert
-      showIcon
-      description={<ErrorDescription error={error} />}
-      message="数据加载失败"
-      type="error"
+    <Empty
+      className="admin-section-empty"
+      description="暂无可展示数据"
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
     />
-  );
-}
-
-function ErrorDescription({ error }: { error: AdminApiError }) {
-  return (
-    <div className="admin-error-description">
-      <div>{error.message}</div>
-      {error.requestId ? <Typography.Text code>requestId: {error.requestId}</Typography.Text> : null}
-    </div>
   );
 }
 

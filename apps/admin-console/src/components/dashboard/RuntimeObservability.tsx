@@ -1,12 +1,10 @@
 import type { AgentRunView } from '@interview-agent/contracts';
 import { Card, Empty, Table, Tag, Typography, type TableColumnsType } from 'antd';
-import { useDeferredValue, useMemo, useState } from 'react';
-import type { SectionState } from '@/hooks/useAdminDashboard';
+import { useAdminListExport } from '@/hooks/useAdminListExport';
+import { useAdminPagedList, type AdminPagedListController } from '@/hooks/useAdminPagedList';
 import { AdminPagination, AdminTableToolbar } from './AdminTableControls';
-import { filterRuns, paginateRecords } from './admin-records';
 import { SectionFeedback } from './SectionState';
 
-const PAGE_SIZE = 10;
 const STATUS_LABELS: Record<AgentRunView['status'], string> = {
   running: '运行中',
   succeeded: '成功',
@@ -31,6 +29,106 @@ const RUN_STATUS_COLORS: Record<AgentRunView['status'], string> = {
   fallback: 'warning',
 };
 
+export function RuntimeObservability({
+  active,
+  refreshKey,
+}: {
+  active: boolean;
+  refreshKey: number;
+}) {
+  const list = useAdminPagedList('agent-runs', { enabled: active, reloadKey: refreshKey });
+  const { exportList, isExporting } = useAdminListExport('agent-runs', list.submittedQuery);
+  return (
+    <section className="admin-page" id="section-5" aria-labelledby="runs-heading">
+      <Card className="admin-dense-card admin-table-card" size="small">
+        <div className="admin-page-heading">
+          <div>
+            <div className="eyebrow">Runtime Observability</div>
+            <h2 id="runs-heading">Agent 运行观测</h2>
+          </div>
+          <p>跟踪执行阶段、延迟、降级与结构化输出结果。</p>
+        </div>
+        <RunListContent exportList={exportList} isExporting={isExporting} list={list} />
+      </Card>
+    </section>
+  );
+}
+
+type RunListContentProps = {
+  exportList: () => Promise<void>;
+  isExporting: boolean;
+  list: AdminPagedListController<'agent-runs'>;
+};
+
+function RunListContent({ exportList, isExporting, list }: RunListContentProps) {
+  if (list.state.status !== 'ready')
+    return <SectionFeedback state={list.state} loadingMessage="正在加载 Agent 运行记录" />;
+  const page = list.state.data;
+  return (
+    <>
+      <RunToolbar
+        exportList={exportList}
+        isExporting={isExporting}
+        list={list}
+        total={page.total}
+      />
+      <RunTable runs={page.items} />
+      <AdminPagination
+        page={page.page}
+        pageSize={page.pageSize}
+        total={page.total}
+        onChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
+      />
+    </>
+  );
+}
+
+type RunToolbarProps = RunListContentProps & { total: number };
+
+function RunToolbar({ exportList, isExporting, list, total }: RunToolbarProps) {
+  return (
+    <AdminTableToolbar
+      filters={[
+        {
+          label: '状态',
+          value: list.draftQuery.status ?? 'all',
+          options: STATUS_OPTIONS,
+          onChange: (value) =>
+            list.setDraftQuery((current) => ({
+              ...current,
+              status: value === 'all' ? undefined : (value as AgentRunView['status']),
+            })),
+        },
+      ]}
+      isExporting={isExporting}
+      isLoading={list.isLoading}
+      query={list.draftQuery.keyword ?? ''}
+      resultLabel={`共 ${total} 条`}
+      searchLabel="搜索阶段或 Trace ID"
+      onExport={() => void exportList()}
+      onQuery={list.query}
+      onQueryChange={(keyword) => list.setDraftQuery((current) => ({ ...current, keyword }))}
+      onReset={list.reset}
+    />
+  );
+}
+
+function RunTable({ runs }: { runs: AgentRunView[] }) {
+  if (!runs.length)
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的记录" />;
+  return (
+    <Table<AgentRunView>
+      columns={RUN_COLUMNS}
+      dataSource={runs}
+      pagination={false}
+      rowKey="id"
+      scroll={{ x: 900 }}
+      size="middle"
+    />
+  );
+}
+
 const RUN_COLUMNS: TableColumnsType<AgentRunView> = [
   {
     title: '状态',
@@ -40,18 +138,8 @@ const RUN_COLUMNS: TableColumnsType<AgentRunView> = [
       <Tag color={RUN_STATUS_COLORS[run.status]}>{STATUS_LABELS[run.status]}</Tag>
     ),
   },
-  {
-    title: '阶段',
-    dataIndex: 'stage',
-    width: 180,
-    ellipsis: true,
-  },
-  {
-    title: '质量与延迟',
-    key: 'quality',
-    width: 190,
-    render: (_, run) => qualitySummary(run),
-  },
+  { title: '阶段', dataIndex: 'stage', width: 180, ellipsis: true },
+  { title: '质量与延迟', key: 'quality', width: 190, render: (_, run) => qualitySummary(run) },
   {
     title: 'Trace ID',
     key: 'traceId',
@@ -74,88 +162,9 @@ const RUN_COLUMNS: TableColumnsType<AgentRunView> = [
   },
 ];
 
-export function RuntimeObservability({ state }: { state: SectionState<AgentRunView[]> }) {
-  return (
-    <section className="admin-page" id="section-5" aria-labelledby="runs-heading">
-      <Card className="admin-dense-card admin-table-card" size="small">
-        <div className="admin-page-heading">
-          <div>
-            <div className="eyebrow">Runtime Observability</div>
-            <h2 id="runs-heading">Agent 运行观测</h2>
-          </div>
-          <p>跟踪执行阶段、延迟、降级与结构化输出结果。</p>
-        </div>
-        {state.status === 'ready' ? (
-          <ReadyRunTable runs={state.data} />
-        ) : (
-          <SectionFeedback state={state} loadingMessage="正在加载 Agent 运行记录" />
-        )}
-      </Card>
-    </section>
-  );
-}
-
-function ReadyRunTable({ runs }: { runs: AgentRunView[] }) {
-  const table = useRunFilters(runs);
-  return (
-    <>
-      <AdminTableToolbar
-        query={table.query}
-        searchLabel="搜索阶段或 Trace ID"
-        resultLabel={`筛选出 ${table.pagination.total} 条`}
-        filters={[table.statusFilter]}
-        onQueryChange={table.changeQuery}
-      />
-      <RunTable runs={table.pagination.items} />
-      <AdminPagination {...table.pagination} onChange={table.setPage} />
-    </>
-  );
-}
-
-function useRunFilters(runs: AgentRunView[]) {
-  const [query, setQuery] = useState('');
-  const [status, setStatus] = useState<AgentRunView['status'] | 'all'>('all');
-  const [page, setPage] = useState(1);
-  const deferredQuery = useDeferredValue(query);
-  const filtered = useMemo(
-    () => filterRuns(runs, { query: deferredQuery, status }),
-    [deferredQuery, runs, status],
-  );
-  const changeStatus = (value: string) => {
-    setStatus(value as AgentRunView['status'] | 'all');
-    setPage(1);
-  };
-  const changeQuery = (value: string) => {
-    setQuery(value);
-    setPage(1);
-  };
-  return {
-    query,
-    changeQuery,
-    setPage,
-    pagination: paginateRecords(filtered, page, PAGE_SIZE),
-    statusFilter: { label: '状态', value: status, options: STATUS_OPTIONS, onChange: changeStatus },
-  };
-}
-
-function RunTable({ runs }: { runs: AgentRunView[] }) {
-  if (!runs.length) {
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的记录" />;
-  }
-  return (
-    <Table<AgentRunView>
-      columns={RUN_COLUMNS}
-      dataSource={runs}
-      pagination={false}
-      rowKey="id"
-      scroll={{ x: 900 }}
-      size="middle"
-    />
-  );
-}
-
 function qualitySummary(run: AgentRunView): string {
-  const latency = run.latencyMs === null ? '无延迟数据' : run.latencyMs + ' ms';
-  if (run.schemaValid === null) return '未校验 · ' + latency;
-  return (run.schemaValid ? 'Schema 通过' : 'Schema 失败') + ' · ' + latency;
+  const latency = run.latencyMs === null ? '无延迟数据' : `${run.latencyMs} ms`;
+  return run.schemaValid === null
+    ? `未校验 · ${latency}`
+    : `${run.schemaValid ? 'Schema 通过' : 'Schema 失败'} · ${latency}`;
 }

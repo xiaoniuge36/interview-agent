@@ -1,0 +1,114 @@
+.question-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 13px;
+  align-items: center;
+  margin-top: 20px;
+  color: #718096;
+  font-size: 11px;
+}
+.question-pagination button,
+.question-list-state button {
+  border: 1px solid #d3ddea;
+  border-radius: 8px;
+  padding: 8px 11px;
+  background: #fff;
+  color: #315fae;
+  font-size: 11px;
+  font-weight: 750;
+}
+.question-pagination button:disabled {
+  opacity: 0.45;
+}
+.question-list-state,
+.question-picker-loading {
+  margin: 40px auto;
+  padding: 44px 24px;
+  color: #718096;
+  text-align: center;
+}
+.question-list-state strong {
+  color: #26364e;
+}
+.question-list-state p {
+  margin: 8px 0 16px;
+  font-size: 12px;
+}
+
+@media (max-width: 980px) {
+  .question-filter-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .question-picker-layout {
+    grid-template-columns: 1fr;
+  }
+  .selected-question-tray {
+    position: fixed;
+    z-index: 30;
+    inset: auto 12px 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+  }
+  .selected-question-tray header {
+    align-items: center;
+  }
+  .selected-question-tray header > button,
+  .selected-question-list,
+  .selected-question-progress,
+  .selected-question-message,
+  .selected-question-error {
+    display: none;
+  }
+  .selected-question-tray footer {
+    min-width: 160px;
+    padding: 0;
+    border: 0;
+  }
+  .selected-question-tray footer span {
+    display: none;
+  }
+  .question-picker-page {
+    padding-bottom: 120px;
+  }
+}
+@media (max-width: 600px) {
+  .question-picker-page {
+    padding: 24px 16px 122px;
+  }
+  .question-picker-header {
+    align-items: flex-start;
+  }
+  .question-picker-rule {
+    display: none;
+  }
+  .question-filter-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  .question-catalog-card {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+  .question-card-number {
+    display: none;
+  }
+  .question-card-content h2 {
+    max-width: calc(100% - 94px);
+    font-size: 15px;
+  }
+  .question-select-control {
+    right: 13px;
+    top: 13px;
+  }
+  .selected-question-tray h2 {
+    font-size: 14px;
+  }
+  .selected-question-tray header span {
+    display: none;
+  }
+  .selected-question-tray footer {
+    min-width: 142px;
+  }
+}

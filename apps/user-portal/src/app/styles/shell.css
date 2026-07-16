@@ -1472,6 +1472,15 @@
   gap: 12px;
   padding: 0 10px 16px;
   border-bottom: 1px solid rgba(188, 208, 240, 0.15);
+  border-radius: 10px;
+  transition:
+    background 160ms var(--ease-out),
+    border-color 160ms var(--ease-out);
+}
+
+.sidebar-user-summary:hover {
+  border-bottom-color: transparent;
+  background: rgba(117, 153, 211, 0.09);
 }
 
 .sidebar-user-summary strong,
@@ -1528,8 +1537,10 @@
 .sidebar-account {
   margin-top: auto;
   display: block;
-  padding-top: 18px;
-  border-top: 1px solid rgba(188, 208, 240, 0.15);
+  padding: 8px;
+  border: 1px solid rgba(176, 199, 234, 0.2);
+  border-radius: 14px;
+  background: rgba(10, 27, 47, 0.38);
 }
 
 .sidebar-account-link {
@@ -1537,14 +1548,20 @@
   grid-template-columns: 38px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
-  border: 1px solid rgba(176, 199, 234, 0.18);
-  border-radius: 12px;
-  background: rgba(10, 27, 47, 0.35);
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
 }
 
 .sidebar-account-link:hover {
   background: rgba(46, 78, 127, 0.28);
+}
+
+.sidebar-account.has-signout .sidebar-account-link {
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(176, 199, 234, 0.14);
+  border-radius: 9px 9px 0 0;
 }
 
 .sidebar-avatar {
@@ -1563,17 +1580,33 @@
 
 .sidebar-signout {
   width: 100%;
-  margin-top: 8px;
+  min-height: 38px;
+  margin-top: 6px;
   border: 0;
-  padding: 6px 10px;
+  border-radius: 9px;
+  padding: 0 9px;
   background: transparent;
-  color: #98a9c6;
-  font-size: 12px;
+  color: #bac7dc;
+  font-size: 13px;
+  font-weight: 600;
   text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  transition:
+    color 160ms var(--ease-out),
+    background 160ms var(--ease-out);
 }
 
 .sidebar-signout:hover {
   color: #fff;
+  background: rgba(239, 68, 68, 0.13);
+}
+
+.sidebar-signout svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
 }
 
 /* 首页 Agent 工作台：以任务路径与记忆面板承担层级，而非堆叠通用卡片。 */

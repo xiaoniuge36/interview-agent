@@ -19,6 +19,16 @@ export class PracticeController {
     return this.service.create(request.context, CreatePracticeSessionSchema.parse(body));
   }
 
+  @Get('practices/recent')
+  recent(@Req() request: ProductRequest) {
+    return this.service.recent(request.context);
+  }
+
+  @Get('practice-recommendations')
+  recommendations(@Req() request: ProductRequest) {
+    return this.service.recommendationList(request.context);
+  }
+
   @Get('practices/:id')
   get(@Req() request: ProductRequest, @Param('id') sessionId: string) {
     return this.service.get(request.context, sessionId);
@@ -36,6 +46,25 @@ export class PracticeController {
       itemId: params.itemId,
       input: SubmitPracticeAnswerSchema.parse(body),
     });
+  }
+
+  @Post('practices/:id/items/:itemId/evaluate')
+  evaluate(@Req() request: ProductRequest, @Param() params: PracticeAnswerParams) {
+    return this.service.evaluate({
+      context: request.context,
+      sessionId: params.id,
+      itemId: params.itemId,
+    });
+  }
+
+  @Get('practices/:id/items/:itemId/solution')
+  solution(@Req() request: ProductRequest, @Param() params: PracticeAnswerParams) {
+    return this.service.solution(request.context, params.id, params.itemId);
+  }
+
+  @Post('practices/:id/complete-self-study')
+  completeSelfStudy(@Req() request: ProductRequest, @Param('id') sessionId: string) {
+    return this.service.completeSelfStudy(request.context, sessionId);
   }
 
   @Post('practices/:id/submit')

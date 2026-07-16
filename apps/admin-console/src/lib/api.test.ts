@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import {
   AdminApiError,
+  isAdminSessionExpired,
   requestAdminJson,
   type AdminApiDependencies,
   type AdminApiRequest,
@@ -51,6 +52,17 @@ describe('requestAdminJson successful responses', () => {
 });
 
 describe('requestAdminJson error responses', () => {
+  it('classifies only 401 API errors as expired sessions', () => {
+    expect(
+      isAdminSessionExpired(
+        new AdminApiError({ message: '登录状态已失效', code: 'AUTH_REQUIRED', status: 401 }),
+      ),
+    ).toBe(true);
+    expect(
+      isAdminSessionExpired(new AdminApiError({ message: '没有权限', code: 'FORBIDDEN', status: 403 })),
+    ).toBe(false);
+  });
+
   it('解析统一错误 envelope 并保留 requestId', async () => {
     const response = Response.json(errorEnvelope('FORBIDDEN', '无权访问'), {
       status: 403,

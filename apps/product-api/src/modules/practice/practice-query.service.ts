@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  EvaluatorRubricSchema,
   MasteryProfileListSchema,
+  PracticeItemSolutionSchema,
+  RecentPracticeResponseSchema,
   type MasteryProfile,
   type PracticeReport,
   type PracticeSession,
+  type PracticeItemSolution,
+  type RecentPracticeSummary,
 } from '@interview-agent/contracts';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
@@ -44,6 +49,45 @@ export class PracticeQueryService {
     return MasteryProfileListSchema.parse(
       records.filter((record) => !isPracticeCategoryTag(record.tag)).map(mapMastery),
     );
+  }
+
+  async recent(context: ProductRequestContext): Promise<RecentPracticeSummary | null> {
+    this.assertAction(context, 'practice:read', context.actor.id);
+    const session = await this.prisma.practiceSession.findFirst({
+      where: {
+        tenantId: context.tenantId,
+        userId: context.actor.id,
+        status: { in: ['created', 'in_progress'] },
+      },
+      orderBy: { updatedAt: 'desc' },
+      include: { items: { select: { answer: true } } },
+    });
+    if (!session) return null;
+    return RecentPracticeResponseSchema.parse({
+      id: session.id,
+      title: session.title,
+      mode: session.mode,
+      status: session.status,
+      questionCount: session.items.length,
+      answeredCount: session.items.filter((item) => item.answer).length,
+      updatedAt: session.updatedAt.toISOString(),
+    });
+  }
+
+  async solution(
+    context: ProductRequestContext,
+    sessionId: string,
+    itemId: string,
+  ): Promise<PracticeItemSolution> {
+    const session = await loadPracticeSession(this.prisma, sessionId, context.tenantId);
+    this.assertAction(context, 'practice:read', session.userId);
+    const item = session.items.find((candidate) => candidate.id === itemId);
+    if (!item) throw new NotFoundException({ code: 'PRACTICE_ITEM_NOT_FOUND' });
+    if (!item.answer) throw new BadRequestException({ code: 'PRACTICE_ANSWER_REQUIRED' });
+    return PracticeItemSolutionSchema.parse({
+      referenceAnswer: item.question.answer,
+      rubric: EvaluatorRubricSchema.parse(item.question.rubric),
+    });
   }
 
   private assertAction(

@@ -143,8 +143,30 @@ export function resolveCandidateSelection(
   return null;
 }
 
+export type CandidateBatchReviewSelection = {
+  candidateIds: string[];
+  canSubmit: boolean;
+  sourceImport: CandidateReview['sourceImport'];
+};
+
+export function resolveCandidateBatchReview(
+  candidates: CandidateReview[],
+): CandidateBatchReviewSelection {
+  const candidateIds = candidates.map((candidate) => candidate.id);
+  const sourceKeys = new Set(candidates.map(candidateSourceKey));
+  return {
+    candidateIds,
+    canSubmit: candidateIds.length > 0 && sourceKeys.size === 1,
+    sourceImport: candidates[0]?.sourceImport ?? null,
+  };
+}
+
 function pageRange(start: number, end: number): number[] {
   return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
+}
+
+function candidateSourceKey(candidate: CandidateReview): string {
+  return candidate.sourceImport?.id ?? candidate.importTaskId ?? 'manual';
 }
 
 function matchesQuery(query: string, values: string[]): boolean {

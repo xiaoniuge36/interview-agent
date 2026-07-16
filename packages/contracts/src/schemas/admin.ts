@@ -1,6 +1,37 @@
 ﻿import { z } from 'zod';
 import { CONTRACT_LIMITS } from '../limits';
-import { CandidateReviewSchema, QuestionSchema } from './training';
+import {
+  CandidateReviewSchema,
+  CandidateReviewStatusSchema,
+  ImportTaskStatusSchema,
+  QuestionDifficultySchema,
+  QuestionSchema,
+  QuestionStatusSchema,
+} from './training';
+
+const ADMIN_PAGE_DEFAULT = 1;
+const ADMIN_PAGE_SIZE_DEFAULT = 20;
+const ADMIN_PAGE_SIZE_MAX = 100;
+const ADMIN_KEYWORD_MAX_LENGTH = 120;
+
+export const AdminPaginationQuerySchema = z.object({
+  page: z.coerce.number().int().min(ADMIN_PAGE_DEFAULT).default(ADMIN_PAGE_DEFAULT),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(ADMIN_PAGE_DEFAULT)
+    .max(ADMIN_PAGE_SIZE_MAX)
+    .default(ADMIN_PAGE_SIZE_DEFAULT),
+  keyword: z.string().trim().max(ADMIN_KEYWORD_MAX_LENGTH).optional(),
+});
+
+export const AdminPageSchema = <ItemSchema extends z.ZodTypeAny>(itemSchema: ItemSchema) =>
+  z.object({
+    items: z.array(itemSchema).max(ADMIN_PAGE_SIZE_MAX),
+    total: z.number().int().nonnegative(),
+    page: z.number().int().min(ADMIN_PAGE_DEFAULT),
+    pageSize: z.number().int().min(ADMIN_PAGE_DEFAULT).max(ADMIN_PAGE_SIZE_MAX),
+  });
 
 export const ModelProfileSchema = z.object({
   id: z.string().min(1),
@@ -65,7 +96,40 @@ export const ModelProfileListSchema = z.array(ModelProfileSchema).max(CONTRACT_L
 export const AgentRunListSchema = z.array(AgentRunViewSchema).max(CONTRACT_LIMITS.largeList);
 export const AuditLogListSchema = z.array(AuditLogViewSchema).max(CONTRACT_LIMITS.largeList);
 
+export const ImportTaskListQuerySchema = AdminPaginationQuerySchema.extend({
+  status: ImportTaskStatusSchema.optional(),
+});
+
+export const QuestionListQuerySchema = AdminPaginationQuerySchema.extend({
+  status: QuestionStatusSchema.optional(),
+  difficulty: QuestionDifficultySchema.optional(),
+});
+
+export const CandidateReviewListQuerySchema = AdminPaginationQuerySchema.extend({
+  status: CandidateReviewStatusSchema.optional(),
+  importTaskId: z.string().min(1).optional(),
+});
+
+export const ModelProfileListQuerySchema = AdminPaginationQuerySchema.extend({
+  status: ModelProfileSchema.shape.status.optional(),
+});
+
+export const AgentRunListQuerySchema = AdminPaginationQuerySchema.extend({
+  status: AgentRunViewSchema.shape.status.optional(),
+});
+
+export const AuditLogListQuerySchema = AdminPaginationQuerySchema.extend({
+  result: AuditLogViewSchema.shape.result.optional(),
+});
+
 export type Dashboard = z.infer<typeof DashboardSchema>;
 export type ModelProfile = z.infer<typeof ModelProfileSchema>;
 export type AgentRunView = z.infer<typeof AgentRunViewSchema>;
 export type AuditLogView = z.infer<typeof AuditLogViewSchema>;
+export type AdminPaginationQuery = z.infer<typeof AdminPaginationQuerySchema>;
+export type ImportTaskListQuery = z.infer<typeof ImportTaskListQuerySchema>;
+export type QuestionListQuery = z.infer<typeof QuestionListQuerySchema>;
+export type CandidateReviewListQuery = z.infer<typeof CandidateReviewListQuerySchema>;
+export type ModelProfileListQuery = z.infer<typeof ModelProfileListQuerySchema>;
+export type AgentRunListQuery = z.infer<typeof AgentRunListQuerySchema>;
+export type AuditLogListQuery = z.infer<typeof AuditLogListQuerySchema>;

@@ -25,12 +25,6 @@ const DASHBOARD: Dashboard = {
 function successfulRequests() {
   return {
     dashboard: async () => DASHBOARD,
-    imports: async () => [],
-    questions: async () => [],
-    candidates: async () => [],
-    models: async () => [],
-    runs: async () => [],
-    logs: async () => [],
   };
 }
 
@@ -43,29 +37,17 @@ function apiError(status: number) {
 }
 
 describe('loadAdminDashboard', () => {
-  it('保留独立分区的成功结果', async () => {
+  it('只保留治理总览结果，列表由独立服务端分页 Hook 加载', async () => {
     const state = await loadAdminDashboard(successfulRequests());
     expect(state.authenticationError).toBeNull();
     expect(state.dashboard).toMatchObject({ status: 'ready', data: DASHBOARD });
-    expect(state.imports).toMatchObject({ status: 'ready', data: [] });
-    expect(state.models).toMatchObject({ status: 'ready', data: [] });
   });
 
-  it('将管理员专属接口的 403 映射为仅管理员可见', async () => {
+  it('将治理总览的 403 映射为无权访问', async () => {
     const requests = successfulRequests();
-    requests.models = async () => Promise.reject(apiError(403));
-    requests.runs = async () => Promise.reject(apiError(403));
+    requests.dashboard = async () => Promise.reject(apiError(403));
     const state = await loadAdminDashboard(requests);
-    expect(state.dashboard.status).toBe('ready');
-    expect(state.models).toEqual({ status: 'forbidden', access: 'admin-only' });
-    expect(state.runs).toEqual({ status: 'forbidden', access: 'admin-only' });
-  });
-
-  it('将必需接口的 403 映射为无权访问', async () => {
-    const requests = successfulRequests();
-    requests.questions = async () => Promise.reject(apiError(403));
-    const state = await loadAdminDashboard(requests);
-    expect(state.questions).toEqual({
+    expect(state.dashboard).toEqual({
       status: 'forbidden',
       access: 'required',
     });

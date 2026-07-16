@@ -12,6 +12,15 @@ export const ADMIN_VIEW_IDS = [
 
 export type AdminView = (typeof ADMIN_VIEW_IDS)[number];
 
+export type AdminViewParams = {
+  importTaskId?: string;
+};
+
+export type AdminViewLocation = {
+  view: AdminView;
+  params: AdminViewParams;
+};
+
 export type AdminNavigationItem = {
   id: AdminView;
   label: string;
@@ -106,22 +115,46 @@ const LEGACY_HASHES: Readonly<Record<string, AdminView>> = {
   'section-6': 'audit',
 };
 
+const IMPORT_TASK_ID_MAX_LENGTH = 160;
+
 export function isAdminView(value: string): value is AdminView {
   return ADMIN_VIEW_IDS.some((view) => view === value);
 }
 
 export function adminViewFromHash(hash: string): AdminView {
-  const view = hash.replace(/^#/, '');
-  if (isAdminView(view)) return view;
-  return LEGACY_HASHES[view] ?? 'overview';
+  return adminViewLocationFromHash(hash).view;
 }
 
-export function adminViewHash(view: AdminView): string {
-  return `#${view}`;
+export function adminViewLocationFromHash(hash: string): AdminViewLocation {
+  const [rawView, rawParams] = splitHash(hash);
+  const view = isAdminView(rawView) ? rawView : (LEGACY_HASHES[rawView] ?? 'overview');
+  return { view, params: view === 'content' ? parseContentParams(rawParams) : {} };
+}
+
+export function adminViewHash(view: AdminView, params: AdminViewParams = {}): string {
+  const importTaskId = view === 'content' ? normalizeImportTaskId(params.importTaskId) : undefined;
+  return importTaskId ? `#${view}?importTaskId=${encodeURIComponent(importTaskId)}` : `#${view}`;
 }
 
 export function getAdminNavigationItem(view: AdminView): AdminNavigationItem {
   const item = ADMIN_NAV_ITEMS.find((candidate) => candidate.id === view);
   if (!item) throw new Error(`Unknown admin view: ${view}`);
   return item;
+}
+
+function splitHash(hash: string): [string, string] {
+  const value = hash.replace(/^#/, '');
+  const separator = value.indexOf('?');
+  return separator === -1 ? [value, ''] : [value.slice(0, separator), value.slice(separator + 1)];
+}
+
+function parseContentParams(rawParams: string): AdminViewParams {
+  const importTaskId = normalizeImportTaskId(new URLSearchParams(rawParams).get('importTaskId'));
+  return importTaskId ? { importTaskId } : {};
+}
+
+function normalizeImportTaskId(value: string | null | undefined): string | undefined {
+  const normalized = value?.trim();
+  if (!normalized || normalized.length > IMPORT_TASK_ID_MAX_LENGTH) return undefined;
+  return normalized;
 }

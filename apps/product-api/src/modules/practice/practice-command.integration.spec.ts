@@ -5,6 +5,7 @@ import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
 import { PracticeCommandService } from './practice-command.service';
+import { PracticeCompletionService } from './practice-completion.service';
 
 const describeDatabase = process.env.RUN_DATABASE_INTEGRATION === 'true' ? describe : describe.skip;
 const suffix = randomUUID();
@@ -17,6 +18,11 @@ const closedSessionId = `practice-closed-${suffix}`;
 
 const prisma = new PrismaService();
 const commands = new PracticeCommandService(prisma, new PolicyService(), new AuditService(prisma));
+const completion = new PracticeCompletionService(
+  prisma,
+  new PolicyService(),
+  new AuditService(prisma),
+);
 
 const context: ProductRequestContext = {
   requestId: `request-${suffix}`,
@@ -44,17 +50,21 @@ describeDatabase('PracticeCommandService database integration', () => {
 
   it('returns one persisted report when the same session is submitted twice', async () => {
     const results = await Promise.allSettled([
-      commands.submit(context, replaySessionId),
-      commands.submit(context, replaySessionId),
+      completion.submit(context, replaySessionId),
+      completion.submit(context, replaySessionId),
     ]);
 
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(2);
     expect(await prisma.practiceReport.count({ where: { sessionId: replaySessionId } })).toBe(1);
-    expect(await prisma.evaluationResult.count({ where: { tenantId } })).toBe(1);
+    expect(
+      await prisma.evaluationResult.count({
+        where: { tenantId, sessionItemId: itemIdFor(replaySessionId) },
+      }),
+    ).toBe(1);
   });
 
   it('does not lose mastery evidence when sessions with the same tag submit concurrently', async () => {
-    await Promise.all(parallelSessionIds.map((sessionId) => commands.submit(context, sessionId)));
+    await Promise.all(parallelSessionIds.map((sessionId) => completion.submit(context, sessionId)));
 
     const mastery = await prisma.masteryProfile.findUniqueOrThrow({
       where: { tenantId_userId_tag: { tenantId, userId, tag: 'system-design' } },
@@ -64,7 +74,7 @@ describeDatabase('PracticeCommandService database integration', () => {
   });
 
   it('rejects a delayed answer after a report has been generated', async () => {
-    await commands.submit(context, closedSessionId);
+    await completion.submit(context, closedSessionId);
 
     try {
       await commands.submitAnswer({
@@ -136,6 +146,17 @@ async function seedSession(sessionId: string) {
       status: 'answered',
       answer: 'Use a serializable transaction and explicit state transition.',
       answeredAt: new Date(),
+    },
+  });
+  await prisma.evaluationResult.create({
+    data: {
+      tenantId,
+      sessionItemId: itemIdFor(sessionId),
+      score: 85,
+      feedback: 'Persisted user model evaluation.',
+      missingPoints: [],
+      rubricScores: [{ point: 'transaction', score: 85 }],
+      followUpQuestion: 'How would you handle a retry conflict?',
     },
   });
 }

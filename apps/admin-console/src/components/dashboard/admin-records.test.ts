@@ -6,6 +6,7 @@ import type {
   Question,
 } from '@interview-agent/contracts';
 import { describe, expect, it } from 'vitest';
+import * as adminRecords from './admin-records';
 import {
   filterAuditLogs,
   filterCandidates,
@@ -34,6 +35,8 @@ const QUESTION = {
 
 const CANDIDATE = {
   id: 'candidate-1',
+  importTaskId: null,
+  sourceImport: null,
   title: 'React 状态管理',
   status: 'pending',
   qualityScore: 86,
@@ -137,6 +140,29 @@ describe('candidate review selection', () => {
     expect(resolveCandidateSelection([CANDIDATE], 'missing', null)).toBeNull();
     expect(resolveCandidateSelection([CANDIDATE], null, null)).toBeNull();
     expect(resolveCandidateSelection([], 'missing', null)).toBeNull();
+  });
+});
+
+describe('candidate batch review selection', () => {
+  it('allows a batch only when every selected candidate has the same source', () => {
+    const resolveBatch = (adminRecords as unknown as {
+      resolveCandidateBatchReview(candidates: CandidateReview[]): unknown;
+    }).resolveCandidateBatchReview;
+    const sameSource = [
+      { ...CANDIDATE, id: 'candidate-1', importTaskId: 'import-1', sourceImport: { id: 'import-1', title: 'Java 面试资料.md' } },
+      { ...CANDIDATE, id: 'candidate-2', importTaskId: 'import-1', sourceImport: { id: 'import-1', title: 'Java 面试资料.md' } },
+    ];
+    const mixedSources = [
+      ...sameSource,
+      { ...CANDIDATE, id: 'candidate-3', importTaskId: 'import-2', sourceImport: { id: 'import-2', title: 'Go 面试资料.md' } },
+    ];
+
+    expect(resolveBatch(sameSource)).toEqual({
+      candidateIds: ['candidate-1', 'candidate-2'],
+      canSubmit: true,
+      sourceImport: { id: 'import-1', title: 'Java 面试资料.md' },
+    });
+    expect(resolveBatch(mixedSources)).toMatchObject({ canSubmit: false });
   });
 });
 
