@@ -62,6 +62,7 @@ function ActivePractice({ player }: { player: ReturnType<typeof usePracticePlaye
           solution={player.solutions[item.id]}
           busy={player.busy}
           issue={player.issue}
+          aiOperation={player.aiOperation}
           onRevealSolution={() => void player.revealSolution(item.id)}
           onEvaluate={() => void player.evaluate(item.id)}
         />

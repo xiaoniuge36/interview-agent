@@ -12,6 +12,7 @@ import { httpFailure, parseRuntimeDecision, unavailableFailure } from './agent-r
 import type {
   AgentNextInput,
   AgentNextResult,
+  AgentRuntimeProgress,
   RuntimeFailure,
   RuntimeInvocationOutcome,
 } from './agent-runtime.types';
@@ -45,8 +46,16 @@ export class AgentRuntimeClient {
     this.token = config.get('INTERNAL_AGENT_TOKEN', { infer: true });
   }
 
-  async next(input: AgentNextInput, context?: ProductRequestContext): Promise<AgentNextResult> {
-    if (context && this.userModels) return this.userModels.next({ context, input });
+  async next(
+    input: AgentNextInput,
+    context?: ProductRequestContext,
+    progress: AgentRuntimeProgress = {},
+  ): Promise<AgentNextResult> {
+    if (context && this.userModels) {
+      if (!progress.onContentDelta && !progress.signal)
+        return this.userModels.next({ context, input });
+      return this.userModels.nextStream({ context, input }, progress);
+    }
     const startedAt = performance.now();
     const request = AgentRuntimeNextRequestSchema.parse({
       contractVersion: CONTRACT_VERSION,

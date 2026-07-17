@@ -200,6 +200,216 @@
   gap: 12px;
 }
 
+.platform-pulse-content {
+  display: grid;
+  gap: 16px;
+}
+
+.platform-bi-overview-card {
+  border-color: #dce8f5;
+  box-shadow: 0 6px 18px rgba(27, 76, 119, 0.08);
+}
+
+.platform-bi-overview-card > .ant-card-body {
+  padding: 20px 22px;
+}
+
+.platform-bi-overview-heading,
+.platform-bi-overview-content,
+.platform-bi-chart-heading,
+.platform-bi-rate-item > div {
+  display: flex;
+}
+
+.platform-bi-overview-heading {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.platform-bi-overview-heading .ant-typography-title {
+  margin: 2px 0 4px !important;
+}
+
+.platform-bi-kicker {
+  color: #1677ff !important;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.platform-bi-health-tag {
+  padding: 4px 10px;
+  margin: 0;
+  font-weight: 600;
+  border: 0;
+}
+
+.platform-bi-health-healthy {
+  color: #0d5a38;
+  background: #d8f6e7;
+}
+
+.platform-bi-health-attention {
+  color: #805400;
+  background: #fff1bd;
+}
+
+.platform-bi-health-critical {
+  color: #a61d24;
+  background: #ffe0df;
+}
+
+.platform-bi-health-quiet {
+  color: #465a69;
+  background: #eef3f7;
+}
+
+.platform-bi-overview-content {
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  margin-top: 20px;
+}
+
+.platform-bi-health-status {
+  display: grid;
+  min-width: 200px;
+  gap: 12px;
+}
+
+.platform-bi-summary-metrics,
+.platform-bi-runtime-stats,
+.platform-bi-rate-grid {
+  display: grid;
+}
+
+.platform-bi-summary-metrics {
+  flex: 1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.platform-bi-summary-metrics .ant-statistic {
+  padding-left: 16px;
+  border-inline-start: 1px solid #edf1f5;
+}
+
+.platform-bi-summary-metrics .ant-statistic-content {
+  font-size: 24px;
+}
+
+.platform-bi-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.platform-bi-grid-primary {
+  grid-template-columns: minmax(0, 1.65fr) minmax(320px, 1fr);
+}
+
+.platform-bi-grid-secondary {
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr);
+}
+
+.platform-bi-chart-heading {
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.platform-bi-chart-heading .ant-statistic-content {
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.platform-bi-chart-area {
+  display: grid;
+  min-height: 280px;
+  align-items: center;
+}
+
+.platform-bi-chart-area .ant-empty {
+  margin-block: 0;
+}
+
+.platform-chart-loading {
+  display: grid;
+  min-height: 280px;
+  place-items: center;
+}
+
+.platform-bi-runtime-card > .ant-card-body {
+  display: grid;
+  gap: 14px;
+}
+
+.platform-bi-runtime-gauge {
+  min-height: 220px;
+}
+
+.platform-bi-runtime-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-top: 14px;
+  border-top: 1px solid #edf1f5;
+}
+
+.platform-bi-runtime-stats .ant-statistic {
+  padding-inline: 12px;
+  border-inline-start: 1px solid #edf1f5;
+}
+
+.platform-bi-runtime-stats .ant-statistic:first-child {
+  padding-left: 0;
+  border-inline-start: 0;
+}
+
+.platform-bi-runtime-stats .ant-statistic-content {
+  font-size: 21px;
+}
+
+.platform-bi-runtime-hint {
+  font-size: 12px;
+}
+
+.platform-bi-funnel-intro {
+  margin-bottom: 2px;
+}
+
+.platform-bi-rate-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #edf1f5;
+}
+
+.platform-bi-rate-item {
+  display: grid;
+  gap: 6px;
+}
+
+.platform-bi-rate-item > div {
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.platform-bi-rate-item strong {
+  color: #102a43;
+  font-size: 16px;
+}
+
+.platform-alert-stack {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.platform-alert-stack .ant-alert {
+  padding: 8px 10px;
+}
+
 .platform-analytics-subtitle {
   margin-top: 18px;
 }
@@ -211,6 +421,169 @@
 
 .account-table-toolbar .ant-input {
   min-width: 220px;
+}
+
+.account-governance-card > .ant-card-body {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.account-page-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.account-page-heading > div:last-child {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  max-width: 560px;
+}
+
+.account-match-tag {
+  margin: 0;
+  color: #175cd3;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.account-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  background: #f8fafc;
+  border: 1px solid #e7edf5;
+  border-radius: 10px;
+}
+
+.account-summary .ant-statistic {
+  padding: 14px 16px;
+}
+
+.account-summary .ant-statistic + .ant-statistic {
+  border-inline-start: 1px solid #e7edf5;
+}
+
+.account-summary .ant-statistic-content {
+  color: #102a43;
+  font-size: 24px;
+}
+
+.account-governance-toolbar {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  background: #fbfcfe;
+  border: 1px solid #edf0f4;
+  border-radius: 10px;
+}
+
+.account-toolbar-primary,
+.account-advanced-filter-fields,
+.account-identity,
+.account-role-cell,
+.account-role-context,
+.account-role-description {
+  display: flex;
+}
+
+.account-toolbar-primary {
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-toolbar-primary .ant-form-item {
+  width: min(420px, 44vw);
+  margin-bottom: 0;
+}
+
+.account-toolbar-actions {
+  justify-content: flex-end;
+}
+
+.account-advanced-filters > .ant-collapse-item > .ant-collapse-header {
+  padding: 8px 0 !important;
+  color: #44546a;
+  font-weight: 600;
+}
+
+.account-advanced-filters .ant-collapse-content-box {
+  padding: 8px 0 0 !important;
+}
+
+.account-advanced-filter-fields {
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.account-advanced-filter-fields .ant-form-item {
+  min-width: 146px;
+  margin-bottom: 0;
+}
+.account-advanced-filter-fields .ant-form-item:first-child {
+  min-width: 230px;
+}
+
+.account-identity {
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.account-identity > div {
+  display: grid;
+  min-width: 0;
+}
+.account-identity .ant-typography {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-avatar {
+  flex: 0 0 auto;
+  color: #1554ad;
+  background: #e8f2ff;
+}
+.account-role-cell {
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.account-role-cell .ant-tag {
+  margin-inline-end: 0;
+}
+.account-source-tag {
+  color: #536273;
+  background: #f4f6f8;
+  border-color: #e0e6ec;
+}
+
+.account-role-context {
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+  background: #f7faff;
+  border: 1px solid #d6e8ff;
+  border-radius: 8px;
+}
+
+.account-role-context > div,
+.account-role-description {
+  display: grid;
+  gap: 2px;
+}
+.account-role-select {
+  width: 100%;
+  margin-top: 8px;
+}
+.account-role-description {
+  padding: 10px 12px;
+  margin-top: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
 }
 
 .admin-table-pagination {
@@ -314,14 +687,89 @@
   margin-bottom: 12px;
 }
 
+.admin-import-review-guide {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  background: #f6faff;
+  border: 1px solid #d9e9ff;
+  border-radius: 8px;
+}
+
+.admin-import-review-guide > .anticon {
+  margin-top: 3px;
+  color: #1677ff;
+  font-size: 16px;
+}
+
+.admin-import-review-guide .ant-typography {
+  display: block;
+}
+
+.admin-import-review-guide .ant-typography-paragraph {
+  max-width: 920px;
+  margin: 2px 0 6px;
+  line-height: 1.65;
+}
+
+.admin-import-review-guide-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.admin-import-review-guide-meta .anticon {
+  color: #8c8c8c;
+}
+
 .admin-import-review-loading {
   display: grid;
   min-height: 120px;
   place-items: center;
 }
 
+.admin-import-source-list {
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+}
+
+.admin-import-source-list .ant-collapse-item {
+  border-bottom-color: #f0f0f0;
+}
+
+.admin-import-source-list .ant-collapse-header {
+  align-items: center;
+}
+
+.admin-import-source-label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-import-source-label .ant-typography {
+  display: block;
+}
+
+.admin-import-source-preview {
+  overflow: hidden;
+  margin-top: 2px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-import-source-fulltext {
+  padding: 2px 0 0 4px;
+}
+
 .admin-import-source-content {
-  margin-bottom: 0;
+  margin: 6px 0 0;
+  line-height: 1.7;
   white-space: pre-wrap;
 }
 
@@ -342,6 +790,20 @@
 
   .admin-refresh-summary {
     display: none;
+  }
+
+  .platform-bi-grid-primary,
+  .platform-bi-grid-secondary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .platform-bi-overview-content {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-import-source-label {
+    gap: 10px;
   }
 }
 
@@ -381,6 +843,14 @@
     flex-direction: column;
   }
 
+  .admin-import-review-guide {
+    padding: 10px 12px;
+  }
+
+  .admin-import-source-preview {
+    white-space: normal;
+  }
+
   .admin-table-toolbar {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -410,6 +880,66 @@
 
   .admin-table-filters,
   .admin-table-pagination {
+    justify-content: flex-start;
+  }
+
+  .platform-bi-overview-card > .ant-card-body {
+    padding: 16px;
+  }
+
+  .platform-bi-summary-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .platform-bi-summary-metrics .ant-statistic:nth-child(odd) {
+    padding-left: 0;
+    border-inline-start: 0;
+  }
+
+  .platform-bi-summary-metrics .ant-statistic:nth-child(n + 3) {
+    padding-top: 12px;
+    border-top: 1px solid #edf1f5;
+  }
+
+  .platform-bi-runtime-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .platform-bi-runtime-stats .ant-statistic:nth-child(3) {
+    padding-top: 12px;
+    padding-left: 0;
+    border-top: 1px solid #edf1f5;
+    border-inline-start: 0;
+  }
+
+  .platform-bi-rate-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .account-page-heading {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .account-page-heading > div:last-child {
+    justify-items: start;
+  }
+  .account-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .account-summary .ant-statistic:nth-child(3) {
+    border-inline-start: 0;
+    border-top: 1px solid #e7edf5;
+  }
+  .account-summary .ant-statistic:nth-child(4) {
+    border-top: 1px solid #e7edf5;
+  }
+  .account-toolbar-primary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .account-toolbar-primary .ant-form-item {
+    width: 100%;
+  }
+  .account-toolbar-actions {
     justify-content: flex-start;
   }
 }

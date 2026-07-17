@@ -7,6 +7,7 @@ import {
 import {
   EvaluatorRubricSchema,
   PracticeItemFeedbackSchema,
+  type AiOperationPhase,
   type PracticeItemFeedback,
 } from '@interview-agent/contracts';
 import { jsonValue } from '../../common/audit/audit.service';
@@ -24,6 +25,12 @@ export type PracticeEvaluationCommand = {
   itemId: string;
 };
 
+export type PracticeEvaluationStream = {
+  phase: (phase: AiOperationPhase) => void;
+  delta: (content: string) => void;
+  signal?: AbortSignal;
+};
+
 @Injectable()
 export class PracticeEvaluationCommandService {
   constructor(
@@ -32,6 +39,37 @@ export class PracticeEvaluationCommandService {
   ) {}
 
   async evaluate(command: PracticeEvaluationCommand): Promise<PracticeItemFeedback> {
+    const prepared = await this.prepare(command);
+    if (prepared.item.evaluation) {
+      return feedback(prepared.item.question.answer, prepared.rubric, prepared.item.evaluation);
+    }
+    const draft = await this.model.evaluate(command.context, modelInput(prepared));
+    return this.persist(command, prepared, draft);
+  }
+
+  async evaluateStream(
+    command: PracticeEvaluationCommand,
+    stream: PracticeEvaluationStream,
+  ): Promise<PracticeItemFeedback> {
+    const prepared = await this.prepare(command);
+    if (prepared.item.evaluation) {
+      return feedback(prepared.item.question.answer, prepared.rubric, prepared.item.evaluation);
+    }
+    stream.phase('preparing');
+    stream.phase('analyzing');
+    stream.phase('composing');
+    const draft = await this.model.evaluateStream(command.context, modelInput(prepared), {
+      onDelta: stream.delta,
+      onComplete: () => stream.phase('validating'),
+      ...(stream.signal ? { signal: stream.signal } : {}),
+    });
+    stream.phase('saving');
+    return this.persist(command, prepared, draft);
+  }
+
+  private async prepare(
+    command: PracticeEvaluationCommand,
+  ): Promise<PracticeEvaluationPreparation> {
     const session = await loadPracticeSession(
       this.infrastructure.prisma,
       command.sessionId,
@@ -40,17 +78,15 @@ export class PracticeEvaluationCommandService {
     this.assertAction(command.context, session.userId);
     const item = evaluableItem(session, command.itemId);
     const rubric = EvaluatorRubricSchema.parse(item.question.rubric);
-    if (item.evaluation) return feedback(item.question.answer, rubric, item.evaluation);
     const targetRole = await this.targetRole(command.context, session.jobIntentId);
-    const draft = await this.model.evaluate(command.context, {
-      title: item.question.title,
-      stem: item.question.stem,
-      answer: item.answer!,
-      referenceAnswer: item.question.answer,
-      rubric,
-      tags: visiblePracticeTags(item.question.tags),
-      ...(targetRole ? { targetRole } : {}),
-    });
+    return { item, rubric, targetRole };
+  }
+
+  private persist(
+    command: PracticeEvaluationCommand,
+    prepared: PracticeEvaluationPreparation,
+    draft: EvaluationDraft,
+  ): Promise<PracticeItemFeedback> {
     return runSerializable(this.infrastructure.prisma, async (transaction) => {
       const current = await loadPracticeSession(
         transaction,
@@ -58,7 +94,7 @@ export class PracticeEvaluationCommandService {
         command.context.tenantId,
       );
       const currentItem = evaluableItem(current, command.itemId);
-      if (currentItem.answer !== item.answer) throw answerChanged();
+      if (currentItem.answer !== prepared.item.answer) throw answerChanged();
       const evaluation = await transaction.evaluationResult.upsert({
         where: {
           tenantId_sessionItemId: {
@@ -75,10 +111,14 @@ export class PracticeEvaluationCommandService {
       });
       await this.infrastructure.audit.record(
         command.context,
-        { action: 'practice:evaluate', resourceType: 'PracticeSessionItem', resourceId: item.id },
+        {
+          action: 'practice:evaluate',
+          resourceType: 'PracticeSessionItem',
+          resourceId: prepared.item.id,
+        },
         transaction,
       );
-      return feedback(item.question.answer, rubric, evaluation);
+      return feedback(prepared.item.question.answer, prepared.rubric, evaluation);
     });
   }
 
@@ -100,6 +140,18 @@ export class PracticeEvaluationCommandService {
   }
 }
 
+function modelInput(prepared: PracticeEvaluationPreparation) {
+  return {
+    title: prepared.item.question.title,
+    stem: prepared.item.question.stem,
+    answer: prepared.item.answer!,
+    referenceAnswer: prepared.item.question.answer,
+    rubric: prepared.rubric,
+    tags: visiblePracticeTags(prepared.item.question.tags),
+    ...(prepared.targetRole ? { targetRole: prepared.targetRole } : {}),
+  };
+}
+
 function evaluableItem(session: Awaited<ReturnType<typeof loadPracticeSession>>, itemId: string) {
   if (session.status !== 'in_progress') throw sessionClosed();
   const item = session.items.find((candidate) => candidate.id === itemId);
@@ -107,6 +159,12 @@ function evaluableItem(session: Awaited<ReturnType<typeof loadPracticeSession>>,
   if (!item.answer) throw new BadRequestException({ code: 'PRACTICE_ANSWER_REQUIRED' });
   return item;
 }
+
+type PracticeEvaluationPreparation = {
+  item: ReturnType<typeof evaluableItem>;
+  rubric: ReturnType<typeof EvaluatorRubricSchema.parse>;
+  targetRole: string | undefined;
+};
 
 function evaluationData(tenantId: string, sessionItemId: string, draft: EvaluationDraft) {
   return { tenantId, sessionItemId, ...evaluationUpdate(draft) };

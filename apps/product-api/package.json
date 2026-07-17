@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "predev": "pnpm --filter @interview-agent/contracts build && prisma generate --schema prisma/schema",
-    "dev": "nest start --watch",
+    "dev": "node scripts/dev-watch.mjs",
     "prebuild": "pnpm --filter @interview-agent/contracts build && prisma generate --schema prisma/schema",
     "build": "nest build",
     "start": "node dist/main.js",

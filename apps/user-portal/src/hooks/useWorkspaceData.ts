@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { JobIntentPayload, ProfilePayload } from '@interview-agent/contracts';
-import { loadWorkspaceData, type WorkspaceData } from '@/lib/workspace-api';
+import { loadWorkspaceData, type WorkspaceData } from '../lib/workspace-api';
 
 type WorkspaceState = {
   status: 'loading' | 'ready' | 'error';
@@ -18,15 +18,16 @@ const INITIAL_STATE: WorkspaceState = {
 
 export function useWorkspaceData() {
   const [state, setState] = useState<WorkspaceState>(INITIAL_STATE);
+  const [loadWorkspace] = useState(() => createWorkspaceLoader());
   const reload = useCallback(async () => {
     setState(INITIAL_STATE);
     try {
-      const data = await loadWorkspaceData();
+      const data = await loadWorkspace();
       setState({ status: 'ready', data, error: null });
     } catch (error) {
       setState({ status: 'error', data: null, error: toError(error) });
     }
-  }, []);
+  }, [loadWorkspace]);
   useEffect(() => {
     void reload();
   }, [reload]);
@@ -37,6 +38,22 @@ export function useWorkspaceData() {
     setState((current) => updateData(current, { job }));
   }, []);
   return { state, reload, updateProfile, addJob };
+}
+
+export function createWorkspaceLoader(
+  source: () => Promise<WorkspaceData> = loadWorkspaceData,
+): () => Promise<WorkspaceData> {
+  let request: Promise<WorkspaceData> | null = null;
+  return () => {
+    if (request) return request;
+    const current = source();
+    request = current;
+    const release = () => {
+      if (request === current) request = null;
+    };
+    void current.then(release, release);
+    return current;
+  };
 }
 
 function updateData(

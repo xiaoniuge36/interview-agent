@@ -8,9 +8,11 @@ import {
 } from '@interview-agent/contracts';
 import { roleInputFor } from '@/lib/interview-roles';
 import { createJobIntent } from '@/lib/workspace-api';
+import { useNotifications } from '@/components/notifications/NotificationProvider';
 import { DEFAULT_JOB_FORM } from './job-form';
 
 export function useJobIntentForm(onCreated: (payload: JobIntentPayload) => void) {
+  const notifications = useNotifications();
   const [form, setForm] = useState<CreateJobIntentInput>(DEFAULT_JOB_FORM);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('选择岗位模板预填内容，也可以直接粘贴真实 JD。');
@@ -28,7 +30,9 @@ export function useJobIntentForm(onCreated: (payload: JobIntentPayload) => void)
     event.preventDefault();
     const parsed = CreateJobIntentInputSchema.safeParse(form);
     if (!parsed.success) {
-      setMessage(parsed.error.issues[0]?.message ?? '请补全岗位信息后再保存。');
+      const issue = parsed.error.issues[0]?.message ?? '请补全岗位信息后再保存。';
+      setMessage(issue);
+      notifications.error('目标岗位未保存', new Error(issue), issue);
       return;
     }
     setBusy(true);
@@ -36,8 +40,10 @@ export function useJobIntentForm(onCreated: (payload: JobIntentPayload) => void)
       const payload = await createJobIntent(parsed.data);
       onCreated(payload);
       setMessage('岗位目标已保存，下一场模拟会围绕重点能力展开追问。');
+      notifications.success('目标岗位已保存', 'Agent 推荐与下一场模拟已使用新的岗位模型。');
     } catch (error) {
       setMessage(errorMessage(error));
+      notifications.error('目标岗位保存失败', error, '岗位目标保存失败，请稍后重试。');
     } finally {
       setBusy(false);
     }

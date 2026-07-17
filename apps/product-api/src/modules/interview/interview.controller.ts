@@ -7,9 +7,11 @@ import {
   Post,
   Query,
   Req,
+  Res,
   Sse,
 } from '@nestjs/common';
 import type { MessageEvent } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   AdvanceInterviewInputSchema,
   StartInterviewInputSchema,
@@ -18,9 +20,11 @@ import {
 import type { Observable } from 'rxjs';
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
+import { createAiOperationSse, streamError } from '../../common/streaming/ai-operation-sse';
 import { InterviewService } from './interview.service';
 
 const IDEMPOTENCY_KEY_PATTERN = /^[a-zA-Z0-9_.:-]{8,128}$/;
+type InterviewStreamParams = { id: string };
 
 @Roles('user')
 @Controller('interviews')
@@ -56,6 +60,34 @@ export class InterviewController {
     });
   }
 
+  @Post(':id/advance/stream')
+  async advanceStream(
+    @Req() request: ProductRequest,
+    @Param() params: InterviewStreamParams,
+    @Res() response: Response,
+  ): Promise<void> {
+    const input = AdvanceInterviewInputSchema.parse(request.body);
+    const key = idempotencyKey(request);
+    const connection = createAiOperationSse(response, request.context);
+    const controller = streamAbortController(response);
+    try {
+      const execution = await this.service.advanceStream(
+        {
+          context: request.context,
+          sessionId: params.id,
+          input,
+          idempotencyKey: key,
+        },
+        interviewStream(connection.sink, controller.signal),
+      );
+      connection.sink.result({ operation: 'interview_next', ...execution });
+    } catch (error) {
+      connection.sink.error(streamError(error, request.context));
+    } finally {
+      connection.close();
+    }
+  }
+
   @Post(':id/answer')
   answer(@Req() request: ProductRequest, @Param('id') sessionId: string, @Body() body: unknown) {
     return this.service.submitAnswer({
@@ -64,6 +96,34 @@ export class InterviewController {
       input: SubmitInterviewAnswerInputSchema.parse(body),
       idempotencyKey: idempotencyKey(request),
     });
+  }
+
+  @Post(':id/answer/stream')
+  async answerStream(
+    @Req() request: ProductRequest,
+    @Param() params: InterviewStreamParams,
+    @Res() response: Response,
+  ): Promise<void> {
+    const input = SubmitInterviewAnswerInputSchema.parse(request.body);
+    const key = idempotencyKey(request);
+    const connection = createAiOperationSse(response, request.context);
+    const controller = streamAbortController(response);
+    try {
+      const execution = await this.service.submitAnswerStream(
+        {
+          context: request.context,
+          sessionId: params.id,
+          input,
+          idempotencyKey: key,
+        },
+        interviewStream(connection.sink, controller.signal),
+      );
+      connection.sink.result({ operation: 'interview_next', ...execution });
+    } catch (error) {
+      connection.sink.error(streamError(error, request.context));
+    } finally {
+      connection.close();
+    }
   }
 
   @Sse(':id/stream')
@@ -101,4 +161,23 @@ function eventCursor(value: string | undefined) {
     code: 'INVALID_EVENT_CURSOR',
     message: '事件游标必须是非负整数。',
   });
+}
+
+function streamAbortController(response: Response): AbortController {
+  const controller = new AbortController();
+  response.once('close', () => {
+    if (!response.writableEnded) controller.abort();
+  });
+  return controller;
+}
+
+function interviewStream(
+  sink: ReturnType<typeof createAiOperationSse>['sink'],
+  signal: AbortSignal,
+) {
+  return {
+    phase: sink.phase,
+    delta: (content: string) => sink.delta('interviewer_content', content),
+    signal,
+  };
 }

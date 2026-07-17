@@ -3,6 +3,7 @@ import type { CandidateQuestionDetail } from '@interview-agent/contracts';
 import { useEffect, useState } from 'react';
 import { getCandidateDetail, publishCandidate, updateCandidate } from '@/lib/training-content-api';
 import { CandidateForm } from './CandidateForm';
+import { saveAndPublishCandidate } from './candidate-publish-flow';
 import { ImportReviewContext } from './ImportReviewContext';
 import type { CandidateEditorProps, ChangeHandler } from './types';
 import { candidateUpdateInput } from './training-utils';
@@ -16,24 +17,46 @@ export function CandidateEditor(props: CandidateEditorProps) {
 type CandidateDetailState = ReturnType<typeof useCandidateDetail>;
 type CandidateActions = ReturnType<typeof useCandidateActions>;
 
-function CandidateEditorContent({ actions, detailState }: { actions: CandidateActions; detailState: CandidateDetailState }) {
+function CandidateEditorContent({
+  actions,
+  detailState,
+}: {
+  actions: CandidateActions;
+  detailState: CandidateDetailState;
+}) {
   return (
     <div className="admin-candidate-editor">
       {detailState.isLoading ? <Spin description="正在加载候选题详情…" /> : null}
       {detailState.detail ? (
         <>
-          <CandidateSourceContext importTaskId={detailState.detail.importTaskId} />
-          <CandidateForm detail={detailState.detail} onChange={detailState.setDetail} {...actions} />
+          <CandidateSourceContext
+            importTaskId={detailState.detail.importTaskId}
+            sourceRefs={detailState.detail.sourceRefs}
+          />
+          <CandidateForm
+            detail={detailState.detail}
+            onChange={detailState.setDetail}
+            {...actions}
+          />
         </>
       ) : null}
-      {detailState.hasError ? <Empty description="暂无可展示的候选题详情。" image={Empty.PRESENTED_IMAGE_SIMPLE} /> : null}
+      {detailState.hasError ? (
+        <Empty description="暂无可展示的候选题详情。" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+      ) : null}
       {actions.message ? <Alert message={actions.message} showIcon type="success" /> : null}
     </div>
   );
 }
 
-function CandidateSourceContext({ importTaskId }: { importTaskId: string | null }) {
-  if (importTaskId) return <ImportReviewContext active importTaskId={importTaskId} />;
+function CandidateSourceContext({
+  importTaskId,
+  sourceRefs,
+}: {
+  importTaskId: string | null;
+  sourceRefs: string[];
+}) {
+  if (importTaskId)
+    return <ImportReviewContext active importTaskId={importTaskId} sourceRefs={sourceRefs} />;
   return (
     <Card className="admin-import-review-context" size="small" title="来源资料">
       <Typography.Text type="secondary">非导入来源</Typography.Text>
@@ -54,7 +77,9 @@ function useCandidateDetail(candidateId: string) {
       .then((candidate) => active && setDetail(candidate))
       .catch(() => active && setHasError(true))
       .finally(() => active && setLoading(false));
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [candidateId]);
   return { detail, setDetail, hasError, isLoading };
 }
@@ -86,8 +111,10 @@ async function executeCandidateAction(request: CandidateActionRequest) {
       setDetail(await updateCandidate(detail.id, candidateUpdateInput(detail)));
       request.setMessage('审核结果已保存。');
     } else {
-      const question = await publishCandidate(detail.id);
-      request.setMessage(`已发布到题库：${question.title}`);
+      const result = await saveAndPublishCandidate(detail, updateCandidate, publishCandidate);
+      setDetail({ ...result.candidate, publishedQuestionId: result.question.id });
+      const question = result.question;
+      request.setMessage(`审核已保存并发布到题库：${question.title}`);
     }
     request.onChanged();
   } catch {

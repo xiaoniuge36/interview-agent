@@ -1,14 +1,10 @@
 import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
-import {
-  AgentRuntimeNextResponseSchema,
-} from '@interview-agent/contracts';
+import { AgentRuntimeNextResponseSchema } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
+import { IncrementalJsonFieldDecoder } from '../../common/streaming/incremental-json-field-decoder';
 import { ModelCredentialService } from '../model-credential/model-credential.service';
-import {
-  ModelProviderClient,
-  ModelProviderError,
-} from '../model-credential/model-provider.client';
-import type { AgentNextInput, AgentNextResult } from './agent-runtime.types';
+import { ModelProviderClient, ModelProviderError } from '../model-credential/model-provider.client';
+import type { AgentNextInput, AgentNextResult, AgentRuntimeProgress } from './agent-runtime.types';
 
 type UserModelNextInput = { context: ProductRequestContext; input: AgentNextInput };
 
@@ -29,8 +25,34 @@ export class UserModelRuntimeClient {
         systemPrompt: systemPrompt(input),
         userPrompt: userPrompt(input),
       });
-      const decision = parseDecision(content);
-      return { ...decision, latencyMs: elapsed(startedAt), attempts: 1, fallbackUsed: false, schemaValid: true };
+      return runtimeResult(parseDecision(content), startedAt);
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw providerFailure(error);
+    }
+  }
+
+  async nextStream(
+    { context, input }: UserModelNextInput,
+    progress: AgentRuntimeProgress,
+  ): Promise<AgentNextResult> {
+    const credential = await this.credentials.resolveDefault(context);
+    if (!credential) throw connectionRequired();
+    const startedAt = performance.now();
+    const decoder = new IncrementalJsonFieldDecoder('content');
+    let content = '';
+    try {
+      for await (const delta of this.provider.stream({
+        ...credential,
+        systemPrompt: systemPrompt(input),
+        userPrompt: userPrompt(input),
+        ...(progress.signal ? { signal: progress.signal } : {}),
+      })) {
+        content += delta;
+        const visible = decoder.push(delta);
+        if (visible) progress.onContentDelta?.(visible);
+      }
+      return runtimeResult(parseDecision(content), startedAt);
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw providerFailure(error);
@@ -38,8 +60,24 @@ export class UserModelRuntimeClient {
   }
 }
 
+function runtimeResult(
+  decision: ReturnType<typeof parseDecision>,
+  startedAt: number,
+): AgentNextResult {
+  const { basisSummary, ...next } = decision;
+  return {
+    ...next,
+    ...(basisSummary ? { basisSummary } : {}),
+    latencyMs: elapsed(startedAt),
+    attempts: 1,
+    fallbackUsed: false,
+    schemaValid: true,
+  };
+}
+
 function systemPrompt(input: AgentNextInput) {
   return [
+    '请先输出 content 字段；可选 basisSummary 最多三条，只能引用用户回答、岗位要求或评分标准中的可解释证据。',
     '你是专业的中文模拟面试官。基于候选人的最近回答推进面试。',
     '只返回 JSON，不要 Markdown，不要解释。',
     'JSON 格式：{"stage":"当前或下一阶段","content":"给用户的问题或结束语","shouldFinish":false}。',
@@ -56,7 +94,9 @@ function userPrompt(input: AgentNextInput) {
     `面试主题：${input.session.title}`,
     history ? `最近对话：\n${history}` : '这是面试开始，请提出第一题。',
     input.answer ? `本次回答：${input.answer}` : '',
-  ].filter(Boolean).join('\n\n');
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 function parseDecision(value: string) {
@@ -74,7 +114,10 @@ function parseDecision(value: string) {
 }
 
 function stripCodeFence(value: string) {
-  return value.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  return value
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '');
 }
 
 function connectionRequired() {

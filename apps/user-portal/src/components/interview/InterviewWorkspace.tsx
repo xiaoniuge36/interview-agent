@@ -16,10 +16,13 @@ export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
     <section className="interview section-gap">
       <InterviewConsole jobs={jobs} controller={controller} />
       <aside className="stack" aria-label="训练进度与面试复盘">
-        <RuntimeEventList events={controller.state.events} />
+        <RuntimeEventList
+          events={controller.state.events}
+          phase={controller.state.phase}
+          basisSummary={controller.state.basisSummary}
+        />
         <ReportPanel report={controller.state.report} />
       </aside>
     </section>
   );
 }
-

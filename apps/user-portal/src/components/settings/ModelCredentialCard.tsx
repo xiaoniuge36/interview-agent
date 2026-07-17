@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { ModelCredentialView } from '@interview-agent/contracts';
 import { removeModelCredential, testModelCredential } from '@/lib/model-credentials-api';
+import { useNotifications } from '@/components/notifications/NotificationProvider';
 import { MODEL_PROVIDER_OPTIONS } from './model-connection-form';
 
 type ModelCredentialCardProps = {
@@ -28,6 +29,7 @@ export function ModelCredentialCard({ credential, onChanged, onEdit }: ModelCred
 }
 
 function useCredentialActions(id: string, onChanged: () => Promise<void>) {
+  const notifications = useNotifications();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const test = async () => {
@@ -37,8 +39,10 @@ function useCredentialActions(id: string, onChanged: () => Promise<void>) {
       await testModelCredential(id);
       await onChanged();
       setMessage('连接测试成功，已可用于 Agent 任务。');
+      notifications.success('模型连接测试成功', '服务端已完成真实模型调用验证。');
     } catch (reason) {
       setMessage(messageOf(reason));
+      notifications.error('模型连接测试失败', reason, '模型连接测试失败，请检查配置。');
       await refreshAfterFailure(onChanged);
     } finally {
       setBusy(false);
@@ -51,8 +55,10 @@ function useCredentialActions(id: string, onChanged: () => Promise<void>) {
     try {
       await removeModelCredential(id);
       await onChanged();
+      notifications.success('模型连接已删除', '服务端已移除该加密凭据。');
     } catch (reason) {
       setMessage(messageOf(reason));
+      notifications.error('模型连接删除失败', reason, '模型连接没有删除，请稍后重试。');
     } finally {
       setBusy(false);
     }

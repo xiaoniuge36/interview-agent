@@ -29,7 +29,6 @@ export function buildCompletion(input: {
     commandId: input.preparation.commandId,
     initialSequence: input.preparation.session.eventSequence,
     stage: input.runtime.stage,
-    content: input.runtime.content,
     turn: interviewerTurn,
     ...(report ? { reportId: report.id } : {}),
     traceId: input.preparation.context.traceId,
@@ -75,6 +74,9 @@ function createTurns(input: {
     role: 'interviewer',
     stage: input.runtime.stage,
     content: input.runtime.content,
+    ...(input.runtime.basisSummary?.length
+      ? { structuredPayload: { basisSummary: input.runtime.basisSummary } }
+      : {}),
   });
   return [...candidate, interviewer];
 }

@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { isGlobalSearchShortcut } from './global-search-model';
+import { isGlobalSearchShortcut, shouldOpenGlobalSearch } from './global-search-model';
 
 type GlobalSearchContextValue = {
   open: (query?: string, trigger?: HTMLElement | null) => void;
@@ -25,20 +25,29 @@ export function GlobalSearchProvider({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLElement | null>(null);
+  const restoringFocusRef = useRef(false);
+  const restorePendingRef = useRef(false);
 
   const open = useCallback((nextQuery = '', trigger?: HTMLElement | null) => {
+    if (!shouldOpenGlobalSearch(restoringFocusRef.current)) return;
+    restorePendingRef.current = false;
     triggerRef.current = trigger ?? activeElement();
     setQuery(nextQuery);
     setIsOpen(true);
   }, []);
 
   const close = useCallback(() => {
+    restorePendingRef.current = true;
     setIsOpen(false);
-    window.requestAnimationFrame(() => triggerRef.current?.focus());
   }, []);
 
   useGlobalSearchShortcut(isOpen, open, close);
   useBodyScrollLock(isOpen);
+  useEffect(() => {
+    if (isOpen || !restorePendingRef.current) return;
+    restorePendingRef.current = false;
+    restoreTriggerFocus(triggerRef.current, restoringFocusRef);
+  }, [isOpen]);
 
   return (
     <GlobalSearchContext.Provider value={{ open, close, setQuery, query, isOpen }}>
@@ -83,4 +92,17 @@ function useBodyScrollLock(isOpen: boolean) {
 
 function activeElement() {
   return document.activeElement instanceof HTMLElement ? document.activeElement : null;
+}
+
+function restoreTriggerFocus(
+  trigger: HTMLElement | null,
+  restoring: React.MutableRefObject<boolean>,
+) {
+  if (!trigger?.isConnected) return;
+  restoring.current = true;
+  try {
+    trigger.focus();
+  } finally {
+    restoring.current = false;
+  }
 }

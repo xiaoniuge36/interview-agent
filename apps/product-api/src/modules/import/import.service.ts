@@ -7,6 +7,7 @@ import {
   type ImportReviewContext,
   type ImportTask,
   type ImportTaskListQuery,
+  type CandidateReviewProgress,
   type MarkdownImportRequest,
 } from '@interview-agent/contracts';
 import { AuditService, jsonValue } from '../../common/audit/audit.service';
@@ -89,7 +90,13 @@ export class ImportService {
         },
         transaction,
       );
-      return mapImportTask(task);
+      return mapImportTask(task, {
+        pending: candidates.length,
+        needsEdit: 0,
+        approved: 0,
+        rejected: 0,
+        published: 0,
+      });
     });
   }
 
@@ -100,7 +107,7 @@ export class ImportService {
       orderBy: { updatedAt: 'desc' },
       take: IMPORT_LIST_LIMIT,
     });
-    return tasks.map(mapImportTask);
+    return this.withCandidateReviewProgress(context.tenantId, tasks);
   }
 
   async reviewContext(
@@ -112,13 +119,16 @@ export class ImportService {
       where: { id: taskId, tenantId: context.tenantId },
     });
     if (!task) throw importTaskNotFound();
-    const chunks = await this.prisma.knowledgeChunk.findMany({
-      where: { assetId: task.assetId, tenantId: context.tenantId },
-      select: { content: true, metadata: true },
-      orderBy: { createdAt: 'asc' },
-    });
+    const [chunks, reviewedTasks] = await Promise.all([
+      this.prisma.knowledgeChunk.findMany({
+        where: { assetId: task.assetId, tenantId: context.tenantId },
+        select: { content: true, metadata: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.withCandidateReviewProgress(context.tenantId, [task]),
+    ]);
     return ImportReviewContextSchema.parse({
-      task: mapImportTask(task),
+      task: reviewedTasks[0] ?? mapImportTask(task),
       sourceChunks: chunks.map((chunk, index) => ({
         content: chunk.content,
         sequence: sourceChunkSequence(chunk.metadata, index + 1),
@@ -138,8 +148,9 @@ export class ImportService {
         take: query.pageSize,
       }),
     ]);
+    const items = await this.withCandidateReviewProgress(context.tenantId, tasks);
     return {
-      items: tasks.map(mapImportTask),
+      items,
       total,
       page: query.page,
       pageSize: query.pageSize,
@@ -156,7 +167,7 @@ export class ImportService {
       orderBy: IMPORT_TASK_ORDER,
       take: IMPORT_EXPORT_LIMIT,
     });
-    const items = tasks.map(mapImportTask);
+    const items = await this.withCandidateReviewProgress(context.tenantId, tasks);
     await this.audit.record(context, {
       action: 'admin:export',
       resourceType: 'AdminImportExport',
@@ -192,6 +203,30 @@ export class ImportService {
     });
   }
 
+  private async withCandidateReviewProgress(
+    tenantId: string,
+    tasks: Array<Parameters<typeof mapImportTask>[0]>,
+  ): Promise<ImportTask[]> {
+    if (!tasks.length) return [];
+    const taskIds = tasks.map((task) => task.id);
+    const candidates = await this.prisma.candidateQuestion.findMany({
+      where: { tenantId, importTaskId: { in: taskIds } },
+      select: { importTaskId: true, publishedQuestionId: true, status: true },
+    });
+    const progressByTask = new Map(
+      taskIds.map((taskId) => [taskId, emptyCandidateReviewProgress()]),
+    );
+    for (const candidate of candidates) {
+      const progress = candidate.importTaskId
+        ? progressByTask.get(candidate.importTaskId)
+        : undefined;
+      if (progress) incrementCandidateReviewProgress(progress, candidate);
+    }
+    return tasks.map((task) =>
+      mapImportTask(task, progressByTask.get(task.id) ?? emptyCandidateReviewProgress()),
+    );
+  }
+
   private queryScope(
     context: ProductRequestContext,
     query: ImportTaskListQuery,
@@ -208,23 +243,45 @@ export class ImportService {
   }
 }
 
-function mapImportTask(record: {
-  id: string;
-  tenantId: string;
-  assetId: string;
-  title: string;
-  status: string;
-  candidateCount: number;
-  failureReason: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}): ImportTask {
+function mapImportTask(
+  record: {
+    id: string;
+    tenantId: string;
+    assetId: string;
+    title: string;
+    status: string;
+    candidateCount: number;
+    failureReason: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  candidateReviewProgress: CandidateReviewProgress = emptyCandidateReviewProgress(),
+): ImportTask {
   return ImportTaskSchema.parse({
     ...record,
     status: ImportTaskStatusSchema.parse(record.status),
+    candidateReviewProgress,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   });
+}
+
+function emptyCandidateReviewProgress(): CandidateReviewProgress {
+  return { pending: 0, needsEdit: 0, approved: 0, rejected: 0, published: 0 };
+}
+
+function incrementCandidateReviewProgress(
+  progress: CandidateReviewProgress,
+  candidate: { publishedQuestionId: string | null; status: string },
+) {
+  if (candidate.publishedQuestionId) {
+    progress.published += 1;
+    return;
+  }
+  if (candidate.status === 'pending') progress.pending += 1;
+  if (candidate.status === 'needs_edit') progress.needsEdit += 1;
+  if (candidate.status === 'approved') progress.approved += 1;
+  if (candidate.status === 'rejected') progress.rejected += 1;
 }
 
 function invalidMarkdown() {

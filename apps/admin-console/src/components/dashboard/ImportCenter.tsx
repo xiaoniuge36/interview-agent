@@ -188,7 +188,7 @@ function ImportTaskTable({
       dataSource={tasks}
       pagination={false}
       rowKey="id"
-      scroll={{ x: 860 }}
+      scroll={{ x: 1040 }}
       size="middle"
     />
   );
@@ -207,7 +207,12 @@ function importTaskColumns(
         <Tag color={importStatusColor(status)}>{STATUS_LABELS[status]}</Tag>
       ),
     },
-    { title: '候选题', dataIndex: 'candidateCount', width: 84 },
+    {
+      title: '审核进度',
+      dataIndex: 'candidateReviewProgress',
+      width: 262,
+      render: (_, task) => <CandidateReviewProgressCell task={task} />,
+    },
     {
       title: '更新时间',
       dataIndex: 'updatedAt',
@@ -246,6 +251,47 @@ function TaskCell({ task }: { task: ImportTask }) {
       <Typography.Text code type="secondary">
         {task.id}
       </Typography.Text>
+    </div>
+  );
+}
+
+type CandidateReviewProgressKey = keyof ImportTask['candidateReviewProgress'];
+
+const CANDIDATE_REVIEW_PROGRESS_META: Record<
+  CandidateReviewProgressKey,
+  { color: string; label: string }
+> = {
+  pending: { color: 'gold', label: '待审' },
+  needsEdit: { color: 'orange', label: '需修改' },
+  approved: { color: 'green', label: '已通过' },
+  rejected: { color: 'red', label: '已驳回' },
+  published: { color: 'blue', label: '已发布' },
+};
+const REVIEW_PROGRESS_TAG_GAP = 4;
+
+function CandidateReviewProgressCell({ task }: { task: ImportTask }) {
+  const progressItems = (
+    Object.keys(CANDIDATE_REVIEW_PROGRESS_META) as CandidateReviewProgressKey[]
+  )
+    .map((key) => ({
+      ...CANDIDATE_REVIEW_PROGRESS_META[key],
+      count: task.candidateReviewProgress[key],
+    }))
+    .filter((item) => item.count > 0);
+  return (
+    <div>
+      <Typography.Text strong>共 {task.candidateCount} 题</Typography.Text>
+      {progressItems.length ? (
+        <Space size={[REVIEW_PROGRESS_TAG_GAP, REVIEW_PROGRESS_TAG_GAP]} wrap>
+          {progressItems.map((item) => (
+            <Tag color={item.color} key={item.label}>
+              {item.label} {item.count}
+            </Tag>
+          ))}
+        </Space>
+      ) : (
+        <Typography.Text type="secondary">尚未生成候选题</Typography.Text>
+      )}
     </div>
   );
 }

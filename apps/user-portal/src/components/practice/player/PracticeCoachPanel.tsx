@@ -1,6 +1,6 @@
 import type { PracticeItemSolution, PracticeSession } from '@interview-agent/contracts';
 import Link from 'next/link';
-import type { PlayerBusy, PlayerIssue } from './usePracticePlayer';
+import type { PlayerAiOperation, PlayerBusy, PlayerIssue } from './practice-player-actions';
 
 type PracticeCoachPanelProps = {
   item: PracticeSession['items'][number];
@@ -8,6 +8,7 @@ type PracticeCoachPanelProps = {
   solution: PracticeItemSolution | undefined;
   busy: PlayerBusy;
   issue: PlayerIssue;
+  aiOperation: PlayerAiOperation | null;
   onRevealSolution: () => void;
   onEvaluate: () => void;
 };
@@ -17,7 +18,10 @@ export function PracticeCoachPanel(props: PracticeCoachPanelProps) {
   const answerCurrent = answerSaved && props.draft.trim() === props.item.answer?.trim();
   return (
     <aside className="practice-coach-panel" aria-label="解析与 AI 教练">
-      <header><span>Coach panel</span><h2>解析与反馈</h2></header>
+      <header>
+        <span>Coach panel</span>
+        <h2>解析与反馈</h2>
+      </header>
       <SolutionSection {...props} answerSaved={answerSaved} />
       <AiEvaluationSection {...props} answerCurrent={answerCurrent} />
     </aside>
@@ -28,18 +32,34 @@ function SolutionSection(props: PracticeCoachPanelProps & { answerSaved: boolean
   const loading = props.busy === `solution:${props.item.id}`;
   return (
     <section className="practice-coach-section">
-      <div className="practice-coach-heading"><span>01</span><strong>标准解析</strong></div>
+      <div className="practice-coach-heading">
+        <span>01</span>
+        <strong>标准解析</strong>
+      </div>
       {props.solution ? (
         <div className="practice-solution-content">
           <p>{props.solution.referenceAnswer}</p>
           <div className="practice-rubric-list">
-            {props.solution.rubric.map((rubric) => <div key={rubric.point}><strong>{rubric.point}</strong><span>{rubric.description}</span></div>)}
+            {props.solution.rubric.map((rubric) => (
+              <div key={rubric.point}>
+                <strong>{rubric.point}</strong>
+                <span>{rubric.description}</span>
+              </div>
+            ))}
           </div>
         </div>
       ) : (
         <div className="practice-coach-locked">
-          <p>{props.answerSaved ? '回答已保存，可以展开标准答案与评分点。' : '先保存你的回答，再查看标准解析。'}</p>
-          <button type="button" disabled={!props.answerSaved || props.busy !== null} onClick={props.onRevealSolution}>
+          <p>
+            {props.answerSaved
+              ? '回答已保存，可以展开标准答案与评分点。'
+              : '先保存你的回答，再查看标准解析。'}
+          </p>
+          <button
+            type="button"
+            disabled={!props.answerSaved || props.busy !== null}
+            onClick={props.onRevealSolution}
+          >
             {loading ? '加载解析中…' : '查看标准解析'}
           </button>
         </div>
@@ -53,13 +73,27 @@ function AiEvaluationSection(props: PracticeCoachPanelProps & { answerCurrent: b
   const evaluating = props.busy === `evaluate:${props.item.id}`;
   return (
     <section className="practice-coach-section ai-section">
-      <div className="practice-coach-heading"><span>02</span><strong>真实 AI 评价</strong><i>BYOK</i></div>
-      {evaluation ? <EvaluationResult evaluation={evaluation} /> : (
+      <div className="practice-coach-heading">
+        <span>02</span>
+        <strong>真实 AI 评价</strong>
+        <i>BYOK</i>
+      </div>
+      {evaluation ? (
+        <EvaluationResult evaluation={evaluation} />
+      ) : evaluating ? (
+        <AiEvaluationProgress stream={props.aiOperation} />
+      ) : (
         <div className="practice-ai-ready">
-          <p>{props.answerCurrent
-            ? '将使用你在设置中验证的默认模型。API Key 只从加密存储中解密用于本次调用。'
-            : '保存当前回答后，才能请求 AI 评分与针对性追问。'}</p>
-          <button type="button" disabled={!props.answerCurrent || props.busy !== null} onClick={props.onEvaluate}>
+          <p>
+            {props.answerCurrent
+              ? '将使用你在设置中验证的默认模型。API Key 只从加密存储中解密用于本次调用。'
+              : '保存当前回答后，才能请求 AI 评分与针对性追问。'}
+          </p>
+          <button
+            type="button"
+            disabled={!props.answerCurrent || props.busy !== null}
+            onClick={props.onEvaluate}
+          >
             {evaluating ? '模型评价中…' : '调用我的模型评价'}
           </button>
         </div>
@@ -69,14 +103,69 @@ function AiEvaluationSection(props: PracticeCoachPanelProps & { answerCurrent: b
   );
 }
 
-function EvaluationResult({ evaluation }: { evaluation: NonNullable<PracticeSession['items'][number]['evaluation']> }) {
+const PHASE_LABELS = {
+  preparing: '正在连接你的默认模型',
+  analyzing: '正在提取回答中的有效信息',
+  composing: '正在组织评价正文',
+  validating: '正在核对模型返回结果',
+  saving: '正在保存本题评价',
+} as const;
+
+function AiEvaluationProgress({ stream }: { stream: PlayerAiOperation | null }) {
+  const label = stream?.phase ? PHASE_LABELS[stream.phase] : '正在准备 AI 评价';
+  return (
+    <div className="practice-ai-stream" aria-live="polite">
+      <div className="practice-ai-stream-status">
+        <span aria-hidden="true" />
+        {label}
+      </div>
+      {stream?.visibleText ? (
+        <p>{stream.visibleText}</p>
+      ) : (
+        <p>你的评分和追问会在结果校验并保存后出现。</p>
+      )}
+    </div>
+  );
+}
+
+function EvaluationResult({
+  evaluation,
+}: {
+  evaluation: NonNullable<PracticeSession['items'][number]['evaluation']>;
+}) {
   return (
     <div className="practice-evaluation-result">
-      <div className="practice-evaluation-score"><strong>{Math.round(evaluation.score)}</strong><span>本题得分</span></div>
+      <div className="practice-evaluation-score">
+        <strong>{Math.round(evaluation.score)}</strong>
+        <span>本题得分</span>
+      </div>
       <p>{evaluation.feedback}</p>
-      {evaluation.missingPoints.length ? <div><strong>回答还缺少</strong><ul>{evaluation.missingPoints.map((point) => <li key={point}>{point}</li>)}</ul></div> : null}
-      {evaluation.rubricScores.length ? <div className="practice-rubric-scores">{evaluation.rubricScores.map((score) => <span key={score.point}><b>{score.point}</b><i>{Math.round(score.score)}</i></span>)}</div> : null}
-      {evaluation.followUpQuestion ? <blockquote><span>Agent 追问</span>{evaluation.followUpQuestion}</blockquote> : null}
+      {evaluation.missingPoints.length ? (
+        <div>
+          <strong>回答还缺少</strong>
+          <ul>
+            {evaluation.missingPoints.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {evaluation.rubricScores.length ? (
+        <div className="practice-rubric-scores">
+          {evaluation.rubricScores.map((score) => (
+            <span key={score.point}>
+              <b>{score.point}</b>
+              <i>{Math.round(score.score)}</i>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {evaluation.followUpQuestion ? (
+        <blockquote>
+          <span>Agent 追问</span>
+          {evaluation.followUpQuestion}
+        </blockquote>
+      ) : null}
     </div>
   );
 }

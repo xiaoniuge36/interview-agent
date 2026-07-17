@@ -11,16 +11,18 @@ import {
 } from '@/lib/account-api';
 import { saveAdminDownloadedFile } from '@/lib/admin-list-api';
 import { INITIAL_ACCOUNT_QUERY, type RoleModalState } from './account-management.types';
+import { useCreateLocalAdmin } from './useCreateLocalAdmin';
 import { useAccountList } from './useAccountList';
 
 type ScreenOptions = { active: boolean; refreshKey: number; onChanged: () => void };
 
 export function useAccountScreen(options: ScreenOptions) {
   const queries = useAccountQueries(options);
+  const creation = useCreateLocalAdmin(queries.reload);
   const role = useRoleMutation(queries.reload);
   const changeStatus = useStatusMutation(queries.reload);
   const [drawerAccountId, setDrawerAccountId] = useState<string | null>(null);
-  return { ...queries, changeStatus, drawerAccountId, role, setDrawerAccountId };
+  return { ...queries, changeStatus, creation, drawerAccountId, role, setDrawerAccountId };
 }
 
 function useAccountQueries(options: ScreenOptions) {

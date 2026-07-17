@@ -4,6 +4,7 @@ import {
   isGlobalSearchShortcut,
   moveSearchIndex,
   questionSearchItems,
+  shouldOpenGlobalSearch,
 } from './global-search-model';
 
 describe('全局搜索模型', () => {
@@ -45,6 +46,13 @@ describe('全局搜索模型', () => {
     expect(item?.href).toBe(
       '/questions?query=%E5%A6%82%E4%BD%95%E8%AE%BE%E8%AE%A1%20Agent%20%E5%B7%A5%E5%85%B7%E8%B0%83%E7%94%A8%E7%9A%84%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6%EF%BC%9F',
     );
+  });
+});
+
+describe('全局搜索键盘交互', () => {
+  it('恢复触发元素焦点时不会立刻重新打开面板', () => {
+    expect(shouldOpenGlobalSearch(false)).toBe(true);
+    expect(shouldOpenGlobalSearch(true)).toBe(false);
   });
 
   it('让键盘索引首尾循环并处理空列表', () => {

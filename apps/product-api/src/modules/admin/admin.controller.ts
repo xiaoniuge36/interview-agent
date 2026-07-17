@@ -5,6 +5,7 @@ import {
   AuditLogListQuerySchema,
   BatchCandidateReviewInputSchema,
   CandidateReviewListQuerySchema,
+  CreateLocalAdminInputSchema,
   ModelProfileListQuerySchema,
   PlatformDashboardQuerySchema,
   PublishCandidateQuestionInputSchema,
@@ -51,6 +52,21 @@ export class AdminController {
   @Get('accounts/query')
   queryAccounts(@Req() request: ProductRequest, @Query() query: unknown) {
     return this.services.accounts.query(request.context, AccountListQuerySchema.parse(query));
+  }
+
+  @Roles('platform_admin')
+  @Get('accounts/tenants')
+  tenantOptions(@Req() request: ProductRequest) {
+    return this.services.accounts.tenantOptions(request.context);
+  }
+
+  @Roles('platform_admin')
+  @Post('accounts/local-admin')
+  createLocalAdmin(@Req() request: ProductRequest, @Body() body: unknown) {
+    return this.services.accounts.createLocalAdmin(
+      request.context,
+      CreateLocalAdminInputSchema.parse(body),
+    );
   }
 
   @Roles('platform_admin')

@@ -29,8 +29,7 @@
   padding: 10px;
   border: 1px solid var(--outline);
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(180deg, #f7f9ff 0%, #f3f6fb 100%);
+  background: linear-gradient(180deg, #f7f9ff 0%, #f3f6fb 100%);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -217,6 +216,31 @@
 
 .event-row:last-child {
   border-bottom: 0;
+}
+
+.event-row-active {
+  border-color: color-mix(in srgb, var(--accent, #635bff) 34%, transparent);
+  background: color-mix(in srgb, var(--accent, #635bff) 8%, transparent);
+}
+
+.interview-basis-summary {
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line, rgba(148, 163, 184, 0.22));
+}
+
+.interview-basis-summary strong {
+  font-size: 13px;
+}
+
+.interview-basis-summary ul {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--muted, #64748b);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .event-row strong::before {

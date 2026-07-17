@@ -1,11 +1,5 @@
 export type NavigationId =
-  | 'home'
-  | 'questions'
-  | 'profile'
-  | 'practice'
-  | 'interview'
-  | 'reports'
-  | 'settings';
+  'home' | 'questions' | 'profile' | 'practice' | 'interview' | 'reports' | 'settings';
 
 export type IconName = 'grid' | 'user' | 'target' | 'book' | 'mic' | 'chart' | 'settings';
 
@@ -93,4 +87,13 @@ export function navIdFromPathname(pathname: string): NavigationId {
     (item) => pathname === item.href || pathname.startsWith(item.href + '/'),
   );
   return match?.id ?? 'home';
+}
+
+export function navigationLinkClass(
+  active: NavigationId,
+  pending: NavigationId | null,
+  item: NavigationId,
+): string {
+  if (pending) return pending === item ? 'active pending' : '';
+  return active === item ? 'active' : '';
 }

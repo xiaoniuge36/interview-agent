@@ -6,8 +6,6 @@ import type {
   InterviewTurnRole,
 } from '@interview-agent/contracts';
 
-const TOKEN_CHUNK_CHARACTERS = 18;
-
 export type TurnInput = {
   tenantId: string;
   sessionId: string;
@@ -15,6 +13,7 @@ export type TurnInput = {
   role: InterviewTurnRole;
   stage: InterviewStage;
   content: string;
+  structuredPayload?: Record<string, unknown>;
   traceId: string;
   createdAt: string;
 };
@@ -24,7 +23,6 @@ export type EventFactoryInput = {
   commandId: string;
   initialSequence: number;
   stage: InterviewStage;
-  content: string;
   turn: InterviewTurn;
   reportId?: string;
   traceId: string;
@@ -48,24 +46,10 @@ export function createInterviewEvents(input: EventFactoryInput): AgentStreamEven
   const events: AgentStreamEvent[] = [
     { type: 'workflow_started', ...metadata() },
     { type: 'stage_changed', stage: input.stage, ...metadata() },
-    ...chunkContent(input.content).map((content) => ({
-      type: 'token' as const,
-      content,
-      ...metadata(),
-    })),
     { type: 'turn_completed', turn: input.turn, ...metadata() },
   ];
   if (input.reportId) {
     events.push({ type: 'report_ready', reportId: input.reportId, ...metadata() });
   }
   return events;
-}
-
-function chunkContent(content: string) {
-  const pattern = new RegExp(
-    `.{1,${TOKEN_CHUNK_CHARACTERS}}(?:\\s|$)|.{1,${TOKEN_CHUNK_CHARACTERS}}`,
-    'g',
-  );
-  const chunks = content.match(pattern) ?? [content];
-  return chunks.map((chunk) => chunk.trim()).filter(Boolean);
 }

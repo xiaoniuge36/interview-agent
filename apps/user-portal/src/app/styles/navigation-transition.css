@@ -1,0 +1,191 @@
+.route-view {
+  min-width: 0;
+  min-height: inherit;
+}
+
+.sidebar-nav a {
+  position: relative;
+  overflow: hidden;
+  transition:
+    color 90ms var(--ease-out),
+    background 90ms var(--ease-out);
+}
+
+.sidebar-nav a.pending {
+  background: color-mix(in srgb, var(--sidebar-active) 72%, transparent);
+  color: #ffffff;
+}
+
+.route-loading-state {
+  align-content: start;
+  gap: 26px;
+  min-height: min(720px, calc(100vh - 32px));
+}
+
+.route-loading-signal {
+  display: grid;
+  grid-template-columns: minmax(72px, 116px) repeat(3, 7px);
+  align-items: center;
+  gap: 7px;
+  width: min(220px, 48vw);
+  padding-top: 8px;
+}
+
+.route-loading-signal span {
+  height: 2px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--primary) 52%, var(--outline));
+  transform-origin: left;
+  animation: route-signal-line 900ms var(--ease-out) infinite alternate;
+}
+
+.route-loading-signal i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 24%, var(--outline));
+  animation: route-signal-dot 900ms ease-in-out infinite alternate;
+}
+
+.route-loading-signal i:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.route-loading-signal i:nth-child(4) {
+  animation-delay: 240ms;
+}
+
+.route-loading-intro,
+.route-loading-card {
+  display: grid;
+}
+
+.route-loading-intro {
+  gap: 12px;
+  max-width: 680px;
+}
+
+.route-loading-intro span,
+.route-loading-intro strong,
+.route-loading-intro p,
+.route-loading-card span,
+.route-loading-card strong,
+.route-loading-card p {
+  display: block;
+  margin: 0;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--outline) 70%, var(--surface));
+  animation: route-skeleton-breathe 1100ms ease-in-out infinite alternate;
+}
+
+.route-loading-intro span {
+  width: 86px;
+  height: 10px;
+}
+
+.route-loading-intro strong {
+  width: min(380px, 68vw);
+  height: 38px;
+  border-radius: 12px;
+}
+
+.route-loading-intro p {
+  width: min(610px, 80vw);
+  height: 14px;
+}
+
+.route-loading-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.route-loading-card {
+  min-height: 260px;
+  gap: 16px;
+  padding: 26px;
+  border: 1px solid color-mix(in srgb, var(--outline) 88%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--primary-soft));
+  box-shadow: 0 10px 30px rgba(20, 33, 61, 0.035);
+}
+
+.route-loading-card.compact {
+  min-height: 210px;
+}
+
+.route-loading-card span {
+  width: 72px;
+  height: 9px;
+}
+
+.route-loading-card strong {
+  width: min(260px, 70%);
+  height: 23px;
+  border-radius: 8px;
+}
+
+.route-loading-card p {
+  width: 92%;
+  height: 12px;
+}
+
+.route-loading-card p:last-child {
+  width: 68%;
+}
+
+@keyframes route-signal-line {
+  from {
+    opacity: 0.45;
+    transform: scaleX(0.42);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes route-signal-dot {
+  from {
+    opacity: 0.28;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
+@keyframes route-skeleton-breathe {
+  from {
+    opacity: 0.54;
+  }
+  to {
+    opacity: 0.92;
+  }
+}
+
+@media (max-width: 760px) {
+  .route-loading-grid {
+    grid-template-columns: 1fr;
+  }
+  .route-loading-card.compact {
+    min-height: 170px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-view,
+  .sidebar-nav a,
+  .sidebar-nav a.pending,
+  .route-loading-signal span,
+  .route-loading-signal i,
+  .route-loading-intro span,
+  .route-loading-intro strong,
+  .route-loading-intro p,
+  .route-loading-card span,
+  .route-loading-card strong,
+  .route-loading-card p {
+    animation: none;
+    transform: none;
+  }
+}

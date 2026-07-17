@@ -59,14 +59,16 @@ export const CandidateReviewSchema = z.object({
   createdAt: z.string().datetime(),
 });
 
-export const BatchCandidateReviewInputSchema = z.object({
-  candidateIds: z.array(z.string().min(1)).min(1).max(CONTRACT_LIMITS.list),
-  status: z.enum(['needs_edit', 'approved', 'rejected']),
-  reviewNotes: z.string().max(CONTRACT_LIMITS.mediumText).nullable(),
-}).refine((value) => new Set(value.candidateIds).size === value.candidateIds.length, {
-  message: 'Candidate IDs must be unique.',
-  path: ['candidateIds'],
-});
+export const BatchCandidateReviewInputSchema = z
+  .object({
+    candidateIds: z.array(z.string().min(1)).min(1).max(CONTRACT_LIMITS.list),
+    status: z.enum(['needs_edit', 'approved', 'rejected']),
+    reviewNotes: z.string().max(CONTRACT_LIMITS.mediumText).nullable(),
+  })
+  .refine((value) => new Set(value.candidateIds).size === value.candidateIds.length, {
+    message: 'Candidate IDs must be unique.',
+    path: ['candidateIds'],
+  });
 
 export const BatchCandidateReviewResultSchema = z.object({
   updatedCount: z.number().int().nonnegative(),
@@ -109,6 +111,14 @@ export const ImportTaskStatusSchema = z.enum([
   'failed',
 ]);
 
+export const CandidateReviewProgressSchema = z.object({
+  pending: z.number().int().nonnegative(),
+  needsEdit: z.number().int().nonnegative(),
+  approved: z.number().int().nonnegative(),
+  rejected: z.number().int().nonnegative(),
+  published: z.number().int().nonnegative(),
+});
+
 export const MarkdownImportRequestSchema = z.object({
   title: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   markdown: z.string().min(MIN_MARKDOWN_IMPORT_LENGTH).max(CONTRACT_LIMITS.longText),
@@ -121,6 +131,7 @@ export const ImportTaskSchema = z.object({
   title: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   status: ImportTaskStatusSchema,
   candidateCount: z.number().int().nonnegative(),
+  candidateReviewProgress: CandidateReviewProgressSchema,
   failureReason: z.string().max(CONTRACT_LIMITS.mediumText).nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -178,6 +189,7 @@ export const PublishCandidateQuestionInputSchema = z.object({
 });
 
 export type ImportTask = z.infer<typeof ImportTaskSchema>;
+export type CandidateReviewProgress = z.infer<typeof CandidateReviewProgressSchema>;
 export type ImportReviewContext = z.infer<typeof ImportReviewContextSchema>;
 export type CandidateQuestionDetail = z.infer<typeof CandidateQuestionDetailSchema>;
 export type MarkdownImportRequest = z.infer<typeof MarkdownImportRequestSchema>;

@@ -36,10 +36,11 @@ export function useGlobalSearchResults(query: string): GlobalSearchResultsState 
       return;
     }
     setIsLoading(true);
-    return scheduleQuestionSearch(normalizedQuery, version, requestVersion, {
-      setQuestionItems,
-      setIsLoading,
-      setError,
+    return scheduleQuestionSearch({
+      query: normalizedQuery,
+      version,
+      currentVersion: requestVersion,
+      setters: { setQuestionItems, setIsLoading, setError },
     });
   }, [query, retryVersion]);
 
@@ -54,12 +55,14 @@ type SearchSetters = {
   setError: (value: string | null) => void;
 };
 
-function scheduleQuestionSearch(
-  query: string,
-  version: number,
-  currentVersion: React.MutableRefObject<number>,
-  setters: SearchSetters,
-) {
+type SearchRequest = {
+  query: string;
+  version: number;
+  currentVersion: React.MutableRefObject<number>;
+  setters: SearchSetters;
+};
+
+function scheduleQuestionSearch({ query, version, currentVersion, setters }: SearchRequest) {
   const timeout = window.setTimeout(async () => {
     try {
       const catalog = await getQuestionCatalog({ query, page: 1, pageSize: SEARCH_PAGE_SIZE });

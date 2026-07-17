@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --ink:#102a43; --muted:#6b7a90; --line:#e7edf5; --blue:#1677ff; --cyan:#1ca7ec; --navy:#081f39; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#f3f6fa; color:var(--ink); font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif; }
+    .page { max-width:1460px; margin:0 auto; padding:34px; }
+    .eyebrow { color:#3977d5; font-size:12px; font-weight:800; letter-spacing:.13em; }
+    h1 { margin:8px 0 8px; font-size:30px; letter-spacing:-.04em; }
+    .intro { max-width:760px; margin:0 0 28px; color:var(--muted); line-height:1.65; }
+    .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
+    .choice { overflow:hidden; cursor:pointer; background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:0 10px 30px rgba(15,45,75,.06); transition:.2s ease; }
+    .choice:hover,.choice.selected { border-color:#4e98ff; transform:translateY(-3px); box-shadow:0 18px 40px rgba(22,119,255,.15); }
+    .mock { min-height:300px; padding:18px; }
+    .copy { padding:18px 20px 22px; border-top:1px solid var(--line); }
+    .copy h2 { margin:0 0 6px; font-size:18px; }
+    .copy p { margin:0; color:var(--muted); font-size:14px; line-height:1.55; }
+    .badge { display:inline-block; padding:4px 8px; color:#0d5a38; background:#d8f6e7; border-radius:999px; font-size:11px; font-weight:700; }
+    .tiny { font-size:11px; color:#8a99ab; }
+    .light { background:#fbfdff; }
+    .light-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+    .light-title { font-weight:800; font-size:15px; }
+    .metric-row { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:10px; }
+    .metric { padding:12px; background:#fff; border:1px solid #eaf0f7; border-radius:10px; }
+    .metric.hero { color:white; background:linear-gradient(135deg,#1368d4,#37a4f5); border:0; }
+    .metric b { display:block; margin-top:6px; font-size:23px; }
+    .chart { position:relative; height:110px; margin-top:14px; padding:12px 10px; background:#fff; border:1px solid #eaf0f7; border-radius:10px; }
+    .bars { position:absolute; right:14px; bottom:16px; left:14px; display:flex; height:67px; align-items:end; gap:8px; }
+    .bars i { flex:1; display:block; background:linear-gradient(#6eb6ff,#1677ff); border-radius:5px 5px 1px 1px; }
+    .dark { color:#eaf4ff; background:radial-gradient(circle at 85% 15%,#1c71bd 0%,#092b4c 35%,#071b31 100%); }
+    .dark-head { display:flex; justify-content:space-between; margin-bottom:24px; }
+    .dark-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .dark .metric { color:#eaf4ff; background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.12); }
+    .dark .metric b { color:#85d0ff; }
+    .signal { margin-top:14px; padding:14px; background:rgba(3,12,24,.35); border:1px solid rgba(134,205,255,.28); border-radius:10px; }
+    .signal-line { height:3px; margin-top:12px; background:linear-gradient(90deg,#36d399 0 76%,rgba(255,255,255,.18) 76%); border-radius:9px; }
+    .story { background:#fffaf4; }
+    .story-head { display:flex; justify-content:space-between; margin-bottom:20px; }
+    .story-flow { display:flex; align-items:center; gap:6px; }
+    .flow { width:52px; height:52px; padding-top:8px; text-align:center; border-radius:14px; font-size:10px; font-weight:700; }
+    .flow b { display:block; margin-top:3px; font-size:18px; }
+    .arrow { color:#a2acba; }
+    .f1{background:#e5f2ff;color:#1769aa}.f2{background:#fff2cf;color:#a36100}.f3{background:#e9f8ee;color:#238143}.f4{background:#f0ecff;color:#6651bd}
+    .story-note { margin-top:22px; padding:12px; color:#805400; background:#fff5da; border:1px solid #ffe6a3; border-radius:10px; font-size:12px; }
+    @media(max-width:960px){ .grid{grid-template-columns:1fr;} .page{padding:20px;} }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="eyebrow">ANALYTICS VISUAL DIRECTION</div>
+    <h1>哪种报表气质更适合治理后台？</h1>
+    <p class="intro">现状的问题不是数据不够，而是指标、图表和风险信息没有主次。请选择你更希望看到的视觉方向；我推荐 A，它最适合日常运营决策，也最能发挥成熟图表库的交互能力。</p>
+    <section class="grid">
+      <article class="choice" data-choice="a" onclick="toggleSelect(this)">
+        <div class="mock light">
+          <div class="light-head"><span class="light-title">平台经营概览</span><span class="badge">健康</span></div>
+          <div class="metric-row"><div class="metric hero"><span class="tiny" style="color:#d9efff">本周训练完成</span><b>1,284</b></div><div class="metric"><span class="tiny">Agent 成功率</span><b>98.6%</b></div><div class="metric"><span class="tiny">待处理</span><b>21</b></div></div>
+          <div class="chart"><span class="tiny">训练完成趋势</span><div class="bars"><i style="height:30%"></i><i style="height:58%"></i><i style="height:48%"></i><i style="height:78%"></i><i style="height:65%"></i><i style="height:92%"></i><i style="height:73%"></i></div></div>
+        </div>
+        <div class="copy"><h2>A · 轻量 BI 仪表盘 <span class="badge">推荐</span></h2><p>明亮、克制、数据优先。用 Ant Design Charts 展示可悬浮查看的趋势、堆叠漏斗与风险分布，适合每天打开看一次。</p></div>
+      </article>
+      <article class="choice" data-choice="b" onclick="toggleSelect(this)">
+        <div class="mock dark">
+          <div class="dark-head"><div><div class="tiny" style="color:#8fc9f6">CONTROL ROOM</div><b>运行指挥舱</b></div><span class="badge">系统稳定</span></div>
+          <div class="dark-grid"><div class="metric"><span class="tiny" style="color:#a8c7e5">当前调用</span><b>312</b></div><div class="metric"><span class="tiny" style="color:#a8c7e5">平均延迟</span><b>44ms</b></div><div class="metric"><span class="tiny" style="color:#a8c7e5">错误事件</span><b>02</b></div><div class="metric"><span class="tiny" style="color:#a8c7e5">队列积压</span><b>21</b></div></div>
+          <div class="signal"><span class="tiny" style="color:#b7dcfb">Agent 健康信号</span><div class="signal-line"></div></div>
+        </div>
+        <div class="copy"><h2>B · 深色运行指挥舱</h2><p>强调实时性和风险告警，适合高频值守。但与当前深色侧栏叠加后，页面会更偏“运维台”而非经营报表。</p></div>
+      </article>
+      <article class="choice" data-choice="c" onclick="toggleSelect(this)">
+        <div class="mock story">
+          <div class="story-head"><b>内容到训练的经营链路</b><span class="tiny">近 7 天</span></div>
+          <div class="story-flow"><div class="flow f1">导入<b>146</b></div><span class="arrow">→</span><div class="flow f2">审核<b>21</b></div><span class="arrow">→</span><div class="flow f3">发布<b>84</b></div><span class="arrow">→</span><div class="flow f4">训练<b>63</b></div></div>
+          <div class="story-note">审核积压高于日常阈值，建议优先处理 21 条候选题。</div>
+        </div>
+        <div class="copy"><h2>C · 经营故事面板</h2><p>把导入、审核、发布、训练串成业务叙事，面向管理层汇报更直观；但对日常数值比较和多指标趋势稍弱。</p></div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

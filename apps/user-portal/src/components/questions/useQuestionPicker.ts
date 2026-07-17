@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { getPracticeRecommendations, getQuestionCatalog } from '@/lib/question-catalog-api';
 import { createPracticeSession } from '@/lib/practice-api';
+import { useNotifications } from '@/components/notifications/NotificationProvider';
 import {
   composeQuestionSelectionWithFeedback,
   toggleQuestionSelection,
@@ -40,14 +41,17 @@ export function useQuestionPicker() {
     });
   }, [run, selected]);
 
-  const startRecommendation = useCallback((recommendation: PracticeRecommendation) => {
-    return run({
-      key: recommendation.id,
-      title: recommendation.title,
-      questionIds: recommendation.questionIds,
-      failureMessage: '推荐题单未能创建，不影响你继续自主选题。',
-    });
-  }, [run]);
+  const startRecommendation = useCallback(
+    (recommendation: PracticeRecommendation) => {
+      return run({
+        key: recommendation.id,
+        title: recommendation.title,
+        questionIds: recommendation.questionIds,
+        failureMessage: '推荐题单未能创建，不影响你继续自主选题。',
+      });
+    },
+    [run],
+  );
 
   const quickCompose = useCallback(() => {
     compose(catalogState.catalog?.items ?? []);
@@ -71,18 +75,24 @@ export function useQuestionPicker() {
 function useQuestionNavigation(queryKey: string) {
   const router = useRouter();
   const pathname = usePathname();
-  const updateFilter = useCallback((key: string, value: string) => {
-    const params = new URLSearchParams(queryKey);
-    if (value) params.set(key, value);
-    else params.delete(key);
-    params.delete('page');
-    router.replace(withQuery(pathname, params), { scroll: false });
-  }, [pathname, queryKey, router]);
-  const changePage = useCallback((page: number) => {
-    const params = new URLSearchParams(queryKey);
-    params.set('page', String(page));
-    router.replace(withQuery(pathname, params));
-  }, [pathname, queryKey, router]);
+  const updateFilter = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(queryKey);
+      if (value) params.set(key, value);
+      else params.delete(key);
+      params.delete('page');
+      router.replace(withQuery(pathname, params), { scroll: false });
+    },
+    [pathname, queryKey, router],
+  );
+  const changePage = useCallback(
+    (page: number) => {
+      const params = new URLSearchParams(queryKey);
+      params.set('page', String(page));
+      router.replace(withQuery(pathname, params));
+    },
+    [pathname, queryKey, router],
+  );
   return { updateFilter, changePage };
 }
 
@@ -101,7 +111,9 @@ function useCatalog(queryKey: string) {
       setLoading(false);
     }
   }, [queryKey]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
   return { catalog, loading, error, reload: load };
 }
 
@@ -110,7 +122,10 @@ function useQuestionSelection() {
   const [selectionMessage, setSelectionMessage] = useState('');
   const toggle = useCallback((question: CatalogQuestion) => {
     setSelected((current) => {
-      const result = toggleQuestionSelection(current.map((item) => item.id), question.id);
+      const result = toggleQuestionSelection(
+        current.map((item) => item.id),
+        question.id,
+      );
       setSelectionMessage(result.limitReached ? '每轮最多选择 10 题，请先移除一道题。' : '');
       if (result.limitReached) return current;
       return current.some((item) => item.id === question.id)
@@ -137,7 +152,10 @@ function useQuestionSelection() {
       });
     });
   }, []);
-  const clear = useCallback(() => { setSelected([]); setSelectionMessage(''); }, []);
+  const clear = useCallback(() => {
+    setSelected([]);
+    setSelectionMessage('');
+  }, []);
   return { selected, selectionMessage, toggle, remove, compose, clear };
 }
 
@@ -157,30 +175,38 @@ function useRecommendations() {
       setRecommendationLoading(false);
     }
   }, []);
-  useEffect(() => { void reloadRecommendation(); }, [reloadRecommendation]);
+  useEffect(() => {
+    void reloadRecommendation();
+  }, [reloadRecommendation]);
   return { recommendation, recommendationLoading, recommendationError, reloadRecommendation };
 }
 
 function usePracticeStarter() {
   const router = useRouter();
+  const notifications = useNotifications();
   const [error, setError] = useState('');
   const [busyKey, setBusyKey] = useState<string | null>(null);
-  const run = useCallback(async (input: PracticeStartInput) => {
-    setError('');
-    setBusyKey(input.key);
-    try {
-      const session = await createPracticeSession({
-        title: input.title,
-        mode: 'manual',
-        questionIds: input.questionIds,
-      });
-      router.push(`/practice?session=${session.id}`);
-    } catch {
-      setError(input.failureMessage);
-    } finally {
-      setBusyKey(null);
-    }
-  }, [router]);
+  const run = useCallback(
+    async (input: PracticeStartInput) => {
+      setError('');
+      setBusyKey(input.key);
+      try {
+        const session = await createPracticeSession({
+          title: input.title,
+          mode: 'manual',
+          questionIds: input.questionIds,
+        });
+        notifications.success('练习题单已创建', '服务端已保存本轮题目，即将进入练习空间。');
+        router.push(`/practice?session=${session.id}`);
+      } catch (error) {
+        setError(input.failureMessage);
+        notifications.error('练习题单创建失败', error, input.failureMessage);
+      } finally {
+        setBusyKey(null);
+      }
+    },
+    [notifications, router],
+  );
   return { error, busyKey, run };
 }
 

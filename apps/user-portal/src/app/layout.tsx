@@ -25,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       data-theme="dawn"
       data-accent="coral"
       data-motion="on"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>

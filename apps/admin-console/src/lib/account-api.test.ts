@@ -1,11 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createLocalAdminRequest,
   createAccountExportRequest,
   createAccountQueryRequest,
   createResetLocalPasswordRequest,
 } from './account-api';
 
 describe('account governance API requests', () => {
+  it('sends local administrator creation as a POST body', () => {
+    expect(
+      createLocalAdminRequest({
+        name: 'Platform Admin',
+        email: 'PLATFORM.ADMIN@example.com',
+        password: 'initial-password',
+        role: 'platform_admin',
+      }),
+    ).toMatchObject({
+      path: '/admin/accounts/local-admin',
+      init: {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Platform Admin',
+          email: 'platform.admin@example.com',
+          password: 'initial-password',
+          role: 'platform_admin',
+        }),
+      },
+    });
+  });
+
   it('serializes submitted filters and server pagination for queries', () => {
     const request = createAccountQueryRequest({
       keyword: '  Avery  ',

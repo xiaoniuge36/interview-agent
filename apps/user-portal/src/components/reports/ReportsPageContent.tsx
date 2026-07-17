@@ -100,7 +100,7 @@ function ReportsIntro() {
           报告是训练闭环的交付物：评分、缺口、下一步行动。完成模拟面试后，结果会出现在这里。
         </p>
       </div>
-      <Link className="button" href="/interview">
+      <Link className="button secondary" href="/interview">
         再开一场面试
       </Link>
     </header>

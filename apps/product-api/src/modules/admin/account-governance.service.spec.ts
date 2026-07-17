@@ -60,6 +60,9 @@ describe('AccountGovernanceService', () => {
 });
 
 describe('AccountGovernanceService protection rules', () => {
+  it('creates a local tenant administrator with credential and audit trail', () =>
+    expectLocalTenantAdministratorCreation());
+
   it('keeps at least one active platform administrator during a role downgrade', async () => {
     const { service, transaction } = dependencies();
     transaction.user.findUnique.mockResolvedValue(accountRecord({ role: 'platform_admin' }));
@@ -84,10 +87,92 @@ describe('AccountGovernanceService protection rules', () => {
   });
 });
 
+async function expectLocalTenantAdministratorCreation() {
+  const fixture = dependencies();
+  arrangeTenantAdministratorCreation(fixture.transaction);
+  await expect(
+    fixture.service.createLocalAdmin(context, tenantAdministratorInput()),
+  ).resolves.toMatchObject({
+    id: 'admin-2',
+    authSource: 'local',
+    role: 'admin',
+    tenant: { slug: 'demo' },
+  });
+  expect(fixture.policy.assert).toHaveBeenCalledWith(context.actor, 'account:write', {
+    platform: true,
+  });
+  expectTenantAdministratorWrites(fixture);
+}
+
+function arrangeTenantAdministratorCreation(
+  transaction: ReturnType<typeof dependencies>['transaction'],
+) {
+  transaction.tenant.findUnique.mockResolvedValue({
+    id: 'tenant-2',
+    slug: 'demo',
+    name: 'Demo Tenant',
+  });
+  transaction.user.create.mockResolvedValue(
+    accountRecord({
+      id: 'admin-2',
+      tenantId: 'tenant-2',
+      subject: 'local:admin-2',
+      role: 'admin',
+      name: 'Tenant Admin',
+      email: 'tenant-admin@example.com',
+      tenant: { id: 'tenant-2', slug: 'demo', name: 'Demo Tenant' },
+      credential: { id: 'credential-2' },
+    }),
+  );
+  transaction.localCredential.create.mockResolvedValue({ id: 'credential-2' });
+}
+
+function tenantAdministratorInput() {
+  return {
+    name: 'Tenant Admin',
+    email: 'tenant-admin@example.com',
+    password: 'initial-password',
+    role: 'admin' as const,
+    tenantSlug: 'demo',
+  };
+}
+
+function expectTenantAdministratorWrites(fixture: ReturnType<typeof dependencies>) {
+  expect(fixture.transaction.user.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        tenantId: 'tenant-2',
+        role: 'admin',
+        email: 'tenant-admin@example.com',
+      }),
+    }),
+  );
+  expect(fixture.transaction.localCredential.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        tenantId: 'tenant-2',
+        userId: 'admin-2',
+        email: 'tenant-admin@example.com',
+        passwordHash: expect.any(String),
+      }),
+    }),
+  );
+  expect(fixture.audit.record).toHaveBeenCalledWith(
+    context,
+    expect.objectContaining({
+      action: 'account:local_admin_created',
+      resourceId: 'admin-2',
+      metadata: { authSource: 'local', role: 'admin', tenantSlug: 'demo' },
+    }),
+    fixture.transaction,
+  );
+}
+
 function dependencies() {
   const transaction = {
-    user: { findUnique: jest.fn(), count: jest.fn(), update: jest.fn() },
-    localCredential: { findUnique: jest.fn(), update: jest.fn() },
+    tenant: { findUnique: jest.fn(), findMany: jest.fn() },
+    user: { findUnique: jest.fn(), count: jest.fn(), create: jest.fn(), update: jest.fn() },
+    localCredential: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     auditLog: { create: jest.fn() },
   };
   const prisma = {
@@ -105,6 +190,7 @@ function dependencies() {
       policy as unknown as PolicyService,
       audit as unknown as AuditService,
     ),
+    audit,
     prisma,
     transaction,
     policy,

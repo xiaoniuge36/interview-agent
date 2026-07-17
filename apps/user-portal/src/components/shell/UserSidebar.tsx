@@ -1,23 +1,45 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useEffect, useState, type MouseEvent } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@interview-agent/auth-client';
 import { NavigationIcon } from './NavigationIcon';
-import { NAV_ITEMS, navIdFromPathname } from './navigation';
+import {
+  NAV_ITEMS,
+  navigationLinkClass,
+  navIdFromPathname,
+  type NavigationId,
+} from './navigation';
 import { sidebarAccountActions } from './sidebar-account-actions';
 import { ThemeMenu } from '../theme/ThemeMenu';
 
+const NAV_PENDING_TIMEOUT_MS = 4000;
+
 export function UserSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const auth = useAuth();
+  const active = navIdFromPathname(pathname);
+  const [pending, setPending] = useState<NavigationId | null>(null);
   const name = auth.identity?.displayName ?? '训练用户';
   const accountActions = sidebarAccountActions(auth.mode);
+  useEffect(() => setPending(null), [pathname]);
+  useEffect(() => {
+    if (!pending) return;
+    const timeout = window.setTimeout(() => setPending(null), NAV_PENDING_TIMEOUT_MS);
+    return () => window.clearTimeout(timeout);
+  }, [pending]);
   return (
     <aside className="user-sidebar" aria-label="主导航">
       <SidebarBrand />
       <SidebarUserSummary name={name} />
-      <SidebarNavigation active={navIdFromPathname(pathname)} />
+      <SidebarNavigation
+        active={active}
+        pending={pending}
+        onNavigate={setPending}
+        onWarm={router.prefetch}
+      />
       <ThemeMenu variant="sidebar" />
       <SidebarAccount
         name={name}
@@ -57,15 +79,30 @@ function SidebarUserSummary({ name }: { name: string }) {
   );
 }
 
-function SidebarNavigation({ active }: { active: ReturnType<typeof navIdFromPathname> }) {
+function SidebarNavigation(props: {
+  active: NavigationId;
+  pending: NavigationId | null;
+  onNavigate: (id: NavigationId) => void;
+  onWarm: (href: string) => void;
+}) {
   return (
-    <nav className="sidebar-nav">
+    <nav className="sidebar-nav" aria-busy={props.pending !== null}>
       {NAV_ITEMS.map((item) => (
         <Link
           key={item.id}
-          className={active === item.id ? 'active' : ''}
+          className={navigationLinkClass(props.active, props.pending, item.id)}
           href={item.href}
-          aria-current={active === item.id ? 'page' : undefined}
+          aria-current={props.active === item.id ? 'page' : undefined}
+          onMouseEnter={() => props.onWarm(item.href)}
+          onFocus={() => props.onWarm(item.href)}
+          onClick={(event) =>
+            trackNavigation({
+              event,
+              active: props.active,
+              target: item.id,
+              onNavigate: props.onNavigate,
+            })
+          }
         >
           <NavigationIcon name={item.icon} />
           <span>{item.label}</span>
@@ -73,6 +110,26 @@ function SidebarNavigation({ active }: { active: ReturnType<typeof navIdFromPath
       ))}
     </nav>
   );
+}
+
+function trackNavigation(options: {
+  event: MouseEvent<HTMLAnchorElement>;
+  active: NavigationId;
+  target: NavigationId;
+  onNavigate: (id: NavigationId) => void;
+}) {
+  const { event, active, target, onNavigate } = options;
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey ||
+    active === target
+  )
+    return;
+  onNavigate(target);
 }
 
 function SidebarAccount({

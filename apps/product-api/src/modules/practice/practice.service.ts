@@ -13,7 +13,10 @@ import type { ProductRequestContext } from '../../common/context/request-context
 import type { PracticeAnswerCommand } from './practice-command.service';
 import { PracticeQueryService } from './practice-query.service';
 import { PracticeRecommendationService } from './practice-recommendation.service';
-import type { PracticeEvaluationCommand } from './practice-evaluation-command.service';
+import type {
+  PracticeEvaluationCommand,
+  PracticeEvaluationStream,
+} from './practice-evaluation-command.service';
 import { PracticeWriteService } from './practice-write.service';
 
 @Injectable()
@@ -59,6 +62,13 @@ export class PracticeService {
 
   evaluate(command: PracticeEvaluationCommand): Promise<PracticeItemFeedback> {
     return this.writes.evaluate(command);
+  }
+
+  evaluateStream(
+    command: PracticeEvaluationCommand,
+    stream: PracticeEvaluationStream,
+  ): Promise<PracticeItemFeedback> {
+    return this.writes.evaluateStream(command, stream);
   }
 
   async completeSelfStudy(

@@ -6,6 +6,7 @@ import { UserSidebar } from './shell/UserSidebar';
 import { ThemeMenu } from './theme/ThemeMenu';
 import { GlobalSearchProvider } from './search/GlobalSearchProvider';
 import { GlobalSearchDialog } from './search/GlobalSearchDialog';
+import { GlobalSearchTrigger } from './search/GlobalSearchTrigger';
 
 type UserShellProps = { children: ReactNode };
 
@@ -19,6 +20,7 @@ export function UserShell({ children }: UserShellProps) {
         </a>
         <UserSidebar />
         <main className="main" id="main-content">
+          <GlobalSearchTrigger />
           <div className="page-stage">{children}</div>
         </main>
         <ThemeMenu variant="floating" />

@@ -9,14 +9,19 @@ import {
 } from '@/lib/practice-api';
 import type { BusyAction, PracticeState } from './types';
 import { answerDrafts, errorMessage } from './practice-utils';
+import {
+  useNotifications,
+  type NotificationApi,
+} from '@/components/notifications/NotificationProvider';
 
 export function usePracticeController(jobIntentId?: string) {
   const state = usePracticeState();
+  const notifications = useNotifications();
   return {
     ...state,
-    start: usePracticeStarter(state, jobIntentId),
-    saveAnswer: usePracticeAnswerSaver(state),
-    finish: usePracticeFinisher(state),
+    start: usePracticeStarter(state, notifications, jobIntentId),
+    saveAnswer: usePracticeAnswerSaver(state, notifications),
+    finish: usePracticeFinisher(state, notifications),
   };
 }
 
@@ -49,10 +54,16 @@ function usePracticeState(): PracticeState {
   };
 }
 
-function usePracticeStarter(state: PracticeState, jobIntentId?: string) {
+function usePracticeStarter(
+  state: PracticeState,
+  notifications: NotificationApi,
+  jobIntentId?: string,
+) {
   return async function start() {
     if (!jobIntentId) {
-      state.setMessage('请先保存目标岗位，系统才能为你匹配对应训练题。');
+      const issue = '请先保存目标岗位，系统才能为你匹配对应训练题。';
+      state.setMessage(issue);
+      notifications.error('专项练习未创建', new Error(issue), issue);
       return;
     }
     state.setBusy('start');
@@ -67,20 +78,24 @@ function usePracticeStarter(state: PracticeState, jobIntentId?: string) {
       state.setReport(null);
       state.setDrafts(answerDrafts(next));
       state.setMessage('本轮专项练习已准备好，完成并保存每题后即可生成复盘。');
+      notifications.success('专项练习已创建', '服务端已生成并保存本轮训练题单。');
     } catch (error) {
       state.setMessage(errorMessage(error));
+      notifications.error('专项练习创建失败', error, '本轮专项练习没有创建，请稍后重试。');
     } finally {
       state.setBusy(null);
     }
   };
 }
 
-function usePracticeAnswerSaver(state: PracticeState) {
+function usePracticeAnswerSaver(state: PracticeState, notifications: NotificationApi) {
   return async function saveAnswer(itemId: string) {
     if (!state.session) return;
     const answer = state.drafts[itemId]?.trim();
     if (!answer) {
-      state.setMessage('请先完成回答后再保存。');
+      const issue = '请先完成回答后再保存。';
+      state.setMessage(issue);
+      notifications.error('回答未保存', new Error(issue), issue);
       return;
     }
     state.setBusy(('answer:' + itemId) as BusyAction);
@@ -90,15 +105,17 @@ function usePracticeAnswerSaver(state: PracticeState) {
       state.setSession(next);
       state.setDrafts(answerDrafts(next));
       state.setMessage('回答已保存。');
+      notifications.success('回答已保存', '服务端已记录本题回答。');
     } catch (error) {
       state.setMessage(errorMessage(error));
+      notifications.error('回答保存失败', error, '回答没有保存，请稍后重试。');
     } finally {
       state.setBusy(null);
     }
   };
 }
 
-function usePracticeFinisher(state: PracticeState) {
+function usePracticeFinisher(state: PracticeState, notifications: NotificationApi) {
   return async function finish() {
     if (!state.session) return;
     state.setBusy('submit');
@@ -113,8 +130,10 @@ function usePracticeFinisher(state: PracticeState) {
       state.setReport(report);
       state.setMastery(profiles);
       state.setMessage('本轮复盘已生成，能力记录已同步更新。');
+      notifications.success('本轮复盘已生成', '评分与能力记录已从服务端同步完成。');
     } catch (error) {
       state.setMessage(errorMessage(error));
+      notifications.error('复盘生成失败', error, '本轮复盘没有生成，请稍后重试。');
     } finally {
       state.setBusy(null);
     }

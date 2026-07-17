@@ -89,6 +89,7 @@ export const AgentRuntimeNextResponseSchema = z.object({
   stage: InterviewStageSchema,
   content: z.string().trim().min(1).max(CONTRACT_LIMITS.longText),
   shouldFinish: z.boolean(),
+  basisSummary: z.array(z.string().trim().min(1).max(CONTRACT_LIMITS.mediumText)).max(3).optional(),
 });
 
 export const StartInterviewInputSchema = z.object({

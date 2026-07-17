@@ -19,24 +19,28 @@ const services = [
     packageName: '@interview-agent/user-portal',
     port: 3000,
     url: 'http://localhost:3000',
+    hotReload: 'Next.js Fast Refresh',
   },
   {
     label: 'ADMIN',
     packageName: '@interview-agent/admin-console',
     port: 3002,
     url: 'http://localhost:3002',
+    hotReload: 'Next.js Fast Refresh',
   },
   {
     label: 'API',
     packageName: '@interview-agent/product-api',
     port: 3001,
     url: 'http://localhost:3001/api',
+    hotReload: 'Node.js source watcher + ts-node',
   },
   {
     label: 'AGENT',
     packageName: '@interview-agent/agent-runtime',
     port: 8000,
     url: 'http://localhost:8000',
+    hotReload: 'Uvicorn reload',
   },
 ];
 
@@ -202,7 +206,9 @@ function stopAll(exitCode = 0) {
 }
 
 function startService(service) {
-  console.log(`[${service.label}] 启动 ${service.packageName}，端口 ${service.port}`);
+  console.log(
+    `[${service.label}] 启动 ${service.packageName}，端口 ${service.port}，热更新：${service.hotReload}`,
+  );
   const pnpmInvocation = getPnpmInvocation(['--filter', service.packageName, 'dev']);
   const child = spawn(pnpmInvocation.command, pnpmInvocation.args, {
     cwd: rootDir,

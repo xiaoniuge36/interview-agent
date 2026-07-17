@@ -50,6 +50,55 @@ test('真实模型评价持久化后返回标准解析与追问', async () => {
   expect(result.evaluation.followUpQuestion).toContain('补偿');
 });
 
+test('streams visible feedback before the evaluation transaction returns a final result', async () => {
+  const session = sessionRecord();
+  const evaluation = evaluationRecord();
+  const transaction = {
+    practiceSession: { findFirst: jest.fn().mockResolvedValue(session) },
+    evaluationResult: { upsert: jest.fn().mockResolvedValue(evaluation) },
+    practiceSessionItem: { update: jest.fn().mockResolvedValue({}) },
+  };
+  const prisma = {
+    ...transaction,
+    jobIntent: { findFirst: jest.fn().mockResolvedValue({ targetRole: 'Backend engineer' }) },
+    $transaction: jest.fn(async (operation: (client: unknown) => unknown) =>
+      operation(transaction),
+    ),
+  };
+  const model = {
+    evaluateStream: jest.fn().mockImplementation(async (_context, _input, callbacks) => {
+      callbacks.onDelta('Visible feedback');
+      callbacks.onComplete();
+      return evaluation;
+    }),
+  };
+  const service = new PracticeEvaluationCommandService(
+    {
+      prisma: prisma as unknown as PrismaService,
+      policy: { assert: jest.fn() },
+      audit: { record: jest.fn() },
+    } as never,
+    model as never,
+  );
+  const events: string[] = [];
+
+  const result = await service.evaluateStream(
+    { context, sessionId: session.id, itemId: 'item-1' },
+    { phase: (phase) => events.push(phase), delta: (content) => events.push(content) },
+  );
+
+  expect(events).toEqual([
+    'preparing',
+    'analyzing',
+    'composing',
+    'Visible feedback',
+    'validating',
+    'saving',
+  ]);
+  expect(result.evaluation.feedback).toBe(evaluation.feedback);
+  expect(transaction.evaluationResult.upsert).toHaveBeenCalledTimes(1);
+});
+
 function sessionRecord() {
   return {
     id: 'session-1',

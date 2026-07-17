@@ -98,6 +98,20 @@ export function accountNotFound() {
   return new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: '账号不存在。' });
 }
 
+export function targetTenantNotFound() {
+  return new NotFoundException({
+    code: 'ACCOUNT_TARGET_TENANT_NOT_FOUND',
+    message: '目标租户不存在。',
+  });
+}
+
+export function accountEmailExists() {
+  return new ConflictException({
+    code: 'ACCOUNT_EMAIL_EXISTS',
+    message: '该邮箱已绑定本地账号。',
+  });
+}
+
 export function selfMutationForbidden() {
   return new ForbiddenException({
     code: 'ACCOUNT_SELF_MUTATION_FORBIDDEN',

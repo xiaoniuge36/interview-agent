@@ -1,6 +1,6 @@
 ﻿import { Injectable } from '@nestjs/common';
 import type { ProductRequestContext } from '../../common/context/request-context';
-import { InterviewCommandService } from './interview-command.service';
+import { InterviewCommandService, type InterviewCommandStream } from './interview-command.service';
 import { InterviewQueryService } from './interview-query.service';
 import type {
   AdvanceCommandRequest,
@@ -33,6 +33,14 @@ export class InterviewService {
 
   submitAnswer(request: AnswerCommandRequest) {
     return this.commands.submitAnswer(request);
+  }
+
+  advanceStream(request: AdvanceCommandRequest, stream: InterviewCommandStream) {
+    return this.commands.advanceStream(request, stream);
+  }
+
+  submitAnswerStream(request: AnswerCommandRequest, stream: InterviewCommandStream) {
+    return this.commands.submitAnswerStream(request, stream);
   }
 
   stream(input: { context: ProductRequestContext; sessionId: string; afterSequence: number }) {

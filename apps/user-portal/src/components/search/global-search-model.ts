@@ -165,6 +165,10 @@ export function isGlobalSearchShortcut(event: {
   return event.key.toLocaleLowerCase() === 'k' && (event.ctrlKey || event.metaKey) && !event.altKey;
 }
 
+export function shouldOpenGlobalSearch(isRestoringTriggerFocus: boolean) {
+  return !isRestoringTriggerFocus;
+}
+
 function topicSearchItem(topic: (typeof QUESTION_TOPICS)[number]): GlobalSearchItem {
   return {
     id: `topic:${topic.category}`,

@@ -13,6 +13,7 @@ import {
   getRecentPractice,
 } from '@/lib/question-catalog-api';
 import { createPracticeSession } from '@/lib/practice-api';
+import { useNotifications } from '@/components/notifications/NotificationProvider';
 
 export function useQuestionHubData() {
   return { ...useQuestionHubQueries(), ...useRecommendationStarter() };
@@ -50,7 +51,9 @@ function useQuestionHubQueries() {
   useEffect(() => {
     void loadCatalog();
     void loadRecommendations();
-    void getRecentPractice().then(setRecent).catch(() => setRecent(null));
+    void getRecentPractice()
+      .then(setRecent)
+      .catch(() => setRecent(null));
   }, [loadCatalog, loadRecommendations]);
 
   return {
@@ -67,6 +70,7 @@ function useQuestionHubQueries() {
 
 function useRecommendationStarter() {
   const router = useRouter();
+  const notifications = useNotifications();
   const [actionError, setActionError] = useState('');
   const [busyRecommendationId, setBusyRecommendationId] = useState<string | null>(null);
 
@@ -80,14 +84,17 @@ function useRecommendationStarter() {
           mode: 'manual',
           questionIds: recommendation.questionIds,
         });
+        notifications.success('Agent 推荐训练已创建', '服务端已保存推荐题单，即将开始训练。');
         router.push(`/practice?session=${session.id}`);
-      } catch {
-        setActionError('推荐题单未能创建，请稍后重试或前往题库自主选题。');
+      } catch (error) {
+        const message = '推荐题单未能创建，请稍后重试或前往题库自主选题。';
+        setActionError(message);
+        notifications.error('Agent 推荐训练创建失败', error, message);
       } finally {
         setBusyRecommendationId(null);
       }
     },
-    [router],
+    [notifications, router],
   );
 
   return {

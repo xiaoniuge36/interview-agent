@@ -1,0 +1,125 @@
+.notification-viewport {
+  position: fixed;
+  z-index: 1600;
+  top: 96px;
+  right: 24px;
+  display: grid;
+  gap: 10px;
+  width: min(390px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.operation-notification {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 28px;
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--outline);
+  border-left: 3px solid var(--primary);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 18px 50px rgba(20, 33, 61, 0.16);
+  backdrop-filter: blur(18px);
+  pointer-events: auto;
+  animation: operation-notification-in 160ms var(--ease-out) both;
+}
+
+.operation-notification.success {
+  border-left-color: var(--success);
+}
+
+.operation-notification.error {
+  border-left-color: var(--danger);
+}
+
+.operation-notification-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  font-weight: 800;
+}
+
+.operation-notification.success .operation-notification-icon {
+  background: color-mix(in srgb, var(--success) 12%, var(--surface));
+  color: var(--success);
+}
+
+.operation-notification.error .operation-notification-icon {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.operation-notification-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.operation-notification-copy strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.operation-notification-copy span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.operation-notification-copy small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operation-notification > button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.operation-notification > button:hover {
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+@keyframes operation-notification-in {
+  from {
+    opacity: 0;
+    transform: translate3d(12px, -4px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .notification-viewport {
+    top: 78px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operation-notification {
+    animation: none;
+  }
+}

@@ -21,6 +21,23 @@ describe('platform dashboard requests', () => {
           fallbacks: 0,
           recentFailures: [],
         },
+        trend: [
+          {
+            date: '2026-07-16',
+            accountsCreated: 0,
+            questionsPublished: 0,
+            trainingCompleted: 0,
+            agentRuns: 0,
+          },
+        ],
+        funnel: {
+          imports: 0,
+          pendingCandidates: 0,
+          publishedQuestions: 0,
+          practiceSubmissions: 0,
+          practiceReports: 0,
+        },
+        alerts: [],
       }).period,
     ).toBe('30d');
   });

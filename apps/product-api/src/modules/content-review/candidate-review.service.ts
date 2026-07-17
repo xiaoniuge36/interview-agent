@@ -274,13 +274,13 @@ function mapCandidate(record: {
 function candidateNotApproved() {
   return new BadRequestException({
     code: 'CANDIDATE_NOT_APPROVED',
-    message: 'Approve the candidate before publishing.',
+    message: '候选题审核通过后才能发布。',
   });
 }
 
 function publishedCandidateConflict() {
   return new ConflictException({
     code: 'CANDIDATE_ALREADY_PUBLISHED',
-    message: 'A published candidate can no longer be edited.',
+    message: '候选题已发布到题库，不能再编辑。',
   });
 }

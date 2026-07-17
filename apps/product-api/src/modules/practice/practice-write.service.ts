@@ -11,6 +11,7 @@ import { PracticeCompletionService } from './practice-completion.service';
 import {
   PracticeEvaluationCommandService,
   type PracticeEvaluationCommand,
+  type PracticeEvaluationStream,
 } from './practice-evaluation-command.service';
 
 @Injectable()
@@ -31,6 +32,13 @@ export class PracticeWriteService {
 
   evaluate(command: PracticeEvaluationCommand): Promise<PracticeItemFeedback> {
     return this.evaluations.evaluate(command);
+  }
+
+  evaluateStream(
+    command: PracticeEvaluationCommand,
+    stream: PracticeEvaluationStream,
+  ): Promise<PracticeItemFeedback> {
+    return this.evaluations.evaluateStream(command, stream);
   }
 
   submit(context: ProductRequestContext, sessionId: string): Promise<PracticeReport> {

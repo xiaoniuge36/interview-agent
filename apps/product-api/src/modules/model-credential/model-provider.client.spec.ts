@@ -1,57 +1,78 @@
 import { ModelProviderClient } from './model-provider.client';
 
-afterEach(() => {
-  jest.restoreAllMocks();
-});
+const input = {
+  provider: 'openai' as const,
+  model: 'gpt-test',
+  baseUrl: null,
+  apiKey: 'test-key',
+  systemPrompt: 'system',
+  userPrompt: 'user',
+};
 
-describe('ModelProviderClient', () => {
-  it('calls OpenAI-compatible providers server-side with the supplied secret', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          choices: [{ message: { content: '{"stage":"warmup","content":"请介绍一个项目。","shouldFinish":false}' } }],
-        }),
-      ),
-    );
-    const client = new ModelProviderClient();
+describe('ModelProviderClient streaming', () => {
+  const fetchImplementation = global.fetch;
 
-    const output = await client.complete({
-      provider: 'deepseek',
-      model: 'deepseek-chat',
-      baseUrl: null,
-      apiKey: 'sk-server-only',
-      systemPrompt: '只返回 JSON。',
-      userPrompt: '开始面试。',
-    });
-
-    expect(output).toContain('请介绍一个项目');
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.deepseek.com/v1/chat/completions',
-      expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: 'Bearer sk-server-only' }),
-        signal: expect.any(AbortSignal),
-      }),
-    );
+  afterEach(() => {
+    global.fetch = fetchImplementation;
   });
 
-  it('uses the native Anthropic messages API when selected', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ content: [{ type: 'text', text: '{"stage":"warmup","content":"你好","shouldFinish":false}' }] })),
-    );
-    const client = new ModelProviderClient();
+  it('normalizes OpenAI compatible SSE deltas without forwarding other fields', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        sseResponse([
+          'data: {"choices":[{"delta":{"reasoning_content":"hidden","content":"你"}}]}\n\n',
+          'data: {"choices":[{"delta":{"content":"好"}}]}\n\n',
+          'data: [DONE]\n\n',
+        ]),
+      );
 
-    await client.testConnection({
-      provider: 'anthropic',
-      model: 'claude-sonnet-4-20250514',
-      baseUrl: null,
-      apiKey: 'sk-ant-server-only',
+    const values = await collect(new ModelProviderClient().stream(input));
+
+    expect(values).toEqual(['你', '好']);
+    expect(JSON.parse(String((global.fetch as jest.Mock).mock.calls[0][1].body))).toMatchObject({
+      stream: true,
     });
+  });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.anthropic.com/v1/messages',
-      expect.objectContaining({
-        headers: expect.objectContaining({ 'x-api-key': 'sk-ant-server-only' }),
-      }),
+  it('normalizes Anthropic text delta events', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        sseResponse(['data: {"type":"content_block_delta","delta":{"text":"评价"}}\n\n']),
+      );
+
+    const values = await collect(
+      new ModelProviderClient().stream({ ...input, provider: 'anthropic' }),
+    );
+
+    expect(values).toEqual(['评价']);
+  });
+
+  it('rejects malformed provider SSE payloads without exposing the raw payload', async () => {
+    global.fetch = jest.fn().mockResolvedValue(sseResponse(['data: {not-json}\n\n']));
+
+    await expect(collect(new ModelProviderClient().stream(input))).rejects.toEqual(
+      expect.objectContaining({ code: 'MODEL_PROVIDER_RESPONSE_INVALID' }),
     );
   });
 });
+
+async function collect(stream: AsyncIterable<string>) {
+  const values: string[] = [];
+  for await (const value of stream) values.push(value);
+  return values;
+}
+
+function sseResponse(parts: string[]) {
+  const encoder = new TextEncoder();
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        for (const part of parts) controller.enqueue(encoder.encode(part));
+        controller.close();
+      },
+    }),
+    { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
+  );
+}

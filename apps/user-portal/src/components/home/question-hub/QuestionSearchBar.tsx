@@ -25,6 +25,7 @@ export function QuestionSearchBar({ total }: { total: number | undefined }) {
           aria-label="搜索面试题"
           value={search.query}
           onFocus={(event) => search.open(search.query, event.currentTarget)}
+          onClick={(event) => search.open(search.query, event.currentTarget)}
           onChange={(event) => search.open(event.target.value, event.currentTarget)}
           placeholder="搜索 Agent 架构、项目复盘、系统设计……"
         />

@@ -2,6 +2,8 @@ import {
   AccountDetailSchema,
   AccountListQuerySchema,
   AccountViewSchema,
+  CreateLocalAdminInputSchema,
+  TenantOptionSchema,
   AdminPageSchema,
   ResetLocalPasswordInputSchema,
   UpdateAccountRoleInputSchema,
@@ -9,7 +11,9 @@ import {
   type AccountDetail,
   type AccountListQuery,
   type AccountView,
+  type CreateLocalAdminInput,
   type ResetLocalPasswordInput,
+  type TenantOption,
   type UpdateAccountRoleInput,
   type UpdateAccountStatusInput,
 } from '@interview-agent/contracts';
@@ -77,6 +81,23 @@ export function createResetLocalPasswordRequest(
   );
 }
 
+export function createAccountTenantOptionsRequest(): AdminApiRequest<TenantOption[]> {
+  return { path: '/admin/accounts/tenants', schema: z.array(TenantOptionSchema) };
+}
+
+export function createLocalAdminRequest(
+  input: CreateLocalAdminInput,
+): AdminApiRequest<AccountView> {
+  return {
+    path: '/admin/accounts/local-admin',
+    schema: AccountViewSchema,
+    init: {
+      method: 'POST',
+      body: JSON.stringify(CreateLocalAdminInputSchema.parse(input)),
+    },
+  };
+}
+
 export function queryAccounts(input: AccountQueryInput, signal?: AbortSignal) {
   const request = createAccountQueryRequest(input);
   return adminRequest({ ...request, ...(signal ? { init: { signal } } : {}) });
@@ -101,6 +122,14 @@ export function updateAccountStatus(accountId: string, input: UpdateAccountStatu
 
 export function resetLocalPassword(accountId: string, input: ResetLocalPasswordInput) {
   return adminRequest(createResetLocalPasswordRequest(accountId, input));
+}
+
+export function getAccountTenantOptions() {
+  return adminRequest(createAccountTenantOptionsRequest());
+}
+
+export function createLocalAdmin(input: CreateLocalAdminInput) {
+  return adminRequest(createLocalAdminRequest(input));
 }
 
 function accountPath(

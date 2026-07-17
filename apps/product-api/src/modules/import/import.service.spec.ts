@@ -18,6 +18,9 @@ const context: ProductRequestContext = {
 describe('ImportService', () => {
   it('returns a tenant-scoped filtered page with stable ordering', () => expectFilteredPageQuery());
 
+  it('groups each import task candidate review outcomes with published questions first', () =>
+    expectCandidateReviewProgress());
+
   it('returns the import source chunks for a tenant-scoped review task', () =>
     expectReviewContext());
 
@@ -88,6 +91,52 @@ async function expectFilteredPageQuery() {
   });
 }
 
+async function expectCandidateReviewProgress() {
+  const { service, prisma } = createService();
+  prisma.importTask.count.mockResolvedValue(2);
+  prisma.importTask.findMany.mockResolvedValue([
+    importTaskRecord({ candidateCount: 4 }),
+    importTaskRecord({ id: 'import-2', candidateCount: 2 }),
+  ]);
+  prisma.candidateQuestion.findMany.mockResolvedValue([
+    { importTaskId: 'import-1', status: 'pending', publishedQuestionId: null },
+    { importTaskId: 'import-1', status: 'approved', publishedQuestionId: null },
+    { importTaskId: 'import-1', status: 'needs_edit', publishedQuestionId: null },
+    { importTaskId: 'import-1', status: 'approved', publishedQuestionId: 'question-1' },
+    { importTaskId: 'import-2', status: 'rejected', publishedQuestionId: null },
+    { importTaskId: 'import-2', status: 'pending', publishedQuestionId: null },
+  ]);
+
+  const result = await queryService(service).query(context, parseQuery());
+
+  expect(prisma.candidateQuestion.findMany).toHaveBeenCalledWith({
+    where: { tenantId: context.tenantId, importTaskId: { in: ['import-1', 'import-2'] } },
+    select: { importTaskId: true, publishedQuestionId: true, status: true },
+  });
+  expect(result.items).toEqual([
+    expect.objectContaining({
+      id: 'import-1',
+      candidateReviewProgress: {
+        pending: 1,
+        needsEdit: 1,
+        approved: 1,
+        rejected: 0,
+        published: 1,
+      },
+    }),
+    expect.objectContaining({
+      id: 'import-2',
+      candidateReviewProgress: {
+        pending: 1,
+        needsEdit: 0,
+        approved: 0,
+        rejected: 1,
+        published: 0,
+      },
+    }),
+  ]);
+}
+
 async function expectReviewContext() {
   const { service, prisma, policy } = createService();
   prisma.importTask.findFirst.mockResolvedValue(importTaskRecord());
@@ -124,6 +173,9 @@ function createService() {
     knowledgeChunk: {
       findMany: jest.fn(),
     },
+    candidateQuestion: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
   };
   const policy = { assert: jest.fn() };
   const audit = { record: jest.fn().mockResolvedValue({}) };
@@ -141,7 +193,18 @@ function queryService(service: ImportService) {
       context: ProductRequestContext,
       query: ImportTaskListQuery,
     ): Promise<{
-      items: Array<{ id: string; createdAt: string; updatedAt: string }>;
+      items: Array<{
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        candidateReviewProgress: {
+          pending: number;
+          needsEdit: number;
+          approved: number;
+          rejected: number;
+          published: number;
+        };
+      }>;
       total: number;
       page: number;
       pageSize: number;
@@ -165,7 +228,7 @@ function reviewService(service: ImportService) {
   };
 }
 
-function importTaskRecord() {
+function importTaskRecord(overrides: Record<string, unknown> = {}) {
   return {
     id: 'import-1',
     tenantId: context.tenantId,
@@ -176,5 +239,6 @@ function importTaskRecord() {
     failureReason: null,
     createdAt: new Date('2026-07-15T10:00:00.000Z'),
     updatedAt: new Date('2026-07-15T12:00:00.000Z'),
+    ...overrides,
   };
 }

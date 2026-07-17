@@ -1,0 +1,67 @@
+<h2>方案 A · AI 流式交互预览</h2>
+<p class="subtitle">展示安全的处理阶段、实时生成内容与完成后的依据摘要；不展示隐藏推理链。</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">单题 AI 评价</div>
+    <div class="mockup-body" style="display:grid;gap:14px;background:#f7f9fc">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>AI 教练正在分析</strong><div style="font-size:12px;color:#718096;margin-top:4px">使用用户默认模型 · BYOK</div></div>
+        <span style="padding:5px 9px;border-radius:999px;background:#e9f8f2;color:#0b8f68;font-size:11px;font-weight:700">STREAMING</span>
+      </div>
+      <div style="display:grid;gap:9px;padding:14px;border:1px solid #e3e8f0;border-radius:14px;background:white">
+        <div style="display:flex;gap:9px;align-items:center;color:#168a68"><b>✓</b><span>理解题意与目标岗位</span></div>
+        <div style="display:flex;gap:9px;align-items:center;color:#2f62ff"><b>●</b><span><strong>提取回答中的有效证据</strong></span></div>
+        <div style="display:flex;gap:9px;align-items:center;color:#94a0b4"><b>○</b><span>对照评分点与参考答案</span></div>
+        <div style="display:flex;gap:9px;align-items:center;color:#94a0b4"><b>○</b><span>组织改进建议与追问</span></div>
+      </div>
+      <div style="padding:15px;border-radius:14px;background:#102244;color:#eaf0ff;line-height:1.7;font-size:13px">
+        <div style="font-size:11px;color:#91a8d6;margin-bottom:6px">实时反馈</div>
+        你的回答已经覆盖了缓存策略和命中率，但对缓存击穿时的并发保护还缺少具体方案<span style="color:#78a0ff">▋</span>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <span style="padding:6px 9px;border-radius:9px;background:#eaf7f2;color:#08795a;font-size:11px">证据：提到命中率</span>
+        <span style="padding:6px 9px;border-radius:9px;background:#fff3e5;color:#ad6412;font-size:11px">缺口：并发保护</span>
+        <span style="padding:6px 9px;border-radius:9px;background:#eef2ff;color:#3658bd;font-size:11px">完成后展开依据摘要</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">模拟面试追问</div>
+    <div class="mockup-body" style="display:grid;grid-template-columns:128px 1fr;gap:14px;background:#f7f9fc">
+      <div style="display:grid;align-content:start;gap:10px;padding:13px;border-radius:14px;background:#12213e;color:white;font-size:11px">
+        <strong style="font-size:12px">Agent 进度</strong>
+        <span style="color:#7ee2bd">✓ 已记录回答</span>
+        <span style="color:#91b1ff">● 分析回答证据</span>
+        <span style="color:#8f9bb2">○ 选择追问方向</span>
+        <span style="color:#8f9bb2">○ 生成下一题</span>
+      </div>
+      <div style="display:grid;align-content:start;gap:12px">
+        <div style="justify-self:end;max-width:88%;padding:11px 13px;border-radius:14px 14px 4px 14px;background:#e8edf6;font-size:12px">我会先监控热点 Key，再通过互斥锁避免大量请求同时回源。</div>
+        <div style="max-width:94%;padding:14px;border-radius:4px 16px 16px 16px;background:white;border:1px solid #e2e7ef;font-size:13px;line-height:1.7">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><strong>AI 面试官</strong><span style="color:#2f62ff;font-size:11px">正在生成</span></div>
+          你提到了互斥锁。如果锁服务本身出现延迟或故障，你会如何保证<span style="color:#2f62ff">▋</span>
+        </div>
+        <div style="padding:10px 12px;border:1px dashed #cad3e3;border-radius:12px;color:#69758a;font-size:11px">回答完成后显示：本轮追问依据 · 命中的能力点 · 仍需验证的缺口</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:22px">
+  <div class="label">交互原则</div>
+  <div class="pros-cons">
+    <div class="pros"><h4>用户能看到</h4><ul><li>当前处理阶段与是否仍在运行</li><li>面试问题或评价正文逐字生成</li><li>完成后可核对的证据与评分依据摘要</li></ul></div>
+    <div class="cons"><h4>不会暴露</h4><ul><li>隐藏 Chain-of-Thought</li><li>系统提示词、密钥或供应商原始事件</li><li>尚未校验、尚未落库的最终分数</li></ul></div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="approve-a" onclick="toggleSelect(this)">
+    <div class="letter">✓</div><div class="content"><h3>按此方案继续</h3><p>进入技术架构与异常恢复设计。</p></div>
+  </div>
+  <div class="option" data-choice="revise-a" onclick="toggleSelect(this)">
+    <div class="letter">↺</div><div class="content"><h3>需要调整</h3><p>告诉我希望增减哪些阶段或信息。</p></div>
+  </div>
+</div>

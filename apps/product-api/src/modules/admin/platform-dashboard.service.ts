@@ -11,6 +11,7 @@ import { loadPlatformDashboardMetrics, type TimeRange } from './platform-dashboa
 
 const SEVEN_DAY_WINDOW = 7;
 const THIRTY_DAY_WINDOW = 30;
+const PERIOD_START_OFFSET = 1;
 
 @Injectable()
 export class PlatformDashboardService {
@@ -37,14 +38,15 @@ export class PlatformDashboardService {
 
 function dashboardRange(period: PlatformDashboardQuery['period'], now: Date): TimeRange {
   const endAt = new Date(now);
+  const startAt = startOfUtcDay(endAt);
   if (period === 'today') {
-    const startAt = new Date(endAt);
-    startAt.setUTCHours(0, 0, 0, 0);
     return { startAt, endAt };
   }
-  const startAt = new Date(endAt);
-  startAt.setUTCDate(
-    startAt.getUTCDate() - (period === '7d' ? SEVEN_DAY_WINDOW : THIRTY_DAY_WINDOW),
-  );
+  const window = period === '7d' ? SEVEN_DAY_WINDOW : THIRTY_DAY_WINDOW;
+  startAt.setUTCDate(startAt.getUTCDate() - (window - PERIOD_START_OFFSET));
   return { startAt, endAt };
+}
+
+function startOfUtcDay(value: Date) {
+  return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
 }

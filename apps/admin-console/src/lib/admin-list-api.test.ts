@@ -17,6 +17,13 @@ const IMPORT_TASK = {
   title: 'Architecture notes',
   status: 'review',
   candidateCount: 2,
+  candidateReviewProgress: {
+    pending: 2,
+    needsEdit: 0,
+    approved: 0,
+    rejected: 0,
+    published: 0,
+  },
   failureReason: null,
   createdAt: '2026-07-15T00:00:00.000Z',
   updatedAt: '2026-07-15T01:00:00.000Z',

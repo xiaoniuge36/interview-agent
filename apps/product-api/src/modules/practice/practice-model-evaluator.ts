@@ -1,11 +1,9 @@
 import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
 import { PracticeEvaluationSchema, type RubricPoint } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
+import { IncrementalJsonFieldDecoder } from '../../common/streaming/incremental-json-field-decoder';
 import { ModelCredentialService } from '../model-credential/model-credential.service';
-import {
-  ModelProviderClient,
-  ModelProviderError,
-} from '../model-credential/model-provider.client';
+import { ModelProviderClient, ModelProviderError } from '../model-credential/model-provider.client';
 
 const EvaluationDraftSchema = PracticeEvaluationSchema.pick({
   score: true,
@@ -23,6 +21,12 @@ export type PracticeModelEvaluationInput = {
   rubric: RubricPoint[];
   tags: string[];
   targetRole?: string;
+};
+
+export type PracticeEvaluationStreamCallbacks = {
+  onDelta: (content: string) => void;
+  onComplete: () => void;
+  signal?: AbortSignal;
 };
 
 @Injectable()
@@ -47,10 +51,39 @@ export class PracticeModelEvaluator {
       throw providerFailure(error);
     }
   }
+
+  async evaluateStream(
+    context: ProductRequestContext,
+    input: PracticeModelEvaluationInput,
+    callbacks: PracticeEvaluationStreamCallbacks,
+  ) {
+    const credential = await this.credentials.resolveDefault(context);
+    if (!credential) throw connectionRequired();
+    const decoder = new IncrementalJsonFieldDecoder('feedback');
+    let content = '';
+    try {
+      for await (const delta of this.provider.stream({
+        ...credential,
+        systemPrompt: systemPrompt(),
+        userPrompt: userPrompt(input),
+        ...(callbacks.signal ? { signal: callbacks.signal } : {}),
+      })) {
+        content += delta;
+        const visible = decoder.push(delta);
+        if (visible) callbacks.onDelta(visible);
+      }
+      callbacks.onComplete();
+      return parseEvaluation(content);
+    } catch (error) {
+      if (error instanceof BadGatewayException || error instanceof BadRequestException) throw error;
+      throw providerFailure(error);
+    }
+  }
 }
 
 function systemPrompt() {
   return [
+    '请将 feedback 作为 JSON 的第一个字段输出，方便用户实时阅读评价正文。',
     '你是专业的中文面试训练教练，需要严格评价用户对当前题目的回答。',
     '只返回 JSON，不要 Markdown，不要解释。',
     'JSON 字段：score(0-100)、feedback、missingPoints、rubricScores、followUpQuestion。',
@@ -83,7 +116,10 @@ function parseEvaluation(value: string) {
 }
 
 function stripCodeFence(value: string) {
-  return value.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  return value
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '');
 }
 
 function connectionRequired() {

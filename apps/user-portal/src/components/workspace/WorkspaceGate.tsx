@@ -1,21 +1,29 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useWorkspaceData } from '@/hooks/useWorkspaceData';
+import { RouteLoadingState } from '@/components/shell/RouteLoadingState';
 import type { WorkspaceData } from '@/lib/workspace-api';
+import {
+  useWorkspaceContext,
+  type WorkspaceContextValue,
+} from '@/components/workspace/WorkspaceProvider';
 
 type WorkspaceGateProps = {
-  children: (data: WorkspaceData & {
-    updateProfile: ReturnType<typeof useWorkspaceData>['updateProfile'];
-    addJob: ReturnType<typeof useWorkspaceData>['addJob'];
-    reload: ReturnType<typeof useWorkspaceData>['reload'];
-  }) => ReactNode;
+  children: (
+    data: WorkspaceData & {
+      updateProfile: WorkspaceContextValue['updateProfile'];
+      addJob: WorkspaceContextValue['addJob'];
+      reload: WorkspaceContextValue['reload'];
+    },
+  ) => ReactNode;
 };
 
 /** 统一加载/错误态，各页面只关心 ready 后的数据 */
 export function WorkspaceGate({ children }: WorkspaceGateProps) {
-  const workspace = useWorkspaceData();
-  if (workspace.state.status === 'loading') return <WorkspaceLoading />;
+  const workspace = useWorkspaceContext();
+  if (workspace.state.status === 'loading') {
+    return <RouteLoadingState label="正在同步训练上下文" />;
+  }
   if (workspace.state.status === 'error' || !workspace.state.data) {
     return <WorkspaceError onRetry={workspace.reload} />;
   }
@@ -28,16 +36,6 @@ export function WorkspaceGate({ children }: WorkspaceGateProps) {
         reload: workspace.reload,
       })}
     </>
-  );
-}
-
-function WorkspaceLoading() {
-  return (
-    <section className="panel request-state page-card" aria-live="polite">
-      <div className="eyebrow">正在准备</div>
-      <h1 className="h2">同步你的训练上下文</h1>
-      <p className="muted-text">个人画像、目标岗位与近期记录正在加载。</p>
-    </section>
   );
 }
 

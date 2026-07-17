@@ -14,6 +14,7 @@ export type AgentNextDecision = {
   stage: InterviewStage;
   content: string;
   shouldFinish: boolean;
+  basisSummary?: string[];
 };
 
 export type AgentNextResult = AgentNextDecision & {
@@ -28,6 +29,11 @@ export type AgentNextInput = {
   answer?: string;
   traceId: string;
   commandId: string;
+};
+
+export type AgentRuntimeProgress = {
+  onContentDelta?: (content: string) => void;
+  signal?: AbortSignal;
 };
 
 export type AgentRuntimeFailureTelemetry = {

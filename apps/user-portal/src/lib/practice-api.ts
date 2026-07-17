@@ -7,6 +7,7 @@
   PracticeSessionSchema,
   SubmitPracticeAnswerSchema,
   type CreatePracticeSession,
+  type AiOperationStreamEvent,
   type MasteryProfile,
   type PracticeReport,
   type PracticeItemFeedback,
@@ -15,6 +16,8 @@
   type SubmitPracticeAnswer,
 } from '@interview-agent/contracts';
 import { apiRequest } from './api';
+import { ApiError } from './api';
+import { runAiOperationStream } from './ai-operation-stream';
 
 export function createPracticeSession(input: CreatePracticeSession): Promise<PracticeSession> {
   return apiRequest({
@@ -49,6 +52,24 @@ export function evaluatePracticeItem(
     schema: PracticeItemFeedbackSchema,
     init: { method: 'POST', body: '{}' },
   });
+}
+
+export async function evaluatePracticeItemStream(
+  sessionId: string,
+  itemId: string,
+  options: {
+    signal?: AbortSignal;
+    onEvent?: (event: AiOperationStreamEvent) => void;
+  } = {},
+): Promise<PracticeItemFeedback> {
+  const result = await runAiOperationStream({
+    path: `/practices/${sessionId}/items/${itemId}/evaluate/stream`,
+    body: {},
+    ...(options.signal ? { signal: options.signal } : {}),
+    ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+  });
+  if (result.operation === 'practice_evaluation') return result.result;
+  throw new ApiError({ code: 'INVALID_STREAM_RESULT', message: 'AI 评价返回的数据不符合预期。' });
 }
 
 export function getPracticeItemSolution(

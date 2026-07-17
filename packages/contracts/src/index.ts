@@ -7,6 +7,7 @@ export * from './schemas/training';
 export * from './schemas/question-catalog';
 export * from './schemas/practice';
 export * from './schemas/interview';
+export * from './schemas/ai-operation-stream';
 export * from './schemas/report';
 export * from './schemas/admin';
 export * from './schemas/model-credential';

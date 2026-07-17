@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import {
   AccountDetailSchema,
+  TenantOptionSchema,
+  type CreateLocalAdminInput,
   type AccountDetail,
   type AccountListQuery,
   type AccountView,
@@ -14,9 +17,11 @@ import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
 import { runSerializable } from '../../common/database/serializable-transaction';
+import { randomUUID } from 'node:crypto';
 import {
   ACCOUNT_INCLUDE,
   AccountPageSchema,
+  accountEmailExists,
   accountNotFound,
   accountWhere,
   assertPlatformAdminRemains,
@@ -24,11 +29,13 @@ import {
   mapAccount,
   mapAuditLog,
   selfMutationForbidden,
+  targetTenantNotFound,
 } from './account-governance.helpers';
 
 const EXPORT_LIMIT = 10_000;
 const DETAIL_AUDIT_LIMIT = 20;
 const ACCOUNT_ORDER = [{ createdAt: 'desc' as const }, { id: 'desc' as const }];
+const SYSTEM_TENANT_SLUG = 'system';
 
 @Injectable()
 export class AccountGovernanceService {
@@ -94,6 +101,58 @@ export class AccountGovernanceService {
       disabledByUserId: account.disabledByUserId,
       auditLogs: auditLogs.map(mapAuditLog),
     });
+  }
+
+  async tenantOptions(context: ProductRequestContext) {
+    this.assert(context, 'account:read');
+    const tenants = await this.prisma.tenant.findMany({
+      select: { id: true, name: true, slug: true },
+      orderBy: { name: 'asc' },
+    });
+    return TenantOptionSchema.array().parse(tenants);
+  }
+
+  async createLocalAdmin(context: ProductRequestContext, input: CreateLocalAdminInput) {
+    this.assert(context, 'account:write');
+    const passwordHash = await hashPassword(input.password);
+    try {
+      return await runSerializable(this.prisma, async (transaction) => {
+        const tenant = await createTargetTenant(transaction, input);
+        const account = await transaction.user.create({
+          data: {
+            tenantId: tenant.id,
+            subject: 'local:' + randomUUID(),
+            role: input.role,
+            name: input.name,
+            email: input.email,
+          },
+          include: ACCOUNT_INCLUDE,
+        });
+        const credential = await transaction.localCredential.create({
+          data: {
+            tenantId: tenant.id,
+            userId: account.id,
+            email: input.email,
+            passwordHash,
+          },
+          select: { id: true },
+        });
+        await this.audit.record(
+          context,
+          {
+            action: 'account:local_admin_created',
+            resourceType: 'User',
+            resourceId: account.id,
+            metadata: { authSource: 'local', role: input.role, tenantSlug: tenant.slug },
+          },
+          transaction,
+        );
+        return mapAccount({ ...account, credential });
+      });
+    } catch (error) {
+      if (isUniqueConstraint(error)) throw accountEmailExists();
+      throw error;
+    }
   }
 
   updateRole(context: ProductRequestContext, accountId: string, input: UpdateAccountRoleInput) {
@@ -208,4 +267,22 @@ export class AccountGovernanceService {
   private assert(context: ProductRequestContext, action: 'account:read' | 'account:write') {
     this.policy.assert(context.actor, action, { platform: true });
   }
+}
+
+async function createTargetTenant(
+  transaction: Prisma.TransactionClient,
+  input: CreateLocalAdminInput,
+) {
+  const slug = input.role === 'platform_admin' ? SYSTEM_TENANT_SLUG : input.tenantSlug;
+  if (!slug) throw targetTenantNotFound();
+  const tenant = await transaction.tenant.findUnique({
+    where: { slug },
+    select: { id: true, name: true, slug: true },
+  });
+  if (!tenant) throw targetTenantNotFound();
+  return tenant;
+}
+
+function isUniqueConstraint(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
 }

@@ -1,7 +1,13 @@
-import type { AccountView, Question } from '@interview-agent/contracts';
-import { renderAccountExportCsv, renderQuestionExportCsv } from './admin-export-csv';
+import type { AccountView, ImportTask, Question } from '@interview-agent/contracts';
+import {
+  renderAccountExportCsv,
+  renderImportTaskExportCsv,
+  renderQuestionExportCsv,
+} from './admin-export-csv';
 
 describe('admin export CSV rows', () => {
+  describeImportTaskExport();
+
   it('renders question export fields in the table order', () => {
     const result = renderQuestionExportCsv([
       {
@@ -47,3 +53,32 @@ describe('admin export CSV rows', () => {
     );
   });
 });
+
+function describeImportTaskExport() {
+  it('includes the candidate review outcome breakdown for every import task', () => {
+    const result = renderImportTaskExportCsv([
+      {
+        id: 'import-1',
+        tenantId: 'tenant-1',
+        assetId: 'asset-1',
+        title: 'Java 面试资料.md',
+        status: 'review',
+        candidateCount: 6,
+        candidateReviewProgress: {
+          pending: 2,
+          needsEdit: 1,
+          approved: 1,
+          rejected: 1,
+          published: 1,
+        },
+        failureReason: null,
+        createdAt: '2026-07-17T00:00:00.000Z',
+        updatedAt: '2026-07-17T01:00:00.000Z',
+      } as ImportTask,
+    ]);
+
+    expect(result).toBe(
+      '\uFEFF任务 ID,任务名称,状态,候选题数,待审核,需修改,已通过,已驳回,已发布,创建时间,更新时间,失败原因\r\nimport-1,Java 面试资料.md,review,6,2,1,1,1,1,2026-07-17T00:00:00.000Z,2026-07-17T01:00:00.000Z,',
+    );
+  });
+}

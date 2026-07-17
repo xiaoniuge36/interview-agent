@@ -62,6 +62,9 @@ describe('CandidateReviewService', () => {
     expect(database.$transaction).not.toHaveBeenCalled();
   });
 
+  it('returns a Chinese prompt when a pending candidate is sent to publish', () =>
+    expectPendingPublishPrompt());
+
   it('increments the persisted revision before recording an approval transition', () =>
     expectPersistedRevisionAudit());
   it('reviews same-source candidates atomically and records every transition', () =>
@@ -107,6 +110,26 @@ function candidateDatabase() {
       callback(transaction),
     ),
   };
+}
+
+async function expectPendingPublishPrompt() {
+  const database = candidateDatabase();
+  database.transaction.candidateQuestion.findFirst.mockResolvedValue(candidateRecord());
+  const service = new CandidateReviewService(
+    database as unknown as PrismaService,
+    new PolicyService(),
+    { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
+  );
+  const error = await service.publish(context, 'candidate-1', { visibility: 'tenant' }).then(
+    () => null,
+    (reason: unknown) => reason,
+  );
+
+  expect(error).toBeInstanceOf(BadRequestException);
+  expect((error as BadRequestException).getResponse()).toMatchObject({
+    code: 'CANDIDATE_NOT_APPROVED',
+    message: '候选题审核通过后才能发布。',
+  });
 }
 
 async function expectPersistedRevisionAudit() {
@@ -224,6 +247,10 @@ async function expectPublishedBatchRejected() {
     );
 
   expect(error).toBeInstanceOf(ConflictException);
+  expect((error as ConflictException).getResponse()).toMatchObject({
+    code: 'CANDIDATE_ALREADY_PUBLISHED',
+    message: '候选题已发布到题库，不能再编辑。',
+  });
   expect(database.transaction.candidateQuestion.update).not.toHaveBeenCalled();
 }
 

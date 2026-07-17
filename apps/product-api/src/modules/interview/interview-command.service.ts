@@ -1,4 +1,5 @@
 ﻿import { HttpException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import type { AiOperationPhase, InterviewCommandResult } from '@interview-agent/contracts';
 import { PolicyService } from '../../common/authz/policy.service';
 import {
   AgentRuntimeClient,
@@ -18,6 +19,18 @@ import type {
   StartCommandRequest,
 } from './interview.types';
 
+export type InterviewCommandStream = {
+  phase: (phase: AiOperationPhase) => void;
+  delta: (content: string) => void;
+  signal?: AbortSignal;
+};
+
+export type InterviewStreamCommandResult = {
+  result: InterviewCommandResult;
+  basisSummary: string[];
+};
+const MAX_BASIS_SUMMARY_ITEMS = 3;
+
 @Injectable()
 export class InterviewCommandService {
   private readonly logger = new Logger(InterviewCommandService.name);
@@ -36,8 +49,8 @@ export class InterviewCommandService {
     return this.repository.start(request);
   }
 
-  advance(request: AdvanceCommandRequest) {
-    return this.execute({
+  async advance(request: AdvanceCommandRequest) {
+    const execution = await this.execute({
       context: request.context,
       sessionId: request.sessionId,
       command: 'advance',
@@ -45,10 +58,11 @@ export class InterviewCommandService {
       idempotencyKey: request.idempotencyKey,
       answer: undefined,
     });
+    return execution.result;
   }
 
-  submitAnswer(request: AnswerCommandRequest) {
-    return this.execute({
+  async submitAnswer(request: AnswerCommandRequest) {
+    const execution = await this.execute({
       context: request.context,
       sessionId: request.sessionId,
       command: 'answer',
@@ -56,27 +70,62 @@ export class InterviewCommandService {
       idempotencyKey: request.idempotencyKey,
       answer: request.input.answer,
     });
+    return execution.result;
   }
 
-  private async execute(request: ExecuteCommandRequest) {
+  advanceStream(request: AdvanceCommandRequest, stream: InterviewCommandStream) {
+    return this.execute(
+      {
+        context: request.context,
+        sessionId: request.sessionId,
+        command: 'advance',
+        expectedVersion: request.input.expectedVersion,
+        idempotencyKey: request.idempotencyKey,
+        answer: undefined,
+      },
+      stream,
+    );
+  }
+
+  submitAnswerStream(request: AnswerCommandRequest, stream: InterviewCommandStream) {
+    return this.execute(
+      {
+        context: request.context,
+        sessionId: request.sessionId,
+        command: 'answer',
+        expectedVersion: request.input.expectedVersion,
+        idempotencyKey: request.idempotencyKey,
+        answer: request.input.answer,
+      },
+      stream,
+    );
+  }
+
+  private async execute(
+    request: ExecuteCommandRequest,
+    stream?: InterviewCommandStream,
+  ): Promise<InterviewStreamCommandResult> {
     this.assertCommandAccess(request);
     const prepared = await this.repository.prepare(request);
-    if (prepared.kind === 'replay') return prepared.result;
+    if (prepared.kind === 'replay') {
+      return { result: prepared.result, basisSummary: basisSummary(prepared.result) };
+    }
     let runtime: AgentNextResult | undefined;
     try {
-      runtime = await this.agent.next({
-        session: toRuntimeContext(prepared.session),
-        ...(prepared.answer ? { answer: prepared.answer } : {}),
-        traceId: prepared.context.traceId,
-        commandId: prepared.commandId,
-      }, prepared.context);
+      stream?.phase('preparing');
+      stream?.phase('analyzing');
+      stream?.phase('composing');
+      runtime = await invokeRuntime(this.agent, prepared, stream);
+      stream?.phase('validating');
       assertRuntimeDecision(prepared.session, prepared.command, runtime);
       const artifacts = buildCompletion({ preparation: prepared, runtime });
-      return await this.repository.complete({
+      stream?.phase('saving');
+      const result = await this.repository.complete({
         preparation: prepared,
         runtime,
         artifacts,
       });
+      return { result, basisSummary: runtime.basisSummary ?? [] };
     } catch (error) {
       await this.recordFailure(prepared, error, runtime);
       throw this.publicError(error, prepared.context.traceId);
@@ -120,6 +169,37 @@ export class InterviewCommandService {
       message: '面试命令暂时无法完成，请稍后重试。',
     });
   }
+}
+
+function invokeRuntime(
+  agent: AgentRuntimeClient,
+  preparation: InvocationPreparation,
+  stream: InterviewCommandStream | undefined,
+) {
+  const input = {
+    session: toRuntimeContext(preparation.session),
+    ...(preparation.answer ? { answer: preparation.answer } : {}),
+    traceId: preparation.context.traceId,
+    commandId: preparation.commandId,
+  };
+  if (!stream) return agent.next(input, preparation.context);
+  return agent.next(input, preparation.context, streamProgress(stream));
+}
+
+function streamProgress(stream: InterviewCommandStream) {
+  return {
+    onContentDelta: stream.delta,
+    ...(stream.signal ? { signal: stream.signal } : {}),
+  };
+}
+
+function basisSummary(result: InterviewCommandResult): string[] {
+  const payload = result.session.turns.at(-1)?.structuredPayload;
+  const summary = payload?.basisSummary;
+  if (!Array.isArray(summary)) return [];
+  return summary
+    .filter((item): item is string => typeof item === 'string')
+    .slice(0, MAX_BASIS_SUMMARY_ITEMS);
 }
 
 function failureTelemetry(error: unknown, runtime: AgentNextResult | undefined): FailureTelemetry {

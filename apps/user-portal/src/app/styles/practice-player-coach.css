@@ -198,6 +198,44 @@
   font-weight: 800;
 }
 
+.practice-ai-stream {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent, #635bff) 28%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent, #635bff) 7%, transparent);
+}
+
+.practice-ai-stream-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.practice-ai-stream-status span {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent, #635bff);
+  animation: practice-ai-pulse 1.35s ease-in-out infinite;
+}
+
+.practice-ai-stream p {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.65;
+}
+
+@keyframes practice-ai-pulse {
+  50% {
+    opacity: 0.38;
+    transform: scale(0.72);
+  }
+}
+
 .practice-round-actions {
   width: min(1430px, calc(100% - 130px));
   margin: 18px 0 0 auto;

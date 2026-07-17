@@ -1,7 +1,7 @@
 'use client';
 
 import { DownloadOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Select, Space } from 'antd';
+import { Button, Collapse, Form, Input, Select, Space } from 'antd';
 import React from 'react';
 import type { AccountQueryInput } from '@/lib/account-api';
 import { ACCOUNT_ROLE_OPTIONS } from './account-management.types';
@@ -32,13 +32,27 @@ export function AccountToolbar(props: AccountToolbarProps) {
   const update = (changes: Partial<AccountQueryInput>) =>
     props.onDraftChange({ ...props.draft, ...changes });
   return (
-    <Form
-      className="admin-table-toolbar account-table-toolbar"
-      layout="inline"
-      onFinish={props.onQuery}
-    >
-      <AccountFilters draft={props.draft} onChange={update} />
-      <ToolbarActions {...props} />
+    <Form className="account-governance-toolbar" layout="vertical" onFinish={props.onQuery}>
+      <div className="account-toolbar-primary">
+        <AccountTextFilter
+          label="搜索账号"
+          placeholder="姓名、邮箱或账号主体"
+          value={props.draft.keyword}
+          onChange={(keyword) => update({ keyword })}
+        />
+        <ToolbarActions {...props} />
+      </div>
+      <Collapse
+        className="account-advanced-filters"
+        ghost
+        items={[
+          {
+            key: 'advanced',
+            label: '高级筛选',
+            children: <AccountFilters draft={props.draft} onChange={update} />,
+          },
+        ]}
+      />
     </Form>
   );
 }
@@ -48,13 +62,7 @@ function AccountFilters(props: {
   onChange: (changes: Partial<AccountQueryInput>) => void;
 }) {
   return (
-    <div className="admin-table-toolbar-fields">
-      <AccountTextFilter
-        label="关键词"
-        placeholder="姓名、邮箱或账号主体"
-        value={props.draft.keyword}
-        onChange={(keyword) => props.onChange({ keyword })}
-      />
+    <div className="account-advanced-filter-fields">
       <AccountTextFilter
         label="租户"
         placeholder="租户名称或标识"
@@ -124,7 +132,7 @@ function AccountSelect(props: {
 
 function ToolbarActions(props: Pick<AccountToolbarProps, 'isLoading' | 'onExport' | 'onReset'>) {
   return (
-    <Space className="admin-table-toolbar-actions" size={8} wrap>
+    <Space className="account-toolbar-actions" size={8} wrap>
       <Button htmlType="submit" icon={<SearchOutlined />} loading={props.isLoading} type="primary">
         查询
       </Button>

@@ -64,6 +64,36 @@ test('import task query supports status filtering', () => {
   assert.deepEqual(parsed, { page: 1, pageSize: 20, status: 'review' });
 });
 
+test('import tasks expose the detailed candidate review progress', () => {
+  const task = {
+    id: 'import-1',
+    tenantId: 'tenant-1',
+    assetId: 'asset-1',
+    title: 'Java 面试资料.md',
+    status: 'review',
+    candidateCount: 6,
+    candidateReviewProgress: {
+      pending: 2,
+      needsEdit: 1,
+      approved: 1,
+      rejected: 1,
+      published: 1,
+    },
+    failureReason: null,
+    createdAt: '2026-07-17T00:00:00.000Z',
+    updatedAt: '2026-07-17T00:00:00.000Z',
+  };
+
+  assert.deepEqual(getSchema('ImportTaskSchema').parse(task), task);
+  assert.equal(
+    getSchema('ImportTaskSchema').safeParse({
+      ...task,
+      candidateReviewProgress: undefined,
+    }).success,
+    false,
+  );
+});
+
 test('question query supports status and difficulty filtering', () => {
   const parsed = getSchema('QuestionListQuerySchema').parse({
     status: 'published',
@@ -124,6 +154,23 @@ test('platform dashboard contracts default the period and validate real aggregat
       fallbacks: 1,
       recentFailures: [],
     },
+    trend: [
+      {
+        date: '2026-07-16',
+        accountsCreated: 2,
+        questionsPublished: 3,
+        trainingCompleted: 4,
+        agentRuns: 5,
+      },
+    ],
+    funnel: {
+      imports: 4,
+      pendingCandidates: 3,
+      publishedQuestions: 7,
+      practiceSubmissions: 5,
+      practiceReports: 3,
+    },
+    alerts: [{ code: 'review_backlog', severity: 'warning', count: 3 }],
   };
 
   assert.deepEqual(getSchema('PlatformDashboardSchema').parse(dashboard), dashboard);

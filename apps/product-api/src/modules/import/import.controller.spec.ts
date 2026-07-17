@@ -60,7 +60,9 @@ describe('ImportController list routes', () => {
     });
     expect(response.attachment).toHaveBeenCalledWith('imports.csv');
     expect(response.type).toHaveBeenCalledWith('text/csv; charset=utf-8');
-    expect(body).toBe('\uFEFF任务 ID,任务名称,状态,候选题数,创建时间,更新时间,失败原因');
+    expect(body).toBe(
+      '\uFEFF任务 ID,任务名称,状态,候选题数,待审核,需修改,已通过,已驳回,已发布,创建时间,更新时间,失败原因',
+    );
   });
 });
 

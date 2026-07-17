@@ -1,10 +1,12 @@
-import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   CreatePracticeSessionSchema,
   SubmitPracticeAnswerSchema,
 } from '@interview-agent/contracts';
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
+import { createAiOperationSse, streamError } from '../../common/streaming/ai-operation-sse';
 import { PracticeService } from './practice.service';
 
 type PracticeAnswerParams = { id: string; itemId: string };
@@ -55,6 +57,34 @@ export class PracticeController {
       sessionId: params.id,
       itemId: params.itemId,
     });
+  }
+
+  @Post('practices/:id/items/:itemId/evaluate/stream')
+  async evaluateStream(
+    @Req() request: ProductRequest,
+    @Param() params: PracticeAnswerParams,
+    @Res() response: Response,
+  ): Promise<void> {
+    const connection = createAiOperationSse(response, request.context);
+    const controller = new AbortController();
+    response.once('close', () => {
+      if (!response.writableEnded) controller.abort();
+    });
+    try {
+      const result = await this.service.evaluateStream(
+        { context: request.context, sessionId: params.id, itemId: params.itemId },
+        {
+          phase: connection.sink.phase,
+          delta: (content) => connection.sink.delta('evaluation_feedback', content),
+          signal: controller.signal,
+        },
+      );
+      connection.sink.result({ operation: 'practice_evaluation', result });
+    } catch (error) {
+      connection.sink.error(streamError(error, request.context));
+    } finally {
+      connection.close();
+    }
   }
 
   @Get('practices/:id/items/:itemId/solution')

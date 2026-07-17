@@ -94,6 +94,28 @@ export const PlatformDashboardQuerySchema = z.object({
   period: PlatformDashboardPeriodSchema,
 });
 
+export const PlatformTrendPointSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  accountsCreated: z.number().int().nonnegative(),
+  questionsPublished: z.number().int().nonnegative(),
+  trainingCompleted: z.number().int().nonnegative(),
+  agentRuns: z.number().int().nonnegative(),
+});
+
+export const PlatformFunnelSchema = z.object({
+  imports: z.number().int().nonnegative(),
+  pendingCandidates: z.number().int().nonnegative(),
+  publishedQuestions: z.number().int().nonnegative(),
+  practiceSubmissions: z.number().int().nonnegative(),
+  practiceReports: z.number().int().nonnegative(),
+});
+
+export const PlatformAlertSchema = z.object({
+  code: z.enum(['review_backlog', 'failed_imports', 'runtime_risk']),
+  severity: z.enum(['warning', 'critical']),
+  count: z.number().int().nonnegative(),
+});
+
 export const PlatformDashboardSchema = z.object({
   period: PlatformDashboardPeriodSchema,
   range: z.object({
@@ -129,6 +151,9 @@ export const PlatformDashboardSchema = z.object({
     fallbacks: z.number().int().nonnegative(),
     recentFailures: z.array(AgentRunViewSchema).max(CONTRACT_LIMITS.recentRuns),
   }),
+  trend: z.array(PlatformTrendPointSchema).min(1).max(30),
+  funnel: PlatformFunnelSchema,
+  alerts: z.array(PlatformAlertSchema).max(3),
 });
 
 export const AccountStatusSchema = z.enum(['active', 'disabled']);
@@ -141,6 +166,41 @@ export const ManagedAccountRoleSchema = z.enum([
 ]);
 export const AccountKindSchema = z.enum(['admin', 'user']);
 export const AccountAuthSourceSchema = z.enum(['local', 'oidc']);
+export const CreateLocalAdminRoleSchema = z.enum(['admin', 'platform_admin']);
+export const TenantOptionSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  slug: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+});
+export const CreateLocalAdminInputSchema = z
+  .object({
+    name: z.string().trim().min(2, '姓名至少需要 2 个字符。').max(80, '姓名长度不能超过 80 个字符。'),
+    email: z
+      .string()
+      .trim()
+      .email('请输入有效的邮箱地址。')
+      .max(320, '邮箱地址过长。')
+      .transform((value) => value.toLowerCase()),
+    password: z.string().min(1, '请输入初始密码。'),
+    role: CreateLocalAdminRoleSchema,
+    tenantSlug: z.string().trim().min(1, '请选择租户。').max(CONTRACT_LIMITS.shortText).optional(),
+  })
+  .superRefine((input, context) => {
+    if (input.role === 'admin' && !input.tenantSlug) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['tenantSlug'],
+        message: '租户管理员必须选择租户。',
+      });
+    }
+    if (input.role === 'platform_admin' && input.tenantSlug) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['tenantSlug'],
+        message: '平台管理员固定归入系统租户。',
+      });
+    }
+  });
 
 export const AccountViewSchema = z.object({
   id: z.string().min(1),
@@ -226,10 +286,16 @@ export type Dashboard = z.infer<typeof DashboardSchema>;
 export type PlatformDashboardPeriod = z.infer<typeof PlatformDashboardPeriodSchema>;
 export type PlatformDashboardQuery = z.infer<typeof PlatformDashboardQuerySchema>;
 export type PlatformDashboard = z.infer<typeof PlatformDashboardSchema>;
+export type PlatformTrendPoint = z.infer<typeof PlatformTrendPointSchema>;
+export type PlatformFunnel = z.infer<typeof PlatformFunnelSchema>;
+export type PlatformAlert = z.infer<typeof PlatformAlertSchema>;
 export type AccountStatus = z.infer<typeof AccountStatusSchema>;
 export type ManagedAccountRole = z.infer<typeof ManagedAccountRoleSchema>;
 export type AccountKind = z.infer<typeof AccountKindSchema>;
 export type AccountAuthSource = z.infer<typeof AccountAuthSourceSchema>;
+export type CreateLocalAdminRole = z.infer<typeof CreateLocalAdminRoleSchema>;
+export type TenantOption = z.infer<typeof TenantOptionSchema>;
+export type CreateLocalAdminInput = z.infer<typeof CreateLocalAdminInputSchema>;
 export type AccountView = z.infer<typeof AccountViewSchema>;
 export type AccountDetail = z.infer<typeof AccountDetailSchema>;
 export type UpdateAccountRoleInput = z.infer<typeof UpdateAccountRoleInputSchema>;

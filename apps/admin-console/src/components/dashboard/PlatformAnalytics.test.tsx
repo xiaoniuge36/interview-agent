@@ -18,17 +18,42 @@ const dashboard: PlatformDashboard = {
     fallbacks: 1,
     recentFailures: [],
   },
+  trend: [
+    {
+      date: '2026-07-15',
+      accountsCreated: 1,
+      questionsPublished: 2,
+      trainingCompleted: 3,
+      agentRuns: 4,
+    },
+    {
+      date: '2026-07-16',
+      accountsCreated: 2,
+      questionsPublished: 1,
+      trainingCompleted: 2,
+      agentRuns: 5,
+    },
+  ],
+  funnel: {
+    imports: 4,
+    pendingCandidates: 3,
+    publishedQuestions: 7,
+    practiceSubmissions: 5,
+    practiceReports: 3,
+  },
+  alerts: [{ code: 'review_backlog', severity: 'warning', count: 3 }],
 };
 
 describe('PlatformAnalyticsContent', () => {
-  it('renders actual platform account, content, training, and runtime metrics', () => {
+  it('renders the light BI operating overview with real dashboard metrics', () => {
     const markup = renderToStaticMarkup(createElement(PlatformAnalyticsContent, { dashboard }));
 
-    expect(markup).toContain('账号概况');
-    expect(markup).toContain('内容漏斗');
-    expect(markup).toContain('训练业务');
-    expect(markup).toContain('Agent 健康');
-    expect(markup).toContain('已注册账号');
+    expect(markup).toContain('运营概览');
+    expect(markup).toContain('经营趋势');
+    expect(markup).toContain('内容与训练链路');
+    expect(markup).toContain('运行质量');
+    expect(markup).toContain('近期运行风险');
+    expect(markup).toContain('候选题待审核');
     expect(markup).toContain('342');
   });
 });
