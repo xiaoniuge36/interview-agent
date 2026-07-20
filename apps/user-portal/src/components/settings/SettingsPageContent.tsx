@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@interview-agent/auth-client';
 import { ModelConnectionsPanel } from './ModelConnectionsPanel';
+import { AiUsageSummary } from './AiUsageSummary';
 
 type SettingsTab = 'models' | 'account';
 
@@ -92,6 +93,7 @@ function SettingsBody({
     return (
       <>
         <ModelConnectionsPanel createRequest={createRequest} />
+        <AiUsageSummary />
         <ModelUsageRules />
       </>
     );

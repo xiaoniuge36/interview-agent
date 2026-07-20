@@ -46,13 +46,13 @@ function ReviewActions({
 }: Pick<CandidateBatchReviewBarProps, 'isSubmitting' | 'onReview'>) {
   return (
     <Space wrap>
-      <Button disabled={isSubmitting} loading={isSubmitting} type="primary" onClick={() => onReview('approved')}>
+      <Button data-page-agent-not-interactive="true" disabled={isSubmitting} loading={isSubmitting} type="primary" onClick={() => onReview('approved')}>
         批量通过
       </Button>
-      <Button disabled={isSubmitting} loading={isSubmitting} onClick={() => onReview('needs_edit')}>
+      <Button data-page-agent-not-interactive="true" disabled={isSubmitting} loading={isSubmitting} onClick={() => onReview('needs_edit')}>
         批量需修改
       </Button>
-      <Button danger disabled={isSubmitting} loading={isSubmitting} onClick={() => onReview('rejected')}>
+      <Button danger data-page-agent-not-interactive="true" disabled={isSubmitting} loading={isSubmitting} onClick={() => onReview('rejected')}>
         批量驳回
       </Button>
     </Space>

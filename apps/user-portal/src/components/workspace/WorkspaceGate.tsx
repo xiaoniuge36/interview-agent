@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { RouteLoadingState } from '@/components/shell/RouteLoadingState';
 import type { WorkspaceData } from '@/lib/workspace-api';
@@ -21,19 +22,23 @@ type WorkspaceGateProps = {
 /** 统一加载/错误态，各页面只关心 ready 后的数据 */
 export function WorkspaceGate({ children }: WorkspaceGateProps) {
   const workspace = useWorkspaceContext();
-  if (workspace.state.status === 'loading') {
+  const { reload, state } = workspace;
+  useEffect(() => {
+    if (state.status === 'idle') void reload();
+  }, [reload, state.status]);
+  if (state.status === 'idle' || state.status === 'loading') {
     return <RouteLoadingState label="正在同步训练上下文" />;
   }
-  if (workspace.state.status === 'error' || !workspace.state.data) {
-    return <WorkspaceError onRetry={workspace.reload} />;
+  if (state.status === 'error' || !state.data) {
+    return <WorkspaceError onRetry={reload} />;
   }
   return (
     <>
       {children({
-        ...workspace.state.data,
+        ...state.data,
         updateProfile: workspace.updateProfile,
         addJob: workspace.addJob,
-        reload: workspace.reload,
+        reload,
       })}
     </>
   );

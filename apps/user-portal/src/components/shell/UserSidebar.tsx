@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@interview-agent/auth-client';
 import { NavigationIcon } from './NavigationIcon';
@@ -15,6 +15,9 @@ import { sidebarAccountActions } from './sidebar-account-actions';
 import { ThemeMenu } from '../theme/ThemeMenu';
 
 const NAV_PENDING_TIMEOUT_MS = 4000;
+const NAV_PREFETCH_TIMEOUT_MS = 1200;
+const NAV_PREFETCH_FALLBACK_DELAY_MS = 120;
+const SHOULD_WARM_DEVELOPMENT_ROUTES = process.env.NODE_ENV === 'development';
 
 export function UserSidebar() {
   const pathname = usePathname();
@@ -24,6 +27,7 @@ export function UserSidebar() {
   const [pending, setPending] = useState<NavigationId | null>(null);
   const name = auth.identity?.displayName ?? '训练用户';
   const accountActions = sidebarAccountActions(auth.mode);
+  useNavigationWarmup(pathname, router.prefetch);
   useEffect(() => setPending(null), [pathname]);
   useEffect(() => {
     if (!pending) return;
@@ -48,6 +52,38 @@ export function UserSidebar() {
       />
     </aside>
   );
+}
+
+function useNavigationWarmup(pathname: string, prefetch: (href: string) => void) {
+  const prefetched = useRef(new Set<string>());
+  useEffect(() => {
+    const warmRoutes = async () => {
+      for (const item of NAV_ITEMS) {
+        if (item.href === pathname || prefetched.current.has(item.href)) continue;
+        prefetched.current.add(item.href);
+        prefetch(item.href);
+        if (SHOULD_WARM_DEVELOPMENT_ROUTES) await warmDevelopmentRoute(item.href);
+      }
+    };
+    const requestIdle = window.requestIdleCallback;
+    if (requestIdle) {
+      const idleId = requestIdle(() => void warmRoutes(), { timeout: NAV_PREFETCH_TIMEOUT_MS });
+      return () => window.cancelIdleCallback(idleId);
+    }
+    const timeoutId = window.setTimeout(
+      () => void warmRoutes(),
+      NAV_PREFETCH_FALLBACK_DELAY_MS,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [pathname, prefetch]);
+}
+
+async function warmDevelopmentRoute(href: string) {
+  try {
+    await fetch(href, { credentials: 'same-origin' });
+  } catch {
+    return;
+  }
 }
 
 function SidebarBrand() {

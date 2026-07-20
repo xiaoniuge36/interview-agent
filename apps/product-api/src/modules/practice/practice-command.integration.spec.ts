@@ -6,6 +6,7 @@ import type { ProductRequestContext } from '../../common/context/request-context
 import { PrismaService } from '../../common/database/prisma.service';
 import { PracticeCommandService } from './practice-command.service';
 import { PracticeCompletionService } from './practice-completion.service';
+import { PracticeEvaluationInfrastructure } from './practice-evaluation-infrastructure';
 
 const describeDatabase = process.env.RUN_DATABASE_INTEGRATION === 'true' ? describe : describe.skip;
 const suffix = randomUUID();
@@ -19,9 +20,8 @@ const closedSessionId = `practice-closed-${suffix}`;
 const prisma = new PrismaService();
 const commands = new PracticeCommandService(prisma, new PolicyService(), new AuditService(prisma));
 const completion = new PracticeCompletionService(
-  prisma,
-  new PolicyService(),
-  new AuditService(prisma),
+  new PracticeEvaluationInfrastructure(prisma, new PolicyService(), new AuditService(prisma)),
+  { evaluate: jest.fn() } as never,
 );
 
 const context: ProductRequestContext = {

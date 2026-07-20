@@ -185,8 +185,13 @@ services:
       INTERNAL_AGENT_TOKEN: ${INTERNAL_AGENT_TOKEN:?INTERNAL_AGENT_TOKEN is required}
       RUNTIME_BODY_LIMIT_BYTES: ${RUNTIME_BODY_LIMIT_BYTES:-1048576}
       RUNTIME_LOG_LEVEL: ${RUNTIME_LOG_LEVEL:-INFO}
+      AGENT_RUNTIME_MODEL_GATEWAY_URL: http://api:3001/api/internal/model-invocations
+      AGENT_RUNTIME_CHECKPOINT_DATABASE_URL: postgresql://${POSTGRES_USER:-interview_agent}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-interview_agent}?connect_timeout=5
     ports:
       - '127.0.0.1:${RUNTIME_HOST_PORT:-8000}:8000'
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - backend
 

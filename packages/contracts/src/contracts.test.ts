@@ -43,6 +43,15 @@ test('runtime requests reject unsupported contract versions', () => {
   assert.equal(result.success, false);
 });
 
+test('runtime requests preserve an optional signed model invocation grant', () => {
+  const parsed = AgentRuntimeNextRequestSchema.parse({
+    ...validRuntimeRequest,
+    modelInvocationGrant: 'signed-runtime-grant.payload-signature',
+  });
+
+  assert.equal(parsed.modelInvocationGrant, 'signed-runtime-grant.payload-signature');
+});
+
 test('answer input trims content and rejects blank answers', () => {
   const parsed = SubmitInterviewAnswerInputSchema.parse({
     answer: '  structured answer  ',

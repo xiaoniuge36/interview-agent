@@ -1,7 +1,7 @@
 import {
   AdminPageSchema,
+  AgentRunDetailViewSchema,
   AgentRunListQuerySchema,
-  AgentRunViewSchema,
   AuditLogListQuerySchema,
   AuditLogViewSchema,
   CandidateReviewListQuerySchema,
@@ -13,7 +13,7 @@ import {
   QuestionListQuerySchema,
   QuestionSchema,
   type AgentRunListQuery,
-  type AgentRunView,
+  type AgentRunDetailView,
   type AuditLogListQuery,
   type AuditLogView,
   type CandidateReview,
@@ -49,7 +49,7 @@ export type AdminListItemMap = {
   questions: Question;
   candidates: CandidateReview;
   'model-profiles': ModelProfile;
-  'agent-runs': AgentRunView;
+  'agent-runs': AgentRunDetailView;
   'audit-logs': AuditLogView;
 };
 
@@ -104,7 +104,7 @@ const ADMIN_LIST_DEFINITIONS = {
   'agent-runs': {
     path: '/admin/agent-runs',
     querySchema: AgentRunListQuerySchema,
-    pageSchema: AdminPageSchema(AgentRunViewSchema),
+    pageSchema: AdminPageSchema(AgentRunDetailViewSchema),
     fallbackFileName: 'agent-runs.csv',
   },
   'audit-logs': {

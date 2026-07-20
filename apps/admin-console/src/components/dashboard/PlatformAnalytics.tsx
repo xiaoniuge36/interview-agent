@@ -18,6 +18,7 @@ import { PlatformFunnel } from './PlatformFunnel';
 import { PlatformHealthSummary } from './PlatformHealthSummary';
 import { PlatformRuntimeGauge } from './PlatformBiCharts';
 import { PlatformTrendChart } from './PlatformTrendChart';
+import { PlatformAiAnalytics } from './PlatformAiAnalytics';
 import { SectionFeedback } from './SectionState';
 
 const HTTP_FORBIDDEN = 403;
@@ -54,7 +55,12 @@ export function PlatformAnalytics({ active, refreshKey }: { active: boolean; ref
           onChange={(value) => setPeriod(value as PlatformDashboardPeriod)}
         />
       </div>
-      {state.status === 'ready' ? <PlatformAnalyticsContent dashboard={state.data} /> : null}
+      {state.status === 'ready' ? (
+        <>
+          <PlatformAnalyticsContent dashboard={state.data} />
+          <PlatformAiAnalytics active={active} period={period} refreshKey={refreshKey} />
+        </>
+      ) : null}
       {state.status !== 'ready' ? (
         <SectionFeedback state={state} loadingMessage="正在汇总全站运营数据" />
       ) : null}

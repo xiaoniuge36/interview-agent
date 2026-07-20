@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { AdminView } from './admin-navigation';
 import { AdminHeader } from './admin-shell/AdminHeader';
 import { AdminSidebar } from './admin-shell/AdminSidebar';
+import { AdminAgentWidget } from './admin-agent/AdminAgentWidget';
 
 const { Content, Sider } = Layout;
 const SIDEBAR_KEY = 'admin-console.sidebar-collapsed';
@@ -55,6 +56,7 @@ export function AdminShell(props: AdminShellProps) {
           {props.children}
         </Content>
       </Layout>
+      <AdminAgentWidget />
     </Layout>
   );
 }

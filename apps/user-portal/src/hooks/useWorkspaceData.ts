@@ -5,9 +5,15 @@ import type { JobIntentPayload, ProfilePayload } from '@interview-agent/contract
 import { loadWorkspaceData, type WorkspaceData } from '../lib/workspace-api';
 
 type WorkspaceState = {
-  status: 'loading' | 'ready' | 'error';
+  status: 'idle' | 'loading' | 'ready' | 'error';
   data: WorkspaceData | null;
   error: Error | null;
+};
+
+const IDLE_STATE: WorkspaceState = {
+  status: 'idle',
+  data: null,
+  error: null,
 };
 
 const INITIAL_STATE: WorkspaceState = {
@@ -16,8 +22,10 @@ const INITIAL_STATE: WorkspaceState = {
   error: null,
 };
 
-export function useWorkspaceData() {
-  const [state, setState] = useState<WorkspaceState>(INITIAL_STATE);
+export function useWorkspaceData(options: { loadOnMount?: boolean } = {}) {
+  const [state, setState] = useState<WorkspaceState>(() =>
+    options.loadOnMount === false ? IDLE_STATE : INITIAL_STATE,
+  );
   const [loadWorkspace] = useState(() => createWorkspaceLoader());
   const reload = useCallback(async () => {
     setState(INITIAL_STATE);
@@ -29,8 +37,9 @@ export function useWorkspaceData() {
     }
   }, [loadWorkspace]);
   useEffect(() => {
+    if (options.loadOnMount === false) return;
     void reload();
-  }, [reload]);
+  }, [options.loadOnMount, reload]);
   const updateProfile = useCallback((profile: ProfilePayload) => {
     setState((current) => updateData(current, { profile }));
   }, []);

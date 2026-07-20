@@ -3,6 +3,7 @@
   top: 18px;
   overflow: hidden;
   border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(24, 47, 80, 0.08);
 }
 .practice-coach-panel > header {
   padding: 19px 20px;
@@ -237,6 +238,9 @@
 }
 
 .practice-round-actions {
+  position: sticky;
+  z-index: 20;
+  bottom: 16px;
   width: min(1430px, calc(100% - 130px));
   margin: 18px 0 0 auto;
   display: flex;
@@ -247,6 +251,7 @@
   border: 1px solid #cfdbea;
   border-radius: 13px;
   background: #fff;
+  box-shadow: 0 14px 34px rgba(24, 47, 80, 0.12);
 }
 .practice-round-actions strong {
   color: #26364d;
@@ -256,6 +261,38 @@
   margin: 4px 0 0;
   color: #7a879a;
   font-size: 10px;
+}
+
+.practice-round-actions .practice-report-operation {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  color: #315b9e;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.practice-report-operation span {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border: 2px solid #a9c2ec;
+  border-top-color: #315b9e;
+  border-radius: 999px;
+  animation: practice-report-spin 0.8s linear infinite;
+}
+
+@keyframes practice-report-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .practice-report-operation span {
+    animation: none;
+  }
 }
 .practice-round-actions > div:last-child {
   display: flex;

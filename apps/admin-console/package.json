@@ -13,6 +13,8 @@
   "dependencies": {
     "@ant-design/charts": "^2.6.7",
     "@ant-design/icons": "^6.3.2",
+    "@page-agent/core": "^1.12.2",
+    "@page-agent/page-controller": "^1.12.2",
     "@interview-agent/auth-client": "workspace:*",
     "@interview-agent/contracts": "workspace:*",
     "antd": "^6.5.1",

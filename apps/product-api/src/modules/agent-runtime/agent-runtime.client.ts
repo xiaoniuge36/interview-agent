@@ -16,6 +16,7 @@ import type {
   RuntimeFailure,
   RuntimeInvocationOutcome,
 } from './agent-runtime.types';
+import { ModelInvocationGrantService } from './model-invocation-grant.service';
 import { UserModelRuntimeClient } from './user-model-runtime.client';
 
 const CONTRACT_VERSION = 'interview-runtime.v1' as const;
@@ -37,6 +38,7 @@ export class AgentRuntimeClient {
   constructor(
     config: ConfigService<Environment, true>,
     @Optional() private readonly userModels?: UserModelRuntimeClient,
+    @Optional() private readonly grants?: ModelInvocationGrantService,
   ) {
     this.baseUrl = config.get('AGENT_RUNTIME_URL', { infer: true }).replace(/\/$/, '');
     this.timeoutMs = config.get('AGENT_RUNTIME_TIMEOUT_MS', { infer: true });
@@ -51,15 +53,22 @@ export class AgentRuntimeClient {
     context?: ProductRequestContext,
     progress: AgentRuntimeProgress = {},
   ): Promise<AgentNextResult> {
-    if (context && this.userModels) {
-      if (!progress.onContentDelta && !progress.signal)
-        return this.userModels.next({ context, input });
+    if (context && this.userModels && (progress.onContentDelta || progress.signal)) {
       return this.userModels.nextStream({ context, input }, progress);
     }
     const startedAt = performance.now();
+    const modelInvocationGrant =
+      context && this.grants
+        ? await this.grants.issue(context, {
+            sessionId: input.session.id,
+            commandId: input.commandId,
+            traceId: input.traceId,
+          })
+        : undefined;
     const request = AgentRuntimeNextRequestSchema.parse({
       contractVersion: CONTRACT_VERSION,
       ...input,
+      ...(modelInvocationGrant ? { modelInvocationGrant } : {}),
     });
     const outcome = await this.invokeWithRetries(request, input.traceId);
     if ('decision' in outcome.result) {

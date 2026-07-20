@@ -43,7 +43,10 @@
 
 ```ts
 assert.equal(AiUsageSummaryQuerySchema.safeParse({ period: '90d' }).success, false);
-assert.equal(AiUsageSummarySchema.parse(summary).recent[0].errorCode, 'MODEL_PROVIDER_RATE_LIMITED');
+assert.equal(
+  AiUsageSummarySchema.parse(summary).recent[0].errorCode,
+  'MODEL_PROVIDER_RATE_LIMITED',
+);
 assert.equal('prompt' in AiUsageSummarySchema.parse(summary).recent[0], false);
 ```
 
@@ -108,8 +111,7 @@ expect(usage).not.toHaveBeenCalledWith(expect.objectContaining({ raw: expect.any
 
 ```ts
 export type ProviderStreamEvent =
-  | { type: 'text'; value: string }
-  | { type: 'usage'; value: ModelTokenUsage };
+  { type: 'text'; value: string } | { type: 'usage'; value: ModelTokenUsage };
 
 for await (const event of providerEvents(response.body, input.provider)) {
   if (event.type === 'usage') input.onUsage?.(event.value);
@@ -154,7 +156,9 @@ await expect(service.measure(metadata, () => Promise.resolve('ok'))).resolves.to
 expect(prisma.aiInvocation.create).toHaveBeenCalledWith(
   expect.objectContaining({ data: expect.objectContaining({ status: 'succeeded' }) }),
 );
-await expect(service.measure(metadata, () => Promise.reject(providerError))).rejects.toBe(providerError);
+await expect(service.measure(metadata, () => Promise.reject(providerError))).rejects.toBe(
+  providerError,
+);
 ```
 
 - [ ] **Step 2: 实现 `measure()`，用单次 usage 回调和 `performance.now()` 记录终态；失败只持久化已有公开错误码。**
@@ -309,7 +313,11 @@ expect(screen.getByText('MODEL_PROVIDER_RATE_LIMITED')).toBeVisible();
 
 ```ts
 export function getAiUsageSummary(period: AiUsagePeriod, signal?: AbortSignal) {
-  return apiRequest({ path: `/ai-usage/summary?period=${period}`, schema: AiUsageSummarySchema, init: { signal } });
+  return apiRequest({
+    path: `/ai-usage/summary?period=${period}`,
+    schema: AiUsageSummarySchema,
+    init: { signal },
+  });
 }
 ```
 

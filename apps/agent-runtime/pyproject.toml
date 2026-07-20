@@ -5,8 +5,12 @@ description = "FastAPI Agent Runtime for Interview Agent workflows"
 requires-python = ">=3.11,<3.13"
 dependencies = [
   "fastapi>=0.115.0,<1.0.0",
+  "httpx>=0.28.1,<1.0.0",
+  "langgraph>=1.2.9,<2.0.0",
+  "langgraph-checkpoint-postgres>=3.1.0,<4.0.0",
   "pydantic>=2.10.0,<3.0.0",
   "pydantic-settings>=2.7.0,<3.0.0",
+  "psycopg[binary,pool]>=3.3.4,<4.0.0",
   "uvicorn[standard]>=0.30.0,<1.0.0",
 ]
 

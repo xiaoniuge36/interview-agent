@@ -85,6 +85,39 @@ enum AgentRunStatus {
   fallback
 }
 
+enum AiInvocationOperation {
+  model_connection_test
+  practice_evaluation
+  interview_next
+  admin_page_agent
+  user_page_agent
+}
+
+enum AiInvocationStatus {
+  succeeded
+  failed
+  cancelled
+}
+
+enum AdminPageAgentMessageRole {
+  user
+  assistant
+  error
+}
+
+enum UserAgentMessageRole {
+  user
+  assistant
+  error
+}
+
+enum CredentialStatus {
+  unverified
+  verified
+  disabled
+  failed
+}
+
 enum QuestionDifficulty {
   intro
   easy

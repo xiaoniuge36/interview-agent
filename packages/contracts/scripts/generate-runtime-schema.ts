@@ -64,6 +64,7 @@ class NextInterviewRequest(ContractModel):
     command_id: str = {{COMMAND_ID}}
     trace_id: str = {{TRACE_ID}}
     answer: str | None = {{ANSWER}}
+    model_invocation_grant: str | None = {{MODEL_INVOCATION_GRANT}}
 
 
 class NextInterviewResponse(ContractModel):
@@ -71,6 +72,7 @@ class NextInterviewResponse(ContractModel):
     stage: InterviewStage
     content: str = {{RESPONSE_CONTENT}}
     should_finish: bool
+    basis_summary: list[str] | None = Field(default=None, max_length={{BASIS_SUMMARY_MAXIMUM}})
 `;
 
 type Bounds = { min?: number; max?: number };
@@ -154,12 +156,14 @@ function validateShapes(): void {
     'commandId',
     'traceId',
     'answer',
+    'modelInvocationGrant',
   ]);
   assertShape('response', Object.keys(AgentRuntimeNextResponseSchema.shape), [
     'contractVersion',
     'stage',
     'content',
     'shouldFinish',
+    'basisSummary',
   ]);
 }
 
@@ -181,7 +185,9 @@ function runtimeMetadata(): RuntimeMetadata {
     COMMAND_ID: fieldOptions(stringBounds(requestShape.commandId)),
     TRACE_ID: fieldOptions(stringBounds(requestShape.traceId)),
     ANSWER: optionalField(stringBounds(requestShape.answer)),
+    MODEL_INVOCATION_GRANT: optionalField(stringBounds(requestShape.modelInvocationGrant)),
     RESPONSE_CONTENT: fieldOptions(stringBounds(responseShape.content)),
+    BASIS_SUMMARY_MAXIMUM: String(arrayMaximum(responseShape.basisSummary)),
   };
 }
 

@@ -35,6 +35,10 @@ export function AdminDashboard() {
     reload();
     setListReloadKey((value) => value + 1);
   }, [reload]);
+  useEffect(() => {
+    window.addEventListener('admin-agent-refresh', reloadAll);
+    return () => window.removeEventListener('admin-agent-refresh', reloadAll);
+  }, [reloadAll]);
   return (
     <AdminShell
       activeView={activeView}

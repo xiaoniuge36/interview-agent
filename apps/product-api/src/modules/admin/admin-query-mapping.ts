@@ -60,7 +60,7 @@ export function agentRunWhere(
   query: AgentRunListQuery,
 ): Prisma.AgentRunWhereInput {
   return {
-    tenantId: context.tenantId,
+    ...(context.actor.role === 'platform_admin' ? {} : { tenantId: context.tenantId }),
     ...(query.status ? { status: query.status } : {}),
     ...(query.keyword ? { OR: textSearch(query.keyword, ['stage', 'sessionId', 'traceId']) } : {}),
   };

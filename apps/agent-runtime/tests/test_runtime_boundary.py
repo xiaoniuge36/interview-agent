@@ -17,6 +17,7 @@ AUTH_HEADERS = {
 def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     monkeypatch.setenv("INTERNAL_AGENT_TOKEN", INTERNAL_TOKEN)
     monkeypatch.setenv("NODE_ENV", "test")
+    monkeypatch.delenv("AGENT_RUNTIME_CHECKPOINT_DATABASE_URL", raising=False)
     get_settings.cache_clear()
     with TestClient(app) as runtime_client:
         yield runtime_client

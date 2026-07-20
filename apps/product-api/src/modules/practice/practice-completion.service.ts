@@ -1,10 +1,7 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import type { PracticeReport } from '@interview-agent/contracts';
-import { AuditService } from '../../common/audit/audit.service';
-import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
-import { PrismaService } from '../../common/database/prisma.service';
 import { runSerializable } from '../../common/database/serializable-transaction';
 import {
   createPracticeReportData,
@@ -12,6 +9,8 @@ import {
   type EvaluationRecord,
   type SessionRecord,
 } from './practice-mappers';
+import { PracticeEvaluationCommandService } from './practice-evaluation-command.service';
+import { PracticeEvaluationInfrastructure } from './practice-evaluation-infrastructure';
 import { loadPracticeSession } from './practice-records';
 
 type MasteryUpdateInput = {
@@ -24,15 +23,22 @@ type MasteryUpdateInput = {
 @Injectable()
 export class PracticeCompletionService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly policy: PolicyService,
-    private readonly audit: AuditService,
+    private readonly infrastructure: PracticeEvaluationInfrastructure,
+    private readonly evaluations: PracticeEvaluationCommandService,
   ) {}
 
   async submit(context: ProductRequestContext, sessionId: string): Promise<PracticeReport> {
-    const session = await loadPracticeSession(this.prisma, sessionId, context.tenantId);
+    const session = await loadPracticeSession(
+      this.infrastructure.prisma,
+      sessionId,
+      context.tenantId,
+    );
     this.assertAction(context, session.userId);
-    return runSerializable(this.prisma, async (transaction) => {
+    if (!session.report) {
+      assertOpenAndComplete(session, false);
+      await this.evaluatePendingItems(context, session);
+    }
+    return runSerializable(this.infrastructure.prisma, async (transaction) => {
       const current = await loadPracticeSession(transaction, sessionId, context.tenantId);
       this.assertAction(context, current.userId);
       if (current.report) return mapReport(current.report, current.items);
@@ -46,10 +52,24 @@ export class PracticeCompletionService {
     });
   }
 
+  private async evaluatePendingItems(
+    context: ProductRequestContext,
+    session: SessionRecord,
+  ): Promise<void> {
+    const pendingItems = session.items.filter((item) => item.answer && !item.evaluation);
+    for (const item of pendingItems) {
+      await this.evaluations.evaluate({ context, sessionId: session.id, itemId: item.id });
+    }
+  }
+
   async completeSelfStudy(context: ProductRequestContext, sessionId: string): Promise<void> {
-    const session = await loadPracticeSession(this.prisma, sessionId, context.tenantId);
+    const session = await loadPracticeSession(
+      this.infrastructure.prisma,
+      sessionId,
+      context.tenantId,
+    );
     this.assertAction(context, session.userId);
-    await runSerializable(this.prisma, async (transaction) => {
+    await runSerializable(this.infrastructure.prisma, async (transaction) => {
       const current = await loadPracticeSession(transaction, sessionId, context.tenantId);
       this.assertAction(context, current.userId);
       assertOpenAndComplete(current, false);
@@ -57,7 +77,7 @@ export class PracticeCompletionService {
         where: { tenantId_id: { tenantId: context.tenantId, id: sessionId } },
         data: { status: 'submitted', submittedAt: new Date() },
       });
-      await this.audit.record(
+      await this.infrastructure.audit.record(
         context,
         {
           action: 'practice:complete_self_study',
@@ -83,7 +103,7 @@ export class PracticeCompletionService {
       where: { tenantId_id: { tenantId: session.tenantId, id: session.id } },
       data: { status: 'report_ready', reportedAt: new Date() },
     });
-    await this.audit.record(
+    await this.infrastructure.audit.record(
       context,
       {
         action: 'practice:submit',
@@ -125,7 +145,7 @@ export class PracticeCompletionService {
   }
 
   private assertAction(context: ProductRequestContext, ownerId: string) {
-    this.policy.assert(context.actor, 'practice:submit', {
+    this.infrastructure.policy.assert(context.actor, 'practice:submit', {
       tenantId: context.tenantId,
       ownerId,
     });

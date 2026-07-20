@@ -139,7 +139,7 @@ function ToolbarActions(props: Pick<AccountToolbarProps, 'isLoading' | 'onExport
       <Button disabled={props.isLoading} icon={<ReloadOutlined />} onClick={props.onReset}>
         重置
       </Button>
-      <Button disabled={props.isLoading} icon={<DownloadOutlined />} onClick={props.onExport}>
+      <Button data-page-agent-not-interactive="true" disabled={props.isLoading} icon={<DownloadOutlined />} onClick={props.onExport}>
         导出
       </Button>
     </Space>

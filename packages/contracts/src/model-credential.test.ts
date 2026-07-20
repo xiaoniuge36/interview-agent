@@ -1,6 +1,7 @@
 import {
   CreateModelCredentialInputSchema,
   ModelCredentialViewSchema,
+  UpdateModelCredentialInputSchema,
 } from './schemas/model-credential';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -59,4 +60,24 @@ test('自定义兼容端点拒绝本机、私网和内嵌凭证地址', () => {
       false,
     );
   }
+});
+
+test('编辑模型连接时支持服务商切换且兼容端点必须同时更新 Base URL', () => {
+  const missingBaseUrl = UpdateModelCredentialInputSchema.safeParse({
+    provider: 'openai_compatible',
+    model: 'custom-chat',
+  });
+  const providerUpdate = UpdateModelCredentialInputSchema.safeParse({
+    provider: 'qwen',
+    model: 'qwen-plus',
+  });
+
+  assert.equal(missingBaseUrl.success, false);
+  assert.equal(providerUpdate.success, true);
+  assert.equal(
+    providerUpdate.success
+      ? (providerUpdate.data as { provider?: string }).provider
+      : undefined,
+    'qwen',
+  );
 });

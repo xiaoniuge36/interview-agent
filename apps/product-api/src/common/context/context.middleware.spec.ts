@@ -15,6 +15,7 @@ describe('ContextMiddleware public boundary', () => {
     '/api/health/ready',
     '/api/auth/login',
     '/api/auth/register',
+    '/api/internal/model-invocations',
   ])('keeps the exact health endpoint public: %s', async (path) => {
     const identities = { resolve: jest.fn() };
     const middleware = new ContextMiddleware(identities as unknown as AuthIdentityService);

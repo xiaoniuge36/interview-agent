@@ -7,7 +7,7 @@ import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
 import { ModelCredentialService } from './model-credential.service';
 
-@Roles('user')
+@Roles('user', 'admin', 'platform_admin')
 @Controller('model-credentials')
 export class ModelCredentialController {
   constructor(private readonly credentials: ModelCredentialService) {}

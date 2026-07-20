@@ -1,20 +1,23 @@
-import type { AgentRunView } from '@interview-agent/contracts';
-import { Card, Empty, Table, Tag, Typography, type TableColumnsType } from 'antd';
+import { EyeOutlined } from '@ant-design/icons';
+import type { AgentRunDetailView } from '@interview-agent/contracts';
+import { Button, Card, Empty, Space, Table, Tag, Typography, type TableColumnsType } from 'antd';
+import React, { useState } from 'react';
 import { useAdminListExport } from '@/hooks/useAdminListExport';
 import { useAdminPagedList, type AdminPagedListController } from '@/hooks/useAdminPagedList';
 import { AdminPagination, AdminTableToolbar } from './AdminTableControls';
+import {
+  commandLabel,
+  formatRunTime,
+  providerLabel,
+  qualitySummary,
+  RUN_STATUS_COLORS,
+  stageLabel,
+  STATUS_LABELS,
+  tokenValue,
+} from './runtime-observability-format';
+import { RuntimeRunDetailsDrawer } from './RuntimeRunDetailsDrawer';
 import { SectionFeedback } from './SectionState';
 
-const STATUS_LABELS: Record<AgentRunView['status'], string> = {
-  running: '运行中',
-  succeeded: '成功',
-  failed: '失败',
-  fallback: '已降级',
-};
-const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
-  dateStyle: 'short',
-  timeStyle: 'medium',
-});
 const STATUS_OPTIONS = [
   { value: 'all', label: '全部状态' },
   { value: 'running', label: '运行中' },
@@ -22,12 +25,6 @@ const STATUS_OPTIONS = [
   { value: 'failed', label: '失败' },
   { value: 'fallback', label: '已降级' },
 ] as const;
-const RUN_STATUS_COLORS: Record<AgentRunView['status'], string> = {
-  running: 'processing',
-  succeeded: 'success',
-  failed: 'error',
-  fallback: 'warning',
-};
 
 export function RuntimeObservability({
   active,
@@ -97,7 +94,7 @@ function RunToolbar({ exportList, isExporting, list, total }: RunToolbarProps) {
           onChange: (value) =>
             list.setDraftQuery((current) => ({
               ...current,
-              status: value === 'all' ? undefined : (value as AgentRunView['status']),
+              status: value === 'all' ? undefined : (value as AgentRunDetailView['status']),
             })),
         },
       ]}
@@ -114,57 +111,106 @@ function RunToolbar({ exportList, isExporting, list, total }: RunToolbarProps) {
   );
 }
 
-function RunTable({ runs }: { runs: AgentRunView[] }) {
+export function RunTable({ runs }: { runs: AgentRunDetailView[] }) {
+  const [selected, setSelected] = useState<AgentRunDetailView | null>(null);
   if (!runs.length)
     return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的记录" />;
   return (
-    <Table<AgentRunView>
-      columns={RUN_COLUMNS}
-      dataSource={runs}
-      pagination={false}
-      rowKey="id"
-      scroll={{ x: 900 }}
-      size="middle"
-    />
+    <>
+      <Table<AgentRunDetailView>
+        columns={runColumns(setSelected)}
+        dataSource={runs}
+        pagination={false}
+        rowKey="id"
+        scroll={{ x: 1380 }}
+        size="middle"
+      />
+      <RuntimeRunDetailsDrawer run={selected} onClose={() => setSelected(null)} />
+    </>
   );
 }
 
-const RUN_COLUMNS: TableColumnsType<AgentRunView> = [
-  {
-    title: '状态',
-    key: 'status',
-    width: 104,
-    render: (_, run) => (
-      <Tag color={RUN_STATUS_COLORS[run.status]}>{STATUS_LABELS[run.status]}</Tag>
-    ),
-  },
-  { title: '阶段', dataIndex: 'stage', width: 180, ellipsis: true },
-  { title: '质量与延迟', key: 'quality', width: 190, render: (_, run) => qualitySummary(run) },
-  {
-    title: 'Trace ID',
-    key: 'traceId',
-    width: 220,
-    render: (_, run) => (
-      <Typography.Text code copyable={{ text: run.traceId }}>
-        {run.traceId}
-      </Typography.Text>
-    ),
-  },
-  {
-    title: '更新时间',
-    key: 'updatedAt',
-    width: 180,
-    render: (_, run) => (
-      <Typography.Text type="secondary">
-        <time dateTime={run.updatedAt}>{DATE_FORMATTER.format(new Date(run.updatedAt))}</time>
-      </Typography.Text>
-    ),
-  },
-];
+function runColumns(
+  onOpen: (run: AgentRunDetailView) => void,
+): TableColumnsType<AgentRunDetailView> {
+  return [
+    { title: '状态', key: 'status', width: 88, render: (_, run) => runStatus(run) },
+    { title: '用户 / 租户', key: 'user', width: 210, render: (_, run) => runUser(run) },
+    { title: '面试任务', key: 'session', width: 250, render: (_, run) => runSession(run) },
+    { title: '模型', key: 'model', width: 220, render: (_, run) => runModel(run) },
+    { title: 'Token 消耗', key: 'tokens', width: 190, render: (_, run) => runTokens(run) },
+    { title: '质量 / 耗时', key: 'quality', width: 170, render: (_, run) => qualitySummary(run) },
+    { title: '更新时间', key: 'updatedAt', width: 170, render: (_, run) => runTime(run) },
+    {
+      title: '操作',
+      key: 'actions',
+      fixed: 'right',
+      width: 82,
+      render: (_, run) => (
+        <Button icon={<EyeOutlined />} size="small" type="link" onClick={() => onOpen(run)}>
+          详情
+        </Button>
+      ),
+    },
+  ];
+}
 
-function qualitySummary(run: AgentRunView): string {
-  const latency = run.latencyMs === null ? '无延迟数据' : `${run.latencyMs} ms`;
-  return run.schemaValid === null
-    ? `未校验 · ${latency}`
-    : `${run.schemaValid ? 'Schema 通过' : 'Schema 失败'} · ${latency}`;
+function runStatus(run: AgentRunDetailView) {
+  return <Tag color={RUN_STATUS_COLORS[run.status]}>{STATUS_LABELS[run.status]}</Tag>;
+}
+
+function runUser(run: AgentRunDetailView) {
+  return (
+    <Space orientation="vertical" size={0}>
+      <Typography.Text strong>{run.user?.name ?? '未知用户'}</Typography.Text>
+      <Typography.Text type="secondary">{run.user?.email ?? '未登记邮箱'}</Typography.Text>
+      <Typography.Text type="secondary">{run.tenant.name}</Typography.Text>
+    </Space>
+  );
+}
+
+function runSession(run: AgentRunDetailView) {
+  return (
+    <Space orientation="vertical" size={2}>
+      <Typography.Text ellipsis={{ tooltip: run.sessionTitle ?? undefined }}>
+        {run.sessionTitle ?? '未关联面试会话'}
+      </Typography.Text>
+      <Typography.Text type="secondary">
+        {stageLabel(run.stage)} · {commandLabel(run.command)}
+      </Typography.Text>
+    </Space>
+  );
+}
+
+function runModel(run: AgentRunDetailView) {
+  if (!run.modelUsage) return <Tag>历史未采集</Tag>;
+  return (
+    <Space orientation="vertical" size={0}>
+      <Typography.Text strong>{run.modelUsage.model}</Typography.Text>
+      <Typography.Text type="secondary">
+        {providerLabel(run.modelUsage.provider)} · {run.modelUsage.invocationCount} 次调用
+      </Typography.Text>
+    </Space>
+  );
+}
+
+function runTokens(run: AgentRunDetailView) {
+  const usage = run.modelUsage;
+  if (!usage) return <Typography.Text type="secondary">历史未采集</Typography.Text>;
+  return (
+    <Space orientation="vertical" size={0}>
+      <Typography.Text strong>{tokenValue(usage.totalTokens)} Token</Typography.Text>
+      <Typography.Text type="secondary">
+        输入 {tokenValue(usage.inputTokens)} · 输出 {tokenValue(usage.outputTokens)}
+      </Typography.Text>
+    </Space>
+  );
+}
+
+function runTime(run: AgentRunDetailView) {
+  return (
+    <Typography.Text type="secondary">
+      <time dateTime={run.updatedAt}>{formatRunTime(run.updatedAt)}</time>
+    </Typography.Text>
+  );
 }

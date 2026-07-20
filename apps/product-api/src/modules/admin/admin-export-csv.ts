@@ -1,6 +1,6 @@
 import type {
   AccountView,
-  AgentRunView,
+  AgentRunDetailView,
   AuditLogView,
   CandidateReview,
   ImportTask,
@@ -25,7 +25,7 @@ export function renderModelProfileExportCsv(rows: ModelProfile[]): string {
   return renderCsv(modelProfileColumns, rows);
 }
 
-export function renderAgentRunExportCsv(rows: AgentRunView[]): string {
+export function renderAgentRunExportCsv(rows: AgentRunDetailView[]): string {
   return renderCsv(agentRunColumns, rows);
 }
 
@@ -82,14 +82,28 @@ const modelProfileColumns: readonly CsvColumn<ModelProfile>[] = [
   { header: '更新时间', value: (model) => model.updatedAt },
 ];
 
-const agentRunColumns: readonly CsvColumn<AgentRunView>[] = [
+const agentRunColumns: readonly CsvColumn<AgentRunDetailView>[] = [
   { header: '运行 ID', value: (run) => run.id },
   { header: '会话 ID', value: (run) => run.sessionId },
   { header: '类型', value: (run) => run.type },
   { header: '状态', value: (run) => run.status },
+  { header: '用户', value: (run) => run.user?.name ?? null },
+  { header: '邮箱', value: (run) => run.user?.email ?? null },
+  { header: '租户', value: (run) => run.tenant.name },
+  { header: '面试任务', value: (run) => run.sessionTitle },
+  { header: '模型提供商', value: (run) => run.modelUsage?.provider ?? null },
+  { header: '模型', value: (run) => run.modelUsage?.model ?? null },
+  { header: '模型调用次数', value: (run) => run.modelUsage?.invocationCount ?? null },
+  { header: '输入 Token', value: (run) => run.modelUsage?.inputTokens ?? null },
+  { header: '输出 Token', value: (run) => run.modelUsage?.outputTokens ?? null },
+  { header: '缓存读取 Token', value: (run) => run.modelUsage?.cacheReadTokens ?? null },
+  { header: '推理 Token', value: (run) => run.modelUsage?.reasoningTokens ?? null },
+  { header: '总 Token', value: (run) => run.modelUsage?.totalTokens ?? null },
+  { header: '模型耗时 (ms)', value: (run) => run.modelUsage?.latencyMs ?? null },
+  { header: '命令', value: (run) => run.command },
   { header: '阶段', value: (run) => run.stage },
   { header: 'Trace ID', value: (run) => run.traceId },
-  { header: '延迟 (ms)', value: (run) => run.latencyMs },
+  { header: 'Agent 延迟 (ms)', value: (run) => run.latencyMs },
   { header: 'Schema 通过', value: (run) => run.schemaValid },
   { header: '发生降级', value: (run) => run.fallbackUsed },
   { header: '重试次数', value: (run) => run.attemptCount },

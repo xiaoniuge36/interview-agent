@@ -1,6 +1,10 @@
 ﻿import { z } from 'zod';
 import { CONTRACT_LIMITS } from '../limits';
 
+const MIN_MODEL_INVOCATION_GRANT_LENGTH = 16;
+const MAX_MODEL_INVOCATION_GRANT_LENGTH = 4096;
+const MAX_BASIS_SUMMARY_ITEMS = 3;
+
 export const InterviewStageSchema = z.enum([
   'warmup',
   'self_intro',
@@ -82,6 +86,12 @@ export const AgentRuntimeNextRequestSchema = z.object({
   commandId: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   traceId: z.string().min(CONTRACT_LIMITS.traceIdMinLength).max(CONTRACT_LIMITS.traceIdMaxLength),
   answer: z.string().trim().min(1).max(CONTRACT_LIMITS.longText).optional(),
+  modelInvocationGrant: z
+    .string()
+    .trim()
+    .min(MIN_MODEL_INVOCATION_GRANT_LENGTH)
+    .max(MAX_MODEL_INVOCATION_GRANT_LENGTH)
+    .optional(),
 });
 
 export const AgentRuntimeNextResponseSchema = z.object({
@@ -89,7 +99,10 @@ export const AgentRuntimeNextResponseSchema = z.object({
   stage: InterviewStageSchema,
   content: z.string().trim().min(1).max(CONTRACT_LIMITS.longText),
   shouldFinish: z.boolean(),
-  basisSummary: z.array(z.string().trim().min(1).max(CONTRACT_LIMITS.mediumText)).max(3).optional(),
+  basisSummary: z
+    .array(z.string().trim().min(1).max(CONTRACT_LIMITS.mediumText))
+    .max(MAX_BASIS_SUMMARY_ITEMS)
+    .optional(),
 });
 
 export const StartInterviewInputSchema = z.object({

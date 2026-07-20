@@ -132,7 +132,20 @@ test('audit log query supports result filtering', () => {
 
 test('platform dashboard contracts default the period and validate real aggregate metrics', () => {
   assert.deepEqual(getSchema('PlatformDashboardQuerySchema').parse({}), { period: '7d' });
-  const dashboard = {
+  const dashboard = platformDashboard();
+
+  assert.deepEqual(getSchema('PlatformDashboardSchema').parse(dashboard), dashboard);
+  assert.equal(
+    getSchema('PlatformDashboardSchema').safeParse({
+      ...dashboard,
+      runtime: { ...dashboard.runtime, successRate: 101 },
+    }).success,
+    false,
+  );
+});
+
+function platformDashboard() {
+  return {
     period: '7d',
     range: { startAt: '2026-07-09T00:00:00.000Z', endAt: '2026-07-16T00:00:00.000Z' },
     accounts: {
@@ -172,16 +185,7 @@ test('platform dashboard contracts default the period and validate real aggregat
     },
     alerts: [{ code: 'review_backlog', severity: 'warning', count: 3 }],
   };
-
-  assert.deepEqual(getSchema('PlatformDashboardSchema').parse(dashboard), dashboard);
-  assert.equal(
-    getSchema('PlatformDashboardSchema').safeParse({
-      ...dashboard,
-      runtime: { ...dashboard.runtime, successRate: 101 },
-    }).success,
-    false,
-  );
-});
+}
 
 test('account governance contracts normalize filters and reject unmanaged roles', () => {
   assert.deepEqual(

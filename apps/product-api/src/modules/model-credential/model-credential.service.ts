@@ -10,8 +10,9 @@ import {
 } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { CredentialCryptoService } from './credential-crypto.service';
+import { ModelCredentialConnectionTester } from './model-credential-connection-tester';
 import { ModelCredentialInfrastructure } from './model-credential-infrastructure';
-import { ModelProviderClient, ModelProviderError } from './model-provider.client';
+import { ModelProviderError } from './model-provider.client';
 
 const KEY_HINT_VISIBLE_CHARACTERS = 4;
 
@@ -28,7 +29,7 @@ export class ModelCredentialService {
   constructor(
     private readonly infrastructure: ModelCredentialInfrastructure,
     private readonly crypto: CredentialCryptoService,
-    private readonly provider: ModelProviderClient,
+    private readonly connectionTester: ModelCredentialConnectionTester,
   ) {}
 
   async list(context: ProductRequestContext): Promise<ModelCredentialView[]> {
@@ -98,6 +99,10 @@ export class ModelCredentialService {
     await this.infrastructure.prisma.$transaction(async (transaction) => {
       const current = await findOwned(transaction, context, credentialId);
       if (!current) throw credentialNotFound();
+      await transaction.aiInvocation.updateMany({
+        where: { ...ownerScope(context), credentialId },
+        data: { credentialId: null },
+      });
       await transaction.userModelCredential.delete({
         where: { tenantId_id: { tenantId: context.tenantId, id: credentialId } },
       });
@@ -136,12 +141,7 @@ export class ModelCredentialService {
     });
     if (!current) throw credentialNotFound();
     try {
-      await this.provider.testConnection({
-        provider: current.provider as ModelProvider,
-        model: current.model,
-        baseUrl: current.baseUrl,
-        apiKey: this.crypto.decrypt(current),
-      });
+      await this.connectionTester.test(context, current, this.crypto.decrypt(current));
     } catch (error) {
       throw await this.persistTestFailure(context, current, error);
     }
@@ -203,17 +203,28 @@ function encryptedUpdate(crypto: CredentialCryptoService, apiKey: string) {
 }
 
 function plainUpdate(input: UpdateModelCredentialInput) {
+  const baseUrlUpdate = nextBaseUrl(input);
   const connectionChanged =
-    input.apiKey !== undefined || input.model !== undefined || input.baseUrl !== undefined;
+    input.apiKey !== undefined
+    || input.provider !== undefined
+    || input.model !== undefined
+    || input.baseUrl !== undefined;
   return {
+    ...(input.provider ? { provider: input.provider } : {}),
     ...(input.model ? { model: input.model } : {}),
-    ...(input.baseUrl !== undefined ? { baseUrl: input.baseUrl } : {}),
+    ...baseUrlUpdate,
     ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
     ...(connectionChanged
       ? { status: 'unverified' as const, lastTestedAt: null, lastErrorCode: null }
       : {}),
     ...(input.status ? { status: input.status } : {}),
   };
+}
+
+function nextBaseUrl(input: UpdateModelCredentialInput) {
+  if (input.provider && input.provider !== 'openai_compatible') return { baseUrl: null };
+  if (input.baseUrl !== undefined) return { baseUrl: input.baseUrl };
+  return {};
 }
 
 function clearDefault(transaction: Prisma.TransactionClient, context: ProductRequestContext) {

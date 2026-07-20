@@ -107,7 +107,7 @@ function PasswordReset({ accountId, onChanged }: { accountId: string; onChanged:
         <Input.Password autoComplete="new-password" />
       </Form.Item>
       <Form.Item>
-        <Button htmlType="submit" loading={isSaving}>
+        <Button data-page-agent-not-interactive="true" htmlType="submit" loading={isSaving}>
           重置密码
         </Button>
       </Form.Item>

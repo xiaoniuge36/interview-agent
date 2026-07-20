@@ -62,8 +62,8 @@
   width: min(1540px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 104px minmax(460px, 1fr) minmax(300px, 380px);
-  gap: 16px;
+  grid-template-columns: 124px minmax(500px, 1fr) minmax(320px, 390px);
+  gap: 18px;
   align-items: start;
 }
 .practice-question-nav,
@@ -75,8 +75,9 @@
 .practice-question-nav {
   position: sticky;
   top: 18px;
-  padding: 14px 10px;
+  padding: 16px 12px;
   border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(31, 54, 88, 0.06);
 }
 .practice-nav-title {
   display: grid;
@@ -87,12 +88,12 @@
 .practice-nav-title span {
   color: #8a97a9;
   font-family: var(--font-mono);
-  font-size: 7px;
+  font-size: 8px;
   text-transform: uppercase;
 }
 .practice-nav-title strong {
   color: #35445b;
-  font-size: 11px;
+  font-size: 13px;
 }
 .practice-nav-items {
   display: grid;
@@ -100,9 +101,9 @@
   margin-top: 11px;
 }
 .practice-nav-items button {
-  min-height: 46px;
+  min-height: 52px;
   display: grid;
-  grid-template-columns: 25px 1fr;
+  grid-template-columns: 30px 1fr;
   align-items: center;
   gap: 6px;
   border: 1px solid transparent;
@@ -113,16 +114,16 @@
 }
 .practice-nav-items button > span {
   display: grid;
-  width: 25px;
-  height: 25px;
+  width: 30px;
+  height: 30px;
   place-items: center;
   border-radius: 7px;
   background: #eef2f7;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 850;
 }
 .practice-nav-items button small {
-  font-size: 8px;
+  font-size: 9px;
   text-align: left;
 }
 .practice-nav-items button.active {
@@ -145,7 +146,7 @@
   padding-top: 11px;
   border-top: 1px solid #e5eaf1;
   color: #8b97a8;
-  font-size: 7px;
+  font-size: 8px;
 }
 .practice-nav-legend span {
   display: flex;

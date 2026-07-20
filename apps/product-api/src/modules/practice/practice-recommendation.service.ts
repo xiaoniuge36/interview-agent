@@ -7,7 +7,13 @@ import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
 import { classifyRole } from '../../common/role-category';
-import { isPracticeCategoryTag, practiceCategoryTagFor } from './practice-question-categories';
+import { practiceCategoryTagFor } from './practice-question-categories';
+import {
+  recommendationCandidates,
+  recommendationReason,
+  recommendationTitle,
+  type RecommendationContext,
+} from './practice-recommendation-context';
 
 const QUESTION_COUNT = 5;
 const MINUTES_PER_QUESTION = 4;
@@ -30,7 +36,7 @@ export class PracticeRecommendationService {
     ]);
     const selection = await this.selectQuestions(
       context,
-      recommendationCandidates(job, profile, mastery),
+      recommendationCandidates({ job, profile, mastery, recentItems }),
       recentItems,
     );
     if (!selection) return [];
@@ -39,11 +45,7 @@ export class PracticeRecommendationService {
       {
         id: `recommendation-${recommendation.category ?? 'curated'}`,
         title: recommendationTitle(recommendation.category, recommendation.weakTag),
-        reason: recommendationReason(
-          recommendation.source,
-          recommendation.role,
-          recommendation.weakTag,
-        ),
+        reason: recommendationReason(recommendation),
         source: recommendation.source,
         category: recommendation.category,
         estimatedMinutes: questions.length * MINUTES_PER_QUESTION,
@@ -56,14 +58,27 @@ export class PracticeRecommendationService {
     return this.prisma.jobIntent.findFirst({
       where: { tenantId: context.tenantId, userId: context.actor.id },
       orderBy: { updatedAt: 'desc' },
-      select: { targetRole: true },
+      select: {
+        targetRole: true,
+        profile: {
+          select: { skillWeights: true, interviewFocus: true, riskSignals: true },
+        },
+      },
     });
   }
 
   private profile(context: ProductRequestContext) {
     return this.prisma.userProfile.findUnique({
       where: { tenantId_userId: { tenantId: context.tenantId, userId: context.actor.id } },
-      select: { targetRole: true },
+      select: {
+        targetRole: true,
+        techStacks: true,
+        snapshots: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { weaknesses: true },
+        },
+      },
     });
   }
 
@@ -81,23 +96,25 @@ export class PracticeRecommendationService {
       where: { tenantId: context.tenantId, session: { userId: context.actor.id } },
       orderBy: { updatedAt: 'desc' },
       take: RECENT_QUESTION_LIMIT,
-      select: { questionId: true },
+      select: {
+        questionId: true,
+        evaluation: { select: { score: true } },
+        question: { select: { tags: true } },
+      },
     });
   }
 
-  private questions(
-    context: ProductRequestContext,
-    input: RecommendationQuestionInput,
-  ) {
+  private questions(context: ProductRequestContext, input: RecommendationQuestionInput) {
     const requiredTags = [
       ...(input.category ? [practiceCategoryTagFor(input.category)] : []),
       ...(input.weakTag ? [input.weakTag] : []),
+      ...(input.focusTag ? [input.focusTag] : []),
     ];
     return this.prisma.question.findMany({
       where: {
         status: 'published',
         OR: [{ tenantId: context.tenantId }, { visibility: 'public' }],
-        ...(requiredTags.length ? { tags: { hasEvery: requiredTags } } : {}),
+        ...(requiredTags.length ? { tags: { hasEvery: [...new Set(requiredTags)] } } : {}),
         ...(input.recentItems.length
           ? { id: { notIn: input.recentItems.map((item) => item.questionId) } }
           : {}),
@@ -117,6 +134,7 @@ export class PracticeRecommendationService {
       const questions = await this.questions(context, {
         category: recommendation.category,
         weakTag: recommendation.weakTag,
+        focusTag: recommendation.focusTag,
         recentItems,
       });
       if (questions.length) return { recommendation, questions };
@@ -128,70 +146,10 @@ export class PracticeRecommendationService {
 type RecommendationQuestionInput = {
   category: ReturnType<typeof classifyRole> | null;
   weakTag: string | undefined;
+  focusTag: string | undefined;
   recentItems: Array<{ questionId: string }>;
 };
 
-type RecommendationContext = ReturnType<typeof recommendationContext>;
-
-function recommendationCandidates(
-  job: { targetRole: string } | null,
-  profile: { targetRole: string | null } | null,
-  mastery: Array<{ tag: string; score: number }>,
-) {
-  const primary = recommendationContext(job, profile, mastery);
-  const candidates: RecommendationContext[] = [primary];
-  if (primary.weakTag && primary.category) {
-    candidates.push({
-      ...primary,
-      weakTag: undefined,
-      source: recommendationSource(Boolean(job), Boolean(profile), false),
-    });
-  }
-  if (primary.category || primary.weakTag) {
-    candidates.push({
-      role: undefined,
-      weakTag: undefined,
-      category: null,
-      source: 'curated',
-    });
-  }
-  return candidates;
-}
-
-function recommendationContext(
-  job: { targetRole: string } | null,
-  profile: { targetRole: string | null } | null,
-  mastery: Array<{ tag: string; score: number }>,
-) {
-  const role = job?.targetRole ?? profile?.targetRole ?? undefined;
-  const weakTag = mastery.find((item) => !isPracticeCategoryTag(item.tag))?.tag;
-  return {
-    role,
-    weakTag,
-    category: role ? classifyRole(role) : null,
-    source: recommendationSource(Boolean(job), Boolean(profile), Boolean(weakTag)),
-  } as const;
-}
-
-function recommendationSource(hasJob: boolean, hasProfile: boolean, hasWeakTag: boolean) {
-  if (hasWeakTag) return 'mastery' as const;
-  if (hasJob) return 'job' as const;
-  if (hasProfile) return 'profile' as const;
-  return 'curated' as const;
-}
-
 function ownerScope(context: ProductRequestContext) {
   return { tenantId: context.tenantId, ownerId: context.actor.id };
-}
-
-function recommendationTitle(category: ReturnType<typeof classifyRole> | null, weakTag?: string) {
-  if (weakTag) return `${weakTag}强化题单`;
-  return category ? '目标岗位精选题单' : '通用面试精选题单';
-}
-
-function recommendationReason(source: string, role?: string, weakTag?: string) {
-  if (source === 'mastery') return `最近「${weakTag}」能力得分偏低，建议优先补强。`;
-  if (source === 'job') return `根据目标岗位「${role}」的核心考察方向生成。`;
-  if (source === 'profile') return `根据个人档案中的目标「${role}」生成。`;
-  return '根据当前公共题库的通用高价值题目生成。';
 }

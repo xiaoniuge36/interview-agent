@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createPlatformDashboardRequest } from './platform-api';
+import { createPlatformAiAnalyticsRequest, createPlatformDashboardRequest } from './platform-api';
 
 describe('platform dashboard requests', () => {
   it('uses the integrated platform endpoint and shared response schema', () => {
@@ -40,5 +40,19 @@ describe('platform dashboard requests', () => {
         alerts: [],
       }).period,
     ).toBe('30d');
+  });
+});
+
+describe('platform AI analytics requests', () => {
+  it('keeps provider and operation filters inside the integrated platform endpoint', () => {
+    const request = createPlatformAiAnalyticsRequest({
+      period: '30d',
+      provider: 'deepseek',
+      operation: 'interview_next',
+    });
+
+    expect(request.path).toBe(
+      '/admin/platform/ai-analytics?period=30d&provider=deepseek&operation=interview_next',
+    );
   });
 });

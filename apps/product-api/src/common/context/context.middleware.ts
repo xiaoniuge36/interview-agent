@@ -11,6 +11,7 @@ const PUBLIC_PATHS = new Set([
   '/api/health/ready',
   '/api/auth/login',
   '/api/auth/register',
+  '/api/internal/model-invocations',
 ]);
 
 const correlationId = (value: unknown) => {

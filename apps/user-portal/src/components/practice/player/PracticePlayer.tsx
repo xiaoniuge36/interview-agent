@@ -1,7 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { canCompleteSelfStudy, canSubmitAiReport, practiceProgress } from './practice-player-model';
+import {
+  canCompleteSelfStudy,
+  canSubmitAiReport,
+  pendingEvaluationCount,
+  practiceProgress,
+} from './practice-player-model';
 import { PracticeCoachPanel } from './PracticeCoachPanel';
 import { PracticeCompletionPanel } from './PracticeCompletionPanel';
 import { PracticeQuestionNav } from './PracticeQuestionNav';
@@ -99,15 +104,27 @@ function PlayerHeader({
 function RoundCompletionBar({ player }: { player: ReturnType<typeof usePracticePlayer> }) {
   if (!player.session || !canCompleteSelfStudy(player.session)) return null;
   const aiReady = canSubmitAiReport(player.session);
+  const pendingCount = pendingEvaluationCount(player.session);
+  const submitting = player.busy === 'submit-ai';
   return (
     <section className="practice-round-actions">
       <div>
-        <strong>{aiReady ? '全部题目已完成 AI 评价' : '全部回答已保存'}</strong>
+        <strong>
+          {pendingCount
+            ? `全部回答已保存 · 复盘将自动评价 ${pendingCount} 题`
+            : '全部题目已完成 AI 评价'}
+        </strong>
         <p>
-          {aiReady
-            ? '可以生成整轮 AI 复盘并更新能力记录。'
-            : '你可以继续逐题评价，或不生成分数直接结束自学。'}
+          {pendingCount
+            ? '生成前会再次确认模型额度消耗；也可以继续逐题评价后再复盘。'
+            : '可以直接生成整轮 AI 复盘，并把薄弱项同步到下一轮推荐。'}
         </p>
+        {submitting ? (
+          <p className="practice-report-operation" role="status">
+            <span aria-hidden="true" />
+            正在补齐题目评价、生成整轮复盘并更新能力记录，请不要关闭页面…
+          </p>
+        ) : null}
       </div>
       <div>
         <button
@@ -123,7 +140,7 @@ function RoundCompletionBar({ player }: { player: ReturnType<typeof usePracticeP
           disabled={!aiReady || player.busy !== null}
           onClick={() => void player.submitAiReport()}
         >
-          {player.busy === 'submit-ai' ? '生成中…' : '生成 AI 复盘'}
+          {submitting ? '生成复盘中…' : '生成 AI 复盘'}
         </button>
       </div>
     </section>

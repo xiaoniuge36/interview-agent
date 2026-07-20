@@ -8,7 +8,7 @@ export type WorkspaceContextValue = ReturnType<typeof useWorkspaceData>;
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const workspace = useWorkspaceData();
+  const workspace = useWorkspaceData({ loadOnMount: false });
   return <WorkspaceContext.Provider value={workspace}>{children}</WorkspaceContext.Provider>;
 }
 

@@ -64,6 +64,12 @@ importers:
       '@interview-agent/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@page-agent/core':
+        specifier: ^1.12.2
+        version: 1.12.2(zod@3.25.76)
+      '@page-agent/page-controller':
+        specifier: ^1.12.2
+        version: 1.12.2
       antd:
         specifier: ^6.5.1
         version: 6.5.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -200,6 +206,12 @@ importers:
       '@interview-agent/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@page-agent/core':
+        specifier: ^1.12.2
+        version: 1.12.2(zod@3.25.76)
+      '@page-agent/page-controller':
+        specifier: ^1.12.2
+        version: 1.12.2
       next:
         specifier: 15.5.20
         version: 15.5.20(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1453,6 +1465,19 @@ packages:
     resolution: {integrity: sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==}
     engines: {node: '>=12.4.0'}
 
+  '@page-agent/core@1.12.2':
+    resolution: {integrity: sha512-Z/LX6WsXqlKp7VEbr5wyjG0bc1lux4sV4HT2byKzf4OZBxeosOKiSf6RoKeFQQ0uULAsNU6XR/j27tw2XHmr3w==}
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+
+  '@page-agent/llms@1.12.2':
+    resolution: {integrity: sha512-+fYOFCWi2q/lFsOWPoJCQ1Vir3WaynW47EfXlZtX+c2TkLwZRGXRVmpblup+7b0SmJ8JAy8dWEongCqf75aG2Q==}
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+
+  '@page-agent/page-controller@1.12.2':
+    resolution: {integrity: sha512-faiFb/lXMJJ6vDnxZ5Pdo/YE75X9FTGCDGbQuDbYEPOsoWo+pB1xTdfAkjDEkusbkZJdh8+mQoGTJ9yLOJkUkA==}
+
   '@prisma/client@6.19.3':
     resolution: {integrity: sha512-mKq3jQFhjvko5LTJFHGilsuQs+W+T3Gm451NzuTDGQxwCzwXHYnIu2zGkRoW+Exq3Rob7yp2MfzSrdIiZVhrBg==}
     engines: {node: '>=18.18'}
@@ -2459,6 +2484,9 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
+  ai-motion@0.4.8:
+    resolution: {integrity: sha512-9nQVjf8lrYQWSW0sZdb9bES4x8Ei1w9C0S62po2KvRbMjslmjm0WMeszyW771SEauDnu4YGWqurLZ/gCkCTosQ==}
+
   ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
     peerDependencies:
@@ -2739,6 +2767,10 @@ packages:
   chalk@4.1.2:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
+
+  chalk@5.6.2:
+    resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
+    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
 
   char-regex@1.0.2:
     resolution: {integrity: sha512-kWWXztvZ5SBQV+eRgKFeh8q5sLuZY2+8WUIzlxWVTg+oGwY14qylx1KbKzHd8P6ZYkAg0xyIDU9JMHhyJMZ1jw==}
@@ -6794,6 +6826,22 @@ snapshots:
 
   '@nolyfill/is-core-module@1.0.39': {}
 
+  '@page-agent/core@1.12.2(zod@3.25.76)':
+    dependencies:
+      '@page-agent/llms': 1.12.2(zod@3.25.76)
+      '@page-agent/page-controller': 1.12.2
+      chalk: 5.6.2
+      zod: 3.25.76
+
+  '@page-agent/llms@1.12.2(zod@3.25.76)':
+    dependencies:
+      chalk: 5.6.2
+      zod: 3.25.76
+
+  '@page-agent/page-controller@1.12.2':
+    dependencies:
+      ai-motion: 0.4.8
+
   '@prisma/client@6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)':
     optionalDependencies:
       prisma: 6.19.3(typescript@5.9.3)
@@ -7830,6 +7878,8 @@ snapshots:
 
   acorn@8.17.0: {}
 
+  ai-motion@0.4.8: {}
+
   ajv-formats@2.1.1(ajv@8.20.0):
     optionalDependencies:
       ajv: 8.20.0
@@ -8223,6 +8273,8 @@ snapshots:
     dependencies:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
+
+  chalk@5.6.2: {}
 
   char-regex@1.0.2: {}
 

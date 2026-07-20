@@ -14,7 +14,6 @@ import {
   agentRunWhere,
   auditLogWhere,
   candidateWhere,
-  mapAgentRun,
   mapAuditLog,
   mapCandidate,
   mapModelProfile,
@@ -22,6 +21,7 @@ import {
   modelProfileWhere,
   questionWhere,
 } from './admin-query-mapping';
+import { AGENT_RUN_DETAIL_INCLUDE, mapAgentRunDetails } from './admin-agent-run-details';
 
 const EXPORT_LIMIT = 10_000;
 const UPDATED_ORDER = [{ updatedAt: 'desc' as const }, { id: 'desc' as const }];
@@ -44,6 +44,7 @@ type ExportOptions<Row, Item> = {
   load: () => Promise<Row[]>;
   map: (record: Row) => Item;
 };
+type ExportAudit = { resourceType: string; resource: string; count: number };
 
 @Injectable()
 export class AdminQueryService {
@@ -135,24 +136,37 @@ export class AdminQueryService {
   async queryAgentRuns(context: ProductRequestContext, query: AgentRunListQuery) {
     this.assertPermission(context, 'audit:read');
     const where = agentRunWhere(context, query);
-    return this.queryPage(query, {
-      count: () => this.prisma.agentRun.count({ where }),
-      load: (skip, take) =>
-        this.prisma.agentRun.findMany({ where, orderBy: UPDATED_ORDER, skip, take }),
-      map: mapAgentRun,
-    });
+    const skip = (query.page - 1) * query.pageSize;
+    const [total, records] = await Promise.all([
+      this.prisma.agentRun.count({ where }),
+      this.prisma.agentRun.findMany({
+        where,
+        orderBy: UPDATED_ORDER,
+        skip,
+        take: query.pageSize,
+        include: AGENT_RUN_DETAIL_INCLUDE,
+      }),
+    ]);
+    const items = await mapAgentRunDetails(this.prisma, records);
+    return { items, total, page: query.page, pageSize: query.pageSize };
   }
 
   async exportAgentRuns(context: ProductRequestContext, query: AgentRunListQuery) {
     this.assertPermission(context, 'audit:read');
     const where = agentRunWhere(context, query);
-    return this.exportRows(context, {
+    const records = await this.prisma.agentRun.findMany({
+      where,
+      orderBy: UPDATED_ORDER,
+      take: EXPORT_LIMIT,
+      include: AGENT_RUN_DETAIL_INCLUDE,
+    });
+    const items = await mapAgentRunDetails(this.prisma, records);
+    await this.recordExport(context, {
       resourceType: 'AdminAgentRunExport',
       resource: 'agent_runs',
-      load: () =>
-        this.prisma.agentRun.findMany({ where, orderBy: UPDATED_ORDER, take: EXPORT_LIMIT }),
-      map: mapAgentRun,
+      count: items.length,
     });
+    return items;
   }
 
   async queryAuditLogs(context: ProductRequestContext, query: AuditLogListQuery) {
@@ -195,13 +209,21 @@ export class AdminQueryService {
     options: ExportOptions<Row, Item>,
   ): Promise<Item[]> {
     const items = (await options.load()).map(options.map);
-    await this.audit.record(context, {
-      action: 'admin:export',
+    await this.recordExport(context, {
       resourceType: options.resourceType,
-      resourceId: context.requestId,
-      metadata: { resource: options.resource, count: items.length },
+      resource: options.resource,
+      count: items.length,
     });
     return items;
+  }
+
+  private async recordExport(context: ProductRequestContext, input: ExportAudit): Promise<void> {
+    await this.audit.record(context, {
+      action: 'admin:export',
+      resourceType: input.resourceType,
+      resourceId: context.requestId,
+      metadata: { resource: input.resource, count: input.count },
+    });
   }
 
   private assertPermission(context: ProductRequestContext, action: AdminAction) {

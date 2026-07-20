@@ -43,7 +43,7 @@ export class PracticeEvaluationCommandService {
     if (prepared.item.evaluation) {
       return feedback(prepared.item.question.answer, prepared.rubric, prepared.item.evaluation);
     }
-    const draft = await this.model.evaluate(command.context, modelInput(prepared));
+    const draft = await this.model.evaluate(command.context, modelInput(command, prepared));
     return this.persist(command, prepared, draft);
   }
 
@@ -58,7 +58,7 @@ export class PracticeEvaluationCommandService {
     stream.phase('preparing');
     stream.phase('analyzing');
     stream.phase('composing');
-    const draft = await this.model.evaluateStream(command.context, modelInput(prepared), {
+    const draft = await this.model.evaluateStream(command.context, modelInput(command, prepared), {
       onDelta: stream.delta,
       onComplete: () => stream.phase('validating'),
       ...(stream.signal ? { signal: stream.signal } : {}),
@@ -140,8 +140,10 @@ export class PracticeEvaluationCommandService {
   }
 }
 
-function modelInput(prepared: PracticeEvaluationPreparation) {
+function modelInput(command: PracticeEvaluationCommand, prepared: PracticeEvaluationPreparation) {
   return {
+    practiceSessionId: command.sessionId,
+    practiceItemId: prepared.item.id,
     title: prepared.item.question.title,
     stem: prepared.item.question.stem,
     answer: prepared.item.answer!,

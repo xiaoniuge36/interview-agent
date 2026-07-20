@@ -51,13 +51,25 @@ export const CreateModelCredentialInputSchema = z
 
 export const UpdateModelCredentialInputSchema = z
   .object({
+    provider: ModelProviderSchema.optional(),
     model: z.string().trim().min(1).max(CONTRACT_LIMITS.shortText).optional(),
     apiKey: z.string().trim().min(API_KEY_MIN_LENGTH).max(CONTRACT_LIMITS.mediumText).optional(),
     baseUrl: BaseUrlSchema.nullable().optional(),
     isDefault: z.boolean().optional(),
     status: z.enum(['unverified', 'disabled']).optional(),
   })
-  .refine((input) => Object.keys(input).length > 0, '至少修改一项模型连接配置。');
+  .superRefine((input, context) => {
+    if (Object.keys(input).length === 0) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: '至少修改一项模型连接配置。' });
+    }
+    if (input.provider === 'openai_compatible' && !input.baseUrl) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['baseUrl'],
+        message: '切换为自定义兼容端点时必须填写 Base URL。',
+      });
+    }
+  });
 
 export const ModelCredentialViewSchema = z.object({
   id: z.string().min(1),

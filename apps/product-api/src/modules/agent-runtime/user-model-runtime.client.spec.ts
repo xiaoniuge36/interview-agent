@@ -51,20 +51,38 @@ function createClient(
   const provider = {
     complete: jest
       .fn()
-      .mockResolvedValue('{"stage":"warmup","content":"请介绍一个最有挑战的项目。","shouldFinish":false}'),
+      .mockResolvedValue(
+        '{"stage":"warmup","content":"请介绍一个最有挑战的项目。","shouldFinish":false}',
+      ),
   };
-  return { client: new UserModelRuntimeClient(credentials as never, provider as never), credentials, provider };
+  const invocations = {
+    measure: jest.fn((_metadata, run) => run(jest.fn())),
+  };
+  return {
+    client: new UserModelRuntimeClient(
+      credentials as never,
+      provider as never,
+      invocations as never,
+    ),
+    credentials,
+    provider,
+    invocations,
+  };
 }
 
 describe('UserModelRuntimeClient', () => {
   it('uses the caller verified default model and validates its decision', async () => {
-    const { client, credentials, provider } = createClient();
+    const { client, credentials, provider, invocations } = createClient();
 
     const result = await client.next({ context, input });
 
     expect(credentials.resolveDefault).toHaveBeenCalledWith(context);
     expect(provider.complete).toHaveBeenCalledWith(
       expect.objectContaining({ provider: 'deepseek', apiKey: 'sk-secret' }),
+    );
+    expect(invocations.measure).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: 'interview_next', sessionId: 'interview-1' }),
+      expect.any(Function),
     );
     expect(result).toEqual(
       expect.objectContaining({

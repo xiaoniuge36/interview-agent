@@ -114,6 +114,7 @@ function ToolbarActions({
       ) : null}
       {onExport ? (
         <Button
+          data-page-agent-not-interactive="true"
           disabled={isLoading}
           icon={<DownloadOutlined />}
           loading={isExporting}

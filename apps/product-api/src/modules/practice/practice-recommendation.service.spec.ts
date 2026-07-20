@@ -16,6 +16,53 @@ const context: ProductRequestContext = {
   },
 };
 
+test('combines the latest JD focus, profile context and recent low-score practice', async () => {
+  const { service, prisma } = createRecommendationService();
+  prisma.jobIntent.findFirst.mockResolvedValue({
+    targetRole: 'AI Agent 工程师',
+    profile: {
+      skillWeights: [
+        { skill: 'RAG', weight: 88, reason: 'JD 明确要求检索增强能力。' },
+        { skill: '系统设计', weight: 92, reason: '需要负责 Agent 平台架构。' },
+      ],
+      interviewFocus: ['系统设计', '工程质量'],
+      riskSignals: ['缺少生产级 Agent 经验'],
+    },
+  });
+  prisma.userProfile.findUnique.mockResolvedValue({
+    targetRole: '后端工程师',
+    techStacks: ['TypeScript', 'PostgreSQL'],
+    snapshots: [{ weaknesses: ['性能诊断'], skillMap: [] }],
+  });
+  prisma.masteryProfile.findMany.mockResolvedValue([
+    { tag: '模型评估', score: 42 },
+    { tag: 'RAG', score: 56 },
+  ]);
+  prisma.practiceSessionItem.findMany.mockResolvedValue([
+    {
+      questionId: 'question-old',
+      evaluation: { score: 35 },
+      question: { tags: ['Prompt 工程', 'role:ai_agent'] },
+    },
+  ]);
+  prisma.question.findMany.mockResolvedValue(questionRecords());
+
+  const result = await service.list(context);
+
+  expect(result[0]).toMatchObject({ source: 'mastery', category: 'ai_agent' });
+  expect(result[0]?.reason).toContain('AI Agent 工程师');
+  expect(result[0]?.reason).toContain('Prompt 工程');
+  expect(result[0]?.reason).toContain('系统设计');
+  expect(prisma.question.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        tags: { hasEvery: ['role:ai_agent', 'Prompt 工程', '系统设计'] },
+        id: { notIn: ['question-old'] },
+      }),
+    }),
+  );
+});
+
 describe('PracticeRecommendationService', () => {
   it('prioritizes the latest low mastery tag within the current role category', async () => {
     const { service, prisma } = createRecommendationService();
@@ -83,10 +130,7 @@ describe('PracticeQueryService recent session', () => {
       },
     };
     const policy = { assert: jest.fn() };
-    const service = new PracticeQueryService(
-      prisma as unknown as PrismaService,
-      policy as never,
-    );
+    const service = new PracticeQueryService(prisma as unknown as PrismaService, policy as never);
 
     await expect(service.recent(context)).resolves.toMatchObject({
       id: 'session-1',
@@ -94,7 +138,6 @@ describe('PracticeQueryService recent session', () => {
       answeredCount: 1,
     });
   });
-
 });
 
 describe('PracticeQueryService item solution', () => {
@@ -140,10 +183,7 @@ function createRecommendationService() {
   };
   const policy = { assert: jest.fn() };
   return {
-    service: new PracticeRecommendationService(
-      prisma as unknown as PrismaService,
-      policy as never,
-    ),
+    service: new PracticeRecommendationService(prisma as unknown as PrismaService, policy as never),
     prisma,
   };
 }

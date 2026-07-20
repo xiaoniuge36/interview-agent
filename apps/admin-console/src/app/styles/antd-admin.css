@@ -414,6 +414,132 @@
   margin-top: 18px;
 }
 
+.platform-ai-analytics {
+  display: grid;
+  gap: 14px;
+  padding-top: 6px;
+  margin-top: 2px;
+  border-top: 1px solid #e7edf5;
+}
+
+.platform-ai-analytics-heading,
+.platform-ai-analytics-filters,
+.platform-ai-overview,
+.platform-ai-analytics-grid,
+.platform-ai-operation-list,
+.platform-ai-failure-codes {
+  display: flex;
+}
+
+.platform-ai-analytics-heading {
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.platform-ai-analytics-heading .ant-typography-title {
+  margin: 2px 0 4px !important;
+}
+
+.platform-ai-analytics-filters {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.platform-ai-analytics-filters .ant-select {
+  min-width: 142px;
+}
+
+.platform-ai-analytics-content {
+  display: grid;
+  gap: 14px;
+}
+
+.platform-ai-overview {
+  overflow: hidden;
+  border: 1px solid #e2eaf2;
+  border-radius: 10px;
+  background: #fbfcfe;
+}
+
+.platform-ai-overview .ant-statistic {
+  flex: 1 1 0;
+  padding: 14px 16px;
+}
+
+.platform-ai-overview .ant-statistic + .ant-statistic {
+  border-inline-start: 1px solid #e7edf5;
+}
+
+.platform-ai-overview .ant-statistic-content {
+  color: #19324d;
+  font-size: 23px;
+}
+
+.platform-ai-analytics-grid {
+  gap: 16px;
+}
+
+.platform-ai-models,
+.platform-ai-operations {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.platform-ai-operation-list {
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.platform-ai-operation-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.platform-ai-operation-list > div:last-child {
+  border-bottom: 0;
+}
+
+.platform-ai-operation-list span,
+.platform-ai-operation-list small {
+  color: #697586;
+}
+
+.platform-ai-operation-list strong {
+  color: #19324d;
+  font-size: 17px;
+}
+
+.platform-ai-operation-list small {
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+
+.platform-ai-failure-codes {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid #edf1f5;
+}
+
+.platform-ai-failure-codes .ant-tag {
+  margin-inline-end: 0;
+  color: #9f2c23;
+  background: #fff3f0;
+  border-color: #ffd8d2;
+}
+
+.platform-ai-failures .ant-table-wrapper,
+.platform-ai-models .ant-table-wrapper {
+  overflow-x: auto;
+}
+
 .account-table-toolbar .ant-select,
 .account-table-toolbar .ant-input {
   min-width: 132px;
@@ -801,6 +927,11 @@
     align-items: stretch;
     flex-direction: column;
   }
+  .platform-ai-analytics-heading,
+  .platform-ai-analytics-grid {
+    align-items: stretch;
+    flex-direction: column;
+  }
 
   .admin-import-source-label {
     gap: 10px;
@@ -890,6 +1021,16 @@
   .platform-bi-summary-metrics {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .platform-ai-overview {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .platform-ai-overview .ant-statistic:nth-child(odd) {
+    border-inline-start: 0;
+  }
+  .platform-ai-overview .ant-statistic:nth-child(n + 3) {
+    border-top: 1px solid #e7edf5;
   }
 
   .platform-bi-summary-metrics .ant-statistic:nth-child(odd) {

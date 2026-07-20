@@ -12,6 +12,7 @@ import { RequestLoggingInterceptor } from './common/logging/request-logging.inte
 import { RedisModule } from './common/redis/redis.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AgentRuntimeModule } from './modules/agent-runtime/agent-runtime.module';
+import { AiUsageModule } from './modules/ai-usage/ai-usage.module';
 import { HealthModule } from './modules/health/health.module';
 import { InterviewModule } from './modules/interview/interview.module';
 import { ImportModule } from './modules/import/import.module';
@@ -19,6 +20,7 @@ import { JobIntentModule } from './modules/job-intent/job-intent.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { PracticeModule } from './modules/practice/practice.module';
 import { QuestionCatalogModule } from './modules/question-catalog/question-catalog.module';
+import { UserPageAgentModule } from './modules/user-page-agent/user-page-agent.module';
 
 const localEnvFiles = [resolve(process.cwd(), '.env'), resolve(process.cwd(), '../../.env')];
 
@@ -42,6 +44,7 @@ const localEnvFiles = [resolve(process.cwd(), '.env'), resolve(process.cwd(), '.
     PrismaModule,
     RedisModule,
     CommonModule,
+    AiUsageModule,
     HealthModule,
     AgentRuntimeModule,
     ProfileModule,
@@ -50,6 +53,7 @@ const localEnvFiles = [resolve(process.cwd(), '.env'), resolve(process.cwd(), '.
     ImportModule,
     PracticeModule,
     QuestionCatalogModule,
+    UserPageAgentModule,
     AdminModule,
   ],
   providers: [

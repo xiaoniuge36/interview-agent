@@ -67,6 +67,7 @@ class NextInterviewRequest(ContractModel):
     command_id: str = Field(min_length=1, max_length=200)
     trace_id: str = Field(min_length=8, max_length=128)
     answer: str | None = Field(default=None, min_length=1, max_length=20000)
+    model_invocation_grant: str | None = Field(default=None, min_length=16, max_length=4096)
 
 
 class NextInterviewResponse(ContractModel):
@@ -74,3 +75,4 @@ class NextInterviewResponse(ContractModel):
     stage: InterviewStage
     content: str = Field(min_length=1, max_length=20000)
     should_finish: bool
+    basis_summary: list[str] | None = Field(default=None, max_length=3)

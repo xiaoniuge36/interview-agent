@@ -1,7 +1,12 @@
 import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
-import { PracticeEvaluationSchema, type RubricPoint } from '@interview-agent/contracts';
+import {
+  PracticeEvaluationSchema,
+  type ModelProvider,
+  type RubricPoint,
+} from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { IncrementalJsonFieldDecoder } from '../../common/streaming/incremental-json-field-decoder';
+import { AiInvocationService } from '../ai-usage/ai-invocation.service';
 import { ModelCredentialService } from '../model-credential/model-credential.service';
 import { ModelProviderClient, ModelProviderError } from '../model-credential/model-provider.client';
 
@@ -21,6 +26,8 @@ export type PracticeModelEvaluationInput = {
   rubric: RubricPoint[];
   tags: string[];
   targetRole?: string;
+  practiceSessionId: string;
+  practiceItemId: string;
 };
 
 export type PracticeEvaluationStreamCallbacks = {
@@ -34,18 +41,25 @@ export class PracticeModelEvaluator {
   constructor(
     private readonly credentials: ModelCredentialService,
     private readonly provider: ModelProviderClient,
+    private readonly invocations: AiInvocationService,
   ) {}
 
   async evaluate(context: ProductRequestContext, input: PracticeModelEvaluationInput) {
     const credential = await this.credentials.resolveDefault(context);
     if (!credential) throw connectionRequired();
     try {
-      const content = await this.provider.complete({
-        ...credential,
-        systemPrompt: systemPrompt(),
-        userPrompt: userPrompt(input),
-      });
-      return parseEvaluation(content);
+      return await this.invocations.measure(
+        invocationMetadata(context, credential, input),
+        async (onUsage) => {
+          const content = await this.provider.complete({
+            ...credential,
+            systemPrompt: systemPrompt(),
+            userPrompt: userPrompt(input),
+            onUsage,
+          });
+          return parseEvaluation(content);
+        },
+      );
     } catch (error) {
       if (error instanceof BadGatewayException || error instanceof BadRequestException) throw error;
       throw providerFailure(error);
@@ -62,18 +76,24 @@ export class PracticeModelEvaluator {
     const decoder = new IncrementalJsonFieldDecoder('feedback');
     let content = '';
     try {
-      for await (const delta of this.provider.stream({
-        ...credential,
-        systemPrompt: systemPrompt(),
-        userPrompt: userPrompt(input),
-        ...(callbacks.signal ? { signal: callbacks.signal } : {}),
-      })) {
-        content += delta;
-        const visible = decoder.push(delta);
-        if (visible) callbacks.onDelta(visible);
-      }
-      callbacks.onComplete();
-      return parseEvaluation(content);
+      return await this.invocations.measure(
+        invocationMetadata(context, credential, input),
+        async (onUsage) => {
+          for await (const delta of this.provider.stream({
+            ...credential,
+            systemPrompt: systemPrompt(),
+            userPrompt: userPrompt(input),
+            onUsage,
+            ...(callbacks.signal ? { signal: callbacks.signal } : {}),
+          })) {
+            content += delta;
+            const visible = decoder.push(delta);
+            if (visible) callbacks.onDelta(visible);
+          }
+          callbacks.onComplete();
+          return parseEvaluation(content);
+        },
+      );
     } catch (error) {
       if (error instanceof BadGatewayException || error instanceof BadRequestException) throw error;
       throw providerFailure(error);
@@ -135,4 +155,22 @@ function providerFailure(error: unknown) {
     code,
     message: '模型连接暂时不可用，已保存的回答不会丢失。',
   });
+}
+
+function invocationMetadata(
+  context: ProductRequestContext,
+  credential: { id: string; provider: ModelProvider; model: string },
+  input: PracticeModelEvaluationInput,
+) {
+  return {
+    tenantId: context.tenantId,
+    userId: context.actor.id,
+    credentialId: credential.id,
+    practiceSessionId: input.practiceSessionId,
+    practiceItemId: input.practiceItemId,
+    operation: 'practice_evaluation' as const,
+    provider: credential.provider,
+    model: credential.model,
+    traceId: context.traceId,
+  };
 }

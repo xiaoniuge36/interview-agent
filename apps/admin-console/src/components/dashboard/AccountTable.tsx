@@ -155,7 +155,7 @@ function AccountActions(props: AccountTableProps & { account: AccountView }) {
         }}
         trigger={['click']}
       >
-        <Button icon={<MoreOutlined />} type="link">
+        <Button data-page-agent-not-interactive="true" icon={<MoreOutlined />} type="link">
           更多
         </Button>
       </Dropdown>
@@ -165,7 +165,7 @@ function AccountActions(props: AccountTableProps & { account: AccountView }) {
         title={account.status === 'active' ? '确认停用该账号？' : '确认启用该账号？'}
         onConfirm={() => props.onChangeStatus(account)}
       >
-        <Button danger={account.status === 'active'} type="link">
+        <Button danger={account.status === 'active'} data-page-agent-not-interactive="true" type="link">
           {account.status === 'active' ? '停用' : '启用'}
         </Button>
       </Popconfirm>

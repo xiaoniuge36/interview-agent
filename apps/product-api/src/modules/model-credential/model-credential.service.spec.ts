@@ -37,6 +37,7 @@ const credentialRecord = {
 
 function createService() {
   const transaction = {
+    aiInvocation: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
     userModelCredential: {
       updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       findFirst: jest.fn().mockResolvedValue(credentialRecord),
@@ -62,13 +63,13 @@ function createService() {
     }),
     decrypt: jest.fn().mockReturnValue('sk-real-secret'),
   };
-  const provider = { testConnection: jest.fn().mockResolvedValue(undefined) };
+  const connectionTester = { test: jest.fn().mockResolvedValue(undefined) };
   const service = new ModelCredentialService(
     { prisma, policy, audit } as never,
     crypto as never,
-    provider as never,
+    connectionTester as never,
   );
-  return { service, transaction, prisma, crypto, provider };
+  return { service, transaction, prisma, crypto, connectionTester };
 }
 
 describe('ModelCredentialService storage', () => {
@@ -116,12 +117,14 @@ describe('ModelCredentialService storage', () => {
 
 describe('ModelCredentialService connection tests', () => {
   it('tests an owned connection with decrypted key and persists the verified status', async () => {
-    const { service, transaction, provider } = createService();
+    const { service, transaction, connectionTester } = createService();
 
     const result = await service.testConnection(context, 'credential-1');
 
-    expect(provider.testConnection).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: 'openai', apiKey: 'sk-real-secret' }),
+    expect(connectionTester.test).toHaveBeenCalledWith(
+      context,
+      expect.objectContaining({ id: 'credential-1', provider: 'openai' }),
+      'sk-real-secret',
     );
     expect(transaction.userModelCredential.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: 'verified' }) }),
@@ -130,8 +133,8 @@ describe('ModelCredentialService connection tests', () => {
   });
 
   it('persists a failed connection test and returns an actionable provider error', async () => {
-    const { service, transaction, provider } = createService();
-    provider.testConnection.mockRejectedValue(new ModelProviderError('MODEL_PROVIDER_AUTH_FAILED'));
+    const { service, transaction, connectionTester } = createService();
+    connectionTester.test.mockRejectedValue(new ModelProviderError('MODEL_PROVIDER_AUTH_FAILED'));
 
     await expect(service.testConnection(context, 'credential-1')).rejects.toMatchObject({
       response: expect.objectContaining({
@@ -181,9 +184,37 @@ describe('ModelCredentialService lifecycle', () => {
 
     await service.remove(context, 'credential-1');
 
+    expect(transaction.aiInvocation.updateMany).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1', userId: 'user-1', credentialId: 'credential-1' },
+      data: { credentialId: null },
+    });
     expect(transaction.userModelCredential.update).toHaveBeenCalledWith({
       where: { tenantId_id: { tenantId: 'tenant-1', id: 'credential-2' } },
       data: { isDefault: true },
     });
+  });
+});
+
+describe('ModelCredentialService provider changes', () => {
+  it('resets verification and clears the custom endpoint when changing provider', async () => {
+    const { service, transaction } = createService();
+
+    await service.update(context, 'credential-1', {
+      provider: 'qwen',
+      model: 'qwen-plus',
+    });
+
+    expect(transaction.userModelCredential.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          provider: 'qwen',
+          model: 'qwen-plus',
+          baseUrl: null,
+          status: 'unverified',
+          lastTestedAt: null,
+          lastErrorCode: null,
+        }),
+      }),
+    );
   });
 });

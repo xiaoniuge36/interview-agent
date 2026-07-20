@@ -1,0 +1,30 @@
+model UserAgentConversation {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  title     String   @default("新对话")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User               @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade)
+  messages UserAgentMessage[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, userId, updatedAt])
+}
+
+model UserAgentMessage {
+  id             String                 @id @default(cuid())
+  tenantId       String
+  conversationId String
+  role           UserAgentMessageRole
+  content        String
+  tokenCount     Int?
+  createdAt      DateTime               @default(now())
+
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversation UserAgentConversation @relation(fields: [tenantId, conversationId], references: [tenantId, id], onDelete: Cascade)
+
+  @@index([tenantId, conversationId, createdAt])
+}

@@ -7,6 +7,7 @@ import { ThemeMenu } from './theme/ThemeMenu';
 import { GlobalSearchProvider } from './search/GlobalSearchProvider';
 import { GlobalSearchDialog } from './search/GlobalSearchDialog';
 import { GlobalSearchTrigger } from './search/GlobalSearchTrigger';
+import { UserAgentWidget } from './user-agent/UserAgentWidget';
 
 type UserShellProps = { children: ReactNode };
 
@@ -27,6 +28,7 @@ export function UserShell({ children }: UserShellProps) {
         <MobileBottomNav />
       </div>
       <GlobalSearchDialog />
+      <UserAgentWidget />
     </GlobalSearchProvider>
   );
 }

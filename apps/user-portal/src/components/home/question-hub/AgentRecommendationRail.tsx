@@ -91,7 +91,7 @@ function RecommendationCard({
       </div>
       <h3>{recommendation.title}</h3>
       <div className="agent-reason">
-        <span>为什么推荐</span>
+        <span>本轮训练依据</span>
         <p>{recommendation.reason}</p>
       </div>
       <button type="button" onClick={onStart} disabled={busy}>

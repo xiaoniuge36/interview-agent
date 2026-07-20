@@ -7,7 +7,7 @@
     grid-column: 2;
   }
   .practice-round-actions {
-    width: calc(100% - 106px);
+    width: calc(100% - 108px);
   }
 }
 @media (max-width: 960px) {

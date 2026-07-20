@@ -163,3 +163,39 @@ model AgentRun {
   @@index([tenantId, commandId, createdAt])
   @@index([traceId])
 }
+
+model AiInvocation {
+  id                String                @id @default(cuid())
+  tenantId          String
+  userId            String
+  credentialId      String?
+  sessionId         String?
+  practiceSessionId String?
+  practiceItemId    String?
+  operation         AiInvocationOperation
+  provider          String
+  model             String
+  status            AiInvocationStatus
+  traceId           String
+  inputTokens       Int?
+  outputTokens      Int?
+  cacheReadTokens   Int?
+  reasoningTokens   Int?
+  totalTokens       Int?
+  latencyMs         Int?
+  errorCode         String?
+  startedAt         DateTime
+  finishedAt        DateTime
+  createdAt         DateTime              @default(now())
+
+  tenant     Tenant               @relation(fields: [tenantId], references: [id])
+  user       User                 @relation(fields: [tenantId, userId], references: [tenantId, id])
+  credential UserModelCredential? @relation(fields: [tenantId, credentialId], references: [tenantId, id], onDelete: Restrict)
+
+  @@index([tenantId, credentialId, createdAt])
+  @@index([createdAt])
+  @@index([tenantId, userId, createdAt])
+  @@index([tenantId, provider, model, createdAt])
+  @@index([tenantId, status, createdAt])
+  @@index([traceId])
+}

@@ -9,13 +9,13 @@ const input = {
   userPrompt: 'user',
 };
 
-describe('ModelProviderClient streaming', () => {
-  const fetchImplementation = global.fetch;
+const fetchImplementation = global.fetch;
 
-  afterEach(() => {
-    global.fetch = fetchImplementation;
-  });
+afterEach(() => {
+  global.fetch = fetchImplementation;
+});
 
+describe('ModelProviderClient streaming text', () => {
   it('normalizes OpenAI compatible SSE deltas without forwarding other fields', async () => {
     global.fetch = jest
       .fn()
@@ -34,7 +34,6 @@ describe('ModelProviderClient streaming', () => {
       stream: true,
     });
   });
-
   it('normalizes Anthropic text delta events', async () => {
     global.fetch = jest
       .fn()
@@ -48,7 +47,57 @@ describe('ModelProviderClient streaming', () => {
 
     expect(values).toEqual(['评价']);
   });
+});
 
+describe('ModelProviderClient streaming usage', () => {
+  it('forwards normalized OpenAI-compatible token usage without exposing raw SSE data', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        sseResponse([
+          'data: {"choices":[{"delta":{"content":"complete"}}]}\n\n',
+          'data: {"choices":[],"usage":{"prompt_tokens":12,"completion_tokens":8,"total_tokens":20,"prompt_tokens_details":{"cached_tokens":3},"completion_tokens_details":{"reasoning_tokens":2}}}\n\n',
+          'data: [DONE]\n\n',
+        ]),
+      );
+    const onUsage = jest.fn();
+
+    await collect(new ModelProviderClient().stream({ ...input, onUsage }));
+
+    expect(onUsage).toHaveBeenLastCalledWith({
+      inputTokens: 12,
+      outputTokens: 8,
+      cacheReadTokens: 3,
+      reasoningTokens: 2,
+      totalTokens: 20,
+    });
+    expect(JSON.stringify(onUsage.mock.calls)).not.toContain('choices');
+  });
+
+  it('merges Anthropic input and final output usage across stream events', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        sseResponse([
+          'data: {"type":"message_start","message":{"usage":{"input_tokens":15,"cache_read_input_tokens":4}}}\n\n',
+          'data: {"type":"content_block_delta","delta":{"text":"assessment"}}\n\n',
+          'data: {"type":"message_delta","usage":{"output_tokens":9}}\n\n',
+        ]),
+      );
+    const onUsage = jest.fn();
+
+    await collect(new ModelProviderClient().stream({ ...input, provider: 'anthropic', onUsage }));
+
+    expect(onUsage).toHaveBeenLastCalledWith({
+      inputTokens: 15,
+      outputTokens: 9,
+      cacheReadTokens: 4,
+      totalTokens: 24,
+    });
+  });
+});
+
+describe('ModelProviderClient streaming errors', () => {
   it('rejects malformed provider SSE payloads without exposing the raw payload', async () => {
     global.fetch = jest.fn().mockResolvedValue(sseResponse(['data: {not-json}\n\n']));
 
@@ -57,6 +106,61 @@ describe('ModelProviderClient streaming', () => {
     );
   });
 });
+
+describe('ModelProviderClient compatible invocations', () => {
+  it('forwards Page Agent tool calls and normalizes response usage', async () => {
+    global.fetch = jest.fn().mockResolvedValue(compatibleResponse());
+    const onUsage = jest.fn();
+    const result = await new ModelProviderClient().invokeCompatible(compatibleInput(), onUsage);
+
+    expect(result).toMatchObject({ choices: expect.any(Array) });
+    expect(onUsage).toHaveBeenCalledWith({
+      inputTokens: 24,
+      outputTokens: 11,
+      cacheReadTokens: 3,
+      reasoningTokens: 2,
+      totalTokens: 35,
+    });
+    expect(JSON.parse(String((global.fetch as jest.Mock).mock.calls[0][1].body))).toEqual(compatibleInput().requestBody);
+  });
+
+  it('rejects malformed compatible responses', async () => {
+    global.fetch = jest.fn().mockResolvedValue(Response.json({ result: 'not-a-completion' }));
+
+    await expect(
+      new ModelProviderClient().invokeCompatible({
+        provider: 'openai',
+        model: 'gpt-test',
+        baseUrl: null,
+        apiKey: 'test-key',
+        requestBody: { model: 'gpt-test', messages: [], tools: [] },
+      }),
+    ).rejects.toEqual(expect.objectContaining({ code: 'MODEL_PROVIDER_RESPONSE_INVALID' }));
+  });
+});
+
+function compatibleInput() {
+  return {
+    provider: 'openai_compatible' as const,
+    model: 'glm-test',
+    baseUrl: 'https://model.example.test/v1',
+    apiKey: 'test-key',
+    requestBody: { model: 'glm-test', messages: [], tools: [] },
+  };
+}
+
+function compatibleResponse() {
+  return Response.json({
+    choices: [{ message: { role: 'assistant', tool_calls: [] }, finish_reason: 'stop' }],
+    usage: {
+      prompt_tokens: 24,
+      completion_tokens: 11,
+      total_tokens: 35,
+      prompt_tokens_details: { cached_tokens: 3 },
+      completion_tokens_details: { reasoning_tokens: 2 },
+    },
+  });
+}
 
 async function collect(stream: AsyncIterable<string>) {
   const values: string[] = [];

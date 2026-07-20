@@ -25,7 +25,7 @@ export function MarkdownImportForm({ onChanged, onCompleted }: MarkdownImportFor
           <Input.TextArea rows={10} value={form.markdown} onChange={(event) => form.setMarkdown(event.target.value)} />
         </Form.Item>
         {form.message ? <Alert className="admin-form-message" message={form.message} showIcon type={form.messageType} /> : null}
-        <Button htmlType="submit" loading={form.isSubmitting} type="primary">导入并生成候选题</Button>
+        <Button data-page-agent-not-interactive="true" htmlType="submit" loading={form.isSubmitting} type="primary">导入并生成候选题</Button>
       </Form>
     </Card>
   );

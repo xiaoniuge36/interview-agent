@@ -13,6 +13,11 @@ const ADMIN_PAGE_DEFAULT = 1;
 const ADMIN_PAGE_SIZE_DEFAULT = 20;
 const ADMIN_PAGE_SIZE_MAX = 100;
 const ADMIN_KEYWORD_MAX_LENGTH = 120;
+const PLATFORM_TREND_MAX = 30;
+const PLATFORM_ALERT_MAX = 3;
+const ADMIN_NAME_MAX_LENGTH = 80;
+const EMAIL_MAX_LENGTH = 320;
+const ACCOUNT_AUDIT_LOG_MAX = 20;
 
 export const AdminPaginationQuerySchema = z.object({
   page: z.coerce.number().int().min(ADMIN_PAGE_DEFAULT).default(ADMIN_PAGE_DEFAULT),
@@ -151,9 +156,9 @@ export const PlatformDashboardSchema = z.object({
     fallbacks: z.number().int().nonnegative(),
     recentFailures: z.array(AgentRunViewSchema).max(CONTRACT_LIMITS.recentRuns),
   }),
-  trend: z.array(PlatformTrendPointSchema).min(1).max(30),
+  trend: z.array(PlatformTrendPointSchema).min(1).max(PLATFORM_TREND_MAX),
   funnel: PlatformFunnelSchema,
-  alerts: z.array(PlatformAlertSchema).max(3),
+  alerts: z.array(PlatformAlertSchema).max(PLATFORM_ALERT_MAX),
 });
 
 export const AccountStatusSchema = z.enum(['active', 'disabled']);
@@ -174,12 +179,16 @@ export const TenantOptionSchema = z.object({
 });
 export const CreateLocalAdminInputSchema = z
   .object({
-    name: z.string().trim().min(2, '姓名至少需要 2 个字符。').max(80, '姓名长度不能超过 80 个字符。'),
+    name: z
+      .string()
+      .trim()
+      .min(2, '姓名至少需要 2 个字符。')
+      .max(ADMIN_NAME_MAX_LENGTH, '姓名长度不能超过 80 个字符。'),
     email: z
       .string()
       .trim()
       .email('请输入有效的邮箱地址。')
-      .max(320, '邮箱地址过长。')
+      .max(EMAIL_MAX_LENGTH, '邮箱地址过长。')
       .transform((value) => value.toLowerCase()),
     password: z.string().min(1, '请输入初始密码。'),
     role: CreateLocalAdminRoleSchema,
@@ -223,7 +232,7 @@ export const AccountViewSchema = z.object({
 export const AccountDetailSchema = AccountViewSchema.extend({
   disabledAt: z.string().datetime().nullable(),
   disabledByUserId: z.string().nullable(),
-  auditLogs: z.array(AuditLogViewSchema).max(20),
+  auditLogs: z.array(AuditLogViewSchema).max(ACCOUNT_AUDIT_LOG_MAX),
 });
 
 export const UpdateAccountRoleInputSchema = z.object({

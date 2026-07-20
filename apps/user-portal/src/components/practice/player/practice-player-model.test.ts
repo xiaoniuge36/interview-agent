@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { PracticeSession } from '@interview-agent/contracts';
 import {
   canCompleteSelfStudy,
   canSubmitAiReport,
+  confirmAiReportSubmission,
   initialPracticeItemIndex,
+  pendingEvaluationCount,
   practiceProgress,
 } from './practice-player-model';
 
@@ -16,12 +18,35 @@ describe('单题播放器状态', () => {
     expect(practiceProgress(session())).toEqual({ answered: 2, evaluated: 1, total: 3 });
   });
 
-  it('自学完成只要求答案，AI 报告要求每题均有评价', () => {
+  it('答案全部保存但部分题目未评价时允许发起整轮复盘', () => {
     expect(canCompleteSelfStudy(session())).toBe(false);
     expect(canSubmitAiReport(session())).toBe(false);
-    const complete = session({ answerAll: true, evaluateAll: true });
-    expect(canCompleteSelfStudy(complete)).toBe(true);
-    expect(canSubmitAiReport(complete)).toBe(true);
+    const completeAnswers = session({ answerAll: true });
+    expect(canCompleteSelfStudy(completeAnswers)).toBe(true);
+    expect(canSubmitAiReport(completeAnswers)).toBe(true);
+    expect(pendingEvaluationCount(completeAnswers)).toBe(2);
+  });
+
+  it('已保存答案中只统计尚未评价的题目', () => {
+    expect(pendingEvaluationCount(session())).toBe(1);
+    expect(pendingEvaluationCount(session({ answerAll: true, evaluateAll: true }))).toBe(0);
+  });
+
+  it('整轮复盘会提示未评价题目数量和模型额度消耗', () => {
+    const confirm = vi.fn().mockReturnValue(false);
+
+    expect(confirmAiReportSubmission(session({ answerAll: true }), confirm)).toBe(false);
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('2 道题'));
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('消耗模型额度'));
+  });
+
+  it('题目均已评价时不重复弹出额度确认', () => {
+    const confirm = vi.fn();
+
+    expect(
+      confirmAiReportSubmission(session({ answerAll: true, evaluateAll: true }), confirm),
+    ).toBe(true);
+    expect(confirm).not.toHaveBeenCalled();
   });
 });
 

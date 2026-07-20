@@ -1,7 +1,8 @@
 .practice-question-stage {
-  min-height: 680px;
+  min-height: 720px;
   padding: clamp(24px, 3vw, 42px);
   border-radius: 14px;
+  box-shadow: 0 16px 38px rgba(31, 54, 88, 0.065);
 }
 .practice-question-stage > header {
   display: flex;
@@ -71,14 +72,14 @@
 }
 .practice-answer-editor textarea {
   width: 100%;
-  min-height: 250px;
+  min-height: 280px;
   resize: vertical;
   border: 1px solid #cfd9e7;
   border-radius: 12px;
   padding: 16px;
   background: #fbfcfe;
   color: #1f2f47;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.75;
   outline: 0;
 }

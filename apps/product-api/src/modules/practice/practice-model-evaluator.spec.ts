@@ -28,17 +28,23 @@ const input = {
   rubric: [{ point: '失败恢复', score: 10, description: '说明幂等、补偿或重试。' }],
   tags: ['系统设计', '订单'],
   targetRole: '后端工程师',
+  practiceSessionId: 'practice-1',
+  practiceItemId: 'item-1',
 };
 
 describe('PracticeModelEvaluator', () => {
   it('uses the caller verified model and validates structured feedback', async () => {
-    const { evaluator, credentials, provider } = createEvaluator();
+    const { evaluator, credentials, provider, invocations } = createEvaluator();
 
     const result = await evaluator.evaluate(context, input);
 
     expect(credentials.resolveDefault).toHaveBeenCalledWith(context);
     expect(provider.complete).toHaveBeenCalledWith(
       expect.objectContaining({ provider: 'deepseek', apiKey: 'sk-decrypted' }),
+    );
+    expect(invocations.measure).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: 'practice_evaluation', practiceItemId: 'item-1' }),
+      expect.any(Function),
     );
     expect(result).toEqual({
       score: 82,
@@ -80,9 +86,17 @@ function createEvaluator(resolved: typeof credential | null = credential) {
       }),
     ),
   };
+  const invocations = {
+    measure: jest.fn((_metadata, run) => run(jest.fn())),
+  };
   return {
-    evaluator: new PracticeModelEvaluator(credentials as never, provider as never),
+    evaluator: new PracticeModelEvaluator(
+      credentials as never,
+      provider as never,
+      invocations as never,
+    ),
     credentials,
     provider,
+    invocations,
   };
 }

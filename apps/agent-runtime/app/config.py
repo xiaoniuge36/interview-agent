@@ -3,7 +3,7 @@ from os import getenv
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MIN_INTERNAL_TOKEN_LENGTH = 24
@@ -38,6 +38,24 @@ class RuntimeSettings(BaseSettings):
         default="INFO",
         validation_alias="RUNTIME_LOG_LEVEL",
     )
+    model_gateway_url: str | None = Field(
+        default=None,
+        validation_alias="AGENT_RUNTIME_MODEL_GATEWAY_URL",
+    )
+    checkpoint_database_url: SecretStr | None = Field(
+        default=None,
+        validation_alias="AGENT_RUNTIME_CHECKPOINT_DATABASE_URL",
+    )
+
+    @model_validator(mode="after")
+    def require_production_agent_dependencies(self) -> "RuntimeSettings":
+        if self.environment != "production":
+            return self
+        if self.model_gateway_url is None:
+            raise ValueError("Production requires AGENT_RUNTIME_MODEL_GATEWAY_URL.")
+        if self.checkpoint_database_url is None:
+            raise ValueError("Production requires AGENT_RUNTIME_CHECKPOINT_DATABASE_URL.")
+        return self
 
 
 @lru_cache(maxsize=1)

@@ -1,7 +1,8 @@
 import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
-import { AgentRuntimeNextResponseSchema } from '@interview-agent/contracts';
+import { AgentRuntimeNextResponseSchema, type ModelProvider } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { IncrementalJsonFieldDecoder } from '../../common/streaming/incremental-json-field-decoder';
+import { AiInvocationService } from '../ai-usage/ai-invocation.service';
 import { ModelCredentialService } from '../model-credential/model-credential.service';
 import { ModelProviderClient, ModelProviderError } from '../model-credential/model-provider.client';
 import type { AgentNextInput, AgentNextResult, AgentRuntimeProgress } from './agent-runtime.types';
@@ -13,6 +14,7 @@ export class UserModelRuntimeClient {
   constructor(
     private readonly credentials: ModelCredentialService,
     private readonly provider: ModelProviderClient,
+    private readonly invocations: AiInvocationService,
   ) {}
 
   async next({ context, input }: UserModelNextInput): Promise<AgentNextResult> {
@@ -20,12 +22,18 @@ export class UserModelRuntimeClient {
     if (!credential) throw connectionRequired();
     const startedAt = performance.now();
     try {
-      const content = await this.provider.complete({
-        ...credential,
-        systemPrompt: systemPrompt(input),
-        userPrompt: userPrompt(input),
-      });
-      return runtimeResult(parseDecision(content), startedAt);
+      return await this.invocations.measure(
+        invocationMetadata(context, credential, input),
+        async (onUsage) => {
+          const content = await this.provider.complete({
+            ...credential,
+            systemPrompt: systemPrompt(input),
+            userPrompt: userPrompt(input),
+            onUsage,
+          });
+          return runtimeResult(parseDecision(content), startedAt);
+        },
+      );
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw providerFailure(error);
@@ -42,17 +50,23 @@ export class UserModelRuntimeClient {
     const decoder = new IncrementalJsonFieldDecoder('content');
     let content = '';
     try {
-      for await (const delta of this.provider.stream({
-        ...credential,
-        systemPrompt: systemPrompt(input),
-        userPrompt: userPrompt(input),
-        ...(progress.signal ? { signal: progress.signal } : {}),
-      })) {
-        content += delta;
-        const visible = decoder.push(delta);
-        if (visible) progress.onContentDelta?.(visible);
-      }
-      return runtimeResult(parseDecision(content), startedAt);
+      return await this.invocations.measure(
+        invocationMetadata(context, credential, input),
+        async (onUsage) => {
+          for await (const delta of this.provider.stream({
+            ...credential,
+            systemPrompt: systemPrompt(input),
+            userPrompt: userPrompt(input),
+            onUsage,
+            ...(progress.signal ? { signal: progress.signal } : {}),
+          })) {
+            content += delta;
+            const visible = decoder.push(delta);
+            if (visible) progress.onContentDelta?.(visible);
+          }
+          return runtimeResult(parseDecision(content), startedAt);
+        },
+      );
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw providerFailure(error);
@@ -134,4 +148,21 @@ function providerFailure(error: unknown) {
 
 function elapsed(startedAt: number) {
   return Math.max(0, Math.round(performance.now() - startedAt));
+}
+
+function invocationMetadata(
+  context: ProductRequestContext,
+  credential: { id: string; provider: ModelProvider; model: string },
+  input: AgentNextInput,
+) {
+  return {
+    tenantId: context.tenantId,
+    userId: context.actor.id,
+    credentialId: credential.id,
+    sessionId: input.session.id,
+    operation: 'interview_next' as const,
+    provider: credential.provider,
+    model: credential.model,
+    traceId: input.traceId,
+  };
 }
