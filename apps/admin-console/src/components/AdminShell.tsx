@@ -56,7 +56,7 @@ export function AdminShell(props: AdminShellProps) {
           {props.children}
         </Content>
       </Layout>
-      <AdminAgentWidget />
+      <AdminAgentWidget activeView={props.activeView} />
     </Layout>
   );
 }

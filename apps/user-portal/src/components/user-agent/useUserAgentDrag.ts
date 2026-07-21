@@ -124,8 +124,11 @@ function movedEnough(event: PointerEvent<HTMLButtonElement>, drag: DragState) {
 
 function readPosition(): UserAgentFloatPosition {
   try {
-    const value = JSON.parse(window.localStorage.getItem(POSITION_KEY) ?? 'null') as Partial<UserAgentFloatPosition> | null;
-    if (typeof value?.right === 'number' && typeof value.bottom === 'number') return value as UserAgentFloatPosition;
+    const value = JSON.parse(
+      window.localStorage.getItem(POSITION_KEY) ?? 'null',
+    ) as Partial<UserAgentFloatPosition> | null;
+    if (typeof value?.right === 'number' && typeof value.bottom === 'number')
+      return value as UserAgentFloatPosition;
   } catch {
     return DEFAULT_POSITION;
   }
@@ -138,13 +141,22 @@ function persistPosition(position: UserAgentFloatPosition) {
 
 function clampPosition(position: UserAgentFloatPosition, width = FLOAT_SIZE, height = FLOAT_SIZE) {
   return {
-    right: clamp(position.right, EDGE_GAP, Math.max(EDGE_GAP, window.innerWidth - width - EDGE_GAP)),
-    bottom: clamp(position.bottom, EDGE_GAP, Math.max(EDGE_GAP, window.innerHeight - height - EDGE_GAP)),
+    right: clamp(
+      position.right,
+      EDGE_GAP,
+      Math.max(EDGE_GAP, window.innerWidth - width - EDGE_GAP),
+    ),
+    bottom: clamp(
+      position.bottom,
+      EDGE_GAP,
+      Math.max(EDGE_GAP, window.innerHeight - height - EDGE_GAP),
+    ),
   };
 }
 
 function releasePointerCapture(event: PointerEvent<HTMLButtonElement>) {
-  if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  if (event.currentTarget.hasPointerCapture(event.pointerId))
+    event.currentTarget.releasePointerCapture(event.pointerId);
 }
 
 function clamp(value: number, min: number, max: number) {

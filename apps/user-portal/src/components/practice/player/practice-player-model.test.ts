@@ -4,6 +4,9 @@ import {
   canCompleteSelfStudy,
   canSubmitAiReport,
   confirmAiReportSubmission,
+  confirmPracticeItemEvaluation,
+  confirmPracticeNavigation,
+  hasUnsavedPracticeAnswer,
   initialPracticeItemIndex,
   pendingEvaluationCount,
   practiceProgress,
@@ -47,6 +50,27 @@ describe('单题播放器状态', () => {
       confirmAiReportSubmission(session({ answerAll: true, evaluateAll: true }), confirm),
     ).toBe(true);
     expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it('识别当前草稿是否已经保存到服务端', () => {
+    const item = session().items[1]!;
+
+    expect(hasUnsavedPracticeAnswer(item, 'answer-2')).toBe(false);
+    expect(hasUnsavedPracticeAnswer(item, 'answer-2 补充内容')).toBe(true);
+  });
+
+  it('存在未保存修改时切题需要确认', () => {
+    const confirm = vi.fn().mockReturnValue(false);
+
+    expect(confirmPracticeNavigation(session().items[1]!, '新草稿', confirm)).toBe(false);
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('未保存'));
+  });
+
+  it('单题 AI 评价会提示模型额度消耗', () => {
+    const confirm = vi.fn().mockReturnValue(true);
+
+    expect(confirmPracticeItemEvaluation(confirm)).toBe(true);
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('模型额度'));
   });
 });
 

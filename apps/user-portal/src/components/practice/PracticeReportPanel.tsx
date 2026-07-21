@@ -24,6 +24,45 @@ export function PracticeReportPanel({ report, mastery }: PracticeReportPanelProp
         </div>
       </article>
       <MasteryPanel mastery={mastery} />
+      <EvaluationReview evaluations={report.itemEvaluations} />
+    </div>
+  );
+}
+
+function EvaluationReview({ evaluations }: { evaluations: PracticeReport['itemEvaluations'] }) {
+  if (!evaluations.length) return null;
+  return (
+    <article className="insight-card practice-evaluation-review">
+      <div className="eyebrow">逐题回顾</div>
+      <h3>回到每一道题，带走下一次表达要补齐的关键点</h3>
+      <div className="practice-report-evaluations">
+        {evaluations.map((evaluation, index) => (
+          <section className="practice-report-evaluation" key={evaluation.id}>
+            <div className="practice-report-evaluation-heading">
+              <span>题目 {index + 1}</span>
+              <strong>{Math.round(evaluation.score)} 分</strong>
+            </div>
+            <p>{evaluation.feedback}</p>
+            <EvaluationGaps missingPoints={evaluation.missingPoints} />
+            {evaluation.followUpQuestion ? (
+              <blockquote>
+                <span>下次追问</span>
+                {evaluation.followUpQuestion}
+              </blockquote>
+            ) : null}
+          </section>
+        ))}
+      </div>
+    </article>
+  );
+}
+
+function EvaluationGaps({ missingPoints }: { missingPoints: string[] }) {
+  if (!missingPoints.length) return null;
+  return (
+    <div className="practice-report-evaluation-gaps">
+      <span>需要补齐</span>
+      <p>{missingPoints.join('、')}</p>
     </div>
   );
 }

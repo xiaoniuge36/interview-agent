@@ -1,18 +1,24 @@
 import type { AgentStatus, PageAgentCore } from '@page-agent/core';
 import { useEffect, useRef, useState } from 'react';
 import type { UserPageAgentConfig } from '@/lib/user-page-agent-api';
-import { createUserAgentRuntime } from './user-agent-runtime';
+import {
+  appendPageAgentExecutionStep,
+  createUserAgentRuntime,
+  type PageAgentExecutionStep,
+} from './user-agent-runtime';
 
 export function useUserAgentRuntime(options: {
   config: UserPageAgentConfig | null;
   conversationId: string | null;
   conversationContext: string;
+  pageContext: string;
   onAskUser: (question: string, options?: { signal: AbortSignal }) => Promise<string>;
 }) {
-  const { config, conversationId, conversationContext, onAskUser } = options;
+  const { config, conversationId, conversationContext, pageContext, onAskUser } = options;
   const [agent, setAgent] = useState<PageAgentCore | null>(null);
   const [status, setStatus] = useState<AgentStatus>('idle');
   const [activity, setActivity] = useState('准备开始');
+  const [executionSteps, setExecutionSteps] = useState<PageAgentExecutionStep[]>([]);
   const [tokens, setTokens] = useState(0);
   const contextRef = useRef(conversationContext);
   contextRef.current = conversationContext;
@@ -22,8 +28,14 @@ export function useUserAgentRuntime(options: {
     void createUserAgentRuntime({
       config,
       conversationContext: contextRef.current,
+      pageContext,
       onActivity: setActivity,
-      onStatus: setStatus,
+      onExecutionActivity: (activity) =>
+        setExecutionSteps((current) => appendPageAgentExecutionStep(current, activity)),
+      onStatus: (nextStatus) => {
+        setStatus(nextStatus);
+        if (nextStatus === 'running') setExecutionSteps([]);
+      },
       onTokens: setTokens,
       onAskUser,
     }).then((next) => {
@@ -38,8 +50,9 @@ export function useUserAgentRuntime(options: {
       });
       setStatus('idle');
       setActivity('准备开始');
+      setExecutionSteps([]);
       setTokens(0);
     };
-  }, [config, conversationId, onAskUser]);
-  return { agent, status, activity, tokens };
+  }, [config, conversationId, onAskUser, pageContext]);
+  return { agent, status, activity, executionSteps, tokens };
 }

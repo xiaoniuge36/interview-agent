@@ -109,7 +109,11 @@ export class UserPageAgentConversationService {
       });
       const firstUserMessage = messages.find((message) => message.role === 'user');
       const data: { updatedAt: Date; title?: string } = { updatedAt: new Date() };
-      if (conversation.title === DEFAULT_TITLE && !conversation.messages?.length && firstUserMessage) {
+      if (
+        conversation.title === DEFAULT_TITLE &&
+        !conversation.messages?.length &&
+        firstUserMessage
+      ) {
         data.title = titleFromMessage(firstUserMessage.content);
       }
       await transaction.userAgentConversation.update({ where: { id: conversationId }, data });

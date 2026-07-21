@@ -19,6 +19,7 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "node --test scripts/dev-hot-reload.test.mjs && turbo run test",
+    "test:e2e": "node scripts/e2e/run.mjs",
     "verify": "pnpm format:check && pnpm contracts:check && pnpm db:validate && pnpm db:generate && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm security:audit && pnpm infra:config",
     "format": "prettier --write \"**/*.{ts,tsx,js,cjs,mjs,json,md,yml,yaml,css,html}\" && uv run --project apps/agent-runtime --extra dev ruff format apps/agent-runtime && prisma format --schema apps/product-api/prisma/schema",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,cjs,mjs,json,md,yml,yaml,css,html}\" && uv run --project apps/agent-runtime --extra dev ruff format --check apps/agent-runtime",
@@ -43,6 +44,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "1.58.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "15.5.20",
     "eslint-config-prettier": "^10.1.8",

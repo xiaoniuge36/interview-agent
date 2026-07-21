@@ -1,4 +1,3 @@
-﻿import { resolve } from 'node:path';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -6,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { CommonModule } from './common/common.module';
 import { RolesGuard } from './common/authz/roles.guard';
 import { validateEnvironment, type Environment } from './common/config/environment';
+import { localEnvironmentFiles } from './common/config/environment-files';
 import { ContextMiddleware } from './common/context/context.middleware';
 import { PrismaModule } from './common/database/prisma.module';
 import { RequestLoggingInterceptor } from './common/logging/request-logging.interceptor';
@@ -22,7 +22,7 @@ import { PracticeModule } from './modules/practice/practice.module';
 import { QuestionCatalogModule } from './modules/question-catalog/question-catalog.module';
 import { UserPageAgentModule } from './modules/user-page-agent/user-page-agent.module';
 
-const localEnvFiles = [resolve(process.cwd(), '.env'), resolve(process.cwd(), '../../.env')];
+const localEnvFiles = localEnvironmentFiles(process.cwd(), process.env.E2E_PRESERVE_ENVIRONMENT);
 
 @Module({
   imports: [

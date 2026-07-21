@@ -8,7 +8,7 @@ const context = {
   actor: { id: 'user-1' },
 } as never;
 
-describe('UserPageAgentConversationService', () => {
+describe('UserPageAgentConversationService ownership', () => {
   it('lists only conversations owned by the current tenant and user', async () => {
     const prisma = createPrisma();
     prisma.userAgentConversation.findMany.mockResolvedValue([]);
@@ -24,15 +24,19 @@ describe('UserPageAgentConversationService', () => {
     );
   });
 
+  it('rejects a conversation that belongs to another user', async () => {
+    const prisma = createPrisma();
+    prisma.userAgentConversation.findFirst.mockResolvedValue(null);
+    const service = new UserPageAgentConversationService(prisma as never);
+
+    await expect(service.get(context, 'conversation-1')).rejects.toBeInstanceOf(NotFoundException);
+  });
+});
+
+describe('UserPageAgentConversationService automatic titles', () => {
   it('updates the default title from the first user message', async () => {
     const prisma = createPrisma();
-    prisma.userAgentConversation.findFirst.mockResolvedValue({
-      id: 'conversation-1',
-      title: '新对话',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      messages: [],
-    });
+    prisma.userAgentConversation.findFirst.mockResolvedValue(conversation('新对话'));
     const service = new UserPageAgentConversationService(prisma as never);
 
     await service.appendMessages(context, 'conversation-1', [
@@ -45,16 +49,12 @@ describe('UserPageAgentConversationService', () => {
       }),
     );
   });
+});
 
+describe('UserPageAgentConversationService message privacy', () => {
   it('masks credential-shaped values before persisting a message', async () => {
     const prisma = createPrisma();
-    prisma.userAgentConversation.findFirst.mockResolvedValue({
-      id: 'conversation-1',
-      title: '已有对话',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      messages: [],
-    });
+    prisma.userAgentConversation.findFirst.mockResolvedValue(conversation('已有对话'));
     const service = new UserPageAgentConversationService(prisma as never);
 
     await service.appendMessages(context, 'conversation-1', [
@@ -65,17 +65,17 @@ describe('UserPageAgentConversationService', () => {
       data: [expect.objectContaining({ content: 'apiKey=[已隐藏]' })],
     });
   });
-
-  it('rejects a conversation that belongs to another user', async () => {
-    const prisma = createPrisma();
-    prisma.userAgentConversation.findFirst.mockResolvedValue(null);
-    const service = new UserPageAgentConversationService(prisma as never);
-
-    await expect(service.get(context, 'conversation-1')).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
-  });
 });
+
+function conversation(title: string) {
+  return {
+    id: 'conversation-1',
+    title,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    messages: [],
+  };
+}
 
 function createPrisma() {
   const prisma = {

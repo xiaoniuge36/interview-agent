@@ -17,7 +17,11 @@ export function PracticeCoachPanel(props: PracticeCoachPanelProps) {
   const answerSaved = Boolean(props.item.answer);
   const answerCurrent = answerSaved && props.draft.trim() === props.item.answer?.trim();
   return (
-    <aside className="practice-coach-panel" aria-label="解析与 AI 教练">
+    <aside
+      className="practice-coach-panel"
+      aria-label="解析与 AI 教练"
+      data-user-agent-scope="practice-feedback"
+    >
       <header>
         <span>Coach panel</span>
         <h2>解析与反馈</h2>

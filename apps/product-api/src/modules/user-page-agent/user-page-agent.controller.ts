@@ -54,7 +54,10 @@ export class UserPageAgentController {
   }
 
   @Delete('conversations/:conversationId')
-  deleteConversation(@Req() request: ProductRequest, @Param('conversationId') conversationId: string) {
+  deleteConversation(
+    @Req() request: ProductRequest,
+    @Param('conversationId') conversationId: string,
+  ) {
     return this.conversations.remove(request.context, conversationId);
   }
 

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { CONTRACT_LIMITS } from '../limits';
+
+const MAX_INTERVIEW_BASIS_SUMMARIES = 3;
 import { InterviewCommandResultSchema } from './interview';
 import { PracticeItemFeedbackSchema } from './practice';
 
@@ -33,7 +35,9 @@ export const AiOperationInterviewResultEventSchema = StreamMetadataSchema.extend
   type: z.literal('result'),
   operation: z.literal('interview_next'),
   result: InterviewCommandResultSchema,
-  basisSummary: z.array(z.string().min(1).max(CONTRACT_LIMITS.mediumText)).max(3),
+  basisSummary: z
+    .array(z.string().min(1).max(CONTRACT_LIMITS.mediumText))
+    .max(MAX_INTERVIEW_BASIS_SUMMARIES),
 });
 
 export const AiOperationPracticeResultEventSchema = StreamMetadataSchema.extend({

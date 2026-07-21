@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   canCompleteSelfStudy,
   canSubmitAiReport,
+  confirmPracticeNavigation,
   pendingEvaluationCount,
   practiceProgress,
 } from './practice-player-model';
@@ -28,6 +29,8 @@ export function PracticePlayer() {
         mastery={player.mastery}
         message={player.message}
         onRetry={player.reload}
+        onStartNextRecommendation={() => void player.startNextRecommendation()}
+        startingNextRecommendation={player.startingNextRecommendation}
       />
     );
   }
@@ -38,32 +41,34 @@ function ActivePractice({ player }: { player: ReturnType<typeof usePracticePlaye
   const session = player.session;
   if (!session) return null;
   const item = session.items[player.currentIndex] ?? session.items[0]!;
-  const progress = practiceProgress(session);
+  const navigation = practiceNavigation(player, session, item);
+  const draft = player.drafts[item.id] ?? '';
   return (
-    <div className="practice-player-page">
-      <PlayerHeader title={session.title} progress={progress} />
+    <div className="practice-player-page" data-user-agent-scope="practice-player">
+      <PlayerHeader title={session.title} progress={practiceProgress(session)} />
+      {player.message ? <PlayerMessage message={player.message} /> : null}
       <div className="practice-player-layout">
         <PracticeQuestionNav
           session={session}
           currentIndex={player.currentIndex}
-          onSelect={player.setCurrentIndex}
+          disabled={player.busy !== null}
+          onSelect={navigation.selectIndex}
         />
         <PracticeQuestionStage
           item={item}
-          draft={player.drafts[item.id] ?? ''}
+          draft={draft}
           busy={player.busy}
           currentIndex={player.currentIndex}
           total={session.items.length}
           onDraft={(value) => player.updateDraft(item.id, value)}
           onSave={() => void player.save(item.id)}
-          onPrevious={() => player.setCurrentIndex(Math.max(0, player.currentIndex - 1))}
-          onNext={() =>
-            player.setCurrentIndex(Math.min(session.items.length - 1, player.currentIndex + 1))
-          }
+          onSaveAndNext={() => void navigation.saveAndNext()}
+          onPrevious={navigation.movePrevious}
+          onNext={navigation.moveNext}
         />
         <PracticeCoachPanel
           item={item}
-          draft={player.drafts[item.id] ?? ''}
+          draft={draft}
           solution={player.solutions[item.id]}
           busy={player.busy}
           issue={player.issue}
@@ -74,6 +79,41 @@ function ActivePractice({ player }: { player: ReturnType<typeof usePracticePlaye
       </div>
       <RoundCompletionBar player={player} />
     </div>
+  );
+}
+
+function practiceNavigation(
+  player: ReturnType<typeof usePracticePlayer>,
+  session: NonNullable<ReturnType<typeof usePracticePlayer>['session']>,
+  item: NonNullable<ReturnType<typeof usePracticePlayer>['session']>['items'][number],
+) {
+  const selectIndex = (index: number) => {
+    if (index === player.currentIndex || player.busy !== null) return;
+    const allowed = confirmPracticeNavigation(item, player.drafts[item.id] ?? '', (message) =>
+      window.confirm(message),
+    );
+    if (allowed) player.setCurrentIndex(index);
+  };
+  const moveNext = () => selectIndex(Math.min(session.items.length - 1, player.currentIndex + 1));
+  const saveAndNext = async () => {
+    const saved = await player.save(item.id);
+    if (saved) {
+      player.setCurrentIndex(Math.min(session.items.length - 1, player.currentIndex + 1));
+    }
+  };
+  return {
+    selectIndex,
+    moveNext,
+    movePrevious: () => selectIndex(Math.max(0, player.currentIndex - 1)),
+    saveAndNext,
+  };
+}
+
+function PlayerMessage({ message }: { message: string }) {
+  return (
+    <p className="practice-player-message" role="status">
+      {message}
+    </p>
   );
 }
 

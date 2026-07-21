@@ -89,42 +89,63 @@ function CredentialForm({
 }) {
   return (
     <Space direction="vertical" size="middle" style={{ display: 'flex' }}>
-      <Typography.Paragraph type="secondary">
-        API Key 仅在保存或轮换时提交到 Product API 加密保存，不会回显、写入浏览器存储或发送给
-        Agent。
-      </Typography.Paragraph>
-      <Form form={form} layout="vertical" onFinish={onSubmit}>
-        <Form.Item
-          label="模型服务商"
-          name="provider"
-          rules={[{ required: true, message: '请选择服务商' }]}
-        >
-          <Select options={PROVIDER_OPTIONS} />
-        </Form.Item>
-        <Form.Item
-          label="模型名称"
-          name="model"
-          rules={[{ required: true, message: '请输入模型名称' }]}
-        >
-          <Input placeholder="例如：zai-org/GLM-5.2 或 gpt-4.1-mini" />
-        </Form.Item>
-        {provider === 'openai_compatible' ? <BaseUrlField /> : null}
-        <Form.Item
-          label={credential ? 'API Key（留空则不修改）' : 'API Key'}
-          name="apiKey"
-          rules={credential ? [] : [{ required: true, min: 8, message: '请输入有效 API Key' }]}
-        >
-          <Input.Password
-            autoComplete="new-password"
-            placeholder={credential ? '仅在轮换密钥时填写' : '仅提交到后端加密保存'}
-          />
-        </Form.Item>
-        <Form.Item label="设为默认模型" name="isDefault" valuePropName="checked">
-          <Switch />
-        </Form.Item>
-      </Form>
+      <CredentialSecurityNotice />
+      <CredentialFields
+        credential={credential}
+        form={form}
+        onSubmit={onSubmit}
+        provider={provider}
+      />
       {error ? <Typography.Text type="danger">{error}</Typography.Text> : null}
     </Space>
+  );
+}
+
+function CredentialSecurityNotice() {
+  return (
+    <Typography.Paragraph type="secondary">
+      API Key 仅在保存或轮换时提交到 Product API 加密保存，不会回显、写入浏览器存储或发送给 Agent。
+    </Typography.Paragraph>
+  );
+}
+
+function CredentialFields({
+  credential,
+  form,
+  onSubmit,
+  provider,
+}: Omit<Parameters<typeof CredentialForm>[0], 'error'>) {
+  return (
+    <Form form={form} layout="vertical" onFinish={onSubmit}>
+      <Form.Item
+        label="模型服务商"
+        name="provider"
+        rules={[{ required: true, message: '请选择服务商' }]}
+      >
+        <Select options={PROVIDER_OPTIONS} />
+      </Form.Item>
+      <Form.Item
+        label="模型名称"
+        name="model"
+        rules={[{ required: true, message: '请输入模型名称' }]}
+      >
+        <Input placeholder="例如：zai-org/GLM-5.2 或 gpt-4.1-mini" />
+      </Form.Item>
+      {provider === 'openai_compatible' ? <BaseUrlField /> : null}
+      <Form.Item
+        label={credential ? 'API Key（留空则不修改）' : 'API Key'}
+        name="apiKey"
+        rules={credential ? [] : [{ required: true, min: 8, message: '请输入有效 API Key' }]}
+      >
+        <Input.Password
+          autoComplete="new-password"
+          placeholder={credential ? '仅在轮换密钥时填写' : '仅提交到后端加密保存'}
+        />
+      </Form.Item>
+      <Form.Item label="设为默认模型" name="isDefault" valuePropName="checked">
+        <Switch />
+      </Form.Item>
+    </Form>
   );
 }
 

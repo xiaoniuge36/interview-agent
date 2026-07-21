@@ -10,9 +10,13 @@ const input = {
 };
 
 const fetchImplementation = global.fetch;
+const originalNodeEnv = process.env.NODE_ENV;
+const originalE2eModelStubUrl = process.env.E2E_MODEL_STUB_URL;
 
 afterEach(() => {
   global.fetch = fetchImplementation;
+  restoreEnvironment('NODE_ENV', originalNodeEnv);
+  restoreEnvironment('E2E_MODEL_STUB_URL', originalE2eModelStubUrl);
 });
 
 describe('ModelProviderClient streaming text', () => {
@@ -108,6 +112,30 @@ describe('ModelProviderClient streaming errors', () => {
 });
 
 describe('ModelProviderClient compatible invocations', () => {
+  it('uses the explicit local stub only in the test environment', async () => {
+    process.env.NODE_ENV = 'test';
+    process.env.E2E_MODEL_STUB_URL = 'http://127.0.0.1:4100/v1';
+    global.fetch = jest.fn().mockResolvedValue(compatibleResponse());
+
+    await new ModelProviderClient().invokeCompatible(compatibleInput());
+
+    expect((global.fetch as jest.Mock).mock.calls[0][0]).toBe(
+      'http://127.0.0.1:4100/v1/chat/completions',
+    );
+  });
+
+  it('never redirects a production provider invocation to the local stub', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.E2E_MODEL_STUB_URL = 'http://127.0.0.1:4100/v1';
+    global.fetch = jest.fn().mockResolvedValue(compatibleResponse());
+
+    await new ModelProviderClient().invokeCompatible(compatibleInput());
+
+    expect((global.fetch as jest.Mock).mock.calls[0][0]).toBe(
+      'https://model.example.test/v1/chat/completions',
+    );
+  });
+
   it('forwards Page Agent tool calls and normalizes response usage', async () => {
     global.fetch = jest.fn().mockResolvedValue(compatibleResponse());
     const onUsage = jest.fn();
@@ -179,4 +207,9 @@ function sseResponse(parts: string[]) {
     }),
     { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
   );
+}
+
+function restoreEnvironment(key: string, value: string | undefined) {
+  if (value === undefined) delete process.env[key];
+  else process.env[key] = value;
 }

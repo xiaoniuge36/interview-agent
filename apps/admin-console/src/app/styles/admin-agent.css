@@ -301,6 +301,55 @@
   font-size: 11px;
 }
 
+.admin-agent-execution-trace {
+  border: 1px solid #d9e9fb;
+  border-radius: 10px;
+  padding: 10px 12px 4px;
+  background: #f7fbff;
+}
+
+.admin-agent-execution-trace > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.admin-agent-execution-trace .ant-typography-secondary {
+  font-size: 11px;
+}
+
+.admin-agent-execution-trace .ant-timeline {
+  margin: 0;
+  font-size: 12px;
+}
+
+.admin-agent-execution-trace .ant-timeline-item {
+  padding-bottom: 8px;
+}
+
+#page-agent-runtime_simulator-mask {
+  z-index: 999 !important;
+  pointer-events: none !important;
+}
+
+.page-agent-active-target {
+  outline: 2px solid #3d8cff !important;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgb(61 140 255 / 16%), 0 0 20px rgb(61 140 255 / 34%);
+  animation: admin-agent-target-pulse 1.4s ease-out both;
+}
+
+@keyframes admin-agent-target-pulse {
+  from {
+    box-shadow: 0 0 0 2px rgb(61 140 255 / 34%), 0 0 8px rgb(61 140 255 / 44%);
+  }
+  to {
+    box-shadow: 0 0 0 8px rgb(61 140 255 / 0%), 0 0 0 rgb(61 140 255 / 0%);
+  }
+}
+
 .admin-agent-loading {
   align-self: center;
   margin: 32px 0;
@@ -625,6 +674,10 @@
   }
 
   .admin-agent-float-status.is-running {
+    animation: none;
+  }
+
+  .page-agent-active-target {
     animation: none;
   }
 }

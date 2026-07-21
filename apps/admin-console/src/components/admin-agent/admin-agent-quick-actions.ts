@@ -1,5 +1,4 @@
-export type AdminAgentQuickActionId =
-  'pending-imports' | 'pending-candidates' | 'runtime-health' | 'dashboard';
+export type AdminAgentQuickActionId = string;
 
 export type AdminAgentQuickAction = {
   id: AdminAgentQuickActionId;

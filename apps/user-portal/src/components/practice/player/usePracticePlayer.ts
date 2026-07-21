@@ -2,14 +2,17 @@
 
 import type { PracticeSession } from '@interview-agent/contracts';
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import {
   completePracticeSelfStudy,
+  createPracticeSession,
   getMasteryProfiles,
   getPracticeReport,
   getPracticeSession,
   submitPracticeSession,
 } from '@/lib/practice-api';
+import { getPracticeRecommendations } from '@/lib/question-catalog-api';
 import { answerDrafts } from '../practice-utils';
 import { confirmAiReportSubmission, initialPracticeItemIndex } from './practice-player-model';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
@@ -40,11 +43,12 @@ const INITIAL_STATE: PlayerState = {
 
 export function usePracticePlayer() {
   const notifications = useNotifications();
+  const router = useRouter();
   const sessionId = useSearchParams().get('session');
   const loader = usePracticeSessionLoader(sessionId);
   const context = { sessionId, state: loader.state, setState: loader.setState, notifications };
   const itemActions = usePracticeItemActions(context);
-  const completionActions = usePracticeCompletionActions(context);
+  const completionActions = usePracticeCompletionActions(context, router);
   const setCurrentIndex = useCallback(
     (currentIndex: number) => {
       loader.setState((state) => ({ ...state, currentIndex, issue: null, message: '' }));
@@ -114,7 +118,18 @@ async function loadCompletionExtras(session: PracticeSession) {
   }
 }
 
-function usePracticeCompletionActions(context: PracticeActionContext) {
+function usePracticeCompletionActions(
+  context: PracticeActionContext,
+  router: ReturnType<typeof useRouter>,
+) {
+  return {
+    ...useAiReportSubmission(context),
+    ...useSelfStudyCompletion(context),
+    ...useNextPracticeRecommendation(context, router),
+  };
+}
+
+function useAiReportSubmission(context: PracticeActionContext) {
   const submitAiReport = useCallback(async () => {
     if (!context.sessionId || !context.state.session) return;
     const confirmed = confirmAiReportSubmission(context.state.session, (message) =>
@@ -142,6 +157,10 @@ function usePracticeCompletionActions(context: PracticeActionContext) {
       setActionError(context, error, 'AI 复盘生成失败');
     }
   }, [context]);
+  return { submitAiReport };
+}
+
+function useSelfStudyCompletion(context: PracticeActionContext) {
   const completeSelfStudy = useCallback(async () => {
     if (!context.sessionId) return;
     setBusy(context.setState, 'submit-self');
@@ -159,5 +178,35 @@ function usePracticeCompletionActions(context: PracticeActionContext) {
       setActionError(context, error, '自学完成状态保存失败');
     }
   }, [context]);
-  return { submitAiReport, completeSelfStudy };
+  return { completeSelfStudy };
+}
+
+function useNextPracticeRecommendation(
+  context: PracticeActionContext,
+  router: ReturnType<typeof useRouter>,
+) {
+  const [startingNextRecommendation, setStartingNextRecommendation] = useState(false);
+  const startNextRecommendation = useCallback(async () => {
+    setStartingNextRecommendation(true);
+    try {
+      const recommendation = (await getPracticeRecommendations())[0];
+      if (!recommendation) throw new Error('RECOMMENDATION_UNAVAILABLE');
+      const session = await createPracticeSession({
+        title: recommendation.title,
+        mode: 'manual',
+        questionIds: recommendation.questionIds,
+      });
+      context.notifications.success('下一轮推荐已准备好', '已根据最新能力记录创建专项题单。');
+      router.push(`/practice?session=${session.id}`);
+    } catch (error) {
+      context.notifications.error(
+        '下一轮推荐暂时不可用',
+        error,
+        '你可以先从题库自主选题，稍后再试推荐训练。',
+      );
+    } finally {
+      setStartingNextRecommendation(false);
+    }
+  }, [context, router]);
+  return { startNextRecommendation, startingNextRecommendation };
 }

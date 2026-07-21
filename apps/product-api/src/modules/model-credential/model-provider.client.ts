@@ -116,10 +116,25 @@ function endpointFor(input: ModelConnection) {
 }
 
 function baseUrlFor(input: ModelConnection) {
+  const e2eStubUrl = testStubUrl();
+  if (e2eStubUrl) return e2eStubUrl;
   if (input.baseUrl) return input.baseUrl;
   if (input.provider === 'openai_compatible')
     throw new ModelProviderError('MODEL_BASE_URL_REQUIRED');
   return DEFAULT_BASE_URLS[input.provider];
+}
+
+function testStubUrl(): string | null {
+  if (process.env.NODE_ENV !== 'test') return null;
+  const value = process.env.E2E_MODEL_STUB_URL?.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (!['127.0.0.1', '::1', 'localhost'].includes(url.hostname)) return null;
+    return value;
+  } catch {
+    return null;
+  }
 }
 
 function requestFor(input: ModelCompletionRequest): RequestInit {

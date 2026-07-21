@@ -4,6 +4,7 @@ import { useAuth } from '@interview-agent/auth-client';
 import { useCallback, useRef, useState } from 'react';
 import type { PageAgentCore } from '@page-agent/core';
 import type { AdminPageAgentConfig } from '@/lib/admin-page-agent-api';
+import type { AdminView } from '@/components/admin-navigation';
 import { AdminAgentCredentialManager } from './AdminAgentCredentialManager';
 import { AdminAgentDrawer } from './AdminAgentDrawer';
 import { AdminAgentFloatButton } from './AdminAgentFloatButton';
@@ -13,11 +14,13 @@ import { useAdminAgentConversations } from './useAdminAgentConversations';
 import { useAdminAgentDrag } from './useAdminAgentDrag';
 import { useAdminAgentRuntime } from './useAdminAgentRuntime';
 import { formatAdminAgentConversationContext } from './admin-agent-runtime';
+import { resolveAdminAgentPageContext } from './admin-agent-page-context';
 
 const EMPTY_CONVERSATION_MESSAGES: never[] = [];
 
-export function AdminAgentWidget() {
+export function AdminAgentWidget({ activeView }: { activeView: AdminView }) {
   const role = useAuth().identity?.role;
+  const pageContext = resolveAdminAgentPageContext(activeView, role);
   const enabled = role === 'admin' || role === 'platform_admin';
   const [open, setOpen] = useState(false);
   const [modelManagerOpen, setModelManagerOpen] = useState(false);
@@ -36,6 +39,7 @@ export function AdminAgentWidget() {
     conversationContext: formatAdminAgentConversationContext(
       conversations.activeConversation?.messages ?? [],
     ),
+    pageContext: pageContext.runtimeInstructions,
     conversationLoaded: conversations.activeConversation !== null,
     role,
     onAskUser: conversation.askUser,
@@ -58,13 +62,14 @@ export function AdminAgentWidget() {
       onModelManagerOpen={openModelManager}
       onReloadConfig={reloadConfig}
       open={open}
+      pageContext={pageContext}
       runtime={runtime}
       conversation={conversation}
     />
   );
 }
 
-function AdminAgentWidgetView(props: {
+type AdminAgentWidgetViewProps = {
   config: AdminPageAgentConfig | null;
   conversations: ReturnType<typeof useAdminAgentConversations>;
   conversation: ReturnType<typeof useAdminAgentConversation>;
@@ -76,8 +81,11 @@ function AdminAgentWidgetView(props: {
   onModelManagerOpen: () => void;
   onReloadConfig: () => Promise<void>;
   open: boolean;
+  pageContext: ReturnType<typeof resolveAdminAgentPageContext>;
   runtime: ReturnType<typeof useAdminAgentRuntime>;
-}) {
+};
+
+function AdminAgentWidgetView(props: AdminAgentWidgetViewProps) {
   return (
     <>
       <AdminAgentFloatButton {...props.drag} status={props.runtime.status} />
@@ -87,6 +95,7 @@ function AdminAgentWidgetView(props: {
         conversationError={props.conversations.error}
         conversationLoading={props.conversations.loading}
         conversations={props.conversations.summaries}
+        executionSteps={props.runtime.executionSteps}
         loading={props.loading}
         messages={props.conversation.messages}
         activeConversationId={props.conversations.activeId}
@@ -103,6 +112,7 @@ function AdminAgentWidgetView(props: {
         onStop={props.conversation.stop}
         open={props.open}
         pendingQuestion={props.conversation.pendingQuestion}
+        pageContext={props.pageContext}
         status={props.runtime.status}
         tokens={props.runtime.tokens}
       />

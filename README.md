@@ -15,7 +15,8 @@ Web / Admin ──HTTP/SSE──> Product API ──内部 HTTP──> Agent Run
 - **Agent Runtime 是受保护的工作流执行层**：只接受 Product API 的内部服务身份，不直接写入业务事实。
 - **Web 与 Admin 只访问 Product API**：不得直连数据库、Redis、Agent Runtime 或模型服务。
 - **SSE 只承担事件读取、订阅与重放**：读取事件不会推进面试状态。
-- 当前 Runtime 实现为规则化、确定性的工作流边界，已预留模型编排契约，但**尚未接入真实 LLM、RAG 或向量检索 Provider**。
+- 模型调用统一经过 Product API 的受控 Provider 网关；管理员或用户可配置 OpenAI、Anthropic、DeepSeek、通义千问与 OpenAI 兼容端点。API Key 仅用于后端加密保存、测试与调用，界面和审计记录只保留掩码与非敏感元数据。
+- 当前尚未交付 RAG/向量检索、评测集与 LLM Judge、生产级云基础设施及集中式可观测性后端。
 
 ## 目录结构
 
@@ -191,6 +192,7 @@ pnpm test
 pnpm build
 pnpm security:audit
 pnpm infra:config
+pnpm test:e2e
 ```
 
 聚合代码验证可运行：
@@ -201,7 +203,16 @@ pnpm verify
 
 Agent Runtime 的 lint 同时执行 Ruff、格式检查和结构门禁；测试启用分支覆盖率且最低覆盖率为 85%。TypeScript ESLint 规则对源文件执行以下硬限制：文件不超过 300 行、函数不超过 50 行、嵌套不超过 3 层、位置参数不超过 3 个、圈复杂度不超过 10，并禁止未命名魔法数字。
 
-CI 还执行数据库迁移与集成测试、生产依赖审计、Compose 校验、Docker 镜像构建、Gitleaks、Dependency Review、SPDX SBOM 和 CodeQL。
+`pnpm test:e2e` 需要 Docker 和 Playwright Chromium。它会启动独立的 PostgreSQL、Redis、模型替身、Product API、Agent Runtime、用户端和后台端，并在独立端口完成登录、模型调用、审核发布、看板与密钥脱敏验收，不会复用本地开发服务。
+
+CI 还执行数据库迁移与集成测试、隔离 E2E 验收、生产依赖审计、Compose 校验、Docker 镜像构建、Gitleaks、Dependency Review、SPDX SBOM 和 CodeQL。E2E 失败或取消时会保留 Playwright 报告与测试产物。
+
+## 发布前检查
+
+- 使用生产 OIDC Client、TLS 与明确的 CORS 白名单；禁止 `development` 认证和示例回调地址。
+- 在 Secret Manager 中配置并轮换 `CREDENTIAL_ENCRYPTION_KEY`、内部服务令牌和 Provider Key；轮换后在后台重新测试模型连接。
+- 确认 PostgreSQL、Redis、Product API 与 Agent Runtime 的 ready 探针均通过，并由变更负责人完成迁移、备份和恢复演练。
+- 明确灰度范围、监控阈值、回滚开关、回滚负责人和通知渠道；发布后复核审核队列、AI 调用失败率与训练报告链路。
 
 ## 安全与协作
 
@@ -213,4 +224,4 @@ CI 还执行数据库迁移与集成测试、生产依赖审计、Compose 校验
 
 ## 当前范围说明
 
-仓库已经具备可验证的业务边界、持久化 Repository、数据库事务、事件重放、前后端认证适配和本地集成基础设施。真实 LLM/RAG Provider、生产级云基础设施、集中式 Secret Manager、外部 OIDC 租户配置与正式可观测性后端仍属于部署环境或后续产品能力，不应在本地示例中伪装为已完成。
+仓库已经具备可验证的业务边界、持久化 Repository、数据库事务、事件重放、前后端认证适配、本地集成基础设施和受控 Provider 调用能力。RAG/向量检索、评测集、LLM Judge、生产级云基础设施、集中式 Secret Manager、外部 OIDC 租户配置与正式可观测性后端仍属于部署环境或后续产品能力，不应在本地示例中伪装为已完成。

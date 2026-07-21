@@ -3,9 +3,10 @@ import {
   AuditOutlined,
   DashboardOutlined,
   FileSearchOutlined,
+  LoadingOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { Alert, Button, Drawer, Empty, List, Space, Spin, Tag, Typography } from 'antd';
+import { Alert, Button, Drawer, Empty, List, Space, Spin, Tag, Timeline, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import type { AgentStatus } from '@page-agent/core';
 import type { AdminAgentConversationSummary } from '@/lib/admin-page-agent-conversation-api';
@@ -13,15 +14,23 @@ import type { AdminPageAgentConfig } from '@/lib/admin-page-agent-api';
 import { AdminAgentComposer } from './AdminAgentComposer';
 import { AdminAgentConversationSidebar } from './AdminAgentConversationSidebar';
 import { AdminAgentMessageContent } from './AdminAgentMessageContent';
-import { adminAgentQuickActions, type AdminAgentQuickActionId } from './admin-agent-quick-actions';
+import type { AdminAgentPageContext } from './admin-agent-page-context';
+import {
+  resolveAgentDrawerPresentation,
+  useCompactAgentDrawer,
+} from './agent-drawer-presentation';
 import type { AgentMessage } from './useAdminAgentConversation';
+import type { PageAgentExecutionStep } from './admin-agent-runtime';
 
 export function AdminAgentDrawer(props: Props) {
+  const presentation = resolveAgentDrawerPresentation(useCompactAgentDrawer());
   return (
     <Drawer
       className="admin-agent-drawer"
       destroyOnClose={false}
       extra={<DrawerExtra model={props.config?.model} onSetup={props.onSetup} />}
+      mask={presentation.mask}
+      maskClosable={presentation.maskClosable}
       onClose={props.onClose}
       open={props.open}
       title="智能运营助手"
@@ -42,9 +51,11 @@ type Props = {
   activeConversationId: string | null;
   status: AgentStatus;
   activity: string;
+  executionSteps: PageAgentExecutionStep[];
   tokens: number;
   messages: AgentMessage[];
   pendingQuestion: string | null;
+  pageContext: AdminAgentPageContext;
   onClose: () => void;
   onCreateConversation: () => void;
   onSelectConversation: (conversationId: string) => void;
@@ -84,7 +95,7 @@ function DrawerBody(props: Props) {
         onSelect={props.onSelectConversation}
       />
       <main className="admin-agent-chat-pane">
-        <StatusAlert status={props.status} activity={props.activity} />
+        <StatusAlert context={props.pageContext} status={props.status} activity={props.activity} />
         {props.pendingQuestion ? (
           <QuestionAlert question={props.pendingQuestion} onAnswer={props.onAnswer} />
         ) : null}
@@ -103,8 +114,16 @@ function DrawerBody(props: Props) {
   );
 }
 
-function StatusAlert({ status, activity }: { status: AgentStatus; activity: string }) {
-  const message = status === 'running' ? activity : '从一项运营查询开始';
+function StatusAlert({
+  context,
+  status,
+  activity,
+}: {
+  context: AdminAgentPageContext;
+  status: AgentStatus;
+  activity: string;
+}) {
+  const message = status === 'running' ? activity : context.title;
   return (
     <Alert
       banner
@@ -170,8 +189,9 @@ function Conversation(props: Props) {
         </Typography.Text>
         <Typography.Text type="secondary">当前会话</Typography.Text>
       </div>
+      <AgentExecutionTrace steps={props.executionSteps} />
       {showQuickActions ? (
-        <QuickActions busy={busy} onSend={props.onSend} />
+        <QuickActions busy={busy} context={props.pageContext} onSend={props.onSend} />
       ) : (
         <MessageList messages={props.messages} />
       )}
@@ -183,6 +203,26 @@ function Conversation(props: Props) {
       </div>
       <AdminAgentComposer busy={busy} onSend={props.onSend} onStop={props.onStop} />
     </>
+  );
+}
+
+function AgentExecutionTrace({ steps }: { steps: PageAgentExecutionStep[] }) {
+  if (!steps.length) return null;
+  return (
+    <section aria-label="Agent 执行过程" className="admin-agent-execution-trace">
+      <div>
+        <Typography.Text strong>执行过程</Typography.Text>
+        <Typography.Text type="secondary">实时显示，不操作业务页面</Typography.Text>
+      </div>
+      <Timeline
+        items={steps.map((step, index) => ({
+          color: step.state === 'error' ? 'red' : step.state === 'completed' ? 'green' : 'blue',
+          dot: step.state === 'running' ? <LoadingOutlined /> : undefined,
+          children: step.label,
+          key: `${step.key}-${index}`,
+        }))}
+      />
+    </section>
   );
 }
 
@@ -200,15 +240,23 @@ function MessageList({ messages }: { messages: AgentMessage[] }) {
   );
 }
 
-function QuickActions({ busy, onSend }: { busy: boolean; onSend: (value: string) => void }) {
+function QuickActions({
+  busy,
+  context,
+  onSend,
+}: {
+  busy: boolean;
+  context: AdminAgentPageContext;
+  onSend: (value: string) => void;
+}) {
   return (
     <section aria-label="常用运营查询" className="admin-agent-quick-actions">
       <div className="admin-agent-quick-actions-heading">
-        <Typography.Text strong>常用运营查询</Typography.Text>
-        <Typography.Text type="secondary">从一个问题开始，结果会保留在本轮对话中。</Typography.Text>
+        <Typography.Text strong>{context.title}</Typography.Text>
+        <Typography.Text type="secondary">{context.description}</Typography.Text>
       </div>
       <div className="admin-agent-quick-actions-grid">
-        {adminAgentQuickActions.map((action) => (
+        {context.quickActions.map((action) => (
           <Button
             className="admin-agent-quick-action"
             disabled={busy}
@@ -227,8 +275,8 @@ function QuickActions({ busy, onSend }: { busy: boolean; onSend: (value: string)
   );
 }
 
-function QuickActionIcon({ id }: { id: AdminAgentQuickActionId }) {
-  const icons: Record<AdminAgentQuickActionId, ReactNode> = {
+function QuickActionIcon({ id }: { id: string }) {
+  const icons: Record<string, ReactNode> = {
     'pending-imports': <FileSearchOutlined />,
     'pending-candidates': <AuditOutlined />,
     'runtime-health': <AlertOutlined />,
@@ -236,7 +284,7 @@ function QuickActionIcon({ id }: { id: AdminAgentQuickActionId }) {
   };
   return (
     <span aria-hidden="true" className="admin-agent-quick-action-icon">
-      {icons[id]}
+      {icons[id] ?? <DashboardOutlined />}
     </span>
   );
 }

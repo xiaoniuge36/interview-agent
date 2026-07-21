@@ -1,5 +1,5 @@
 export type UserAgentQuickAction = {
-  id: 'today-plan' | 'weakness-practice' | 'recent-mistakes' | 'review-center';
+  id: string;
   title: string;
   description: string;
   prompt: string;
@@ -10,7 +10,8 @@ export const userAgentQuickActions: UserAgentQuickAction[] = [
     id: 'today-plan',
     title: '今天练什么',
     description: '结合我的岗位和掌握度安排一轮训练',
-    prompt: '结合我的目标岗位、个人档案和掌握度，告诉我今天最值得练什么。先给出训练计划，不要直接开始消耗模型的评价。',
+    prompt:
+      '结合我的目标岗位、个人档案和掌握度，告诉我今天最值得练什么。先给出训练计划，不要直接开始消耗模型的评价。',
   },
   {
     id: 'weakness-practice',

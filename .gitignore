@@ -28,3 +28,5 @@ __pycache__/
 .audit-current.json
 .coverage
 .mypy_cache/
+/playwright-report/
+/test-results/

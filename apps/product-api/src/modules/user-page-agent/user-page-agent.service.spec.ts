@@ -1,10 +1,17 @@
+import type { ProductRequestContext } from '../../common/context/request-context';
 import { UserPageAgentService } from './user-page-agent.service';
 
-const context = {
+const context: ProductRequestContext = {
   requestId: 'request-1',
   traceId: 'trace-12345678',
   tenantId: 'tenant-1',
-  actor: { id: 'user-1', role: 'user' as const },
+  actor: {
+    id: 'user-1',
+    subject: 'user-1',
+    role: 'user',
+    tenantId: 'tenant-1',
+    scopes: ['model_credential:read'],
+  },
 };
 
 const credential = {

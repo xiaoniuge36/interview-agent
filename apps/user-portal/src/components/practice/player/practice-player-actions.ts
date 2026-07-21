@@ -10,6 +10,7 @@ import type {
 } from '@interview-agent/contracts';
 import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import { ApiError } from '@/lib/api';
+import { confirmPracticeItemEvaluation } from './practice-player-model';
 import {
   evaluatePracticeItem,
   evaluatePracticeItemStream,
@@ -67,13 +68,13 @@ export function usePracticeItemActions(context: PracticeActionContext) {
 function useSavePracticeAnswer(context: PracticeActionContext) {
   return useCallback(
     async (itemId: string) => {
-      if (!context.sessionId) return;
+      if (!context.sessionId) return false;
       const answer = context.state.drafts[itemId]?.trim();
       if (!answer) {
         const issue = '请先写下回答再保存。';
         setIssue(context.setState, 'ANSWER_REQUIRED', issue);
         context.notifications.error('回答未保存', new Error(issue), issue);
-        return;
+        return false;
       }
       setBusy(context.setState, `save:${itemId}`);
       try {
@@ -87,8 +88,10 @@ function useSavePracticeAnswer(context: PracticeActionContext) {
           message: '回答已保存。',
         }));
         context.notifications.success('回答已保存', '服务端已记录本题回答。');
+        return true;
       } catch (error) {
         setActionError(context, error, '回答保存失败');
+        return false;
       }
     },
     [context],
@@ -122,6 +125,7 @@ function useEvaluatePracticeItem(context: PracticeActionContext) {
   return useCallback(
     async (itemId: string) => {
       if (!context.sessionId) return;
+      if (!confirmPracticeItemEvaluation(window.confirm)) return;
       setBusy(context.setState, `evaluate:${itemId}`);
       const controller = new AbortController();
       controllerRef.current?.abort();

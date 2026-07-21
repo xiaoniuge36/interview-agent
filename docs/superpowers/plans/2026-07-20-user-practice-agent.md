@@ -21,6 +21,7 @@
 ### Task 1: 用户 Agent 数据模型与 API
 
 **Files:**
+
 - Create: `apps/product-api/prisma/schema/user-page-agent.prisma`
 - Create: `apps/product-api/prisma/schema/migrations/20260720143000_add_user_page_agent/migration.sql`
 - Create: `apps/product-api/src/modules/user-page-agent/user-page-agent.schemas.ts`
@@ -37,6 +38,7 @@
 - Modify: `packages/contracts/src/schemas/ai-usage.test.ts`
 
 **Interfaces:**
+
 - Produces: `/user/page-agent/config`、`/chat/completions` 和会话 CRUD API。
 - Consumes: `ModelCredentialService.resolveDefault`、`ModelProviderClient.invokeCompatible`、`AiInvocationService.measure`。
 
@@ -49,6 +51,7 @@
 ### Task 2: User Portal API、工具和运行时
 
 **Files:**
+
 - Modify: `apps/user-portal/package.json`
 - Modify: `pnpm-lock.yaml`
 - Create: `apps/user-portal/src/lib/user-page-agent-api.ts`
@@ -62,6 +65,7 @@
 - Create: `apps/user-portal/src/components/user-agent/user-agent-quick-actions.test.ts`
 
 **Interfaces:**
+
 - Produces: `createUserAgentRuntime`、`formatUserAgentConversationContext`、只读工具和 API clients。
 - Consumes: 用户 Agent 后端 API、现有 `/practice-recommendations`、`/mastery`、`/practices/recent`。
 
@@ -74,6 +78,7 @@
 ### Task 3: 多会话状态与 C 端界面
 
 **Files:**
+
 - Create: `apps/user-portal/src/components/user-agent/UserAgentWidget.tsx`
 - Create: `apps/user-portal/src/components/user-agent/UserAgentFloatButton.tsx`
 - Create: `apps/user-portal/src/components/user-agent/UserAgentDrawer.tsx`
@@ -89,6 +94,7 @@
 - Modify: `apps/user-portal/src/app/globals.css`
 
 **Interfaces:**
+
 - Produces: 登录用户全局可用的 AI 刷题教练。
 - Consumes: Task 2 的运行时、快捷提问和 API clients。
 
@@ -101,9 +107,11 @@
 ### Task 4: 数据库应用与完成验证
 
 **Files:**
+
 - Verify all files listed above.
 
 **Interfaces:**
+
 - Produces: 可在本地真实 API 与 User Portal 中运行的完整闭环。
 
 - [ ] 运行 `pnpm db:validate`、`pnpm db:generate` 和 `pnpm db:migrate:deploy`。
@@ -112,3 +120,31 @@
 - [ ] 运行目标文件 Prettier 检查与 `git diff --check`。
 - [ ] 检查 `git status --short`，只报告本次新增改动，不覆盖或提交其他工作区内容。
 
+### Task 5: 练习空间样式与交互节奏优化
+
+**Files:**
+
+- Modify: `apps/user-portal/src/components/practice/player/PracticePlayer.tsx`
+- Modify: `apps/user-portal/src/components/practice/player/PracticeQuestionStage.tsx`
+- Modify: `apps/user-portal/src/components/practice/player/PracticeQuestionNav.tsx`
+- Modify: `apps/user-portal/src/components/practice/player/PracticeCoachPanel.tsx`
+- Modify: `apps/user-portal/src/components/practice/player/usePracticePlayer.ts`
+- Modify: `apps/user-portal/src/components/practice/player/practice-player-actions.ts`
+- Modify: `apps/user-portal/src/components/practice/player/practice-player-model.ts`
+- Modify: `apps/user-portal/src/components/practice/player/practice-player-model.test.ts`
+- Modify: `apps/user-portal/src/app/styles/practice-player-base.css`
+- Modify: `apps/user-portal/src/app/styles/practice-player-stage.css`
+- Modify: `apps/user-portal/src/app/styles/practice-player-coach.css`
+- Modify: `apps/user-portal/src/app/styles/practice-player-responsive.css`
+
+**Interfaces:**
+
+- Produces: 不丢失未保存修改、可确认模型消耗、可连续完成多题的练习播放器。
+- Consumes: 既有单题保存、解析、流式评价和整轮提交 API。
+
+- [ ] 先扩展纯函数测试，覆盖未保存修改检测、切题确认、单题模型消耗确认。
+- [ ] 运行 `practice-player-model.test.ts`，确认新增行为在实现前失败。
+- [ ] 让保存动作返回成功状态，并实现“保存并下一题”和切题保护。
+- [ ] 在单题评价前增加额度确认，异步操作期间锁定题目导航。
+- [ ] 调整三栏比例、答题区、教练面板、进度和移动端样式。
+- [ ] 运行练习定向测试、User Portal 全量测试、类型检查、Lint 和构建。

@@ -24,9 +24,7 @@ export const UserPageAgentCompletionRequestSchema = z
   })
   .passthrough();
 
-export type UserPageAgentCompletionRequest = z.infer<
-  typeof UserPageAgentCompletionRequestSchema
->;
+export type UserPageAgentCompletionRequest = z.infer<typeof UserPageAgentCompletionRequestSchema>;
 
 export const UserPageAgentConfigSchema = z.object({
   enabled: z.boolean(),

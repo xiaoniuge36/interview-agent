@@ -236,25 +236,54 @@
 }
 .practice-completion-page > header div {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
   margin-top: 18px;
 }
-.practice-completion-page > header a {
+.practice-completion-page > header a,
+.practice-completion-page > header button {
   border: 1px solid #ccd8e8;
   border-radius: 9px;
   padding: 10px 13px;
+  background: #fff;
   color: #245bbd;
   font-size: 11px;
   font-weight: 800;
+}
+.practice-completion-page > header button {
+  border-color: #1d5de1;
+  background: #1d5de1;
+  color: #fff;
+}
+.practice-completion-page > header button:disabled {
+  cursor: wait;
+  opacity: 0.64;
 }
 .practice-completion-page .practice-results {
   width: min(1120px, 100%);
   margin: 0 auto;
 }
 .practice-report-retry {
-  display: block;
+  display: grid;
+  justify-items: center;
+  gap: 9px;
   margin: 20px auto;
+  text-align: center;
+}
+.practice-report-retry p {
+  margin: 0;
+  color: #6f7e92;
+  font-size: 12px;
+}
+.practice-report-retry button {
+  border: 1px solid #ccd8e8;
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: #fff;
+  color: #245bbd;
+  font-size: 11px;
+  font-weight: 800;
 }
 .practice-completion-message {
   text-align: center;
