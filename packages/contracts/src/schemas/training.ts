@@ -74,6 +74,21 @@ export const BatchCandidateReviewResultSchema = z.object({
   updatedCount: z.number().int().nonnegative(),
 });
 
+export const BatchCandidatePublishInputSchema = z
+  .object({
+    candidateIds: z.array(z.string().min(1)).min(1).max(CONTRACT_LIMITS.list),
+    visibility: QuestionVisibilitySchema.default('tenant'),
+  })
+  .refine((value) => new Set(value.candidateIds).size === value.candidateIds.length, {
+    message: 'Candidate IDs must be unique.',
+    path: ['candidateIds'],
+  });
+
+export const BatchCandidatePublishResultSchema = z.object({
+  publishedCount: z.number().int().nonnegative(),
+  alreadyPublishedCount: z.number().int().nonnegative(),
+});
+
 export const TrainingPlanSchema = z.object({
   id: z.string(),
   tenantId: z.string(),
@@ -101,6 +116,8 @@ export type CandidateQuestion = z.infer<typeof CandidateQuestionSchema>;
 export type CandidateReview = z.infer<typeof CandidateReviewSchema>;
 export type BatchCandidateReviewInput = z.infer<typeof BatchCandidateReviewInputSchema>;
 export type BatchCandidateReviewResult = z.infer<typeof BatchCandidateReviewResultSchema>;
+export type BatchCandidatePublishInput = z.infer<typeof BatchCandidatePublishInputSchema>;
+export type BatchCandidatePublishResult = z.infer<typeof BatchCandidatePublishResultSchema>;
 export type TrainingPlan = z.infer<typeof TrainingPlanSchema>;
 
 export const ImportTaskStatusSchema = z.enum([

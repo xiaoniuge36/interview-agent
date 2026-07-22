@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { LockOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { Alert, Button, Card, Form, Input, Layout } from 'antd';
 import { useAuth } from '@interview-agent/auth-client';
+import { AdminAuthTransition } from './AdminAuthTransition';
 
 const CONSOLE_ROLES = new Set(['admin', 'question_reviewer', 'platform_admin']);
 
@@ -31,9 +32,8 @@ export function AdminAccess({ children }: AdminAccessProps) {
 
   if (auth.status === 'authenticated' && hasConsoleAccess) return children;
   if (auth.mode === 'development') return children;
-  // OIDC 异步校验：透明占位，避免整页闪登录卡
   if (auth.status === 'loading') {
-    return <main className="admin-access-bootstrap" aria-busy="true" aria-label="加载中" />;
+    return <AdminAuthTransition />;
   }
   if (auth.mode === 'local') return <LocalAdminAccess error={accessError ?? auth.error} />;
   return <FederatedAdminAccess error={accessError ?? auth.error} />;

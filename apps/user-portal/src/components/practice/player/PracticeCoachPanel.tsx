@@ -1,5 +1,6 @@
 import type { PracticeItemSolution, PracticeSession } from '@interview-agent/contracts';
 import Link from 'next/link';
+import { useState } from 'react';
 import type { PlayerAiOperation, PlayerBusy, PlayerIssue } from './practice-player-actions';
 
 type PracticeCoachPanelProps = {
@@ -11,6 +12,7 @@ type PracticeCoachPanelProps = {
   aiOperation: PlayerAiOperation | null;
   onRevealSolution: () => void;
   onEvaluate: () => void;
+  onOpenReview: () => void;
 };
 
 export function PracticeCoachPanel(props: PracticeCoachPanelProps) {
@@ -23,12 +25,40 @@ export function PracticeCoachPanel(props: PracticeCoachPanelProps) {
       data-user-agent-scope="practice-feedback"
     >
       <header>
-        <span>Coach panel</span>
+        <span>答题教练</span>
         <h2>解析与反馈</h2>
       </header>
       <SolutionSection {...props} answerSaved={answerSaved} />
       <AiEvaluationSection {...props} answerCurrent={answerCurrent} />
+      {props.solution || props.item.evaluation ? (
+        <button
+          className="practice-coach-review-trigger"
+          type="button"
+          onClick={props.onOpenReview}
+        >
+          打开本题复盘
+        </button>
+      ) : null}
+      <PracticeLearningNotice item={props.item} />
     </aside>
+  );
+}
+
+export function PracticeLearningNotice({ item }: Pick<PracticeCoachPanelProps, 'item'>) {
+  const focus = item.question.tags.slice(0, 2).join('、') || '相关能力';
+  const evaluated = Boolean(item.evaluation);
+  const copy = evaluated
+    ? `完成整轮 AI 复盘后，会把本题的 ${focus} 证据写入能力画像，并用于下一轮推荐。`
+    : `保存回答并完成 AI 评价后，系统会在整轮 AI 复盘时更新你的 ${focus} 能力画像。`;
+
+  return (
+    <section className="practice-learning-notice" data-state={evaluated ? 'ready' : 'pending'}>
+      <div>
+        <span>Agent 学习轨迹</span>
+        <strong>{evaluated ? '本题反馈已就绪' : '等待本题 AI 评价'}</strong>
+      </div>
+      <p>{copy}</p>
+    </section>
   );
 }
 
@@ -73,6 +103,7 @@ function SolutionSection(props: PracticeCoachPanelProps & { answerSaved: boolean
 }
 
 function AiEvaluationSection(props: PracticeCoachPanelProps & { answerCurrent: boolean }) {
+  const [confirming, setConfirming] = useState(false);
   const evaluation = props.item.evaluation;
   const evaluating = props.busy === `evaluate:${props.item.id}`;
   return (
@@ -96,13 +127,45 @@ function AiEvaluationSection(props: PracticeCoachPanelProps & { answerCurrent: b
           <button
             type="button"
             disabled={!props.answerCurrent || props.busy !== null}
-            onClick={props.onEvaluate}
+            onClick={() => setConfirming(true)}
           >
             {evaluating ? '模型评价中…' : '调用我的模型评价'}
           </button>
         </div>
       )}
+      {confirming ? (
+        <AiEvaluationConfirmation
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false);
+            props.onEvaluate();
+          }}
+        />
+      ) : null}
       {props.issue ? <CoachIssue issue={props.issue} /> : null}
+    </section>
+  );
+}
+
+function AiEvaluationConfirmation({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <section className="practice-item-ai-confirmation" aria-live="polite">
+      <strong>确认调用 AI 评价</strong>
+      <p>将使用你在设置中验证的默认模型，生成本题评分、缺失要点与追问。</p>
+      <div>
+        <button className="secondary" type="button" onClick={onCancel}>
+          暂不评价
+        </button>
+        <button type="button" onClick={onConfirm}>
+          开始评价
+        </button>
+      </div>
     </section>
   );
 }

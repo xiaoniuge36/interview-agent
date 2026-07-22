@@ -5,6 +5,7 @@ import {
   ActionSchema,
   CreateLocalAdminInputSchema,
   PlatformDashboardSchema,
+  PracticeHistoryListSchema,
   QuestionSchema,
   RoleSchema,
   SubmitInterviewAnswerInputSchema,
@@ -61,6 +62,27 @@ test('answer input trims content and rejects blank answers', () => {
   assert.equal(
     SubmitInterviewAnswerInputSchema.safeParse({ answer: '   ', expectedVersion: 0 }).success,
     false,
+  );
+});
+
+test('practice history only accepts compact training summaries', () => {
+  assert.equal(
+    PracticeHistoryListSchema.safeParse([
+      {
+        id: 'practice-1',
+        title: 'System design review',
+        mode: 'manual',
+        status: 'report_ready',
+        questionCount: 3,
+        answeredCount: 3,
+        evaluatedCount: 3,
+        overallScore: 86,
+        weaknesses: ['Explain trade-offs'],
+        reportedAt: '2026-07-22T09:00:00.000Z',
+        updatedAt: '2026-07-22T10:00:00.000Z',
+      },
+    ]).success,
+    true,
   );
 });
 

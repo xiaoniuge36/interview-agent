@@ -1,0 +1,111 @@
+.access-shell {
+  grid-template-columns: minmax(0, 0.92fr) minmax(500px, 1.08fr);
+}
+
+.access-story {
+  padding: clamp(32px, 5vw, 72px);
+  background:
+    radial-gradient(circle at 74% 18%, rgba(93, 136, 255, 0.3), transparent 23rem),
+    linear-gradient(155deg, #10274a, #09182f 58%, #071322);
+}
+
+.access-story-copy {
+  max-width: 510px;
+}
+
+.access-story h1 {
+  max-width: 500px;
+  font-size: clamp(38px, 4.2vw, 56px);
+}
+
+.access-story-copy > p {
+  max-width: 430px;
+  font-size: 14px;
+}
+
+.access-memory-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 530px;
+}
+
+.access-memory-card {
+  gap: 11px;
+  padding: 14px;
+}
+
+.access-memory-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.access-memory-card strong {
+  font-size: 13px;
+}
+
+.access-memory-card p {
+  font-size: 11px;
+}
+
+.access-panel {
+  width: min(480px, calc(100% - 56px));
+  padding: 38px 38px 32px;
+  border-radius: 22px;
+  box-shadow: 0 22px 60px rgba(22, 39, 69, 0.1);
+}
+
+.access-panel-header h2 {
+  font-size: 30px;
+}
+
+.access-panel-header > p:last-child {
+  max-width: 360px;
+}
+
+.access-tabs {
+  margin: 26px 0 22px;
+}
+
+.access-form {
+  gap: 16px;
+}
+
+.access-submit {
+  min-height: 50px;
+}
+
+@media (max-width: 960px) {
+  .access-shell {
+    grid-template-columns: minmax(0, 0.84fr) minmax(420px, 1.16fr);
+  }
+
+  .access-memory-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .access-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .access-story {
+    min-height: auto;
+  }
+
+  .access-memory-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .access-panel {
+    width: min(100% - 28px, 480px);
+    padding: 28px 22px;
+  }
+
+  .access-memory-list {
+    grid-template-columns: 1fr;
+  }
+}

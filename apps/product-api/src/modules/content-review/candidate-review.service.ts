@@ -1,15 +1,14 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
-  CandidateQuestionDetailSchema,
   BatchCandidateReviewResultSchema,
-  QuestionSchema,
+  CandidateQuestionDetailSchema,
+  type BatchCandidatePublishInput,
   type BatchCandidateReviewInput,
   type CandidateQuestionDetail,
   type PublishCandidateQuestionInput,
@@ -20,14 +19,19 @@ import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
 import { runSerializable } from '../../common/database/serializable-transaction';
+import { CandidatePublicationService } from './candidate-publication.service';
 
 @Injectable()
 export class CandidateReviewService {
+  private readonly publication: CandidatePublicationService;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly policy: PolicyService,
     private readonly audit: AuditService,
-  ) {}
+  ) {
+    this.publication = new CandidatePublicationService(prisma, policy, audit);
+  }
 
   async detail(
     context: ProductRequestContext,
@@ -103,76 +107,16 @@ export class CandidateReviewService {
     });
   }
 
-  async publish(
+  batchPublish(context: ProductRequestContext, input: BatchCandidatePublishInput) {
+    return this.publication.batchPublish(context, input);
+  }
+
+  publish(
     context: ProductRequestContext,
     candidateId: string,
     input: PublishCandidateQuestionInput,
   ) {
-    this.assertPublishPermission(context);
-    return runSerializable(this.prisma, async (transaction) => {
-      const candidate = await this.loadCandidate(transaction, context.tenantId, candidateId);
-      if (candidate.status !== 'approved') throw candidateNotApproved();
-      if (candidate.publishedQuestionId)
-        return this.loadPublishedQuestion(
-          transaction,
-          candidate.tenantId,
-          candidate.publishedQuestionId,
-        );
-      const question = await this.findOrCreateQuestion(transaction, candidate, input.visibility);
-      await transaction.candidateQuestion.update({
-        where: { id: candidate.id },
-        data: { publishedQuestionId: question.id },
-      });
-      await this.audit.record(
-        context,
-        {
-          action: 'question:write',
-          resourceType: 'Question',
-          resourceId: question.id,
-          metadata: { candidateId: candidate.id, source: 'candidate_review' },
-        },
-        transaction,
-      );
-      return QuestionSchema.parse(question);
-    });
-  }
-
-  private async findOrCreateQuestion(
-    transaction: Prisma.TransactionClient,
-    candidate: Awaited<ReturnType<CandidateReviewService['loadCandidate']>>,
-    visibility: 'public' | 'tenant',
-  ) {
-    const existing = await transaction.question.findFirst({
-      where: { tenantId: candidate.tenantId, title: candidate.title, status: 'published' },
-    });
-    if (existing) return existing;
-    return transaction.question.create({
-      data: {
-        tenantId: candidate.tenantId,
-        visibility,
-        title: candidate.title,
-        stem: candidate.stem,
-        type: candidate.type,
-        difficulty: candidate.difficulty,
-        tags: candidate.tags,
-        answer: candidate.answer,
-        rubric: jsonValue(candidate.rubric),
-        sourceRefs: candidate.sourceRefs,
-        status: 'published',
-      },
-    });
-  }
-
-  private async loadPublishedQuestion(
-    transaction: Prisma.TransactionClient,
-    tenantId: string,
-    questionId: string,
-  ) {
-    const question = await transaction.question.findUnique({
-      where: { tenantId_id: { tenantId, id: questionId } },
-    });
-    if (!question) throw new ConflictException({ code: 'PUBLISHED_QUESTION_MISSING' });
-    return QuestionSchema.parse(question);
+    return this.publication.publish(context, candidateId, input);
   }
 
   private async loadCandidate(
@@ -192,17 +136,6 @@ export class CandidateReviewService {
 
   private assertReviewPermission(context: ProductRequestContext) {
     this.policy.assert(context.actor, 'candidate:review', { tenantId: context.tenantId });
-  }
-
-  private assertPublishPermission(context: ProductRequestContext) {
-    this.assertReviewPermission(context);
-    if (context.actor.role !== 'admin' && context.actor.role !== 'platform_admin') {
-      throw new ForbiddenException({
-        code: 'ROLE_NOT_ALLOWED',
-        message: '当前身份无权访问该资源。',
-      });
-    }
-    this.policy.assert(context.actor, 'question:write', { tenantId: context.tenantId });
   }
 }
 
@@ -268,13 +201,6 @@ function mapCandidate(record: {
     rubric: record.rubric,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
-  });
-}
-
-function candidateNotApproved() {
-  return new BadRequestException({
-    code: 'CANDIDATE_NOT_APPROVED',
-    message: '候选题审核通过后才能发布。',
   });
 }
 

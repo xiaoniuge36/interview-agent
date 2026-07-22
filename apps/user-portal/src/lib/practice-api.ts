@@ -4,6 +4,7 @@
   PracticeReportSchema,
   PracticeItemFeedbackSchema,
   PracticeItemSolutionSchema,
+  PracticeHistoryListSchema,
   PracticeSessionSchema,
   SubmitPracticeAnswerSchema,
   type CreatePracticeSession,
@@ -12,6 +13,7 @@
   type PracticeReport,
   type PracticeItemFeedback,
   type PracticeItemSolution,
+  type PracticeHistoryItem,
   type PracticeSession,
   type SubmitPracticeAnswer,
 } from '@interview-agent/contracts';
@@ -29,6 +31,10 @@ export function createPracticeSession(input: CreatePracticeSession): Promise<Pra
 
 export function getPracticeSession(sessionId: string): Promise<PracticeSession> {
   return apiRequest({ path: `/practices/${sessionId}`, schema: PracticeSessionSchema });
+}
+
+export function listPracticeHistory(): Promise<PracticeHistoryItem[]> {
+  return apiRequest({ path: '/practices/history', schema: PracticeHistoryListSchema });
 }
 
 export function submitPracticeAnswer(

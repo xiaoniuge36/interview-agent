@@ -2,7 +2,7 @@ import type { CandidateReview } from '@interview-agent/contracts';
 import { App, Button, Empty, Table, Tag, Typography, type TableProps } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import type { AdminPagedListController } from '@/hooks/useAdminPagedList';
-import { batchReviewCandidates } from '@/lib/training-content-api';
+import { batchPublishCandidates, batchReviewCandidates } from '@/lib/training-content-api';
 import { CandidateBatchReviewBar } from './CandidateBatchReviewBar';
 import { resolveCandidateBatchReview } from './admin-records';
 
@@ -65,9 +65,37 @@ function useCandidateBatchReview(props: CandidateQueueTableProps) {
   }, [props.list.submittedQuery, props.candidates]);
 
   const onReview = (status: 'approved' | 'needs_edit' | 'rejected') => {
-    void submitCandidateBatchReview({ notes, props, selection, setNotes, setSelectedCandidateIds, setSubmitting, message, status });
+    void submitCandidateBatchReview({
+      notes,
+      props,
+      selection,
+      setNotes,
+      setSelectedCandidateIds,
+      setSubmitting,
+      message,
+      status,
+    });
   };
-  return { isSubmitting, notes, onNotesChange: setNotes, onReview, selectedCandidateIds, selection, setSelectedCandidateIds };
+  const onPublish = () => {
+    void submitCandidateBatchPublish({
+      props,
+      selection,
+      setNotes,
+      setSelectedCandidateIds,
+      setSubmitting,
+      message,
+    });
+  };
+  return {
+    isSubmitting,
+    notes,
+    onNotesChange: setNotes,
+    onPublish,
+    onReview,
+    selectedCandidateIds,
+    selection,
+    setSelectedCandidateIds,
+  };
 }
 
 type SubmitCandidateBatchReview = {
@@ -102,34 +130,94 @@ async function submitCandidateBatchReview(input: SubmitCandidateBatchReview) {
   }
 }
 
-function CandidateQueueEmpty() {
-  return <Empty description="没有匹配的候选题，可前往资料导入创建新任务。" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
+type SubmitCandidateBatchPublish = Omit<SubmitCandidateBatchReview, 'notes' | 'status'>;
+
+async function submitCandidateBatchPublish(input: SubmitCandidateBatchPublish) {
+  if (!input.selection.canPublish) return;
+  input.setSubmitting(true);
+  try {
+    const result = await batchPublishCandidates({
+      candidateIds: input.selection.candidateIds,
+      visibility: 'tenant',
+    });
+    const alreadyPublished = result.alreadyPublishedCount
+      ? `，${result.alreadyPublishedCount} 道已在题库`
+      : '';
+    input.message.success(`已发布 ${result.publishedCount} 道候选题${alreadyPublished}。`);
+    input.setSelectedCandidateIds([]);
+    input.setNotes('');
+    input.props.list.reload();
+    input.props.onChanged();
+  } catch {
+    // 统一请求层会展示失败原因；此处只恢复批量操作状态。
+  } finally {
+    input.setSubmitting(false);
+  }
 }
 
-function candidateColumns(onReview: (id: string) => void): NonNullable<TableProps<CandidateReview>['columns']> {
+function CandidateQueueEmpty() {
+  return (
+    <Empty
+      description="没有匹配的候选题，可前往资料导入创建新任务。"
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+    />
+  );
+}
+
+function candidateColumns(
+  onReview: (id: string) => void,
+): NonNullable<TableProps<CandidateReview>['columns']> {
   return [
-    { title: '候选题', dataIndex: 'title', render: (_, candidate) => <QuestionCell candidate={candidate} /> },
+    {
+      title: '候选题',
+      dataIndex: 'title',
+      render: (_, candidate) => <QuestionCell candidate={candidate} />,
+    },
     { title: '质量分', dataIndex: 'qualityScore', width: 92 },
     {
-      title: '状态', dataIndex: 'status', width: 112,
-      render: (status: CandidateReview['status']) => <Tag color={candidateStatusColor(status)}>{STATUS_LABELS[status]}</Tag>,
+      title: '状态',
+      dataIndex: 'status',
+      width: 112,
+      render: (status: CandidateReview['status']) => (
+        <Tag color={candidateStatusColor(status)}>{STATUS_LABELS[status]}</Tag>
+      ),
     },
-    { title: '来源资料', key: 'sourceImport', width: 220, render: (_, candidate) => <SourceImportCell candidate={candidate} /> },
-    { title: '创建时间', dataIndex: 'createdAt', width: 132, render: (value) => DATE_FORMATTER.format(new Date(value)) },
     {
-      title: '操作', key: 'action', fixed: 'right', width: 88,
-      render: (_, candidate) => <Button size="small" type="link" onClick={() => onReview(candidate.id)}>审核</Button>,
+      title: '来源资料',
+      key: 'sourceImport',
+      width: 220,
+      render: (_, candidate) => <SourceImportCell candidate={candidate} />,
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createdAt',
+      width: 132,
+      render: (value) => DATE_FORMATTER.format(new Date(value)),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      fixed: 'right',
+      width: 88,
+      render: (_, candidate) => (
+        <Button size="small" type="link" onClick={() => onReview(candidate.id)}>
+          审核
+        </Button>
+      ),
     },
   ];
 }
 
 function SourceImportCell({ candidate }: { candidate: CandidateReview }) {
-  if (!candidate.sourceImport) return <Typography.Text type="secondary">非导入来源</Typography.Text>;
+  if (!candidate.sourceImport)
+    return <Typography.Text type="secondary">非导入来源</Typography.Text>;
   return (
     <div>
       <Typography.Text>{candidate.sourceImport.title}</Typography.Text>
       <br />
-      <Typography.Text code type="secondary">{candidate.sourceImport.id}</Typography.Text>
+      <Typography.Text code type="secondary">
+        {candidate.sourceImport.id}
+      </Typography.Text>
     </div>
   );
 }
@@ -139,11 +227,15 @@ function QuestionCell({ candidate }: { candidate: CandidateReview }) {
     <div>
       <Typography.Text strong>{candidate.title}</Typography.Text>
       <br />
-      <Typography.Text type="secondary">{candidate.tags.length ? candidate.tags.join(' · ') : '未标注标签'}</Typography.Text>
+      <Typography.Text type="secondary">
+        {candidate.tags.length ? candidate.tags.join(' · ') : '未标注标签'}
+      </Typography.Text>
     </div>
   );
 }
 
 function candidateStatusColor(status: CandidateReview['status']): string {
-  return { pending: 'processing', needs_edit: 'warning', approved: 'success', rejected: 'error' }[status];
+  return { pending: 'processing', needs_edit: 'warning', approved: 'success', rejected: 'error' }[
+    status
+  ];
 }

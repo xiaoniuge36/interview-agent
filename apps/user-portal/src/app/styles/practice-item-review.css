@@ -1,0 +1,217 @@
+.practice-item-review-backdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  overflow-y: auto;
+  padding: clamp(18px, 4vw, 56px);
+  background: rgba(10, 25, 48, 0.54);
+  backdrop-filter: blur(8px);
+}
+
+.practice-item-review {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(195, 211, 236, 0.88);
+  border-radius: 24px;
+  background: #f6f9ff;
+  box-shadow: 0 28px 70px rgba(10, 25, 48, 0.26);
+}
+
+.practice-item-review-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: clamp(24px, 4vw, 38px);
+  background: radial-gradient(circle at 100% 0%, rgba(59, 111, 234, 0.2), transparent 42%), #14213d;
+}
+
+.practice-item-review-header > div {
+  min-width: 0;
+}
+
+.practice-item-review-header span {
+  color: #9cc6ff;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.practice-item-review-header h2 {
+  margin: 10px 0 7px;
+  color: #ffffff;
+  font-size: clamp(27px, 4vw, 38px);
+  letter-spacing: -0.05em;
+}
+
+.practice-item-review-header p {
+  margin: 0;
+  color: #d7e4fb;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.practice-item-review-header button {
+  flex: 0 0 auto;
+  border: 1px solid rgba(190, 216, 255, 0.32);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.practice-item-review-body {
+  display: grid;
+  gap: 18px;
+  padding: clamp(22px, 4vw, 38px);
+}
+
+.practice-item-review-section {
+  position: relative;
+  border: 1px solid #dbe5f4;
+  border-radius: 17px;
+  padding: 20px 22px;
+  background: #ffffff;
+}
+
+.practice-item-review-section[data-tone]::before {
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: -1px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: #82aaf2;
+  content: '';
+}
+
+.practice-item-review-section[data-tone='solution']::before {
+  background: #49a987;
+}
+
+.practice-item-review-section[data-tone='evaluation']::before {
+  background: #3b6fea;
+}
+
+.practice-item-review-section > header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 13px;
+}
+
+.practice-item-review-section > header span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b6fea;
+}
+
+.practice-item-review-section h3 {
+  margin: 0;
+  color: #14213d;
+  font-size: 15px;
+}
+
+.practice-item-review-section p,
+.practice-item-review-section > div {
+  color: #43536c;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.practice-item-review-section p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.practice-item-review-rubric,
+.practice-item-review-gaps ul {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.practice-item-review-rubric li {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.35fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f4f8ff;
+}
+
+.practice-item-review-rubric strong,
+.practice-item-review-gaps strong {
+  color: #1d4279;
+  font-size: 12px;
+}
+
+.practice-item-review-score {
+  display: inline-grid;
+  gap: 0;
+  min-width: 88px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  padding: 11px 14px;
+  background: #eaf1ff;
+}
+
+.practice-item-review-score strong {
+  color: #2459c7;
+  font-size: 29px;
+  line-height: 1;
+}
+
+.practice-item-review-score span {
+  color: #60708a;
+  font-size: 11px;
+}
+
+.practice-item-review-gaps {
+  margin-top: 16px;
+}
+
+.practice-item-review-gaps li {
+  border-left: 2px solid #e7ae4e;
+  padding-left: 9px;
+}
+
+.practice-item-review-section blockquote {
+  margin: 18px 0 0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #edf6f3;
+  color: #1d6455;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+@media (max-width: 640px) {
+  .practice-item-review-backdrop {
+    padding: 0;
+  }
+  .practice-item-review {
+    min-height: 100%;
+    border-radius: 0;
+  }
+  .practice-item-review-header {
+    padding: 24px 20px;
+  }
+  .practice-item-review-body {
+    padding: 18px;
+  }
+  .practice-item-review-section {
+    padding: 18px;
+  }
+  .practice-item-review-rubric li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

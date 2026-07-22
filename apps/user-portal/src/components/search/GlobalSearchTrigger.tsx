@@ -1,14 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import { useGlobalSearch } from './GlobalSearchProvider';
 
-export function GlobalSearchTrigger() {
+export function GlobalSearchTrigger({ actions }: { actions?: ReactNode }) {
   const search = useGlobalSearch();
   return (
     <GlobalSearchTriggerView
       isOpen={search.isOpen}
       onOpen={(trigger) => search.open('', trigger)}
+      actions={actions}
     />
   );
 }
@@ -16,9 +17,11 @@ export function GlobalSearchTrigger() {
 export function GlobalSearchTriggerView({
   isOpen,
   onOpen,
+  actions,
 }: {
   isOpen: boolean;
   onOpen: (trigger: HTMLElement) => void;
+  actions?: ReactNode;
 }) {
   return (
     <header className="global-search-dock" aria-label="全局搜索入口">
@@ -45,7 +48,10 @@ export function GlobalSearchTriggerView({
           </span>
           <kbd>Ctrl K</kbd>
         </button>
-        <span className="global-search-dock-scope">题目 · 专题 · 页面</span>
+        <div className="global-search-dock-actions">
+          <span className="global-search-dock-scope">题目 · 专题 · 页面</span>
+          {actions}
+        </div>
       </div>
     </header>
   );

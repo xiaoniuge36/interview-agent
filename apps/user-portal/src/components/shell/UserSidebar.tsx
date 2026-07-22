@@ -3,16 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@interview-agent/auth-client';
 import { NavigationIcon } from './NavigationIcon';
-import {
-  NAV_ITEMS,
-  navigationLinkClass,
-  navIdFromPathname,
-  type NavigationId,
-} from './navigation';
-import { sidebarAccountActions } from './sidebar-account-actions';
-import { ThemeMenu } from '../theme/ThemeMenu';
+import { NAV_ITEMS, navigationLinkClass, navIdFromPathname, type NavigationId } from './navigation';
 
 const NAV_PENDING_TIMEOUT_MS = 4000;
 const NAV_PREFETCH_TIMEOUT_MS = 1200;
@@ -22,11 +14,8 @@ const SHOULD_WARM_DEVELOPMENT_ROUTES = process.env.NODE_ENV === 'development';
 export function UserSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const auth = useAuth();
   const active = navIdFromPathname(pathname);
   const [pending, setPending] = useState<NavigationId | null>(null);
-  const name = auth.identity?.displayName ?? '训练用户';
-  const accountActions = sidebarAccountActions(auth.mode);
   useNavigationWarmup(pathname, router.prefetch);
   useEffect(() => setPending(null), [pathname]);
   useEffect(() => {
@@ -34,21 +23,15 @@ export function UserSidebar() {
     const timeout = window.setTimeout(() => setPending(null), NAV_PENDING_TIMEOUT_MS);
     return () => window.clearTimeout(timeout);
   }, [pending]);
+
   return (
     <aside className="user-sidebar" aria-label="主导航">
       <SidebarBrand />
-      <SidebarUserSummary name={name} />
       <SidebarNavigation
         active={active}
         pending={pending}
         onNavigate={setPending}
         onWarm={router.prefetch}
-      />
-      <ThemeMenu variant="sidebar" />
-      <SidebarAccount
-        name={name}
-        showSignOut={accountActions.includes('sign_out')}
-        onSignOut={() => void auth.signOut()}
       />
     </aside>
   );
@@ -70,10 +53,7 @@ function useNavigationWarmup(pathname: string, prefetch: (href: string) => void)
       const idleId = requestIdle(() => void warmRoutes(), { timeout: NAV_PREFETCH_TIMEOUT_MS });
       return () => window.cancelIdleCallback(idleId);
     }
-    const timeoutId = window.setTimeout(
-      () => void warmRoutes(),
-      NAV_PREFETCH_FALLBACK_DELAY_MS,
-    );
+    const timeoutId = window.setTimeout(() => void warmRoutes(), NAV_PREFETCH_FALLBACK_DELAY_MS);
     return () => window.clearTimeout(timeoutId);
   }, [pathname, prefetch]);
 }
@@ -95,21 +75,6 @@ function SidebarBrand() {
       <span>
         <strong>OfferPilot</strong>
         <small>你的面试 Agent</small>
-      </span>
-    </Link>
-  );
-}
-
-function SidebarUserSummary({ name }: { name: string }) {
-  return (
-    <Link className="sidebar-user-summary" href="/settings" aria-label="打开个人设置">
-      <span className="sidebar-avatar">{initial(name)}</span>
-      <span>
-        <strong>{name}</strong>
-        <small>求职者</small>
-      </span>
-      <span className="sidebar-chevron" aria-hidden="true">
-        ⌄
       </span>
     </Link>
   );
@@ -168,56 +133,6 @@ function trackNavigation(options: {
   onNavigate(target);
 }
 
-function SidebarAccount({
-  name,
-  showSignOut,
-  onSignOut,
-}: {
-  name: string;
-  showSignOut: boolean;
-  onSignOut: () => void;
-}) {
-  return (
-    <div className={showSignOut ? 'sidebar-account has-signout' : 'sidebar-account'}>
-      <Link className="sidebar-account-link" href="/settings">
-        <span className="sidebar-avatar">{initial(name)}</span>
-        <span>
-          <strong>{name}</strong>
-          <small>个人设置</small>
-        </span>
-        <span className="sidebar-chevron" aria-hidden="true">
-          ›
-        </span>
-      </Link>
-      {showSignOut ? (
-        <button className="sidebar-signout" type="button" onClick={onSignOut}>
-          <LogoutIcon />
-          <span>退出登录</span>
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function LogoutIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10M14 8l4 4-4 4M18 12H9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function initial(value: string) {
-  return value.trim().slice(0, 1).toUpperCase() || 'U';
-}
-
 function BrandMark() {
   return (
     <svg viewBox="0 0 32 32" focusable="false">
@@ -226,8 +141,8 @@ function BrandMark() {
         d="m14 17.9 12.5-12.7"
         fill="none"
         stroke="#BBD3FF"
-        strokeWidth="2"
         strokeLinecap="round"
+        strokeWidth="2"
       />
     </svg>
   );

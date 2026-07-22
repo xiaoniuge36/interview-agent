@@ -10,7 +10,6 @@ import type {
 } from '@interview-agent/contracts';
 import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import { ApiError } from '@/lib/api';
-import { confirmPracticeItemEvaluation } from './practice-player-model';
 import {
   evaluatePracticeItem,
   evaluatePracticeItemStream,
@@ -125,7 +124,6 @@ function useEvaluatePracticeItem(context: PracticeActionContext) {
   return useCallback(
     async (itemId: string) => {
       if (!context.sessionId) return;
-      if (!confirmPracticeItemEvaluation(window.confirm)) return;
       setBusy(context.setState, `evaluate:${itemId}`);
       const controller = new AbortController();
       controllerRef.current?.abort();

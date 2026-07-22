@@ -9,6 +9,7 @@
 @import './styles/management-tables.css';
 @import './styles/states.css';
 @import './styles/admin-access.css';
+@import './styles/admin-auth-transition.css';
 @import './styles/responsive.css';
 @import './styles/antd-admin.css';
 @import './styles/admin-agent.css';

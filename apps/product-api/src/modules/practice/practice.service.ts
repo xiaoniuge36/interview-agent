@@ -7,6 +7,7 @@ import {
   type PracticeItemFeedback,
   type PracticeItemSolution,
   type PracticeSession,
+  type PracticeHistoryItem,
   type RecentPracticeSummary,
 } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
@@ -54,6 +55,10 @@ export class PracticeService {
 
   recent(context: ProductRequestContext): Promise<RecentPracticeSummary | null> {
     return this.queries.recent(context);
+  }
+
+  history(context: ProductRequestContext): Promise<PracticeHistoryItem[]> {
+    return this.queries.history(context);
   }
 
   recommendationList(context: ProductRequestContext): Promise<PracticeRecommendation[]> {

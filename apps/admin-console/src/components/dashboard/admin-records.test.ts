@@ -145,24 +145,59 @@ describe('candidate review selection', () => {
 
 describe('candidate batch review selection', () => {
   it('allows a batch only when every selected candidate has the same source', () => {
-    const resolveBatch = (adminRecords as unknown as {
-      resolveCandidateBatchReview(candidates: CandidateReview[]): unknown;
-    }).resolveCandidateBatchReview;
+    const resolveBatch = (
+      adminRecords as unknown as {
+        resolveCandidateBatchReview(candidates: CandidateReview[]): unknown;
+      }
+    ).resolveCandidateBatchReview;
     const sameSource = [
-      { ...CANDIDATE, id: 'candidate-1', importTaskId: 'import-1', sourceImport: { id: 'import-1', title: 'Java 面试资料.md' } },
-      { ...CANDIDATE, id: 'candidate-2', importTaskId: 'import-1', sourceImport: { id: 'import-1', title: 'Java 面试资料.md' } },
+      {
+        ...CANDIDATE,
+        id: 'candidate-1',
+        importTaskId: 'import-1',
+        sourceImport: { id: 'import-1', title: 'Java 面试资料.md' },
+      },
+      {
+        ...CANDIDATE,
+        id: 'candidate-2',
+        importTaskId: 'import-1',
+        sourceImport: { id: 'import-1', title: 'Java 面试资料.md' },
+      },
     ];
     const mixedSources = [
       ...sameSource,
-      { ...CANDIDATE, id: 'candidate-3', importTaskId: 'import-2', sourceImport: { id: 'import-2', title: 'Go 面试资料.md' } },
+      {
+        ...CANDIDATE,
+        id: 'candidate-3',
+        importTaskId: 'import-2',
+        sourceImport: { id: 'import-2', title: 'Go 面试资料.md' },
+      },
     ];
 
     expect(resolveBatch(sameSource)).toEqual({
       candidateIds: ['candidate-1', 'candidate-2'],
       canSubmit: true,
+      canPublish: false,
       sourceImport: { id: 'import-1', title: 'Java 面试资料.md' },
     });
     expect(resolveBatch(mixedSources)).toMatchObject({ canSubmit: false });
+  });
+});
+
+describe('candidate batch publishing selection', () => {
+  it('only enables publication when every selected candidate is approved', () => {
+    const resolveBatch = (
+      adminRecords as unknown as {
+        resolveCandidateBatchReview(candidates: CandidateReview[]): { canPublish: boolean };
+      }
+    ).resolveCandidateBatchReview;
+    const approved = [
+      { ...CANDIDATE, id: 'candidate-1', status: 'approved' as const },
+      { ...CANDIDATE, id: 'candidate-2', status: 'approved' as const },
+    ];
+
+    expect(resolveBatch(approved).canPublish).toBe(true);
+    expect(resolveBatch([...approved, { ...CANDIDATE, id: 'candidate-3' }]).canPublish).toBe(false);
   });
 });
 

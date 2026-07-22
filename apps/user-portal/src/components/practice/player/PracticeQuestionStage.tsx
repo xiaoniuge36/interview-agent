@@ -41,7 +41,7 @@ export function PracticeQuestionStage(props: PracticeQuestionStageProps) {
 function StageHeader({ item }: { item: PracticeQuestionStageProps['item'] }) {
   return (
     <header>
-      <div className="practice-stage-index">Question {String(item.sequence).padStart(2, '0')}</div>
+      <div className="practice-stage-index">第 {String(item.sequence).padStart(2, '0')} 题</div>
       <div className="practice-stage-meta">
         <span>{typeLabel(item.question.type)}</span>
         <span>{difficultyLabel(item.question.difficulty)}</span>

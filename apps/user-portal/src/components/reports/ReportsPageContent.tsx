@@ -1,261 +1,237 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
-import { WorkspaceGate } from '@/components/workspace/WorkspaceGate';
-import { interviewStageLabel } from '@/components/interview/interview-labels';
-import { getInterviewReport, listInterviews } from '@/lib/interview-api';
-import { interviewPlanForJob } from '@/lib/interview-roles';
-import type {
-  InterviewReport,
-  InterviewSession,
-  JobIntentPayload,
-  ProfilePayload,
-} from '@interview-agent/contracts';
-import { latestReportReadyInterview } from './reports-model';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { listInterviews } from '@/lib/interview-api';
+import { listPracticeHistory } from '@/lib/practice-api';
+import {
+  buildTrainingRecords,
+  filterTrainingRecords,
+  type TrainingRecord,
+  type TrainingRecordFilter,
+} from './training-records-model';
 
-const FOCUS_PREVIEW = 3;
+const FILTERS: Array<{ id: TrainingRecordFilter; label: string }> = [
+  { id: 'all', label: '全部记录' },
+  { id: 'practice', label: '刷题复盘' },
+  { id: 'interview', label: '模拟面试' },
+];
+
+type ArchiveState = {
+  records: TrainingRecord[];
+  status: 'loading' | 'ready' | 'partial' | 'error';
+};
 
 export function ReportsPageContent() {
-  return (
-    <WorkspaceGate>
-      {(data) => <ReportsBody profile={data.profile} jobs={data.jobs} />}
-    </WorkspaceGate>
+  const [filter, setFilter] = useState<TrainingRecordFilter>('all');
+  const archive = useTrainingArchive();
+  const records = useMemo(
+    () => filterTrainingRecords(archive.records, filter),
+    [archive.records, filter],
   );
-}
-
-function ReportsBody(props: { profile: ProfilePayload; jobs: JobIntentPayload[] }) {
-  const job = props.jobs[0];
-  const plan = interviewPlanForJob(job);
-  const hasProfile = Boolean(props.profile.profile);
-  const hasJob = Boolean(job);
-  const focusPreview = plan.focusTags.slice(0, FOCUS_PREVIEW).join(' · ') || '—';
-  const latest = useLatestInterviewReport();
 
   return (
-    <div className="workspace page-workspace">
-      <ReportsIntro />
-      <div className="reports-grid">
-        <ContextPanel
-          hasProfile={hasProfile}
-          hasJob={hasJob}
-          profileRole={props.profile.profile?.targetRole}
-          jobRole={job?.intent.targetRole}
-          focusPreview={focusPreview}
-        />
-        <ReportDelivery state={latest} />
-      </div>
+    <div className="workspace page-workspace training-archive">
+      <ArchiveIntro />
+      <ArchiveFilters filter={filter} onChange={setFilter} />
+      <ArchiveDelivery state={archive} records={records} filter={filter} />
     </div>
   );
 }
 
-type LatestReportState = {
-  interview: InterviewSession | null;
-  report: InterviewReport | null;
-  status: 'empty' | 'loading' | 'ready' | 'error';
-  reload: () => void;
-};
-
-function useLatestInterviewReport(): LatestReportState {
-  const [interview, setInterview] = useState<InterviewSession | null>(null);
-  const [report, setReport] = useState<InterviewReport | null>(null);
-  const [status, setStatus] = useState<LatestReportState['status']>('loading');
+function useTrainingArchive() {
+  const [state, setState] = useState<ArchiveState>({ records: [], status: 'loading' });
   const [request, setRequest] = useState(0);
   const reload = useCallback(() => setRequest((value) => value + 1), []);
+
   useEffect(() => {
     let active = true;
-    setStatus('loading');
-    void listInterviews()
-      .then(async (interviews) => {
-        const latest = latestReportReadyInterview(interviews);
+    setState((current) => ({ ...current, status: 'loading' }));
+    void Promise.allSettled([listPracticeHistory(), listInterviews()]).then(
+      ([practices, interviews]) => {
         if (!active) return;
-        setInterview(latest);
-        if (!latest) {
-          setReport(null);
-          setStatus('empty');
-          return;
-        }
-        const next = await getInterviewReport(latest.id);
-        if (!active) return;
-        setReport(next);
-        setStatus('ready');
-      })
-      .catch(() => {
-        if (active) setStatus('error');
-      });
+        const practiceItems = practices.status === 'fulfilled' ? practices.value : [];
+        const interviewItems = interviews.status === 'fulfilled' ? interviews.value : [];
+        const successCount =
+          Number(practices.status === 'fulfilled') + Number(interviews.status === 'fulfilled');
+        setState({
+          records: buildTrainingRecords(practiceItems, interviewItems),
+          status: successCount === 2 ? 'ready' : successCount ? 'partial' : 'error',
+        });
+      },
+    );
     return () => {
       active = false;
     };
   }, [request]);
-  return { interview, report, status, reload };
+
+  return { ...state, reload };
 }
 
-function ReportsIntro() {
+function ArchiveIntro() {
   return (
-    <header className="page-intro">
+    <header className="page-intro training-archive-intro">
       <div>
-        <div className="eyebrow">证据与改进</div>
-        <h1 className="h2">复盘报告</h1>
+        <div className="eyebrow">训练证据 · 回看与再练</div>
+        <h1 className="h2">训练档案</h1>
         <p className="muted-text">
-          报告是训练闭环的交付物：评分、缺口、下一步行动。完成模拟面试后，结果会出现在这里。
+          把每一轮刷题和模拟面试沉淀为可回看的证据。优先从薄弱点出发，再开下一轮训练。
         </p>
       </div>
-      <Link className="button secondary" href="/interview">
-        再开一场面试
-      </Link>
+      <div className="training-archive-intro-actions">
+        <Link className="button secondary" href="/questions">
+          去刷题
+        </Link>
+        <Link className="button" href="/interview">
+          开始模拟面试
+        </Link>
+      </div>
     </header>
   );
 }
 
-function ContextPanel(props: {
-  hasProfile: boolean;
-  hasJob: boolean;
-  profileRole: string | undefined;
-  jobRole: string | undefined;
-  focusPreview: string;
+function ArchiveFilters({
+  filter,
+  onChange,
+}: {
+  filter: TrainingRecordFilter;
+  onChange: (filter: TrainingRecordFilter) => void;
 }) {
   return (
-    <section className="panel stack">
-      <div className="eyebrow">当前上下文</div>
-      <h2 className="h2">Agent 记忆快照</h2>
-      <div className="report-context-list">
-        <ContextRow
-          label="个人画像"
-          value={props.hasProfile ? (props.profileRole ?? '已建立') : '尚未建立'}
-          ready={props.hasProfile}
-          href="/profile"
-        />
-        <ContextRow
-          label="目标岗位"
-          value={props.jobRole ?? '尚未匹配'}
-          ready={props.hasJob}
-          href="/job"
-        />
-        <ContextRow label="重点能力" value={props.focusPreview} ready={props.hasJob} href="/job" />
-      </div>
-    </section>
+    <div className="training-archive-filters" aria-label="筛选训练记录">
+      {FILTERS.map((item) => (
+        <button
+          className={filter === item.id ? 'active' : ''}
+          key={item.id}
+          type="button"
+          aria-pressed={filter === item.id}
+          onClick={() => onChange(item.id)}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
-function EmptyReportPanel() {
-  return (
-    <section className="panel stack report-empty-panel">
-      <div className="eyebrow">本轮报告</div>
-      <h2 className="h2">完成一场模拟后生成</h2>
-      <p className="muted-text">
-        面试结束后，这里会展示总分、分阶段得分、证据缺口与下一轮训练建议。你也可以在模拟面试页右侧实时查看本轮复盘。
-      </p>
-      <div className="report-placeholder-score" aria-hidden="true">
-        —
-      </div>
-      <div className="stack compact">
-        <span className="chip">整体表达</span>
-        <span className="chip">项目深挖</span>
-        <span className="chip">岗位对齐</span>
-      </div>
-      <Link className="button" href="/interview">
-        启动面试 Agent
-      </Link>
-    </section>
-  );
-}
-
-function ReportDelivery({ state }: { state: LatestReportState }) {
-  if (state.status === 'empty') return <EmptyReportPanel />;
-  if (state.status === 'loading') {
-    return <ReportState title="正在读取最近报告" copy="评分、证据和下一步行动正在同步。" />;
-  }
-  if (state.status === 'error' || !state.report || !state.interview) {
+function ArchiveDelivery({
+  state,
+  records,
+  filter,
+}: {
+  state: ReturnType<typeof useTrainingArchive>;
+  records: TrainingRecord[];
+  filter: TrainingRecordFilter;
+}) {
+  if (state.status === 'loading')
+    return <ArchiveState title="正在整理训练记录" copy="刷题和面试记录正在同步。" />;
+  if (state.status === 'error') {
     return (
-      <ReportState
-        title="报告暂时没有加载成功"
-        copy="面试记录仍然保留，可以重新读取。"
-        action={{ label: '重新加载', onClick: state.reload }}
+      <ArchiveState
+        title="训练档案暂时无法读取"
+        copy="已保存的训练不会丢失，请稍后重试。"
+        onRetry={state.reload}
       />
     );
   }
-  return <LatestReportPanel report={state.report} interview={state.interview} />;
+  if (!records.length) return <ArchiveEmpty filter={filter} />;
+  return (
+    <section className="training-archive-list" aria-label="训练记录列表">
+      {state.status === 'partial' ? (
+        <p className="training-archive-partial" role="status">
+          部分记录暂时未能读取，其余历史已为你保留。
+          <button type="button" onClick={state.reload}>
+            重新读取
+          </button>
+        </p>
+      ) : null}
+      {records.map((record) => (
+        <ArchiveRecord key={`${record.kind}-${record.id}`} record={record} />
+      ))}
+    </section>
+  );
 }
 
-function LatestReportPanel({
-  report,
-  interview,
-}: {
-  report: InterviewReport;
-  interview: InterviewSession;
-}) {
+function ArchiveRecord({ record }: { record: TrainingRecord }) {
   return (
-    <section className="panel stack latest-report-panel" aria-labelledby="latest-report-heading">
-      <div className="eyebrow">最近完成 · {new Date(report.createdAt).toLocaleDateString()}</div>
-      <div className="latest-report-heading">
-        <div>
-          <h2 id="latest-report-heading" className="h2">
-            {interview.title}
-          </h2>
-          <p className="muted-text">{report.overall.summary}</p>
-        </div>
-        <div className="report-placeholder-score" aria-label={`总分 ${report.overall.score}`}>
-          {Math.round(report.overall.score)}
-        </div>
-      </div>
-      <div className="score-list">
-        {report.stageScores.map((item) => (
-          <div className="score-row" key={item.stage}>
-            <span>{interviewStageLabel(item.stage)}</span>
-            <strong>{Math.round(item.score)}</strong>
-          </div>
-        ))}
-      </div>
-      <div className="latest-report-actions">
-        <strong>下一轮行动</strong>
-        <div>
-          {report.nextActions.map((item) => (
-            <span className="chip" key={item}>
-              {item}
-            </span>
-          ))}
-        </div>
-      </div>
-      <Link className="button secondary" href="/interview">
-        再开一场面试
+    <Link className="training-archive-record" href={record.href}>
+      <span className="training-archive-record-mark" data-kind={record.kind} aria-hidden="true">
+        {record.kind === 'practice' ? '题' : '面'}
+      </span>
+      <span className="training-archive-record-main">
+        <small>
+          {record.kind === 'practice' ? '刷题复盘' : '模拟面试'} · {formatDate(record.updatedAt)}
+        </small>
+        <strong>{record.title}</strong>
+        <span className="training-archive-record-facts">{record.facts.join(' · ')}</span>
+        {record.signals.length ? (
+          <span className="training-archive-record-signals">
+            {record.signals.map((signal) => (
+              <i key={signal}>{signal}</i>
+            ))}
+          </span>
+        ) : null}
+      </span>
+      <span className="training-archive-record-result">
+        {record.score !== null ? <b>{Math.round(record.score)}</b> : null}
+        <small>{record.score !== null ? 'AI 复盘得分' : recordStatusLabel(record.status)}</small>
+        <em>查看记录 →</em>
+      </span>
+    </Link>
+  );
+}
+
+function ArchiveEmpty({ filter }: { filter: TrainingRecordFilter }) {
+  const copy =
+    filter === 'interview'
+      ? '还没有模拟面试记录。开始一场面试，让反馈沉淀下来。'
+      : filter === 'practice'
+        ? '还没有刷题复盘。完成一轮题单后，这里会标出可补强的要点。'
+        : '还没有训练记录。选一道题或开始一次模拟面试，第一份复盘会出现在这里。';
+  return (
+    <section className="training-archive-empty">
+      <span>训练从第一条证据开始</span>
+      <h2>这里会成为你的错题本</h2>
+      <p>{copy}</p>
+      <Link className="button" href={filter === 'interview' ? '/interview' : '/questions'}>
+        {filter === 'interview' ? '开始模拟面试' : '去选择题目'}
       </Link>
     </section>
   );
 }
 
-function ReportState({
+function ArchiveState({
   title,
   copy,
-  action,
+  onRetry,
 }: {
   title: string;
   copy: string;
-  action?: { label: string; onClick: () => void };
+  onRetry?: () => void;
 }) {
   return (
-    <section className="panel stack report-empty-panel" aria-live="polite">
-      <div className="eyebrow">本轮报告</div>
-      <h2 className="h2">{title}</h2>
-      <p className="muted-text">{copy}</p>
-      {action ? (
-        <button className="button secondary" type="button" onClick={action.onClick}>
-          {action.label}
+    <section className="training-archive-empty" aria-live="polite">
+      <span>训练档案</span>
+      <h2>{title}</h2>
+      <p>{copy}</p>
+      {onRetry ? (
+        <button className="button" type="button" onClick={onRetry}>
+          重新读取
         </button>
       ) : null}
     </section>
   );
 }
 
-function ContextRow(props: { label: string; value: string; ready: boolean; href: string }) {
-  return (
-    <Link className="report-context-row" href={props.href}>
-      <span>
-        <small>{props.label}</small>
-        <strong>{props.value}</strong>
-      </span>
-      <span className={props.ready ? 'chip success' : 'chip'}>
-        {props.ready ? '已就绪' : '去完善'}
-      </span>
-    </Link>
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric' }).format(
+    new Date(value),
   );
+}
+
+function recordStatusLabel(status: string) {
+  if (status === 'report_ready') return '复盘已完成';
+  if (status === 'in_progress' || status === 'waiting_user') return '进行中';
+  if (status === 'submitted' || status === 'generating_report') return '报告生成中';
+  return '已保存';
 }

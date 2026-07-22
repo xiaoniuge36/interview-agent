@@ -3,6 +3,7 @@ import { CommonModule } from '../../common/common.module';
 import { AiUsageModule } from '../ai-usage/ai-usage.module';
 import { ModelCredentialModule } from '../model-credential/model-credential.module';
 import { AdminController } from './admin.controller';
+import { CandidateReviewAdminController } from './candidate-review-admin.controller';
 import { AccountGovernanceService } from './account-governance.service';
 import { AdminQueryService } from './admin-query.service';
 import { AdminService } from './admin.service';
@@ -17,7 +18,12 @@ import { AdminPageAgentService } from './admin-page-agent.service';
 
 @Module({
   imports: [CommonModule, AiUsageModule, ContentReviewModule, ModelCredentialModule],
-  controllers: [AdminController, PlatformAiAnalyticsController, AdminPageAgentController],
+  controllers: [
+    AdminController,
+    CandidateReviewAdminController,
+    PlatformAiAnalyticsController,
+    AdminPageAgentController,
+  ],
   providers: [
     AdminService,
     AdminQueryService,

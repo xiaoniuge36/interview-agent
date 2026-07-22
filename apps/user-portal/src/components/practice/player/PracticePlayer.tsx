@@ -1,18 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  canCompleteSelfStudy,
-  canSubmitAiReport,
-  confirmPracticeNavigation,
-  pendingEvaluationCount,
-  practiceProgress,
-} from './practice-player-model';
+import { useState } from 'react';
+import { confirmPracticeNavigation, practiceProgress } from './practice-player-model';
 import { PracticeCoachPanel } from './PracticeCoachPanel';
-import { PracticeCompletionPanel } from './PracticeCompletionPanel';
+import { PracticeCompletedReview } from './PracticeCompletedReview';
+import { PracticeItemReviewDialog } from './PracticeItemReviewDialog';
 import { PracticeQuestionNav } from './PracticeQuestionNav';
 import { PracticeQuestionStage } from './PracticeQuestionStage';
+import { PracticeRoundCompletionBar } from './PracticeRoundCompletionBar';
 import { usePracticePlayer } from './usePracticePlayer';
+
+type PracticePlayerState = ReturnType<typeof usePracticePlayer>;
 
 export function PracticePlayer() {
   const player = usePracticePlayer();
@@ -21,100 +20,110 @@ export function PracticePlayer() {
     return <PlayerState title="正在恢复练习" copy="回答、进度和已生成的评价正在同步。" />;
   if (player.loadError || !player.session)
     return <PlayerError message={player.loadError} onRetry={player.reload} />;
-  if (player.session.status !== 'in_progress') {
-    return (
-      <PracticeCompletionPanel
-        session={player.session}
-        report={player.report}
-        mastery={player.mastery}
-        message={player.message}
-        onRetry={player.reload}
-        onStartNextRecommendation={() => void player.startNextRecommendation()}
-        startingNextRecommendation={player.startingNextRecommendation}
-      />
-    );
-  }
+  if (player.session.status !== 'in_progress') return <Completion player={player} />;
   return <ActivePractice player={player} />;
 }
 
-function ActivePractice({ player }: { player: ReturnType<typeof usePracticePlayer> }) {
+function Completion({ player }: { player: PracticePlayerState }) {
+  return <PracticeCompletedReview player={player} />;
+}
+
+function ActivePractice({ player }: { player: PracticePlayerState }) {
+  const [reviewOpen, setReviewOpen] = useState(false);
   const session = player.session;
   if (!session) return null;
   const item = session.items[player.currentIndex] ?? session.items[0]!;
-  const navigation = practiceNavigation(player, session, item);
   const draft = player.drafts[item.id] ?? '';
   return (
     <div className="practice-player-page" data-user-agent-scope="practice-player">
       <PlayerHeader title={session.title} progress={practiceProgress(session)} />
       {player.message ? <PlayerMessage message={player.message} /> : null}
-      <div className="practice-player-layout">
-        <PracticeQuestionNav
-          session={session}
-          currentIndex={player.currentIndex}
-          disabled={player.busy !== null}
-          onSelect={navigation.selectIndex}
-        />
-        <PracticeQuestionStage
-          item={item}
-          draft={draft}
-          busy={player.busy}
-          currentIndex={player.currentIndex}
-          total={session.items.length}
-          onDraft={(value) => player.updateDraft(item.id, value)}
-          onSave={() => void player.save(item.id)}
-          onSaveAndNext={() => void navigation.saveAndNext()}
-          onPrevious={navigation.movePrevious}
-          onNext={navigation.moveNext}
-        />
-        <PracticeCoachPanel
-          item={item}
-          draft={draft}
-          solution={player.solutions[item.id]}
-          busy={player.busy}
-          issue={player.issue}
-          aiOperation={player.aiOperation}
-          onRevealSolution={() => void player.revealSolution(item.id)}
-          onEvaluate={() => void player.evaluate(item.id)}
-        />
-      </div>
-      <RoundCompletionBar player={player} />
+      <PracticeSessionContent
+        player={player}
+        item={item}
+        draft={draft}
+        onOpenReview={() => setReviewOpen(true)}
+      />
+      <PracticeRoundCompletionBar player={player} />
+      <PracticeItemReviewDialog
+        open={reviewOpen}
+        item={item}
+        draft={draft}
+        solution={player.solutions[item.id]}
+        onClose={() => setReviewOpen(false)}
+      />
+    </div>
+  );
+}
+
+function PracticeSessionContent({
+  player,
+  item,
+  draft,
+  onOpenReview,
+}: {
+  player: PracticePlayerState;
+  item: NonNullable<PracticePlayerState['session']>['items'][number];
+  draft: string;
+  onOpenReview: () => void;
+}) {
+  const session = player.session!;
+  const navigation = practiceNavigation(player, session, item);
+  return (
+    <div className="practice-player-layout">
+      <PracticeQuestionNav
+        session={session}
+        currentIndex={player.currentIndex}
+        disabled={player.busy !== null}
+        onSelect={navigation.selectIndex}
+      />
+      <PracticeQuestionStage
+        item={item}
+        draft={draft}
+        busy={player.busy}
+        currentIndex={player.currentIndex}
+        total={session.items.length}
+        onDraft={(value) => player.updateDraft(item.id, value)}
+        onSave={() => void player.save(item.id)}
+        onSaveAndNext={() => void navigation.saveAndNext()}
+        onPrevious={navigation.movePrevious}
+        onNext={navigation.moveNext}
+      />
+      <PracticeCoachPanel
+        item={item}
+        draft={draft}
+        solution={player.solutions[item.id]}
+        busy={player.busy}
+        issue={player.issue}
+        aiOperation={player.aiOperation}
+        onRevealSolution={() => void player.revealSolution(item.id)}
+        onEvaluate={() => void player.evaluate(item.id)}
+        onOpenReview={onOpenReview}
+      />
     </div>
   );
 }
 
 function practiceNavigation(
-  player: ReturnType<typeof usePracticePlayer>,
-  session: NonNullable<ReturnType<typeof usePracticePlayer>['session']>,
-  item: NonNullable<ReturnType<typeof usePracticePlayer>['session']>['items'][number],
+  player: PracticePlayerState,
+  session: NonNullable<PracticePlayerState['session']>,
+  item: NonNullable<PracticePlayerState['session']>['items'][number],
 ) {
   const selectIndex = (index: number) => {
     if (index === player.currentIndex || player.busy !== null) return;
-    const allowed = confirmPracticeNavigation(item, player.drafts[item.id] ?? '', (message) =>
-      window.confirm(message),
-    );
+    const allowed = confirmPracticeNavigation(item, player.drafts[item.id] ?? '', window.confirm);
     if (allowed) player.setCurrentIndex(index);
   };
-  const moveNext = () => selectIndex(Math.min(session.items.length - 1, player.currentIndex + 1));
   const saveAndNext = async () => {
-    const saved = await player.save(item.id);
-    if (saved) {
+    if (await player.save(item.id))
       player.setCurrentIndex(Math.min(session.items.length - 1, player.currentIndex + 1));
-    }
   };
   return {
     selectIndex,
-    moveNext,
-    movePrevious: () => selectIndex(Math.max(0, player.currentIndex - 1)),
     saveAndNext,
+    movePrevious: () => selectIndex(Math.max(0, player.currentIndex - 1)),
+    moveNext: () => selectIndex(Math.min(session.items.length - 1, player.currentIndex + 1)),
   };
-}
-
-function PlayerMessage({ message }: { message: string }) {
-  return (
-    <p className="practice-player-message" role="status">
-      {message}
-    </p>
-  );
 }
 
 function PlayerHeader({
@@ -128,7 +137,7 @@ function PlayerHeader({
     <header className="practice-player-header">
       <div>
         <Link href="/questions">← 返回题库</Link>
-        <span>Focused practice</span>
+        <span>专注练习</span>
         <h1>{title}</h1>
       </div>
       <div className="practice-player-progress">
@@ -141,49 +150,11 @@ function PlayerHeader({
   );
 }
 
-function RoundCompletionBar({ player }: { player: ReturnType<typeof usePracticePlayer> }) {
-  if (!player.session || !canCompleteSelfStudy(player.session)) return null;
-  const aiReady = canSubmitAiReport(player.session);
-  const pendingCount = pendingEvaluationCount(player.session);
-  const submitting = player.busy === 'submit-ai';
+function PlayerMessage({ message }: { message: string }) {
   return (
-    <section className="practice-round-actions">
-      <div>
-        <strong>
-          {pendingCount
-            ? `全部回答已保存 · 复盘将自动评价 ${pendingCount} 题`
-            : '全部题目已完成 AI 评价'}
-        </strong>
-        <p>
-          {pendingCount
-            ? '生成前会再次确认模型额度消耗；也可以继续逐题评价后再复盘。'
-            : '可以直接生成整轮 AI 复盘，并把薄弱项同步到下一轮推荐。'}
-        </p>
-        {submitting ? (
-          <p className="practice-report-operation" role="status">
-            <span aria-hidden="true" />
-            正在补齐题目评价、生成整轮复盘并更新能力记录，请不要关闭页面…
-          </p>
-        ) : null}
-      </div>
-      <div>
-        <button
-          className="secondary"
-          type="button"
-          disabled={player.busy !== null}
-          onClick={() => void player.completeSelfStudy()}
-        >
-          {player.busy === 'submit-self' ? '结束中…' : '结束自学（无 AI 报告）'}
-        </button>
-        <button
-          type="button"
-          disabled={!aiReady || player.busy !== null}
-          onClick={() => void player.submitAiReport()}
-        >
-          {submitting ? '生成复盘中…' : '生成 AI 复盘'}
-        </button>
-      </div>
-    </section>
+    <p className="practice-player-message" role="status">
+      {message}
+    </p>
   );
 }
 
@@ -199,7 +170,7 @@ function PracticeEntry() {
             组合成一轮专注练习
           </h1>
           <p>
-            无需完善个人档案，直接从公共题库选择 1–10 道题。作答、查看解析和 AI 评价均由你决定。
+            无需完善个人档案，直接从公共题库选择 1–10 道题。作答、查看解析和 AI 评价都由你决定。
           </p>
           <div className="practice-entry-actions">
             <Link href="/questions">
@@ -212,7 +183,7 @@ function PracticeEntry() {
               <strong>1–10</strong> 每轮题目
             </span>
             <span>
-              <strong>≈ 4 分钟</strong> 单题建议
+              <strong>≥4 分钟</strong> 单题建议
             </span>
             <span>
               <strong>可选</strong> AI 评价
@@ -251,19 +222,20 @@ function PracticeEntryGuide() {
           <span>03</span>
           <div>
             <strong>查看解析与评价</strong>
-            <p>先独立思考，再按需查看标准解析或调用你的模型评价。</p>
+            <p>先独立思考，再按需查看标准解析或调用自己的模型评价。</p>
           </div>
         </li>
       </ol>
       <div className="practice-entry-note">
         <span aria-hidden="true">✓</span>
         <p>
-          <strong>个人档案不是刷题门槛</strong>档案和目标岗位仅用于增强 Agent 推荐。
+          <strong>个人档案不是刷题门槛</strong> 档案和目标岗位仅用于增强 Agent 推荐。
         </p>
       </div>
     </aside>
   );
 }
+
 function PlayerState({ title, copy }: { title: string; copy: string }) {
   return (
     <div className="practice-player-state">
@@ -272,6 +244,7 @@ function PlayerState({ title, copy }: { title: string; copy: string }) {
     </div>
   );
 }
+
 function PlayerError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="practice-player-state">

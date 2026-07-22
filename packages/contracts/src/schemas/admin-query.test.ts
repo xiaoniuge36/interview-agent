@@ -278,6 +278,20 @@ test('candidate review summaries expose the source import title for review conte
   );
 });
 
+test('batch candidate publish defaults visibility and rejects duplicate candidates', () => {
+  const schema = getSchema('BatchCandidatePublishInputSchema');
+
+  assert.deepEqual(schema.parse({ candidateIds: ['candidate-1', 'candidate-2'] }), {
+    candidateIds: ['candidate-1', 'candidate-2'],
+    visibility: 'tenant',
+  });
+  assert.deepEqual(schema.parse({ candidateIds: ['candidate-1'], visibility: 'public' }), {
+    candidateIds: ['candidate-1'],
+    visibility: 'public',
+  });
+  assert.equal(schema.safeParse({ candidateIds: ['candidate-1', 'candidate-1'] }).success, false);
+});
+
 test('batch candidate review accepts review outcomes and rejects pending or empty batches', () => {
   const schema = getSchema('BatchCandidateReviewInputSchema');
   assert.deepEqual(

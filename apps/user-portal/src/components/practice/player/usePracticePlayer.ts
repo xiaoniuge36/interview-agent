@@ -14,7 +14,7 @@ import {
 } from '@/lib/practice-api';
 import { getPracticeRecommendations } from '@/lib/question-catalog-api';
 import { answerDrafts } from '../practice-utils';
-import { confirmAiReportSubmission, initialPracticeItemIndex } from './practice-player-model';
+import { initialPracticeItemIndex } from './practice-player-model';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import {
   setActionError,
@@ -132,10 +132,6 @@ function usePracticeCompletionActions(
 function useAiReportSubmission(context: PracticeActionContext) {
   const submitAiReport = useCallback(async () => {
     if (!context.sessionId || !context.state.session) return;
-    const confirmed = confirmAiReportSubmission(context.state.session, (message) =>
-      window.confirm(message),
-    );
-    if (!confirmed) return;
     setBusy(context.setState, 'submit-ai');
     try {
       const report = await submitPracticeSession(context.sessionId);

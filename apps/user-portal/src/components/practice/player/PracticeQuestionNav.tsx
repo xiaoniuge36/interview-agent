@@ -16,7 +16,7 @@ export function PracticeQuestionNav({
   return (
     <nav className="practice-question-nav" aria-label="本轮题目">
       <div className="practice-nav-title">
-        <span>Question set</span>
+        <span>本轮题单</span>
         <strong>{session.items.length} 道题</strong>
       </div>
       <div className="practice-nav-items">

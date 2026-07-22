@@ -21,15 +21,8 @@ export function pendingEvaluationCount(session: PracticeSession) {
   return session.items.filter((item) => Boolean(item.answer) && !item.evaluation).length;
 }
 
-export function confirmAiReportSubmission(
-  session: PracticeSession,
-  confirm: (message: string) => boolean,
-) {
-  const pendingCount = pendingEvaluationCount(session);
-  if (!pendingCount) return true;
-  return confirm(
-    `本轮还有 ${pendingCount} 道题未完成 AI 评价。继续后将自动调用 AI 评价并生成整轮复盘，可能消耗模型额度，是否继续？`,
-  );
+export function requiresAiReportConfirmation(session: PracticeSession) {
+  return pendingEvaluationCount(session) > 0;
 }
 
 export function canSubmitAiReport(session: PracticeSession) {
@@ -47,8 +40,4 @@ export function confirmPracticeNavigation(
 ) {
   if (!hasUnsavedPracticeAnswer(item, draft)) return true;
   return confirm('当前回答还有未保存修改。切换题目会保留本地草稿，但不会同步到服务端，是否继续？');
-}
-
-export function confirmPracticeItemEvaluation(confirm: (message: string) => boolean) {
-  return confirm('本次评价会调用你连接的 AI 模型并消耗模型额度，是否继续？');
 }

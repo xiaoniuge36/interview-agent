@@ -8,6 +8,11 @@
 
 **Tech Stack:** TypeScript、NestJS 11、Prisma 6、Zod、React 18、Ant Design 6、Jest、Vitest。
 
+## 执行收尾（2026-07-22）
+
+- 当前实现已覆盖候选题来源、批量审核/发布与管理端操作；合同测试、API 定向 Jest 测试和管理端定向测试均已通过。
+- Product API 的标准 `pnpm test` 仍待补跑：运行中的 `product-api dev` 占用 Prisma 引擎，导致其前置 `prisma generate` 在 Windows 上报 `EPERM`。
+
 ## Global Constraints
 
 - 批量审核只支持 `approved`、`needs_edit`、`rejected`，不支持批量发布。
@@ -20,10 +25,12 @@
 ### Task 1: 扩展候选题来源与批量审核共享合约
 
 **Files:**
+
 - Modify: `packages/contracts/src/schemas/training.ts`
 - Modify: `packages/contracts/src/schemas/training.test.ts`
 
 **Interfaces:**
+
 - Produces: `CandidateImportSourceSchema`、`BatchCandidateReviewInputSchema`、`CandidateReview.sourceImport`、`BatchCandidateReviewInput`。
 - Consumes: 现有 `CandidateReviewStatusSchema` 与 `CONTRACT_LIMITS`。
 
@@ -31,17 +38,25 @@
 
 ```ts
 it('accepts a same-source batch review command and exposes a source title', () => {
-  expect(CandidateReviewSchema.parse({ ...candidateReview, sourceImport: { id: 'import-1', title: 'Java 面试资料.md' } }).sourceImport)
-    .toEqual({ id: 'import-1', title: 'Java 面试资料.md' });
-  expect(BatchCandidateReviewInputSchema.parse({
-    candidateIds: ['candidate-1', 'candidate-2'],
-    status: 'approved',
-    reviewNotes: '答案与原文一致。',
-  })).toMatchObject({ status: 'approved' });
+  expect(
+    CandidateReviewSchema.parse({
+      ...candidateReview,
+      sourceImport: { id: 'import-1', title: 'Java 面试资料.md' },
+    }).sourceImport,
+  ).toEqual({ id: 'import-1', title: 'Java 面试资料.md' });
+  expect(
+    BatchCandidateReviewInputSchema.parse({
+      candidateIds: ['candidate-1', 'candidate-2'],
+      status: 'approved',
+      reviewNotes: '答案与原文一致。',
+    }),
+  ).toMatchObject({ status: 'approved' });
 });
 
 it('rejects pending status and an empty batch', () => {
-  expect(() => BatchCandidateReviewInputSchema.parse({ candidateIds: [], status: 'pending' })).toThrow();
+  expect(() =>
+    BatchCandidateReviewInputSchema.parse({ candidateIds: [], status: 'pending' }),
+  ).toThrow();
 });
 ```
 
@@ -87,11 +102,13 @@ Expected: PASS，来源摘要、空来源和批量审核状态边界均被验证
 ### Task 2: 在 Product API 查询中关联并映射来源导入文件
 
 **Files:**
+
 - Modify: `apps/product-api/src/modules/admin/admin-query.service.ts`
 - Modify: `apps/product-api/src/modules/admin/admin-query-mapping.ts`
 - Modify: `apps/product-api/src/modules/admin/admin-query.service.spec.ts`
 
 **Interfaces:**
+
 - Consumes: `CandidateReviewSchema` 的 `sourceImport` 字段。
 - Produces: `GET /api/admin/candidates/query` 中每条候选题的 `{ sourceImport: { id, title } | null }`。
 
@@ -106,9 +123,11 @@ await expect(service.queryCandidates(context, query)).resolves.toMatchObject({
   items: [{ sourceImport: { id: 'import-1', title: 'Java 面试资料.md' } }],
 });
 
-expect(prisma.candidateQuestion.findMany).toHaveBeenCalledWith(expect.objectContaining({
-  include: { importTask: { select: { id: true, title: true } } },
-}));
+expect(prisma.candidateQuestion.findMany).toHaveBeenCalledWith(
+  expect.objectContaining({
+    include: { importTask: { select: { id: true, title: true } } },
+  }),
+);
 ```
 
 - [ ] **Step 2: 运行失败测试**
@@ -146,31 +165,38 @@ Expected: PASS，查询和导出各自维持既有行为，分页列表带来源
 ### Task 3: 实现原子的同源批量审核命令
 
 **Files:**
+
 - Modify: `apps/product-api/src/modules/admin/admin.controller.ts`
 - Modify: `apps/product-api/src/modules/content-review/candidate-review.service.ts`
 - Modify: `apps/product-api/src/modules/content-review/candidate-review.service.spec.ts`
 
 **Interfaces:**
+
 - Consumes: `BatchCandidateReviewInput` 和 `candidate:review` 权限。
 - Produces: `PATCH /api/admin/candidates/batch-review`，返回 `{ updatedCount: number }`。
 
 - [ ] **Step 1: 写出服务失败测试**
 
 ```ts
-await expect(service.batchReview(context, {
-  candidateIds: ['candidate-1', 'candidate-2'],
-  status: 'approved',
-  reviewNotes: '内容准确。',
-})).resolves.toEqual({ updatedCount: 2 });
+await expect(
+  service.batchReview(context, {
+    candidateIds: ['candidate-1', 'candidate-2'],
+    status: 'approved',
+    reviewNotes: '内容准确。',
+  }),
+).resolves.toEqual({ updatedCount: 2 });
 
 expect(database.transaction.candidateQuestion.update).toHaveBeenCalledWith({
   where: { id: 'candidate-1' },
   data: { status: 'approved', reviewNotes: '内容准确。', revision: { increment: 1 } },
 });
 
-await expect(service.batchReview(context, {
-  candidateIds: ['candidate-1', 'candidate-3'], status: 'rejected',
-})).rejects.toBeInstanceOf(BadRequestException);
+await expect(
+  service.batchReview(context, {
+    candidateIds: ['candidate-1', 'candidate-3'],
+    status: 'rejected',
+  }),
+).rejects.toBeInstanceOf(BadRequestException);
 ```
 
 - [ ] **Step 2: 运行失败测试**
@@ -227,6 +253,7 @@ Expected: PASS，批量成功、跨来源拒绝、已发布拒绝和既有单题
 ### Task 4: 接入管理端批量审核 API 与来源展示
 
 **Files:**
+
 - Modify: `apps/admin-console/src/lib/training-content-api.ts`
 - Modify: `apps/admin-console/src/lib/training-content-api.test.ts`
 - Modify: `apps/admin-console/src/components/dashboard/CandidateReviewQueue.tsx`
@@ -235,28 +262,35 @@ Expected: PASS，批量成功、跨来源拒绝、已发布拒绝和既有单题
 - Modify: `apps/admin-console/src/app/styles/antd-admin.css`
 
 **Interfaces:**
+
 - Consumes: `BatchCandidateReviewInputSchema`、列表项的 `sourceImport`、`PATCH /admin/candidates/batch-review`。
 - Produces: `batchReviewCandidates(input)` 与同源选择状态 `{ ids, sourceImport, canSubmit }`。
 
 - [ ] **Step 1: 写出失败测试**
 
 ```ts
-expect(resolveBatchReviewSelection([
-  candidate('candidate-1', 'import-1', 'Java 面试资料.md'),
-  candidate('candidate-2', 'import-1', 'Java 面试资料.md'),
-])).toEqual({
+expect(
+  resolveBatchReviewSelection([
+    candidate('candidate-1', 'import-1', 'Java 面试资料.md'),
+    candidate('candidate-2', 'import-1', 'Java 面试资料.md'),
+  ]),
+).toEqual({
   canSubmit: true,
   sourceImport: { id: 'import-1', title: 'Java 面试资料.md' },
 });
 
-expect(resolveBatchReviewSelection([
-  candidate('candidate-1', 'import-1', 'Java 面试资料.md'),
-  candidate('candidate-2', 'import-2', 'Go 面试资料.md'),
-]).canSubmit).toBe(false);
+expect(
+  resolveBatchReviewSelection([
+    candidate('candidate-1', 'import-1', 'Java 面试资料.md'),
+    candidate('candidate-2', 'import-2', 'Go 面试资料.md'),
+  ]).canSubmit,
+).toBe(false);
 ```
 
 ```ts
-expect(createBatchReviewRequest({ candidateIds: ['candidate-1'], status: 'approved' })).toMatchObject({
+expect(
+  createBatchReviewRequest({ candidateIds: ['candidate-1'], status: 'approved' }),
+).toMatchObject({
   path: '/admin/candidates/batch-review',
   init: { method: 'PATCH' },
 });
@@ -280,8 +314,13 @@ export function createBatchReviewRequest(input: BatchCandidateReviewInput) {
 }
 
 export function resolveBatchReviewSelection(candidates: CandidateReview[]) {
-  const sources = new Map(candidates.map((candidate) => [candidate.sourceImport?.id ?? 'none', candidate.sourceImport]));
-  return { canSubmit: candidates.length > 0 && sources.size === 1, sourceImport: sources.values().next().value ?? null };
+  const sources = new Map(
+    candidates.map((candidate) => [candidate.sourceImport?.id ?? 'none', candidate.sourceImport]),
+  );
+  return {
+    canSubmit: candidates.length > 0 && sources.size === 1,
+    sourceImport: sources.values().next().value ?? null,
+  };
 }
 ```
 
@@ -292,12 +331,18 @@ export function resolveBatchReviewSelection(candidates: CandidateReview[]) {
 来源单元格固定使用：
 
 ```tsx
-{candidate.sourceImport ? (
-  <Space direction="vertical" size={0}>
-    <Typography.Text>{candidate.sourceImport.title}</Typography.Text>
-    <Typography.Text code type="secondary">{candidate.sourceImport.id}</Typography.Text>
-  </Space>
-) : <Typography.Text type="secondary">非导入来源</Typography.Text>}
+{
+  candidate.sourceImport ? (
+    <Space direction="vertical" size={0}>
+      <Typography.Text>{candidate.sourceImport.title}</Typography.Text>
+      <Typography.Text code type="secondary">
+        {candidate.sourceImport.id}
+      </Typography.Text>
+    </Space>
+  ) : (
+    <Typography.Text type="secondary">非导入来源</Typography.Text>
+  );
+}
 ```
 
 - [ ] **Step 5: 运行管理端定向测试**
@@ -309,12 +354,14 @@ Expected: PASS，同源多选可提交、跨来源多选被阻断，且批量请
 ### Task 5: 改造单题审核状态控件与来源入口
 
 **Files:**
+
 - Modify: `apps/admin-console/src/components/dashboard/training-content/CandidateEditor.tsx`
 - Modify: `apps/admin-console/src/components/dashboard/training-content/CandidateForm.tsx`
 - Modify: `apps/admin-console/src/components/dashboard/training-content/types.ts`
 - Create: `apps/admin-console/src/components/dashboard/training-content/CandidateForm.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `CandidateQuestionDetail.importTaskId`、`getImportReviewContext(taskId)`。
 - Produces: 无下拉框的单题状态按钮和来源资料展示。
 
@@ -339,9 +386,21 @@ Expected: FAIL，因为当前审核状态使用 Ant Design Select。
 ```tsx
 <Form.Item label="审核结论">
   <Space wrap>
-    <Button type={detail.status === 'approved' ? 'primary' : 'default'} onClick={() => change('status', 'approved')}>通过</Button>
-    <Button danger={detail.status === 'rejected'} onClick={() => change('status', 'rejected')}>驳回</Button>
-    <Button type={detail.status === 'needs_edit' ? 'primary' : 'default'} onClick={() => change('status', 'needs_edit')}>需修改</Button>
+    <Button
+      type={detail.status === 'approved' ? 'primary' : 'default'}
+      onClick={() => change('status', 'approved')}
+    >
+      通过
+    </Button>
+    <Button danger={detail.status === 'rejected'} onClick={() => change('status', 'rejected')}>
+      驳回
+    </Button>
+    <Button
+      type={detail.status === 'needs_edit' ? 'primary' : 'default'}
+      onClick={() => change('status', 'needs_edit')}
+    >
+      需修改
+    </Button>
   </Space>
 </Form.Item>
 ```
@@ -357,6 +416,7 @@ Expected: PASS，抽屉不再渲染下拉框，并包含三个明确状态操作
 ### Task 6: 执行跨端验证
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-16-batch-candidate-review-design.md`（仅当实现中出现需记录的已确认设计偏差时）
 
 - [ ] **Step 1: 运行契约与 Product API 验证**

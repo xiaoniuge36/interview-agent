@@ -39,12 +39,7 @@ export const PracticeEvaluationSchema = z.object({
       }),
     )
     .max(CONTRACT_LIMITS.list),
-  followUpQuestion: z
-    .string()
-    .min(1)
-    .max(CONTRACT_LIMITS.mediumText)
-    .nullable()
-    .default(null),
+  followUpQuestion: z.string().min(1).max(CONTRACT_LIMITS.mediumText).nullable().default(null),
   createdAt: z.string().datetime(),
 });
 
@@ -110,6 +105,22 @@ export const PracticeReportSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
+export const PracticeHistoryItemSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  mode: PracticeModeSchema,
+  status: PracticeSessionStatusSchema,
+  questionCount: z.number().int().positive(),
+  answeredCount: z.number().int().nonnegative(),
+  evaluatedCount: z.number().int().nonnegative(),
+  overallScore: z.number().min(0).max(CONTRACT_LIMITS.percentage).nullable(),
+  weaknesses: z.array(z.string().max(CONTRACT_LIMITS.mediumText)).max(CONTRACT_LIMITS.list),
+  reportedAt: z.string().datetime().nullable(),
+  updatedAt: z.string().datetime(),
+});
+
+export const PracticeHistoryListSchema = z.array(PracticeHistoryItemSchema).max(200);
+
 export const MasteryProfileSchema = z.object({
   id: z.string().min(1),
   tenantId: z.string().min(1),
@@ -135,4 +146,5 @@ export type PracticeEvaluation = z.infer<typeof PracticeEvaluationSchema>;
 export type PracticeItemSolution = z.infer<typeof PracticeItemSolutionSchema>;
 export type PracticeItemFeedback = z.infer<typeof PracticeItemFeedbackSchema>;
 export type PracticeReport = z.infer<typeof PracticeReportSchema>;
+export type PracticeHistoryItem = z.infer<typeof PracticeHistoryItemSchema>;
 export type MasteryProfile = z.infer<typeof MasteryProfileSchema>;

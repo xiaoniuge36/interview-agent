@@ -8,11 +8,13 @@ import {
   CONTRACT_LIMITS,
   MasteryProfileSchema,
   PracticeEvaluationSchema,
+  PracticeHistoryListSchema,
   PracticeReportSchema,
   PracticeSessionSchema,
   type CreatePracticeSession,
   type MasteryProfile,
   type PracticeReport,
+  type PracticeHistoryItem,
   type PracticeSession,
 } from '@interview-agent/contracts';
 import { jsonValue } from '../../common/audit/audit.service';
@@ -28,6 +30,11 @@ export const SESSION_INCLUDE = {
 } satisfies Prisma.PracticeSessionInclude;
 
 export type SessionRecord = Prisma.PracticeSessionGetPayload<{ include: typeof SESSION_INCLUDE }>;
+const HISTORY_INCLUDE = {
+  items: { select: { answer: true, evaluation: { select: { id: true } } } },
+  report: { select: { overallScore: true, weaknesses: true } },
+} satisfies Prisma.PracticeSessionInclude;
+type HistoryRecord = Prisma.PracticeSessionGetPayload<{ include: typeof HISTORY_INCLUDE }>;
 export type EvaluationRecord = EvaluationResult;
 
 type ReportMarkdownInput = {
@@ -86,6 +93,26 @@ export function mapSession(record: SessionRecord): PracticeSession {
     })),
   });
 }
+
+export function mapHistoryItems(records: HistoryRecord[]): PracticeHistoryItem[] {
+  return PracticeHistoryListSchema.parse(
+    records.map((record) => ({
+      id: record.id,
+      title: record.title,
+      mode: record.mode,
+      status: record.status,
+      questionCount: record.items.length,
+      answeredCount: record.items.filter((item) => Boolean(item.answer)).length,
+      evaluatedCount: record.items.filter((item) => Boolean(item.evaluation)).length,
+      overallScore: record.report?.overallScore ?? null,
+      weaknesses: record.report?.weaknesses ?? [],
+      reportedAt: dateOrNull(record.reportedAt),
+      updatedAt: record.updatedAt.toISOString(),
+    })),
+  );
+}
+
+export { HISTORY_INCLUDE };
 
 export function mapEvaluation(record: EvaluationRecord) {
   return PracticeEvaluationSchema.parse({

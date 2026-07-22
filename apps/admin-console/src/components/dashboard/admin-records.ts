@@ -146,6 +146,7 @@ export function resolveCandidateSelection(
 export type CandidateBatchReviewSelection = {
   candidateIds: string[];
   canSubmit: boolean;
+  canPublish: boolean;
   sourceImport: CandidateReview['sourceImport'];
 };
 
@@ -157,6 +158,8 @@ export function resolveCandidateBatchReview(
   return {
     candidateIds,
     canSubmit: candidateIds.length > 0 && sourceKeys.size === 1,
+    canPublish:
+      candidateIds.length > 0 && candidates.every((candidate) => candidate.status === 'approved'),
     sourceImport: candidates[0]?.sourceImport ?? null,
   };
 }

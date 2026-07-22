@@ -3,13 +3,12 @@ import type { PracticeSession } from '@interview-agent/contracts';
 import {
   canCompleteSelfStudy,
   canSubmitAiReport,
-  confirmAiReportSubmission,
-  confirmPracticeItemEvaluation,
   confirmPracticeNavigation,
   hasUnsavedPracticeAnswer,
   initialPracticeItemIndex,
   pendingEvaluationCount,
   practiceProgress,
+  requiresAiReportConfirmation,
 } from './practice-player-model';
 
 describe('单题播放器状态', () => {
@@ -35,21 +34,14 @@ describe('单题播放器状态', () => {
     expect(pendingEvaluationCount(session({ answerAll: true, evaluateAll: true }))).toBe(0);
   });
 
-  it('整轮复盘会提示未评价题目数量和模型额度消耗', () => {
-    const confirm = vi.fn().mockReturnValue(false);
-
-    expect(confirmAiReportSubmission(session({ answerAll: true }), confirm)).toBe(false);
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('2 道题'));
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('消耗模型额度'));
+  it('有待评价题目时需要在页面内确认 AI 复盘', () => {
+    expect(requiresAiReportConfirmation(session({ answerAll: true }))).toBe(true);
   });
 
-  it('题目均已评价时不重复弹出额度确认', () => {
-    const confirm = vi.fn();
-
-    expect(
-      confirmAiReportSubmission(session({ answerAll: true, evaluateAll: true }), confirm),
-    ).toBe(true);
-    expect(confirm).not.toHaveBeenCalled();
+  it('题目均已评价时不需要重复确认', () => {
+    expect(requiresAiReportConfirmation(session({ answerAll: true, evaluateAll: true }))).toBe(
+      false,
+    );
   });
 
   it('识别当前草稿是否已经保存到服务端', () => {
@@ -64,13 +56,6 @@ describe('单题播放器状态', () => {
 
     expect(confirmPracticeNavigation(session().items[1]!, '新草稿', confirm)).toBe(false);
     expect(confirm).toHaveBeenCalledWith(expect.stringContaining('未保存'));
-  });
-
-  it('单题 AI 评价会提示模型额度消耗', () => {
-    const confirm = vi.fn().mockReturnValue(true);
-
-    expect(confirmPracticeItemEvaluation(confirm)).toBe(true);
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('模型额度'));
   });
 });
 

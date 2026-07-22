@@ -5,6 +5,7 @@ import {
   PracticeItemSolutionSchema,
   RecentPracticeResponseSchema,
   type MasteryProfile,
+  type PracticeHistoryItem,
   type PracticeReport,
   type PracticeSession,
   type PracticeItemSolution,
@@ -14,10 +15,17 @@ import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
 import { isPracticeCategoryTag } from './practice-question-categories';
-import { mapMastery, mapReport, mapSession } from './practice-mappers';
+import {
+  HISTORY_INCLUDE,
+  mapHistoryItems,
+  mapMastery,
+  mapReport,
+  mapSession,
+} from './practice-mappers';
 import { loadPracticeSession } from './practice-records';
 
 const MASTERY_LIST_LIMIT = 200;
+const PRACTICE_HISTORY_LIST_LIMIT = 200;
 
 @Injectable()
 export class PracticeQueryService {
@@ -72,6 +80,17 @@ export class PracticeQueryService {
       answeredCount: session.items.filter((item) => item.answer).length,
       updatedAt: session.updatedAt.toISOString(),
     });
+  }
+
+  async history(context: ProductRequestContext): Promise<PracticeHistoryItem[]> {
+    this.assertAction(context, 'practice:read', context.actor.id);
+    const records = await this.prisma.practiceSession.findMany({
+      where: { tenantId: context.tenantId, userId: context.actor.id },
+      include: HISTORY_INCLUDE,
+      orderBy: { updatedAt: 'desc' },
+      take: PRACTICE_HISTORY_LIST_LIMIT,
+    });
+    return mapHistoryItems(records);
   }
 
   async solution(

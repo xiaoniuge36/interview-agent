@@ -26,6 +26,11 @@ export class PracticeController {
     return this.service.recent(request.context);
   }
 
+  @Get('practices/history')
+  history(@Req() request: ProductRequest) {
+    return this.service.history(request.context);
+  }
+
   @Get('practice-recommendations')
   recommendations(@Req() request: ProductRequest) {
     return this.service.recommendationList(request.context);

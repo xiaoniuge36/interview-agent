@@ -88,7 +88,6 @@ function servicesFor() {
   return {
     admin: {},
     accounts: { query: jest.fn().mockResolvedValue({}) },
-    candidates: {},
     platformDashboard: { dashboard: jest.fn().mockResolvedValue({}) },
     query: {
       queryQuestions: jest.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 20 }),

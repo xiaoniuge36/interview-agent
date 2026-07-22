@@ -9,6 +9,7 @@ import { PracticeCompletionPanel } from './PracticeCompletionPanel';
 const session = {
   id: 'session-1',
   status: 'report_ready',
+  items: [{ id: 'item-1', sequence: 1, question: { title: 'System design question' } }],
 } as PracticeSession;
 
 const report = {
@@ -35,6 +36,7 @@ describe('PracticeCompletionPanel', () => {
         mastery: [],
         message: '',
         onRetry: () => undefined,
+        onReviewItem: () => undefined,
         onStartNextRecommendation: () => undefined,
         startingNextRecommendation: false,
       }),
@@ -54,11 +56,13 @@ describe('PracticeCompletionPanel', () => {
         mastery: [],
         message: '',
         onRetry: () => undefined,
+        onReviewItem: () => undefined,
         onStartNextRecommendation: () => undefined,
         startingNextRecommendation: false,
       }),
     );
 
     expect(markup).toContain('按最新推荐开始下一轮');
+    expect(markup).toContain('逐题回看');
   });
 });

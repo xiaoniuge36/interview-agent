@@ -1,0 +1,73 @@
+@media (max-width: 1080px) {
+  .practice-player-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-question-nav {
+    grid-column: auto;
+  }
+
+  .practice-coach-panel {
+    position: static;
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .practice-player-header {
+    padding-inline: 1px;
+  }
+
+  .practice-player-progress {
+    min-width: 0;
+  }
+
+  .practice-question-nav {
+    display: block;
+    overflow: visible;
+  }
+
+  .practice-nav-title,
+  .practice-nav-legend {
+    display: none;
+  }
+
+  .practice-nav-items {
+    display: flex;
+    overflow-x: auto;
+    padding: 2px;
+  }
+
+  .practice-nav-items button {
+    flex: 0 0 98px;
+  }
+
+  .practice-question-stage {
+    border-radius: 17px;
+  }
+
+  .practice-question-stage h1 {
+    font-size: 27px;
+  }
+
+  .practice-learning-notice {
+    margin: 0 14px 14px;
+  }
+
+  .practice-ai-confirmation {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .practice-ai-confirmation-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .practice-player-page * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

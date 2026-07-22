@@ -9,6 +9,7 @@ import {
   useState,
   type Dispatch,
 } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type {
   AiOperationStreamEvent,
   AgentStreamEvent,
@@ -43,6 +44,7 @@ import {
   interviewStatusLabel,
   interviewStatusNotice,
 } from './interview-feedback';
+import { useArchivedInterview } from './useArchivedInterview';
 
 type InterviewPlan = ReturnType<typeof interviewPlanForJob>;
 type StreamConnector = (sessionId: string, cursor: number) => void;
@@ -65,12 +67,11 @@ type AnswerContext = {
 export function useInterviewController(jobs: JobIntentPayload[]) {
   const notifications = useNotifications();
   const [state, dispatch] = useReducer(interviewReducer, INITIAL_INTERVIEW_STATE);
+  const restoredSessionId = useSearchParams().get('session');
   const [selectedJobId, setSelectedJobId] = useSelectedJob(jobs);
   const [connect, disconnect] = useInterviewStream(dispatch, notifications);
-  const selectedJob = useMemo(
-    () => jobs.find((job) => job.intent.id === selectedJobId),
-    [jobs, selectedJobId],
-  );
+  useArchivedInterview({ sessionId: restoredSessionId, dispatch, connect, disconnect });
+  const selectedJob = useSelectedInterviewJob(jobs, selectedJobId);
   const interviewPlan = useMemo(() => interviewPlanForJob(selectedJob), [selectedJob]);
   const start = useCallback(
     () =>
@@ -110,6 +111,10 @@ export function useInterviewController(jobs: JobIntentPayload[]) {
     interviewPlan,
     statusLabel: interviewStatusLabel(state.session),
   };
+}
+
+function useSelectedInterviewJob(jobs: JobIntentPayload[], selectedJobId: string) {
+  return useMemo(() => jobs.find((job) => job.intent.id === selectedJobId), [jobs, selectedJobId]);
 }
 
 function useSelectedJob(jobs: JobIntentPayload[]) {

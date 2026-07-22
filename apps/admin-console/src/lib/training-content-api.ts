@@ -1,4 +1,6 @@
-﻿import {
+import {
+  BatchCandidatePublishInputSchema,
+  BatchCandidatePublishResultSchema,
   BatchCandidateReviewInputSchema,
   BatchCandidateReviewResultSchema,
   CandidateQuestionDetailSchema,
@@ -8,6 +10,8 @@
   PublishCandidateQuestionInputSchema,
   QuestionSchema,
   UpdateCandidateQuestionInputSchema,
+  type BatchCandidatePublishInput,
+  type BatchCandidatePublishResult,
   type BatchCandidateReviewInput,
   type BatchCandidateReviewResult,
   type CandidateQuestionDetail,
@@ -50,6 +54,23 @@ export function batchReviewCandidates(
   input: BatchCandidateReviewInput,
 ): Promise<BatchCandidateReviewResult> {
   return adminRequest(createBatchCandidateReviewRequest(input));
+}
+
+export function createBatchCandidatePublishRequest(input: BatchCandidatePublishInput) {
+  return {
+    path: '/admin/candidates/batch-publish',
+    schema: BatchCandidatePublishResultSchema,
+    init: {
+      method: 'POST',
+      body: JSON.stringify(BatchCandidatePublishInputSchema.parse(input)),
+    },
+  };
+}
+
+export function batchPublishCandidates(
+  input: BatchCandidatePublishInput,
+): Promise<BatchCandidatePublishResult> {
+  return adminRequest(createBatchCandidatePublishRequest(input));
 }
 
 export function createImportReviewContextRequest(taskId: string) {

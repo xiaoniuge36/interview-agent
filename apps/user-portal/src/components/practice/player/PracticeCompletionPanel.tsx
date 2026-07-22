@@ -8,6 +8,7 @@ type PracticeCompletionPanelProps = {
   mastery: MasteryProfile[];
   message: string;
   onRetry: () => void;
+  onReviewItem: (itemId: string) => void;
   onStartNextRecommendation: () => void;
   startingNextRecommendation: boolean;
 };
@@ -19,9 +20,41 @@ export function PracticeCompletionPanel(props: PracticeCompletionPanelProps) {
     <div className="practice-completion-page">
       <CompletionHeader aiCompleted={aiCompleted} {...props} />
       {hasReport ? <PracticeReportPanel report={props.report!} mastery={props.mastery} /> : null}
+      <CompletedQuestionList session={props.session} onReviewItem={props.onReviewItem} />
       <ReportRetry aiCompleted={aiCompleted} report={props.report} onRetry={props.onRetry} />
       {props.message ? <p className="practice-completion-message">{props.message}</p> : null}
     </div>
+  );
+}
+
+function CompletedQuestionList({
+  session,
+  onReviewItem,
+}: {
+  session: PracticeSession;
+  onReviewItem: (itemId: string) => void;
+}) {
+  return (
+    <section
+      className="practice-completion-review-list"
+      aria-labelledby="practice-completion-review-heading"
+    >
+      <div>
+        <span>逐题回看</span>
+        <h2 id="practice-completion-review-heading">回到每道题的回答与反馈</h2>
+      </div>
+      <div>
+        {session.items.map((item) => (
+          <button key={item.id} type="button" onClick={() => onReviewItem(item.id)}>
+            <span>{item.sequence}</span>
+            <strong>{item.question.title}</strong>
+            <small>
+              {item.evaluation ? `AI ${Math.round(item.evaluation.score)} 分` : '已保存回答'}
+            </small>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 

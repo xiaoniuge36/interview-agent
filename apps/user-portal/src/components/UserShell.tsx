@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { MobileBottomNav } from './shell/MobileBottomNav';
 import { UserSidebar } from './shell/UserSidebar';
-import { ThemeMenu } from './theme/ThemeMenu';
+import { UserTopbarActions } from './shell/UserTopbarActions';
 import { GlobalSearchProvider } from './search/GlobalSearchProvider';
 import { GlobalSearchDialog } from './search/GlobalSearchDialog';
 import { GlobalSearchTrigger } from './search/GlobalSearchTrigger';
@@ -21,10 +21,9 @@ export function UserShell({ children }: UserShellProps) {
         </a>
         <UserSidebar />
         <main className="main" id="main-content">
-          <GlobalSearchTrigger />
+          <GlobalSearchTrigger actions={<UserTopbarActions />} />
           <div className="page-stage">{children}</div>
         </main>
-        <ThemeMenu variant="floating" />
         <MobileBottomNav />
       </div>
       <GlobalSearchDialog />
