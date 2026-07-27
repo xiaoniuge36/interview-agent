@@ -3,10 +3,14 @@ import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
 import {
   AdminPageAgentAppendMessagesSchema,
+  AdminPageAgentCompleteRunSchema,
   AdminPageAgentCreateConversationSchema,
+  AdminPageAgentCreateRunSchema,
+  AdminPageAgentHeartbeatRunSchema,
   AdminPageAgentRenameConversationSchema,
 } from './admin-page-agent.schemas';
 import { AdminPageAgentConversationService } from './admin-page-agent-conversation.service';
+import { AdminPageAgentRunService } from './admin-page-agent-run.service';
 import { AdminPageAgentService } from './admin-page-agent.service';
 
 @Roles('admin', 'platform_admin')
@@ -15,6 +19,7 @@ export class AdminPageAgentController {
   constructor(
     private readonly assistant: AdminPageAgentService,
     private readonly conversations: AdminPageAgentConversationService,
+    private readonly runs: AdminPageAgentRunService,
   ) {}
 
   @Get('config')
@@ -69,5 +74,45 @@ export class AdminPageAgentController {
   ) {
     const input = AdminPageAgentAppendMessagesSchema.parse(body);
     return this.conversations.appendMessages(request.context, conversationId, input.messages);
+  }
+
+  @Get('conversations/:conversationId/runs')
+  listRuns(@Req() request: ProductRequest, @Param('conversationId') conversationId: string) {
+    return this.runs.list(request.context, conversationId);
+  }
+
+  @Get('conversations/:conversationId/runs/latest')
+  latestRun(@Req() request: ProductRequest, @Param('conversationId') conversationId: string) {
+    return this.runs.latest(request.context, conversationId);
+  }
+
+  @Post('conversations/:conversationId/runs')
+  createRun(
+    @Req() request: ProductRequest,
+    @Param('conversationId') conversationId: string,
+    @Body() body: unknown,
+  ) {
+    const input = AdminPageAgentCreateRunSchema.parse(body);
+    return this.runs.create(request.context, conversationId, input);
+  }
+
+  @Patch('runs/:runId/heartbeat')
+  heartbeatRun(
+    @Req() request: ProductRequest,
+    @Param('runId') runId: string,
+    @Body() body: unknown,
+  ) {
+    const input = AdminPageAgentHeartbeatRunSchema.parse(body);
+    return this.runs.heartbeat(request.context, runId, input);
+  }
+
+  @Post('runs/:runId/complete')
+  completeRun(
+    @Req() request: ProductRequest,
+    @Param('runId') runId: string,
+    @Body() body: unknown,
+  ) {
+    const input = AdminPageAgentCompleteRunSchema.parse(body);
+    return this.runs.complete(request.context, runId, input);
   }
 }

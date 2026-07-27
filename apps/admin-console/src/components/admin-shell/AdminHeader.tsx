@@ -5,33 +5,31 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   ReloadOutlined,
-  SearchOutlined,
+  SettingOutlined,
+  StarFilled,
+  StarOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@interview-agent/auth-client';
 import {
-  AutoComplete,
   Avatar,
   Breadcrumb,
   Button,
   Dropdown,
-  Input,
   Layout,
+  Popover,
+  Radio,
   Space,
   Tag,
   Typography,
   type MenuProps,
 } from 'antd';
-import { useMemo, useState } from 'react';
-import {
-  ADMIN_NAV_ITEMS,
-  canAccessAdminView,
-  getAdminNavigationItem,
-  type AdminView,
-} from '@/components/admin-navigation';
+import { useState } from 'react';
+import { getAdminNavigationItem, type AdminView } from '@/components/admin-navigation';
+import { useAdminWorkspace } from '@/components/admin-workspace-context';
+import { AdminCommandPalette } from './AdminCommandPalette';
 
 const { Header } = Layout;
-const MAX_SEARCH_RESULTS = 5;
 const TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', { timeStyle: 'medium' });
 
 type AdminHeaderProps = {
@@ -61,37 +59,42 @@ export function AdminHeader(props: AdminHeaderProps) {
           <Typography.Title level={4}>{activeItem.heading}</Typography.Title>
         </div>
       </div>
-      <Space className="admin-header-actions" size="middle">
-        <HeaderSearch role={auth.identity?.role} onViewChange={props.onViewChange} />
-        <RefreshSummary isRefreshing={props.isRefreshing} lastUpdatedAt={props.lastUpdatedAt} />
-        <Button icon={<ReloadOutlined />} loading={props.isRefreshing} onClick={props.onRefresh}>
-          刷新
-        </Button>
-        <SessionControl />
-      </Space>
+      <div className="admin-header-actions" role="toolbar" aria-label="后台快捷操作">
+        <HeaderActions {...props} role={auth.identity?.role} />
+      </div>
     </Header>
   );
 }
 
-function HeaderSearch({
-  role,
-  onViewChange,
-}: Pick<AdminHeaderProps, 'onViewChange'> & { role: string | undefined }) {
-  const [query, setQuery] = useState('');
-  const matches = useMemo(() => findNavigationMatches(query, role), [query, role]);
+function HeaderActions(props: AdminHeaderProps & { role: string | undefined }) {
+  const workspace = useAdminWorkspace();
+  const isFavorite = workspace.isFavorite(props.activeView);
   return (
-    <AutoComplete
-      className="admin-header-search"
-      options={matches.map((item) => ({ value: item.id, label: `${item.label} · ${item.helper}` }))}
-      value={query}
-      onChange={setQuery}
-      onSelect={(value) => {
-        onViewChange(value as AdminView);
-        setQuery('');
-      }}
-    >
-      <Input allowClear prefix={<SearchOutlined />} placeholder="搜索功能 / 模块" />
-    </AutoComplete>
+    <>
+      <div className="admin-header-discovery">
+        <AdminCommandPalette role={props.role} onViewChange={props.onViewChange} />
+      </div>
+      <div className="admin-header-controls">
+        <Button
+          aria-label={isFavorite ? '取消收藏当前模块' : '收藏当前模块'}
+          className="admin-header-favorite"
+          icon={isFavorite ? <StarFilled /> : <StarOutlined />}
+          type="text"
+          onClick={() => workspace.toggleFavorite(props.activeView)}
+        />
+        <WorkspaceSettings />
+        <RefreshSummary isRefreshing={props.isRefreshing} lastUpdatedAt={props.lastUpdatedAt} />
+        <Button
+          className="admin-header-refresh"
+          icon={<ReloadOutlined />}
+          loading={props.isRefreshing}
+          onClick={props.onRefresh}
+        >
+          刷新
+        </Button>
+      </div>
+      <SessionControl />
+    </>
   );
 }
 
@@ -100,6 +103,72 @@ function RefreshSummary(props: Pick<AdminHeaderProps, 'isRefreshing' | 'lastUpda
     <Typography.Text className="admin-refresh-summary" type="secondary">
       {props.isRefreshing ? '正在同步…' : formatUpdatedAt(props.lastUpdatedAt)}
     </Typography.Text>
+  );
+}
+
+function WorkspaceSettings() {
+  const workspace = useAdminWorkspace();
+  return (
+    <Popover
+      content={
+        <Space className="admin-workspace-settings" direction="vertical" size="middle">
+          <SettingsChoice
+            label="外观"
+            options={[
+              { label: '浅色', value: 'light' },
+              { label: '深色', value: 'dark' },
+            ]}
+            value={workspace.preferences.appearance}
+            onChange={(value) => workspace.setAppearance(value === 'dark' ? 'dark' : 'light')}
+          />
+          <SettingsChoice
+            label="信息密度"
+            options={[
+              { label: '舒适', value: 'comfortable' },
+              { label: '紧凑', value: 'compact' },
+            ]}
+            value={workspace.preferences.density}
+            onChange={(value) =>
+              workspace.setDensity(value === 'compact' ? 'compact' : 'comfortable')
+            }
+          />
+        </Space>
+      }
+      title="工作台偏好"
+      trigger="click"
+    >
+      <Button
+        aria-label="工作台偏好"
+        className="admin-header-settings"
+        icon={<SettingOutlined />}
+        type="text"
+      />
+    </Popover>
+  );
+}
+
+function SettingsChoice({
+  label,
+  onChange,
+  options,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  options: { label: string; value: string }[];
+  value: string;
+}) {
+  return (
+    <div>
+      <Typography.Text strong>{label}</Typography.Text>
+      <Radio.Group
+        block
+        optionType="button"
+        options={options}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </div>
   );
 }
 
@@ -114,30 +183,17 @@ function SessionControl() {
   };
   return (
     <Dropdown menu={menu} trigger={['click']}>
-      <Button type="text">
+      <Button className="admin-session-control" type="text">
         <Space size={6}>
           <Avatar icon={<UserOutlined />} size="small">
             {initial(displayName)}
           </Avatar>
-          <span>{displayName}</span>
+          <span className="admin-session-label">{displayName}</span>
           <DownOutlined />
         </Space>
       </Button>
     </Dropdown>
   );
-}
-
-function findNavigationMatches(query: string, role: string | undefined) {
-  const keyword = query.trim().toLowerCase();
-  if (!keyword) return [];
-  return ADMIN_NAV_ITEMS.filter((item) => {
-    if (!canAccessAdminView(role, item.id)) return false;
-    return (
-      item.label.toLowerCase().includes(keyword) ||
-      item.helper.toLowerCase().includes(keyword) ||
-      item.heading.toLowerCase().includes(keyword)
-    );
-  }).slice(0, MAX_SEARCH_RESULTS);
 }
 
 async function signOut(

@@ -1,0 +1,96 @@
+.question-agent-banner {
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--agent-outline));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--agent-surface) 82%, var(--primary)),
+    var(--agent-surface)
+  );
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.question-agent-actions {
+  min-width: 146px;
+}
+
+.question-agent-actions > button:first-child:not(.question-self-picker-toggle) {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--theme-control-text);
+}
+
+.question-self-picker-toggle {
+  border: 1px solid color-mix(in srgb, var(--primary) 42%, var(--theme-control-border));
+  background: color-mix(in srgb, var(--theme-control-bg) 78%, transparent);
+  color: var(--theme-control-text);
+}
+
+.question-self-picker-toggle:hover {
+  border-color: color-mix(in srgb, var(--primary) 72%, var(--theme-control-border));
+  background: color-mix(in srgb, var(--primary) 20%, var(--agent-surface));
+}
+
+.question-self-picker-toggle.primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--theme-control-text);
+}
+
+.question-agent-profile-link,
+.question-agent-retry {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--theme-control-border));
+  background: color-mix(in srgb, var(--theme-control-bg) 78%, transparent);
+  color: var(--theme-control-text);
+}
+
+.question-self-picker-workspace {
+  width: min(1440px, 100%);
+  display: grid;
+  gap: 16px;
+  margin: 24px auto 0;
+  border-top: 1px solid color-mix(in srgb, var(--primary) 18%, var(--outline));
+  padding-top: 24px;
+}
+
+.question-self-picker-workspace > header {
+  display: grid;
+  gap: 5px;
+  max-width: 680px;
+}
+
+.question-self-picker-workspace > header span {
+  color: var(--primary-strong);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.question-self-picker-workspace > header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(20px, 2vw, 26px);
+  letter-spacing: -0.035em;
+}
+
+.question-self-picker-workspace > header p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+@media (max-width: 760px) {
+  .question-agent-actions,
+  .question-agent-actions > button,
+  .question-agent-actions > a,
+  .question-self-picker-toggle {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .question-agent-banner::after,
+  .question-agent-mark::after {
+    animation: none;
+  }
+}

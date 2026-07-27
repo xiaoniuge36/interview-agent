@@ -34,6 +34,8 @@ test('四个开发服务均启用热更新或自动重载', () => {
   assert.equal(productApiDev, 'node scripts/dev-watch.mjs');
   assert.doesNotMatch(productApiDev, /nest start --watch/);
   assert.match(productApiWatcher, /watch\('src', \{ recursive: true \}/);
+  assert.match(productApiWatcher, /watch\(\s*sharedContractsDirectory,\s*\{ recursive: true \}/);
+  assert.match(productApiWatcher, /contractsWatcher\.close\(\)/);
   assert.match(productApiWatcher, /ts-node\/register\/transpile-only/);
   assert.match(productApiWatcher, /tsconfig-paths\/register/);
   assert.match(productApiWatcher, /child\.kill\('SIGKILL'\)/);

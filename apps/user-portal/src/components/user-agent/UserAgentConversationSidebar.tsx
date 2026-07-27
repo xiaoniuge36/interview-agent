@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { UserAgentConversationSummary } from '@/lib/user-agent-conversation-api';
+import { confirmConversationDeletion } from './conversation-management';
 
 type SidebarProps = {
   activeId: string | null;
@@ -7,8 +8,8 @@ type SidebarProps = {
   loading: boolean;
   onCreate: () => void;
   onSelect: (id: string) => void;
-  onRename: (id: string, title: string) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onRename: (id: string, title: string) => Promise<boolean>;
+  onDelete: (id: string) => Promise<boolean>;
 };
 
 export function UserAgentConversationSidebar(props: SidebarProps) {
@@ -72,20 +73,18 @@ function ConversationSearch(props: { query: string; onChange: (value: string) =>
   );
 }
 
-function ConversationRow(props: {
+type ConversationRowProps = {
   active: boolean;
   conversation: UserAgentConversationSummary;
   onSelect: (id: string) => void;
-  onRename: (id: string, title: string) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
-}) {
+  onRename: (id: string, title: string) => Promise<boolean>;
+  onDelete: (id: string) => Promise<boolean>;
+};
+
+function ConversationRow(props: ConversationRowProps) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(props.conversation.title);
-  const save = async () => {
-    if (!title.trim()) return;
-    await props.onRename(props.conversation.id, title.trim());
-    setEditing(false);
-  };
+  const actions = useConversationRowActions(props, title, setEditing);
   return (
     <div className={`user-agent-conversation-row${props.active ? ' is-active' : ''}`}>
       {editing ? (
@@ -93,7 +92,7 @@ function ConversationRow(props: {
           title={title}
           onCancel={() => setEditing(false)}
           onChange={setTitle}
-          onSave={save}
+          onSave={actions.save}
         />
       ) : (
         <button
@@ -106,11 +105,39 @@ function ConversationRow(props: {
         </button>
       )}
       <ConversationActions
-        onDelete={() => void props.onDelete(props.conversation.id)}
+        onDelete={() => void actions.remove()}
         onRename={() => setEditing(true)}
       />
     </div>
   );
+}
+
+function useConversationRowActions(
+  props: ConversationRowProps,
+  title: string,
+  setEditing: Dispatch<SetStateAction<boolean>>,
+) {
+  const pendingRef = useRef(false);
+  const save = async () => {
+    if (pendingRef.current || !title.trim()) return;
+    pendingRef.current = true;
+    try {
+      if (await props.onRename(props.conversation.id, title.trim())) setEditing(false);
+    } finally {
+      pendingRef.current = false;
+    }
+  };
+  const remove = async () => {
+    if (pendingRef.current) return;
+    if (!confirmConversationDeletion(props.conversation.title, window.confirm)) return;
+    pendingRef.current = true;
+    try {
+      await props.onDelete(props.conversation.id);
+    } finally {
+      pendingRef.current = false;
+    }
+  };
+  return { remove, save };
 }
 
 function ConversationTitleEditor(props: {

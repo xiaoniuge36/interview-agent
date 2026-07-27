@@ -1,6 +1,12 @@
 import type { InterviewSession, PracticeHistoryItem } from '@interview-agent/contracts';
 import { describe, expect, it } from 'vitest';
-import { buildTrainingRecords, filterTrainingRecords } from './training-records-model';
+import {
+  buildTrainingRecords,
+  filterTrainingRecords,
+  formatTrainingRecordDate,
+  searchTrainingRecords,
+  summarizeTrainingRecords,
+} from './training-records-model';
 
 const practices = [
   {
@@ -47,5 +53,29 @@ describe('training records model', () => {
     expect(filterTrainingRecords(records, 'interview')[0]?.href).toBe(
       '/interview?session=interview-older',
     );
+  });
+
+  it('searches record titles, types, states, facts, and weakness signals', () => {
+    const records = buildTrainingRecords(practices, interviews);
+
+    expect(searchTrainingRecords(records, 'trade-offs').map((record) => record.id)).toEqual([
+      'practice-newer',
+    ]);
+    expect(searchTrainingRecords(records, '模拟面试').map((record) => record.id)).toEqual([
+      'interview-older',
+    ]);
+  });
+
+  it('formats each training record time with seconds', () => {
+    expect(formatTrainingRecordDate('2026-07-22T10:00:08.000Z')).toMatch(/\d{2}:\d{2}:\d{2}/);
+  });
+
+  it('summarizes only persisted training evidence', () => {
+    expect(summarizeTrainingRecords(buildTrainingRecords(practices, interviews))).toEqual({
+      total: 2,
+      practice: 1,
+      interview: 1,
+      reviewed: 2,
+    });
   });
 });

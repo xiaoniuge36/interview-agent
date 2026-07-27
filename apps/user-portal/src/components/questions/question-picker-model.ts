@@ -26,6 +26,19 @@ export function clearQuestionSelection(): string[] {
   return [];
 }
 
+export function shouldShowSelfPicker(input: {
+  recommendationAvailable: boolean;
+  recommendationLoading: boolean;
+  selectionCount: number;
+  manuallyOpened: boolean;
+}) {
+  return (
+    input.manuallyOpened ||
+    input.selectionCount > 0 ||
+    (!input.recommendationLoading && !input.recommendationAvailable)
+  );
+}
+
 export function composeQuestionSelection(
   selected: string[],
   candidates: string[],

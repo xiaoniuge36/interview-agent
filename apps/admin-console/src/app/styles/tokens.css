@@ -19,18 +19,43 @@
   --warning-soft: #fff7e6;
   --danger: #ff4d4f;
   --danger-soft: #fff2f0;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02),
-    0 2px 4px rgba(0, 0, 0, 0.02);
+  --shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px rgba(0, 0, 0, 0.02);
   --shadow-raised: 0 6px 16px rgba(0, 0, 0, 0.08);
   --radius-large: 12px;
   --radius-medium: 8px;
   --radius-small: 6px;
   --sidebar-width: 248px;
   --content-width: 1440px;
-  --font-sans: var(--font-ui), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans:
+    var(--font-ui), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', monospace;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-admin-appearance='dark'] {
+  color-scheme: dark;
+  --background: #0f172a;
+  --surface: #141414;
+  --surface-muted: #1f2937;
+  --surface-strong: #111827;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --line: #334155;
+  --line-strong: #475569;
+  --primary: #5b9cff;
+  --primary-dark: #8bb8ff;
+  --primary-soft: #172554;
+  --primary-glow: rgba(91, 156, 255, 0.2);
+  --success: #73d13d;
+  --success-soft: #1f3d1c;
+  --warning: #ffc53d;
+  --warning-soft: #4a3410;
+  --danger: #ff7875;
+  --danger-soft: #4a1d1d;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.16);
+  --shadow-raised: 0 8px 24px rgba(0, 0, 0, 0.32);
 }
 
 * {

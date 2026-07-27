@@ -31,10 +31,10 @@ import {
   selfMutationForbidden,
   targetTenantNotFound,
 } from './account-governance.helpers';
+import { loadAccountPage } from './account-governance-query';
 
 const EXPORT_LIMIT = 10_000;
 const DETAIL_AUDIT_LIMIT = 20;
-const ACCOUNT_ORDER = [{ createdAt: 'desc' as const }, { id: 'desc' as const }];
 const SYSTEM_TENANT_SLUG = 'system';
 
 @Injectable()
@@ -48,19 +48,14 @@ export class AccountGovernanceService {
   async query(context: ProductRequestContext, query: AccountListQuery) {
     this.assert(context, 'account:read');
     const where = accountWhere(query);
-    const [total, records] = await Promise.all([
-      this.prisma.user.count({ where }),
-      this.prisma.user.findMany({
-        where,
-        include: ACCOUNT_INCLUDE,
-        orderBy: ACCOUNT_ORDER,
-        skip: (query.page - 1) * query.pageSize,
-        take: query.pageSize,
-      }),
-    ]);
+    const page = await loadAccountPage(this.prisma, {
+      where,
+      page: query.page,
+      pageSize: query.pageSize,
+    });
     return AccountPageSchema.parse({
-      items: records.map(mapAccount),
-      total,
+      items: page.records.map(mapAccount),
+      total: page.total,
       page: query.page,
       pageSize: query.pageSize,
     });
@@ -68,13 +63,12 @@ export class AccountGovernanceService {
 
   async export(context: ProductRequestContext, query: AccountListQuery): Promise<AccountView[]> {
     this.assert(context, 'account:read');
-    const records = await this.prisma.user.findMany({
+    const page = await loadAccountPage(this.prisma, {
       where: accountWhere(query),
-      include: ACCOUNT_INCLUDE,
-      orderBy: ACCOUNT_ORDER,
-      take: EXPORT_LIMIT,
+      page: 1,
+      pageSize: EXPORT_LIMIT,
     });
-    const accounts = records.map(mapAccount);
+    const accounts = page.records.map(mapAccount);
     await this.audit.record(context, {
       action: 'account:exported',
       resourceType: 'AccountExport',

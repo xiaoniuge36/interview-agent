@@ -11,10 +11,10 @@ export function ProfilePageContent() {
       {(data) => (
         <div className="workspace page-workspace profile-page-workspace">
           <PageIntro
-            eyebrow="能力证据库"
-            title="建立候选人画像"
-            copy="只填写会影响面试的问题：目标岗位、经验、技术栈和项目证据。Agent 会据此生成追问链。"
-            next={{ href: '/job', label: '下一步：目标岗位' }}
+            eyebrow="训练画像输入"
+            title="让下一轮训练更贴近你"
+            copy="填写会影响推荐题、项目追问和复盘建议的真实经历；保存后 Agent 会立即更新可用线索。"
+            next={{ href: '/job', label: '继续完善目标岗位' }}
           />
           <div className="profile-agent-layout">
             <ProfilePanel profile={data.profile} onChanged={data.updateProfile} />

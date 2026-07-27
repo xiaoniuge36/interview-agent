@@ -66,6 +66,10 @@ const candidateColumns: readonly CsvColumn<CandidateReview>[] = [
   { header: '导入任务 ID', value: (candidate) => candidate.importTaskId },
   { header: '题目', value: (candidate) => candidate.title },
   { header: '状态', value: (candidate) => candidate.status },
+  {
+    header: '发布题库',
+    value: (candidate) => (candidate.publishedQuestionId ? '已发布' : '未发布'),
+  },
   { header: '质量分', value: (candidate) => candidate.qualityScore },
   { header: '标签', value: (candidate) => candidate.tags.join(' / ') },
   { header: '创建时间', value: (candidate) => candidate.createdAt },

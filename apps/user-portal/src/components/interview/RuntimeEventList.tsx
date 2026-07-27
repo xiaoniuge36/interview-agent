@@ -32,10 +32,10 @@ export function RuntimeEventList({ events, phase, basisSummary }: RuntimeEventLi
     <section className="panel stack compact">
       <div className="eyebrow">本轮进度</div>
       {phase ? (
-        <div className="event-row event-row-active">
+        <p className="interview-runtime-status" role="status">
+          <span>AI 当前处理</span>
           <strong>{PHASE_LABELS[phase]}</strong>
-          <span>进行中</span>
-        </div>
+        </p>
       ) : null}
       {events.length === 0 ? (
         <p className="muted-text">开始面试后，这里会显示本轮问题、追问和复盘的生成进度。</p>
@@ -48,7 +48,7 @@ export function RuntimeEventList({ events, phase, basisSummary }: RuntimeEventLi
       ))}
       {basisSummary.length ? (
         <div className="interview-basis-summary">
-          <strong>本轮关注依据</strong>
+          <h3>本轮关注依据</h3>
           <ul>
             {basisSummary.slice(0, MAX_BASIS_SUMMARY_ITEMS).map((item) => (
               <li key={item}>{item}</li>

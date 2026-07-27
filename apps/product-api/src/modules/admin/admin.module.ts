@@ -14,6 +14,7 @@ import { PlatformAiAnalyticsController } from './platform-ai-analytics.controlle
 import { ADMIN_CONTROLLER_SERVICES } from './admin-controller-services';
 import { AdminPageAgentController } from './admin-page-agent.controller';
 import { AdminPageAgentConversationService } from './admin-page-agent-conversation.service';
+import { AdminPageAgentRunService } from './admin-page-agent-run.service';
 import { AdminPageAgentService } from './admin-page-agent.service';
 
 @Module({
@@ -31,6 +32,7 @@ import { AdminPageAgentService } from './admin-page-agent.service';
     AccountGovernanceService,
     AdminPageAgentService,
     AdminPageAgentConversationService,
+    AdminPageAgentRunService,
     {
       provide: ADMIN_CONTROLLER_SERVICES,
       inject: [

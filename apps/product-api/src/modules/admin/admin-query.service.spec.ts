@@ -10,6 +10,7 @@ import type { ProductRequestContext } from '../../common/context/request-context
 import { PolicyService } from '../../common/authz/policy.service';
 import type { PrismaService } from '../../common/database/prisma.service';
 import { AdminQueryService } from './admin-query.service';
+import { candidateRecord } from './admin-query-test-fixtures';
 
 const context: ProductRequestContext = {
   requestId: 'request-1',
@@ -100,6 +101,7 @@ async function expectCandidatePage() {
       {
         id: 'candidate-1',
         importTaskId: 'import-1',
+        publishedQuestionId: 'question-1',
         sourceImport: { id: 'import-1', title: 'Java 面试资料.md' },
         title: 'Schema candidate',
         status: 'pending',
@@ -297,20 +299,5 @@ function questionRecord() {
     rubric: [{ point: 'tenant', score: 10, description: 'Names the tenant boundary.' }],
     sourceRefs: ['fixture://question'],
     status: 'published',
-  };
-}
-
-function candidateRecord(overrides: Record<string, unknown> = {}) {
-  return {
-    id: 'candidate-1',
-    importTaskId: 'import-1',
-    title: 'Schema candidate',
-    stem: 'Describe schema validation.',
-    status: 'pending',
-    qualityScore: 88,
-    tags: ['schema'],
-    sourceRefs: ['fixture://candidate'],
-    createdAt: new Date('2026-07-15T10:00:00.000Z'),
-    ...overrides,
   };
 }

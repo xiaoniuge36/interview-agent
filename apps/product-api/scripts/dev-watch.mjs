@@ -9,6 +9,7 @@ import { loadLocalDevelopmentEnvironment } from './local-development-environment
 const RESTART_DELAY_MS = 120;
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const localEnvironmentFile = resolve(packageDirectory, '../..', '.env');
+const sharedContractsDirectory = resolve(packageDirectory, '../../packages/contracts/dist');
 const childEnvironment = loadLocalDevelopmentEnvironment(process.env, localEnvironmentFile);
 const CHILD_ARGS = [
   '--enable-source-maps',
@@ -71,6 +72,7 @@ function shutdown() {
   shuttingDown = true;
   clearTimeout(restartTimer);
   sourceWatcher.close();
+  contractsWatcher.close();
   if (child) child.kill('SIGKILL');
   else process.exit(0);
 }
@@ -80,6 +82,18 @@ const sourceWatcher = watch('src', { recursive: true }, (_event, filename) => {
 });
 sourceWatcher.on('error', (error) => {
   console.error(`[API] 源码监听失败：${error.message}`);
+  shutdown();
+});
+
+const contractsWatcher = watch(
+  sharedContractsDirectory,
+  { recursive: true },
+  (_event, filename) => {
+    scheduleRestart(filename);
+  },
+);
+contractsWatcher.on('error', (error) => {
+  console.error(`[API] 共享契约监听失败：${error.message}`);
   shutdown();
 });
 

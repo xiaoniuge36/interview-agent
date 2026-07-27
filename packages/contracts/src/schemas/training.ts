@@ -50,6 +50,7 @@ export const CandidateImportSourceSchema = z.object({
 export const CandidateReviewSchema = z.object({
   id: z.string().min(1),
   importTaskId: z.string().min(1).nullable(),
+  publishedQuestionId: z.string().min(1).nullable().default(null),
   sourceImport: CandidateImportSourceSchema.nullable().default(null),
   title: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   status: CandidateReviewStatusSchema,

@@ -5,7 +5,7 @@ import {
   PlusOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { Button, Dropdown, Empty, Input, List, Modal, Spin, Typography } from 'antd';
+import { Button, Dropdown, Empty, Input, Modal, Spin, Typography } from 'antd';
 import { useMemo, useState } from 'react';
 import type { AdminAgentConversationSummary } from '@/lib/admin-page-agent-conversation-api';
 import {
@@ -17,6 +17,7 @@ type Props = {
   conversations: AdminAgentConversationSummary[];
   activeId: string | null;
   loading: boolean;
+  disabled: boolean;
   onCreate: () => void;
   onSelect: (conversationId: string) => void;
   onRename: (conversationId: string, title: string) => Promise<void>;
@@ -43,12 +44,13 @@ export function AdminAgentConversationSidebar(props: Props) {
 
   return (
     <aside aria-label="历史对话" className="admin-agent-conversation-sidebar">
-      <SidebarHeader onCreate={props.onCreate} />
+      <SidebarHeader disabled={props.disabled} onCreate={props.onCreate} />
       <SidebarSearch keyword={keyword} onChange={setKeyword} />
       <ConversationSidebarList
         activeId={props.activeId}
         conversations={filtered}
         loading={props.loading}
+        disabled={props.disabled}
         onDelete={props.onDelete}
         onRename={openRename}
         onSelect={props.onSelect}
@@ -65,14 +67,20 @@ export function AdminAgentConversationSidebar(props: Props) {
   );
 }
 
-function SidebarHeader({ onCreate }: { onCreate: () => void }) {
+function SidebarHeader({ disabled, onCreate }: { disabled: boolean; onCreate: () => void }) {
   return (
     <div className="admin-agent-conversation-sidebar-header">
       <div>
         <Typography.Text strong>历史对话</Typography.Text>
         <Typography.Text type="secondary">仅当前后台账号可见</Typography.Text>
       </div>
-      <Button aria-label="新建对话" icon={<PlusOutlined />} onClick={onCreate} type="primary">
+      <Button
+        aria-label="新建对话"
+        disabled={disabled}
+        icon={<PlusOutlined />}
+        onClick={onCreate}
+        type="primary"
+      >
         新建
       </Button>
     </div>
@@ -129,6 +137,7 @@ function ConversationSidebarList(props: {
   conversations: AdminAgentConversationSummary[];
   activeId: string | null;
   loading: boolean;
+  disabled: boolean;
   keyword: string;
   onSelect: (conversationId: string) => void;
   onRename: (conversation: AdminAgentConversationSummary) => void;
@@ -143,19 +152,18 @@ function ConversationSidebarList(props: {
       />
     );
   return (
-    <div className="admin-agent-conversation-sidebar-list">
-      <List
-        dataSource={props.conversations}
-        renderItem={(conversation) => (
-          <ConversationItem
-            activeId={props.activeId}
-            conversation={conversation}
-            onDelete={props.onDelete}
-            onRename={props.onRename}
-            onSelect={props.onSelect}
-          />
-        )}
-      />
+    <div className="admin-agent-conversation-sidebar-list" role="list">
+      {props.conversations.map((conversation) => (
+        <ConversationItem
+          activeId={props.activeId}
+          conversation={conversation}
+          disabled={props.disabled}
+          key={conversation.id}
+          onDelete={props.onDelete}
+          onRename={props.onRename}
+          onSelect={props.onSelect}
+        />
+      ))}
     </div>
   );
 }
@@ -163,17 +171,20 @@ function ConversationSidebarList(props: {
 function ConversationItem(props: {
   conversation: AdminAgentConversationSummary;
   activeId: string | null;
+  disabled: boolean;
   onSelect: (conversationId: string) => void;
   onRename: (conversation: AdminAgentConversationSummary) => void;
   onDelete: (conversationId: string) => Promise<void>;
 }) {
   const { conversation } = props;
   return (
-    <List.Item
+    <div
       className={`admin-agent-conversation-item${conversation.id === props.activeId ? ' is-active' : ''}`}
+      role="listitem"
     >
       <button
         className="admin-agent-conversation-item-main"
+        disabled={props.disabled}
         onClick={() => props.onSelect(conversation.id)}
         type="button"
       >
@@ -190,15 +201,17 @@ function ConversationItem(props: {
       </button>
       <ConversationItemMenu
         conversation={conversation}
+        disabled={props.disabled}
         onDelete={props.onDelete}
         onRename={props.onRename}
       />
-    </List.Item>
+    </div>
   );
 }
 
 function ConversationItemMenu(props: {
   conversation: AdminAgentConversationSummary;
+  disabled: boolean;
   onRename: (conversation: AdminAgentConversationSummary) => void;
   onDelete: (conversationId: string) => Promise<void>;
 }) {
@@ -219,10 +232,11 @@ function ConversationItemMenu(props: {
       });
   };
   return (
-    <Dropdown menu={{ items, onClick }} trigger={['click']}>
+    <Dropdown disabled={props.disabled} menu={{ items, onClick }} trigger={['click']}>
       <Button
         aria-label={`管理对话：${props.conversation.title}`}
         className="admin-agent-conversation-item-menu"
+        disabled={props.disabled}
         icon={<MoreOutlined />}
         type="text"
       />

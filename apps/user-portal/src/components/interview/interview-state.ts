@@ -45,6 +45,14 @@ export const INITIAL_INTERVIEW_STATE: InterviewViewState = {
   notice: '选择训练岗位后，开始你的模拟面试。',
 };
 
+export function interviewSessionProgress(session: InterviewSession | null) {
+  return {
+    answered: session?.turns.filter((turn) => turn.role === 'candidate').length ?? 0,
+    stage: session?.stage ?? null,
+    status: session?.status ?? 'idle',
+  } as const;
+}
+
 export function interviewReducer(
   state: InterviewViewState,
   action: InterviewAction,

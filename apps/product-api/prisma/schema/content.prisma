@@ -117,6 +117,7 @@ model PracticeSession {
   tenantId    String
   userId      String
   jobIntentId String?
+  sourceInterviewSessionId String?
   mode        PracticeMode          @default(smart)
   title       String
   status      PracticeSessionStatus @default(created)
@@ -129,12 +130,14 @@ model PracticeSession {
   tenant    Tenant                @relation(fields: [tenantId], references: [id])
   user      User                  @relation(fields: [tenantId, userId], references: [tenantId, id])
   jobIntent JobIntent?            @relation(fields: [tenantId, jobIntentId], references: [tenantId, id])
+  sourceInterviewSession InterviewSession? @relation("InterviewReviewPracticeSessions", fields: [sourceInterviewSessionId], references: [id], onDelete: SetNull)
   items     PracticeSessionItem[]
   report    PracticeReport?
 
   @@unique([tenantId, id])
   @@index([tenantId, userId, status, updatedAt])
   @@index([tenantId, jobIntentId])
+  @@index([tenantId, sourceInterviewSessionId])
 }
 
 model PracticeSessionItem {
@@ -163,15 +166,15 @@ model PracticeSessionItem {
 }
 
 model EvaluationResult {
-  id            String   @id @default(cuid())
-  tenantId      String
-  sessionItemId String
-  score         Float
-  feedback      String
-  missingPoints String[]
-  rubricScores  Json
+  id               String   @id @default(cuid())
+  tenantId         String
+  sessionItemId    String
+  score            Float
+  feedback         String
+  missingPoints    String[]
+  rubricScores     Json
   followUpQuestion String?
-  createdAt     DateTime @default(now())
+  createdAt        DateTime @default(now())
 
   tenant      Tenant              @relation(fields: [tenantId], references: [id])
   sessionItem PracticeSessionItem @relation(fields: [tenantId, sessionItemId], references: [tenantId, id])

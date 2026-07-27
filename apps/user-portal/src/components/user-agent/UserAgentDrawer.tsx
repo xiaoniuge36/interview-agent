@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import type { AgentStatus } from '@page-agent/core';
 import type { UserAgentConversationSummary } from '@/lib/user-agent-conversation-api';
+import type { UserAgentRun } from '@/lib/user-page-agent-run-api';
 import type { UserPageAgentConfig } from '@/lib/user-page-agent-api';
 import { UserAgentComposer } from './UserAgentComposer';
 import { UserAgentConversationSidebar } from './UserAgentConversationSidebar';
+import { UserAgentRunHistory } from './UserAgentRunHistory';
 import type { UserAgentPageContext } from './user-agent-page-context';
 import {
   resolveUserAgentDrawerPresentation,
@@ -26,17 +28,20 @@ type Props = {
   executionSteps: PageAgentExecutionStep[];
   tokens: number;
   messages: UserAgentMessage[];
+  latestRun: UserAgentRun | null;
   pendingQuestion: string | null;
   pageContext: UserAgentPageContext;
   onClose: () => void;
   onCreateConversation: () => void;
   onSelectConversation: (id: string) => void;
-  onRenameConversation: (id: string, title: string) => Promise<void>;
-  onDeleteConversation: (id: string) => Promise<void>;
+  onRenameConversation: (id: string, title: string) => Promise<boolean>;
+  onRetry: (prompt: string, retryOfRunId: string) => void;
+  onDeleteConversation: (id: string) => Promise<boolean>;
   onSetup: () => void;
   onAnswer: (answer: string) => void;
   onSend: (value: string) => void;
   onStop: () => void;
+  runHistory: UserAgentRun[];
 };
 
 export function UserAgentDrawer(props: Props) {
@@ -133,6 +138,11 @@ function ChatNotices(props: Props) {
       {props.conversationError ? (
         <p className="user-agent-error">{props.conversationError}</p>
       ) : null}
+      <UserAgentRunHistory
+        latestRun={props.latestRun}
+        runs={props.runHistory}
+        onRetry={props.onRetry}
+      />
     </>
   );
 }

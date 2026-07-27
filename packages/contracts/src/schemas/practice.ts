@@ -10,16 +10,46 @@ export const PracticeSessionStatusSchema = z.enum([
   'cancelled',
 ]);
 export const PracticeItemStatusSchema = z.enum(['pending', 'answered', 'evaluated']);
-export const PracticeModeSchema = z.enum(['smart', 'manual', 'weakness_review']);
+export const PracticeModeSchema = z.enum([
+  'smart',
+  'manual',
+  'weakness_review',
+  'interview_review',
+]);
 
 const MAX_PRACTICE_QUESTIONS = 10;
 
-export const CreatePracticeSessionSchema = z.object({
-  title: z.string().min(1).max(CONTRACT_LIMITS.shortText).optional(),
-  mode: PracticeModeSchema.optional(),
-  jobIntentId: z.string().min(1).optional(),
-  questionIds: z.array(z.string().min(1)).min(1).max(MAX_PRACTICE_QUESTIONS).optional(),
-});
+export const CreatePracticeSessionSchema = z
+  .object({
+    title: z.string().min(1).max(CONTRACT_LIMITS.shortText).optional(),
+    mode: PracticeModeSchema.optional(),
+    jobIntentId: z.string().min(1).optional(),
+    questionIds: z.array(z.string().min(1)).min(1).max(MAX_PRACTICE_QUESTIONS).optional(),
+    sourceInterviewSessionId: z.string().min(1).optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.mode === 'interview_review' && !value.sourceInterviewSessionId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sourceInterviewSessionId'],
+        message: 'INTERVIEW_REVIEW_SOURCE_REQUIRED',
+      });
+    }
+    if (value.mode !== 'interview_review' && value.sourceInterviewSessionId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['mode'],
+        message: 'INTERVIEW_REVIEW_SOURCE_NOT_ALLOWED',
+      });
+    }
+    if (value.mode === 'interview_review' && value.questionIds) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['questionIds'],
+        message: 'INTERVIEW_REVIEW_QUESTION_IDS_NOT_ALLOWED',
+      });
+    }
+  });
 
 export const SubmitPracticeAnswerSchema = z.object({
   answer: z.string().min(1).max(CONTRACT_LIMITS.longText),
@@ -79,6 +109,7 @@ export const PracticeSessionSchema = z.object({
   tenantId: z.string().min(1),
   userId: z.string().min(1),
   jobIntentId: z.string().nullable(),
+  sourceInterviewSessionId: z.string().nullable(),
   mode: PracticeModeSchema,
   title: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   status: PracticeSessionStatusSchema,

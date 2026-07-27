@@ -60,8 +60,11 @@ export function practiceSessionData(
           },
         }
       : {}),
+    ...(input.sourceInterviewSessionId
+      ? { sourceInterviewSession: { connect: { id: input.sourceInterviewSessionId } } }
+      : {}),
     mode: input.mode ?? (input.questionIds ? 'manual' : 'smart'),
-    title: input.title ?? '专项练习',
+    title: input.title ?? defaultPracticeTitle(input.mode),
     status: 'in_progress',
     items: {
       create: questions.map((question, index) => ({
@@ -80,6 +83,7 @@ export function practiceSessionData(
 export function mapSession(record: SessionRecord): PracticeSession {
   return PracticeSessionSchema.parse({
     ...record,
+    sourceInterviewSessionId: record.sourceInterviewSessionId ?? null,
     startedAt: record.startedAt.toISOString(),
     submittedAt: dateOrNull(record.submittedAt),
     reportedAt: dateOrNull(record.reportedAt),
@@ -206,4 +210,8 @@ function unique(values: string[]) {
 
 function dateOrNull(value: Date | null) {
   return value?.toISOString() ?? null;
+}
+
+function defaultPracticeTitle(mode: CreatePracticeSession['mode']) {
+  return mode === 'interview_review' ? '面试专项回练' : '专项练习';
 }

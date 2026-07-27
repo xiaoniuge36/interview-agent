@@ -6,9 +6,10 @@ model AdminPageAgentConversation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant   Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user     User                     @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade)
+  tenant   Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User                    @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade)
   messages AdminPageAgentMessage[]
+  runs     AdminPageAgentRun[]
 
   @@unique([tenantId, id])
   @@index([tenantId, userId, updatedAt])
@@ -23,8 +24,40 @@ model AdminPageAgentMessage {
   tokenCount     Int?
   createdAt      DateTime                  @default(now())
 
-  tenant       Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   conversation AdminPageAgentConversation @relation(fields: [tenantId, conversationId], references: [tenantId, id], onDelete: Cascade)
 
   @@index([tenantId, conversationId, createdAt])
+}
+
+model AdminPageAgentRun {
+  id              String                  @id @default(cuid())
+  tenantId        String
+  userId          String
+  conversationId  String
+  retryOfRunId    String?
+  clientRequestId String?
+  prompt          String
+  status          AdminPageAgentRunStatus @default(running)
+  currentStep     String?
+  tokenCount      Int                     @default(0)
+  traceId         String
+  errorCode       String?
+  errorSummary    String?
+  startedAt       DateTime                @default(now())
+  finishedAt      DateTime?
+  heartbeatAt     DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  tenant       Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User                       @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade)
+  conversation AdminPageAgentConversation @relation(fields: [tenantId, conversationId], references: [tenantId, id], onDelete: Cascade)
+  retryOf      AdminPageAgentRun?         @relation("AdminPageAgentRunRetries", fields: [retryOfRunId], references: [id], onDelete: SetNull)
+  retries      AdminPageAgentRun[]        @relation("AdminPageAgentRunRetries")
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, userId, clientRequestId])
+  @@index([tenantId, userId, conversationId, startedAt])
+  @@index([status, heartbeatAt])
+  @@index([retryOfRunId])
 }

@@ -10,6 +10,13 @@ const dashboard: PlatformDashboard = {
   accounts: { total: 8, created: 3, active: 2, disabled: 1, tenants: 5, admin: 2, users: 6 },
   content: { imports: 4, pendingCandidates: 3, publishedQuestions: 7, failedImports: 1 },
   training: { interviews: 6, reports: 4, practiceSubmissions: 5, practiceReports: 3 },
+  userUsage: { activeUsers: 2, interviews: 6, practiceSubmissions: 5, reports: 7 },
+  agentUsage: [
+    { agent: 'interview', runs: 8, succeeded: 7, successRate: 87.5 },
+    { agent: 'practice_evaluation', runs: 4, succeeded: 4, successRate: 100 },
+    { agent: 'user_assistant', runs: 3, succeeded: 2, successRate: 66.7 },
+    { agent: 'admin_assistant', runs: 2, succeeded: 2, successRate: 100 },
+  ],
   runtime: {
     runs: 10,
     successRate: 80,
@@ -42,7 +49,7 @@ const dashboard: PlatformDashboard = {
     practiceReports: 3,
   },
   alerts: [{ code: 'review_backlog', severity: 'warning', count: 3 }],
-};
+} as unknown as PlatformDashboard;
 
 describe('PlatformAnalyticsContent', () => {
   it('renders the light BI operating overview with real dashboard metrics', () => {
@@ -53,6 +60,11 @@ describe('PlatformAnalyticsContent', () => {
     expect(markup).toContain('内容与训练链路');
     expect(markup).toContain('运行质量');
     expect(markup).toContain('近期运行风险');
+    expect(markup).toContain('用户使用情况');
+    expect(markup).toContain('模拟面试 Agent');
+    expect(markup).toContain('练习评估 Agent');
+    expect(markup).toContain('用户助手 Agent');
+    expect(markup).toContain('管理员助手 Agent');
     expect(markup).toContain('候选题待审核');
     expect(markup).toContain('342');
   });

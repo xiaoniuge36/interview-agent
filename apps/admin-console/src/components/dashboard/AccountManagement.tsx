@@ -100,7 +100,12 @@ function AccountPageHeading({ total, onCreate }: { total: number; onCreate: () =
           统一管理后台与用户端账号，所有变更都会保留可追溯审计记录。
         </Typography.Text>
         <Tag className="account-match-tag">当前筛选匹配 {total} 个账号</Tag>
-        <Button data-page-agent-not-interactive="true" icon={<UserAddOutlined />} type="primary" onClick={onCreate}>
+        <Button
+          data-page-agent-not-interactive="true"
+          icon={<UserAddOutlined />}
+          type="primary"
+          onClick={onCreate}
+        >
           新增管理员
         </Button>
       </div>
@@ -115,6 +120,7 @@ function AccountSummary({ accounts, total }: { accounts: AccountView[]; total: n
       <Statistic title="匹配账号" value={total} />
       <Statistic title="当前页启用" value={summary.active} />
       <Statistic title="当前页禁用" value={summary.disabled} />
+      <Statistic title="当前页用户端账号" value={summary.user} />
       <Statistic title="当前页后台账号" value={summary.admin} />
     </div>
   );

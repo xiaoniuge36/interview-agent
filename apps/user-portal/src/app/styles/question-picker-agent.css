@@ -12,7 +12,7 @@
   border: 1px solid var(--agent-outline);
   border-radius: 14px;
   background: var(--agent-surface);
-  color: #f7f7fa;
+  color: var(--theme-control-text);
 }
 
 .question-agent-banner::after {
@@ -38,7 +38,7 @@ html[data-motion='on'] .question-agent-banner::after {
   border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
   border-radius: 10px 10px 10px 3px;
   background: color-mix(in srgb, var(--primary) 18%, var(--agent-surface));
-  color: color-mix(in srgb, var(--primary) 55%, #ffffff);
+  color: color-mix(in srgb, var(--primary) 55%, var(--theme-control-text));
 }
 
 .question-agent-mark::after {
@@ -70,14 +70,14 @@ html[data-motion='on'] .question-agent-mark::after {
 }
 
 .question-agent-banner > div > span {
-  color: color-mix(in srgb, var(--primary) 52%, #ffffff);
+  color: color-mix(in srgb, var(--primary) 52%, var(--theme-control-text));
   font-size: 10px;
   font-weight: 750;
 }
 
 .question-agent-banner h2 {
   margin: 3px 0 0;
-  color: #ffffff;
+  color: var(--theme-control-text);
   font-size: 15px;
   font-weight: 750;
   letter-spacing: -0.02em;
@@ -99,12 +99,12 @@ html[data-motion='on'] .question-agent-mark::after {
   align-items: start;
   margin-top: 9px;
   padding: 9px 11px;
-  border-left: 2px solid color-mix(in srgb, var(--primary) 68%, #ffffff);
-  background: rgba(255, 255, 255, 0.045);
+  border-left: 2px solid color-mix(in srgb, var(--primary) 68%, var(--theme-control-text));
+  background: color-mix(in srgb, var(--theme-control-text) 5%, transparent);
 }
 
 .question-agent-reason strong {
-  color: color-mix(in srgb, var(--primary) 48%, #ffffff);
+  color: color-mix(in srgb, var(--primary) 48%, var(--theme-control-text));
   font-size: 9px;
   line-height: 1.7;
   white-space: nowrap;
@@ -112,7 +112,7 @@ html[data-motion='on'] .question-agent-mark::after {
 
 .question-agent-reason p {
   margin: 0;
-  color: #d6deeb;
+  color: var(--agent-text);
 }
 
 .question-agent-meta {
@@ -124,10 +124,10 @@ html[data-motion='on'] .question-agent-mark::after {
 
 .question-agent-meta span {
   padding: 3px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid color-mix(in srgb, var(--theme-control-text) 8%, transparent);
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.045);
-  color: #d6d7df;
+  background: color-mix(in srgb, var(--theme-control-text) 5%, transparent);
+  color: var(--agent-text);
   font-size: 9px;
 }
 
@@ -148,8 +148,8 @@ html[data-motion='on'] .question-agent-mark::after {
   padding: 0 14px;
   border: 1px solid color-mix(in srgb, var(--primary) 32%, transparent);
   border-radius: 9px;
-  background: color-mix(in srgb, var(--primary) 25%, #ffffff);
-  color: var(--primary-strong);
+  background: var(--primary);
+  color: var(--theme-control-text);
   font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
@@ -161,7 +161,7 @@ html[data-motion='on'] .question-agent-mark::after {
 }
 
 .question-agent-actions small {
-  color: #aeb1bd;
+  color: var(--agent-text);
   font-size: 8px;
 }
 

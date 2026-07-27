@@ -27,6 +27,8 @@ export function PracticeCompletedReview({ player }: { player: PracticePlayer }) 
         onReviewItem={openReview}
         onStartNextRecommendation={() => void player.startNextRecommendation()}
         startingNextRecommendation={player.startingNextRecommendation}
+        onStartWeaknessReview={() => void player.startWeaknessReview()}
+        startingWeaknessReview={player.startingWeaknessReview}
       />
       {item ? (
         <PracticeItemReviewDialog

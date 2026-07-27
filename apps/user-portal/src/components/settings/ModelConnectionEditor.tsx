@@ -10,6 +10,7 @@ import {
   validateModelConnection,
   type ModelConnectionDraft,
 } from './model-connection-form';
+import { createExclusiveModelConnectionSaveRunner } from './model-connection-save';
 
 type ModelConnectionEditorProps = {
   credential: ModelCredentialView | null;
@@ -43,35 +44,38 @@ function useConnectionEditor(
   const [draft, setDraft] = useState(initialDraft);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [runExclusive] = useState(createExclusiveModelConnectionSaveRunner);
   const existing = credential !== null;
   const update = (patch: Partial<ModelConnectionDraft>) =>
     setDraft((current) => ({ ...current, ...patch }));
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    const errors = validateModelConnection({ ...draft, existing });
-    if (Object.keys(errors).length) {
-      const issue = Object.values(errors)[0] ?? '请检查填写内容。';
-      setMessage(issue);
-      notifications.error('模型连接未保存', new Error(issue), issue);
-      return;
-    }
-    setBusy(true);
-    setMessage('');
-    try {
-      const saved = existing
-        ? await updateModelCredential(credential.id, updateInput(draft))
-        : await createModelCredential(createInput(draft));
-      onSaved(saved);
-      notifications.success(
-        existing ? '模型连接已更新' : '模型连接已保存',
-        '服务端已加密保存密钥；请完成连接测试后再用于 Agent 任务。',
-      );
-    } catch (reason) {
-      setMessage(messageOf(reason));
-      notifications.error('模型连接保存失败', reason, '模型连接没有保存，请稍后重试。');
-    } finally {
-      setBusy(false);
-    }
+    await runExclusive(async () => {
+      const errors = validateModelConnection({ ...draft, existing });
+      if (Object.keys(errors).length) {
+        const issue = Object.values(errors)[0] ?? '请检查填写内容。';
+        setMessage(issue);
+        notifications.error('模型连接未保存', new Error(issue), issue);
+        return;
+      }
+      setBusy(true);
+      setMessage('');
+      try {
+        const saved = existing
+          ? await updateModelCredential(credential.id, updateInput(draft))
+          : await createModelCredential(createInput(draft));
+        onSaved(saved);
+        notifications.success(
+          existing ? '模型连接已更新' : '模型连接已保存',
+          '服务端已加密保存密钥；请完成连接测试后再用于 Agent 任务。',
+        );
+      } catch (reason) {
+        setMessage(messageOf(reason));
+        notifications.error('模型连接保存失败', reason, '模型连接没有保存，请稍后重试。');
+      } finally {
+        setBusy(false);
+      }
+    });
   };
   return { busy, draft, existing, message, submit, update };
 }
@@ -203,7 +207,7 @@ function EditorActions({
         {message}
       </span>
       <span className="settings-actions">
-        <button className="button secondary" type="button" onClick={onCancel}>
+        <button className="button secondary" type="button" onClick={onCancel} disabled={busy}>
           取消
         </button>
         <button className="button" type="submit" disabled={busy}>

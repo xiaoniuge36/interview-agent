@@ -5,7 +5,9 @@ import type { ModelCredentialView } from '@interview-agent/contracts';
 import { listModelCredentials } from '@/lib/model-credentials-api';
 import { ModelConnectionEditor } from './ModelConnectionEditor';
 import { ModelCredentialCard } from './ModelCredentialCard';
+import { ModelReadinessBanner } from './ModelReadinessBanner';
 import { emptyModelConnection, type ModelConnectionDraft } from './model-connection-form';
+import { createLatestCredentialListRequest } from './model-credential-list-request';
 
 type EditorState = { credential: ModelCredentialView | null; draft: ModelConnectionDraft };
 
@@ -14,14 +16,18 @@ export function ModelConnectionsPanel({ createRequest = 0 }: { createRequest?: n
 
   return (
     <section className="model-connections-panel" aria-labelledby="model-settings-heading">
-      <div className="model-panel-heading">
-        <div>
-          <h2 id="model-settings-heading" className="h2">
-            AI 模型连接
-          </h2>
-          <p>添加你自己的模型连接。密钥只会在保存时提交一次，页面始终只显示脱敏信息。</p>
-        </div>
-      </div>
+      <ModelConnectionsHeader />
+      {controller.loading ? (
+        <p className="model-readiness-loading" role="status">
+          正在检查默认模型状态…
+        </p>
+      ) : null}
+      {!controller.loading && !controller.error ? (
+        <ModelReadinessBanner
+          credentials={controller.credentials}
+          onAdd={() => controller.setEditor(newEditor())}
+        />
+      ) : null}
       {controller.editor ? (
         <ModelConnectionEditor
           credential={controller.editor.credential}
@@ -35,7 +41,7 @@ export function ModelConnectionsPanel({ createRequest = 0 }: { createRequest?: n
           <ModelCredentialCard
             key={credential.id}
             credential={credential}
-            onChanged={controller.refresh}
+            {...controller.credentialActions}
             onEdit={() => controller.setEditor(editEditor(credential))}
           />
         ))}
@@ -57,8 +63,21 @@ export function ModelConnectionsPanel({ createRequest = 0 }: { createRequest?: n
   );
 }
 
+function ModelConnectionsHeader() {
+  return (
+    <div className="model-panel-heading">
+      <div>
+        <h2 id="model-settings-heading" className="h2">
+          AI 模型连接
+        </h2>
+        <p>添加你自己的模型连接。密钥只会在保存时提交一次，页面始终只显示脱敏信息。</p>
+      </div>
+    </div>
+  );
+}
+
 function usePanelController(createRequest: number) {
-  const { credentials, error, refresh, setCredentials } = useConnections();
+  const { credentials, error, loading, refresh, setCredentials } = useConnections();
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [notice, setNotice] = useState('');
   const lastCreateRequest = useRef(createRequest);
@@ -71,28 +90,61 @@ function usePanelController(createRequest: number) {
     (saved: ModelCredentialView) => {
       setCredentials((items) => [saved, ...items.filter((item) => item.id !== saved.id)]);
       setEditor(null);
-      setNotice('模型连接已加密保存。');
+      setNotice('模型连接已加密保存。下一步：测试这条连接后再用于 Agent 任务。');
     },
     [setCredentials],
   );
-  return { credentials, editor, error, notice, onSaved, refresh, setEditor };
+  const onUpdated = useCallback(
+    (updated: ModelCredentialView) => {
+      setCredentials((items) =>
+        items.map((credential) => (credential.id === updated.id ? updated : credential)),
+      );
+    },
+    [setCredentials],
+  );
+  const onRemoved = useCallback(
+    (credentialId: string) => {
+      setCredentials((items) => items.filter((credential) => credential.id !== credentialId));
+    },
+    [setCredentials],
+  );
+  return {
+    credentialActions: { onRefresh: refresh, onRemoved, onUpdated },
+    credentials,
+    editor,
+    error,
+    loading,
+    notice,
+    onRemoved,
+    onSaved,
+    onUpdated,
+    refresh,
+    setEditor,
+  };
 }
 
 function useConnections() {
   const [credentials, setCredentials] = useState<ModelCredentialView[]>([]);
   const [error, setError] = useState('');
-  const refresh = useCallback(async () => {
-    try {
-      setCredentials(await listModelCredentials());
-      setError('');
-    } catch (reason) {
-      setError(messageOf(reason));
-    }
-  }, []);
+  const [loading, setLoading] = useState(true);
+  const [request] = useState(createLatestCredentialListRequest);
+  const refresh = useCallback(() => {
+    setLoading(true);
+    return request.run({
+      load: listModelCredentials,
+      onSuccess: (items) => {
+        setCredentials(items);
+        setError('');
+      },
+      onError: (reason) => setError(messageOf(reason)),
+      onSettled: () => setLoading(false),
+    });
+  }, [request]);
   useEffect(() => {
     void refresh();
-  }, [refresh]);
-  return { credentials, error, refresh, setCredentials };
+    return request.invalidate;
+  }, [refresh, request]);
+  return { credentials, error, loading, refresh, setCredentials };
 }
 
 function EmptyConnections({ onAdd }: { onAdd: () => void }) {

@@ -16,6 +16,7 @@ import { AdminApiError } from '@/lib/api';
 import { getPlatformDashboard } from '@/lib/platform-api';
 import { PlatformFunnel } from './PlatformFunnel';
 import { PlatformHealthSummary } from './PlatformHealthSummary';
+import { PlatformUsageInsights } from './PlatformUsageInsights';
 import { PlatformRuntimeGauge } from './PlatformBiCharts';
 import { PlatformTrendChart } from './PlatformTrendChart';
 import { PlatformAiAnalytics } from './PlatformAiAnalytics';
@@ -76,6 +77,7 @@ export function PlatformAnalyticsContent({ dashboard }: { dashboard: PlatformDas
         <PlatformTrendChart trend={dashboard.trend} />
         <RuntimeQuality dashboard={dashboard} />
       </div>
+      <PlatformUsageInsights dashboard={dashboard} />
       <div className="platform-bi-grid platform-bi-grid-secondary">
         <PlatformFunnel dashboard={dashboard} />
         <RecentFailures dashboard={dashboard} />

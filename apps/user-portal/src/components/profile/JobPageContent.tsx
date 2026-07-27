@@ -1,37 +1,39 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { interviewHrefForJob } from '@/lib/job-handoff';
 import { JobIntentPanel } from './JobIntentPanel';
+import { LatestAnalysis } from './LatestAnalysis';
 import { WorkspaceGate } from '@/components/workspace/WorkspaceGate';
 
 export function JobPageContent() {
+  const router = useRouter();
   return (
     <WorkspaceGate>
       {(data) => (
-        <div className="workspace page-workspace">
-          <header className="page-intro">
+        <div className="workspace page-workspace job-page-workspace">
+          <header className="page-intro job-page-intro">
             <div>
-              <div className="eyebrow">JD 对齐</div>
-              <h1 className="h2">匹配目标岗位模型</h1>
+              <div className="eyebrow">训练上下文 · JD 对齐</div>
+              <h1 className="h2">把目标岗位变成下一场模拟面试</h1>
               <p className="muted-text">
-                从常见岗位模板开始，或直接粘贴真实 JD。下一场模拟会围绕岗位能力重点进行追问。
+                明确岗位要求、业务场景与表达重点，让 Agent
+                的问题、追问和复盘都围绕你真正准备的岗位展开。
               </p>
             </div>
             <div className="page-intro-actions">
               <Link className="button secondary" href="/profile">
                 返回画像
               </Link>
-              <Link className="button" href="/interview">
-                去模拟面试
-              </Link>
             </div>
           </header>
-          <div className="page-single">
+          <div className="job-intent-layout">
             <JobIntentPanel
-              profile={data.profile}
-              latestJob={data.jobs[0]}
               onCreated={data.addJob}
+              onStart={(job) => router.push(interviewHrefForJob(job.intent.id))}
             />
+            <LatestAnalysis job={data.jobs[0]} profile={data.profile} />
           </div>
         </div>
       )}

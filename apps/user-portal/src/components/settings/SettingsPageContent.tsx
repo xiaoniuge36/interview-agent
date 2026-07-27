@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@interview-agent/auth-client';
+import { runSessionSignOut } from '@/components/auth/session-sign-out';
 import { ModelConnectionsPanel } from './ModelConnectionsPanel';
 import { AiUsageSummary } from './AiUsageSummary';
 
@@ -29,7 +30,7 @@ export function SettingsPageContent() {
         createRequest={createRequest}
         displayName={auth.identity?.displayName}
         showSignOut={auth.mode !== 'development'}
-        onSignOut={() => void auth.signOut()}
+        onSignOut={() => void runSessionSignOut(() => auth.signOut())}
       />
     </div>
   );

@@ -15,6 +15,13 @@ import {
   composeQuestionSelectionWithFeedback,
   toggleQuestionSelection,
 } from './question-picker-model';
+import { createLatestQuestionRequestRunner } from './latest-question-request';
+import {
+  createExclusivePracticeStartRunner,
+  startQuestionPractice,
+  type PracticeStartInput,
+} from './practice-start-single-flight';
+import { createLatestQuestionRecommendationRequest } from './question-recommendation-request';
 
 const QUICK_COMPOSE_TARGET_COUNT = 5;
 
@@ -100,20 +107,21 @@ function useCatalog(queryKey: string) {
   const [catalog, setCatalog] = useState<QuestionCatalogResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const load = useCallback(async () => {
+  const [requestRunner] = useState(createLatestQuestionRequestRunner);
+  const load = useCallback(() => {
     setLoading(true);
     setError('');
-    try {
-      setCatalog(await getQuestionCatalog(catalogQueryFromString(queryKey)));
-    } catch {
-      setError('当前筛选结果没有加载成功，请保留题单后重试。');
-    } finally {
-      setLoading(false);
-    }
-  }, [queryKey]);
+    return requestRunner.run({
+      load: () => getQuestionCatalog(catalogQueryFromString(queryKey)),
+      onError: () => setError('当前筛选结果没有加载成功，请保留题单后重试。'),
+      onSettled: () => setLoading(false),
+      onSuccess: setCatalog,
+    });
+  }, [queryKey, requestRunner]);
   useEffect(() => {
     void load();
-  }, [load]);
+    return requestRunner.invalidate;
+  }, [load, requestRunner]);
   return { catalog, loading, error, reload: load };
 }
 
@@ -163,21 +171,23 @@ function useRecommendations() {
   const [recommendation, setRecommendation] = useState<PracticeRecommendation | null>(null);
   const [recommendationLoading, setRecommendationLoading] = useState(true);
   const [recommendationError, setRecommendationError] = useState('');
-  const reloadRecommendation = useCallback(async () => {
+  const [request] = useState(() =>
+    createLatestQuestionRecommendationRequest<PracticeRecommendation>(),
+  );
+  const reloadRecommendation = useCallback(() => {
     setRecommendationError('');
     setRecommendationLoading(true);
-    try {
-      const items = await getPracticeRecommendations();
-      setRecommendation(items[0] ?? null);
-    } catch {
-      setRecommendationError('Agent 推荐暂时不可用，不影响你自主选题。');
-    } finally {
-      setRecommendationLoading(false);
-    }
-  }, []);
+    return request.load({
+      load: getPracticeRecommendations,
+      onError: () => setRecommendationError('Agent 推荐暂时不可用，不影响你自主选题。'),
+      onSettled: () => setRecommendationLoading(false),
+      onSuccess: setRecommendation,
+    });
+  }, [request]);
   useEffect(() => {
     void reloadRecommendation();
-  }, [reloadRecommendation]);
+    return request.invalidate;
+  }, [reloadRecommendation, request]);
   return { recommendation, recommendationLoading, recommendationError, reloadRecommendation };
 }
 
@@ -186,36 +196,29 @@ function usePracticeStarter() {
   const notifications = useNotifications();
   const [error, setError] = useState('');
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [runExclusive] = useState(createExclusivePracticeStartRunner);
   const run = useCallback(
-    async (input: PracticeStartInput) => {
-      setError('');
-      setBusyKey(input.key);
-      try {
-        const session = await createPracticeSession({
-          title: input.title,
-          mode: 'manual',
-          questionIds: input.questionIds,
+    (input: PracticeStartInput) =>
+      runExclusive(async () => {
+        setError('');
+        await startQuestionPractice({
+          input,
+          createSession: createPracticeSession,
+          setBusyKey,
+          onSuccess: (sessionId) => {
+            notifications.success('练习题单已创建', '服务端已保存本轮题目，即将进入练习空间。');
+            router.push(`/practice?session=${sessionId}`);
+          },
+          onError: (error) => {
+            setError(input.failureMessage);
+            notifications.error('练习题单创建失败', error, input.failureMessage);
+          },
         });
-        notifications.success('练习题单已创建', '服务端已保存本轮题目，即将进入练习空间。');
-        router.push(`/practice?session=${session.id}`);
-      } catch (error) {
-        setError(input.failureMessage);
-        notifications.error('练习题单创建失败', error, input.failureMessage);
-      } finally {
-        setBusyKey(null);
-      }
-    },
-    [notifications, router],
+      }),
+    [notifications, router, runExclusive],
   );
   return { error, busyKey, run };
 }
-
-type PracticeStartInput = {
-  key: string;
-  title: string;
-  questionIds: string[];
-  failureMessage: string;
-};
 
 function catalogQueryFromString(value: string): QuestionCatalogQuery {
   const params = new URLSearchParams(value);

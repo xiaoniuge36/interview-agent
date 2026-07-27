@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@interview-agent/auth-client';
+import { runSessionSignOut } from '@/components/auth/session-sign-out';
 import { ThemeMenu } from '../theme/ThemeMenu';
 import { sidebarAccountActions } from './sidebar-account-actions';
 
@@ -21,7 +22,11 @@ export function UserTopbarActions() {
         </span>
       </Link>
       {showSignOut ? (
-        <button className="user-topbar-signout" type="button" onClick={() => void auth.signOut()}>
+        <button
+          className="user-topbar-signout"
+          type="button"
+          onClick={() => void runSessionSignOut(() => auth.signOut())}
+        >
           <LogoutIcon />
           <span>退出登录</span>
         </button>

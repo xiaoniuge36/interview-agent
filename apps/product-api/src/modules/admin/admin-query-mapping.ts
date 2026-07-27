@@ -98,6 +98,7 @@ export function mapCandidate(
 ): CandidateReview {
   return CandidateReviewSchema.parse({
     ...record,
+    publishedQuestionId: record.publishedQuestionId,
     sourceImport: record.importTask ?? null,
     createdAt: record.createdAt.toISOString(),
   });

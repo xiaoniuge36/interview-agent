@@ -36,6 +36,7 @@ const QUESTION = {
 const CANDIDATE = {
   id: 'candidate-1',
   importTaskId: null,
+  publishedQuestionId: null,
   sourceImport: null,
   title: 'React 状态管理',
   status: 'pending',

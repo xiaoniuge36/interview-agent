@@ -11,21 +11,36 @@ const PERCENT_SCALE = 100;
 const ISO_DATE_LENGTH = 10;
 const PLATFORM_ADMIN_ROLES = ['platform_admin', 'admin', 'question_reviewer', 'support'] as const;
 const HEALTHY_SUCCESS_RATE = 95;
+const AGENT_USAGE_DEFINITIONS = [
+  { agent: 'interview', operation: 'interview_next' },
+  { agent: 'practice_evaluation', operation: 'practice_evaluation' },
+  { agent: 'user_assistant', operation: 'user_page_agent' },
+  { agent: 'admin_assistant', operation: 'admin_page_agent' },
+] as const;
 
 export type TimeRange = { startAt: Date; endAt: Date };
 
 export async function loadPlatformDashboardMetrics(prisma: PrismaService, range: TimeRange) {
-  const [accounts, content, training, runtime, trend] = await Promise.all([
+  const [accounts, content, training, runtime, trend, activeUsers, agentUsage] = await Promise.all([
     loadAccountMetrics(prisma, range),
     loadContentMetrics(prisma, range),
     loadTrainingMetrics(prisma, range),
     loadRuntimeMetrics(prisma, range),
     loadTrendMetrics(prisma, range),
+    loadActiveUserCount(prisma, range),
+    loadAgentUsageMetrics(prisma, range),
   ]);
   return {
     accounts,
     content,
     training,
+    userUsage: {
+      activeUsers,
+      interviews: training.interviews,
+      practiceSubmissions: training.practiceSubmissions,
+      reports: training.reports + training.practiceReports,
+    },
+    agentUsage,
     runtime: runtime.dashboard,
     trend,
     funnel: {
@@ -37,6 +52,29 @@ export async function loadPlatformDashboardMetrics(prisma: PrismaService, range:
     },
     alerts: buildAlerts(content, runtime.failureCount, runtime.dashboard),
   };
+}
+
+async function loadActiveUserCount(prisma: PrismaService, range: TimeRange) {
+  return prisma.user.count({ where: { role: 'user', lastSignedInAt: rangeFilter(range) } });
+}
+
+async function loadAgentUsageMetrics(prisma: PrismaService, range: TimeRange) {
+  const rows = await prisma.aiInvocation.groupBy({
+    by: ['operation', 'status'],
+    where: {
+      createdAt: rangeFilter(range),
+      operation: { in: AGENT_USAGE_DEFINITIONS.map(({ operation }) => operation) },
+    },
+    _count: { _all: true },
+  });
+  return AGENT_USAGE_DEFINITIONS.map(({ agent, operation }) => {
+    const matchingRows = rows.filter((row) => row.operation === operation);
+    const runs = matchingRows.reduce((total, row) => total + row._count._all, 0);
+    const succeeded = matchingRows
+      .filter((row) => row.status === 'succeeded')
+      .reduce((total, row) => total + row._count._all, 0);
+    return { agent, runs, succeeded, successRate: percentage(succeeded, runs) };
+  });
 }
 
 async function loadAccountMetrics(prisma: PrismaService, range: TimeRange) {

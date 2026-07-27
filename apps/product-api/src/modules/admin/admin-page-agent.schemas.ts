@@ -35,6 +35,11 @@ export type PageAgentConfig = z.infer<typeof PageAgentConfigSchema>;
 
 const ADMIN_AGENT_TITLE_MAX_LENGTH = 80;
 const ADMIN_AGENT_MESSAGE_MAX_LENGTH = 20_000;
+const ADMIN_AGENT_RUN_PROMPT_MAX_LENGTH = 4_000;
+const ADMIN_AGENT_RUN_STEP_MAX_LENGTH = 500;
+const ADMIN_AGENT_RUN_ERROR_CODE_MAX_LENGTH = 100;
+const ADMIN_AGENT_RUN_ERROR_SUMMARY_MAX_LENGTH = 2_000;
+const ADMIN_AGENT_RUN_ID_MAX_LENGTH = 128;
 
 export const AdminPageAgentMessageRoleSchema = z.enum(['user', 'assistant', 'error']);
 export const AdminPageAgentMessageSchema = z.object({
@@ -80,6 +85,52 @@ export const AdminPageAgentAppendMessagesSchema = z.object({
 export type AdminPageAgentMessageInput = z.infer<
   typeof AdminPageAgentAppendMessagesSchema
 >['messages'][number];
+
+export const AdminPageAgentRunStatusSchema = z.enum([
+  'running',
+  'waiting_confirmation',
+  'succeeded',
+  'failed',
+  'cancelled',
+  'interrupted',
+]);
+export const AdminPageAgentRunSchema = z.object({
+  id: z.string(),
+  conversationId: z.string(),
+  retryOfRunId: z.string().nullable(),
+  prompt: z.string(),
+  status: AdminPageAgentRunStatusSchema,
+  currentStep: z.string().nullable(),
+  tokenCount: z.number().int().nonnegative(),
+  traceId: z.string(),
+  errorCode: z.string().nullable(),
+  errorSummary: z.string().nullable(),
+  startedAt: z.string().datetime(),
+  finishedAt: z.string().datetime().nullable(),
+  heartbeatAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+export const AdminPageAgentCreateRunSchema = z.object({
+  prompt: z.string().trim().min(1).max(ADMIN_AGENT_RUN_PROMPT_MAX_LENGTH),
+  clientRequestId: z.string().uuid(),
+  retryOfRunId: z.string().max(ADMIN_AGENT_RUN_ID_MAX_LENGTH).optional(),
+});
+export const AdminPageAgentHeartbeatRunSchema = z.object({
+  status: z.enum(['running', 'waiting_confirmation']),
+  currentStep: z.string().trim().max(ADMIN_AGENT_RUN_STEP_MAX_LENGTH).optional(),
+  tokenCount: z.number().int().nonnegative().optional(),
+});
+export const AdminPageAgentCompleteRunSchema = z.object({
+  status: z.enum(['succeeded', 'failed', 'cancelled']),
+  currentStep: z.string().trim().max(ADMIN_AGENT_RUN_STEP_MAX_LENGTH).optional(),
+  tokenCount: z.number().int().nonnegative().optional(),
+  errorCode: z.string().trim().max(ADMIN_AGENT_RUN_ERROR_CODE_MAX_LENGTH).optional(),
+  errorSummary: z.string().trim().max(ADMIN_AGENT_RUN_ERROR_SUMMARY_MAX_LENGTH).optional(),
+});
+
+export type AdminPageAgentCreateRunInput = z.infer<typeof AdminPageAgentCreateRunSchema>;
+export type AdminPageAgentHeartbeatRunInput = z.infer<typeof AdminPageAgentHeartbeatRunSchema>;
+export type AdminPageAgentCompleteRunInput = z.infer<typeof AdminPageAgentCompleteRunSchema>;
 
 export function parsePageAgentCompletion(body: unknown): PageAgentCompletionRequest {
   const serialized = JSON.stringify(body) ?? '';

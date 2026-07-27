@@ -4,65 +4,97 @@
   gap: 20px;
   align-items: center;
   padding: 18px 20px;
-  border: 1px solid #cfdced;
-  border-radius: 10px;
-  background: linear-gradient(100deg, #f0f5ff, #fff 70%);
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--outline));
+  border-radius: var(--radius-md);
+  background: linear-gradient(100deg, var(--primary-soft), var(--surface) 70%);
 }
+
 .recent-practice-copy h2 {
   margin: 5px 0;
-  color: #15233a;
+  color: var(--ink);
   font-size: 16px;
 }
+
 .recent-practice-copy p {
   margin: 0;
-  color: #75839a;
+  color: var(--text-muted);
   font-size: 12px;
 }
+
 .recent-practice-progress {
   height: 6px;
   overflow: hidden;
   border-radius: 99px;
-  background: #dfe7f4;
+  background: color-mix(in srgb, var(--primary) 16%, var(--surface-strong));
 }
+
 .recent-practice-progress span {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #1e60e8, #55d7bd);
+  background: linear-gradient(90deg, var(--primary), var(--success));
 }
+
+.recent-training-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 32px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--success) 32%, var(--outline));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 8%, var(--surface));
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.recent-training-status > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 14%, transparent);
+}
+
+.recent-training-status strong {
+  color: var(--ink);
+  font-weight: 750;
+}
+
 .recent-practice-card > a {
-  color: #1d58c5;
+  color: var(--primary-strong);
   font-size: 13px;
   font-weight: 800;
 }
+
 .question-hub-error {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
   padding: 13px 15px;
-  border: 1px solid #f1d6a9;
-  border-radius: 12px;
-  background: #fff8ec;
-  color: #8a5b17;
+  border: 1px solid color-mix(in srgb, var(--warning) 40%, var(--outline));
+  border-radius: var(--radius-md);
+  background: var(--warning-soft);
+  color: var(--warning);
   font-size: 12px;
 }
-.question-hub-error button {
+
+.question-hub-error button,
+.question-hub-error a {
   border: 0;
   padding: 0;
   background: transparent;
-  color: #205ac8;
+  color: var(--primary-strong);
   font-weight: 750;
 }
-.question-hub-error a {
-  color: #205ac8;
-  font-weight: 750;
-}
+
 .question-discovery {
   align-items: flex-start;
-  padding-top: 8px;
-  border-top: 1px solid #dde4ee;
+  padding-top: 22px;
+  border-top: 1px solid var(--outline);
 }
+
 .question-discovery-tags {
   max-width: 620px;
   display: flex;
@@ -70,61 +102,24 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
 .question-discovery-tags a {
   display: inline-flex;
   gap: 7px;
   padding: 8px 10px;
-  border: 1px solid #d8e1ee;
+  border: 1px solid var(--outline);
   border-radius: 999px;
-  background: #fff;
-  color: #4c5d77;
+  background: var(--surface);
+  color: var(--text-muted);
   font-size: 11px;
   font-weight: 700;
 }
+
 .question-discovery-tags a span {
-  color: #2a60cb;
-}
-.question-tags-loading {
-  color: #8290a5;
-  font-size: 12px;
+  color: var(--primary-strong);
 }
 
-@media (max-width: 1180px) {
-  .question-hub-layout {
-    grid-template-columns: 1fr;
-  }
-  .agent-recommendation-rail {
-    position: static;
-  }
-}
-@media (max-width: 760px) {
-  .question-hub-page {
-    padding: 28px 18px 92px;
-  }
-  .question-search-form {
-    grid-template-columns: 22px minmax(0, 1fr);
-    padding: 12px 15px;
-  }
-  .question-search-form button {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
-  .question-topic-grid {
-    grid-template-columns: 1fr;
-  }
-  .recent-practice-card {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  .question-section-heading,
-  .question-discovery {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .question-discovery-tags {
-    justify-content: flex-start;
-  }
-  .agent-recommendation-rail {
-    padding: 20px;
-  }
+.question-tags-loading {
+  color: var(--text-subtle);
+  font-size: 12px;
 }

@@ -1,12 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getQuestionCatalog } from '@/lib/question-catalog-api';
 import {
   filterStaticSearchItems,
   questionSearchItems,
   type GlobalSearchItem,
 } from './global-search-model';
+import {
+  createSearchRequestLifecycle,
+  type SearchRequestLifecycle,
+} from './search-request-lifecycle';
 
 const SEARCH_DEBOUNCE_MS = 180;
 const SEARCH_PAGE_SIZE = 6;
@@ -24,11 +28,11 @@ export function useGlobalSearchResults(query: string): GlobalSearchResultsState 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryVersion, setRetryVersion] = useState(0);
-  const requestVersion = useRef(0);
+  const [requestLifecycle] = useState(createSearchRequestLifecycle);
 
   useEffect(() => {
     const normalizedQuery = query.trim();
-    const version = ++requestVersion.current;
+    const version = requestLifecycle.next();
     setQuestionItems([]);
     setError(null);
     if (!normalizedQuery) {
@@ -39,10 +43,10 @@ export function useGlobalSearchResults(query: string): GlobalSearchResultsState 
     return scheduleQuestionSearch({
       query: normalizedQuery,
       version,
-      currentVersion: requestVersion,
+      currentVersion: requestLifecycle,
       setters: { setQuestionItems, setIsLoading, setError },
     });
-  }, [query, retryVersion]);
+  }, [query, requestLifecycle, retryVersion]);
 
   const retry = useCallback(() => setRetryVersion((value) => value + 1), []);
   const items = useMemo(() => [...questionItems, ...staticItems], [questionItems, staticItems]);
@@ -58,7 +62,7 @@ type SearchSetters = {
 type SearchRequest = {
   query: string;
   version: number;
-  currentVersion: React.MutableRefObject<number>;
+  currentVersion: SearchRequestLifecycle;
   setters: SearchSetters;
 };
 
@@ -66,14 +70,17 @@ function scheduleQuestionSearch({ query, version, currentVersion, setters }: Sea
   const timeout = window.setTimeout(async () => {
     try {
       const catalog = await getQuestionCatalog({ query, page: 1, pageSize: SEARCH_PAGE_SIZE });
-      if (version !== currentVersion.current) return;
+      if (!currentVersion.isCurrent(version)) return;
       setters.setQuestionItems(questionSearchItems(catalog.items));
       setters.setIsLoading(false);
     } catch {
-      if (version !== currentVersion.current) return;
+      if (!currentVersion.isCurrent(version)) return;
       setters.setError('题目搜索暂时不可用，专题和功能入口仍可继续使用。');
       setters.setIsLoading(false);
     }
   }, SEARCH_DEBOUNCE_MS);
-  return () => window.clearTimeout(timeout);
+  return () => {
+    window.clearTimeout(timeout);
+    currentVersion.invalidate();
+  };
 }

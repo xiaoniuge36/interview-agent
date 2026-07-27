@@ -12,6 +12,8 @@ type PracticeQuestionStageProps = {
   onDraft: (value: string) => void;
   onSave: () => void;
   onSaveAndNext: () => void;
+  onSaveAndFeedback: () => void;
+  onOpenFeedback: () => void;
   onPrevious: () => void;
   onNext: () => void;
 };
@@ -33,7 +35,7 @@ export function PracticeQuestionStage(props: PracticeQuestionStageProps) {
         hasUnsavedChanges={hasUnsavedChanges}
         saving={saving}
       />
-      <StageFooter {...props} hasUnsavedChanges={hasUnsavedChanges} />
+      <StageFooter {...props} />
     </article>
   );
 }
@@ -67,7 +69,6 @@ function AnswerEditor(
     saving: boolean;
   },
 ) {
-  const saveDisabled = !props.draft.trim() || !props.hasUnsavedChanges || props.busy !== null;
   return (
     <>
       <label className="practice-answer-editor">
@@ -83,21 +84,85 @@ function AnswerEditor(
           onChange={(event) => props.onDraft(event.target.value)}
         />
       </label>
-      <div className="practice-save-row">
-        <span data-saved={!props.hasUnsavedChanges && Boolean(props.item.answer)}>
-          {saveLabel(props.item.answer, props.hasUnsavedChanges)}
-        </span>
-        <button type="button" disabled={saveDisabled} onClick={props.onSave}>
-          {props.saving ? '保存中…' : props.item.answer ? '保存修改' : '保存回答'}
-        </button>
-      </div>
+      <PracticeAnswerActions {...props} />
     </>
   );
 }
 
-function StageFooter(props: PracticeQuestionStageProps & { hasUnsavedChanges: boolean }) {
+function PracticeAnswerActions(
+  props: PracticeQuestionStageProps & { hasUnsavedChanges: boolean; saving: boolean },
+) {
+  const saveDisabled = !props.draft.trim() || !props.hasUnsavedChanges || props.busy !== null;
+  const primaryDisabled = props.busy !== null || (!props.draft.trim() && props.hasUnsavedChanges);
+  return (
+    <div className="practice-answer-actions">
+      <span data-saved={!props.hasUnsavedChanges && Boolean(props.item.answer)}>
+        {saveLabel(props.item.answer, props.hasUnsavedChanges)}
+      </span>
+      <div>
+        <button
+          className="practice-save-button"
+          type="button"
+          disabled={saveDisabled}
+          onClick={props.onSave}
+        >
+          {props.saving ? '保存中…' : '仅保存'}
+        </button>
+        <PracticePrimaryAction {...props} disabled={primaryDisabled} />
+      </div>
+    </div>
+  );
+}
+
+function PracticePrimaryAction(
+  props: PracticeQuestionStageProps & {
+    disabled: boolean;
+    hasUnsavedChanges: boolean;
+    saving: boolean;
+  },
+) {
+  const action = primaryAnswerAction(props);
+  return (
+    <button
+      className={action.className}
+      type="button"
+      disabled={props.disabled}
+      onClick={action.onClick}
+    >
+      {props.saving ? '保存中…' : action.label}
+    </button>
+  );
+}
+
+function primaryAnswerAction(props: PracticeQuestionStageProps & { hasUnsavedChanges: boolean }) {
   const hasNext = props.currentIndex + 1 < props.total;
-  const next = props.hasUnsavedChanges ? props.onSaveAndNext : props.onNext;
+  if (hasNext && props.hasUnsavedChanges) {
+    return primaryAction('保存并进入下一题 →', props.onSaveAndNext);
+  }
+  if (hasNext) return primaryAction('进入下一题 →', props.onNext);
+  if (props.hasUnsavedChanges) {
+    return primaryAction(
+      '保存并进入 AI 评价 →',
+      props.onSaveAndFeedback,
+      'practice-save-next-button practice-save-feedback-button',
+    );
+  }
+  return primaryAction(
+    '进入 AI 评价 →',
+    props.onOpenFeedback,
+    'practice-save-next-button practice-save-feedback-button',
+  );
+}
+
+function primaryAction(
+  label: string,
+  onClick: () => void,
+  className = 'practice-save-next-button',
+) {
+  return { label, onClick, className };
+}
+
+function StageFooter(props: PracticeQuestionStageProps) {
   return (
     <footer>
       <button
@@ -110,9 +175,6 @@ function StageFooter(props: PracticeQuestionStageProps & { hasUnsavedChanges: bo
       <span>
         {props.currentIndex + 1} / {props.total}
       </span>
-      <button type="button" disabled={!hasNext || props.busy !== null} onClick={next}>
-        {props.hasUnsavedChanges ? '保存并下一题 →' : '下一题 →'}
-      </button>
     </footer>
   );
 }

@@ -5,3 +5,8 @@
 @import './practice-player-responsive.css';
 @import './practice-player-refinement.css';
 @import './practice-player-refinement-responsive.css';
+@import './practice-evidence.css';
+@import './practice-player-feedback-launcher.css';
+@import './practice-player-feedback-step.css';
+@import './practice-player-ai-confirmation.css';
+@import './practice-player-evaluation-result.css';

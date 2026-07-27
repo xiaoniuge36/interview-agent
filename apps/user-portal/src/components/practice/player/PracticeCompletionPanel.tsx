@@ -1,6 +1,8 @@
 import type { MasteryProfile, PracticeReport, PracticeSession } from '@interview-agent/contracts';
 import Link from 'next/link';
 import { PracticeReportPanel } from '../PracticeReportPanel';
+import { hasReviewableWeakness } from '@/lib/weakness-review';
+import { PracticeEvidenceStrip } from './PracticeEvidenceStrip';
 
 type PracticeCompletionPanelProps = {
   session: PracticeSession;
@@ -11,19 +13,48 @@ type PracticeCompletionPanelProps = {
   onReviewItem: (itemId: string) => void;
   onStartNextRecommendation: () => void;
   startingNextRecommendation: boolean;
+  onStartWeaknessReview: () => void;
+  startingWeaknessReview: boolean;
 };
 
 export function PracticeCompletionPanel(props: PracticeCompletionPanelProps) {
   const aiCompleted = props.session.status === 'report_ready';
   const hasReport = aiCompleted && props.report;
+  const reviewWeakness = hasReport ? hasReviewableWeakness(props.report) : false;
   return (
     <div className="practice-completion-page">
-      <CompletionHeader aiCompleted={aiCompleted} {...props} />
+      <CompletionHeader aiCompleted={aiCompleted} reviewWeakness={reviewWeakness} {...props} />
+      <CompletionEvidence
+        session={props.session}
+        aiCompleted={aiCompleted}
+        reviewWeakness={reviewWeakness}
+      />
       {hasReport ? <PracticeReportPanel report={props.report!} mastery={props.mastery} /> : null}
       <CompletedQuestionList session={props.session} onReviewItem={props.onReviewItem} />
       <ReportRetry aiCompleted={aiCompleted} report={props.report} onRetry={props.onRetry} />
       {props.message ? <p className="practice-completion-message">{props.message}</p> : null}
     </div>
+  );
+}
+
+function CompletionEvidence({
+  session,
+  aiCompleted,
+  reviewWeakness,
+}: {
+  session: PracticeSession;
+  aiCompleted: boolean;
+  reviewWeakness: boolean;
+}) {
+  return (
+    <section className="practice-completion-evidence" aria-label="本轮训练证据">
+      <PracticeEvidenceStrip session={session} />
+      <div className="practice-completion-next-step">
+        <span>下一步</span>
+        <strong>{nextStepTitle({ aiCompleted, reviewWeakness })}</strong>
+        <p>{nextStepDescription({ aiCompleted, reviewWeakness })}</p>
+      </div>
+    </section>
   );
 }
 
@@ -58,14 +89,17 @@ function CompletedQuestionList({
   );
 }
 
-function CompletionHeader(props: PracticeCompletionPanelProps & { aiCompleted: boolean }) {
+function CompletionHeader(
+  props: PracticeCompletionPanelProps & { aiCompleted: boolean; reviewWeakness: boolean },
+) {
   return (
     <header>
       <span>{props.aiCompleted ? 'AI review complete' : 'Self-study complete'}</span>
       <h1>{props.aiCompleted ? '本轮 AI 复盘已生成' : '本轮自学已结束'}</h1>
       <p>{completionDescription(props.aiCompleted)}</p>
       <div>
-        {props.aiCompleted ? <NextRecommendationButton {...props} /> : null}
+        {props.aiCompleted ? <NextPracticeButton {...props} /> : null}
+        {props.aiCompleted ? <Link href="/interview">用模拟面试检验本轮提升</Link> : null}
         <Link href="/questions">开始新的题单</Link>
         <Link href="/home">返回题库大厅</Link>
       </div>
@@ -73,16 +107,31 @@ function CompletionHeader(props: PracticeCompletionPanelProps & { aiCompleted: b
   );
 }
 
-function NextRecommendationButton(props: PracticeCompletionPanelProps) {
+function NextPracticeButton(props: PracticeCompletionPanelProps & { reviewWeakness: boolean }) {
+  const starting = props.reviewWeakness
+    ? props.startingWeaknessReview
+    : props.startingNextRecommendation;
   return (
     <button
       type="button"
-      disabled={props.startingNextRecommendation}
-      onClick={props.onStartNextRecommendation}
+      disabled={starting}
+      onClick={props.reviewWeakness ? props.onStartWeaknessReview : props.onStartNextRecommendation}
     >
-      {props.startingNextRecommendation ? '正在准备下一轮…' : '按最新推荐开始下一轮'}
+      {starting ? '正在准备下一轮…' : props.reviewWeakness ? '复练薄弱项' : '按最新推荐开始下一轮'}
     </button>
   );
+}
+
+function nextStepTitle(state: { aiCompleted: boolean; reviewWeakness: boolean }) {
+  if (!state.aiCompleted) return '选择新的题目继续训练';
+  return state.reviewWeakness ? '先复练本轮薄弱项' : '按最新推荐开始下一轮';
+}
+
+function nextStepDescription(state: { aiCompleted: boolean; reviewWeakness: boolean }) {
+  if (!state.aiCompleted) return '回答已保留；完成整轮 AI 复盘前不会更新能力画像。';
+  return state.reviewWeakness
+    ? '本轮低分题已整理为可立即执行的复练入口。'
+    : '本轮复盘已汇总为可复用的训练证据。';
 }
 
 function ReportRetry({

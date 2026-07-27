@@ -6,8 +6,9 @@ export function summarizeAccounts(accounts: AccountView[]) {
       total: summary.total + 1,
       active: summary.active + Number(account.status === 'active'),
       disabled: summary.disabled + Number(account.status === 'disabled'),
+      user: summary.user + Number(account.kind === 'user'),
       admin: summary.admin + Number(account.kind === 'admin'),
     }),
-    { total: 0, active: 0, disabled: 0, admin: 0 },
+    { total: 0, active: 0, disabled: 0, user: 0, admin: 0 },
   );
 }

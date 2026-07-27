@@ -1,7 +1,16 @@
 .practice-player-page {
+  --training-accent: var(--primary);
+  --training-accent-strong: var(--primary-strong);
+  --training-accent-soft: var(--primary-soft);
+  --training-surface: var(--surface);
+  --training-outline: var(--outline);
   background:
-    radial-gradient(circle at 24% -10%, rgba(65, 118, 224, 0.12), transparent 31%),
-    linear-gradient(180deg, #f7f9fd 0%, #eef3fa 100%);
+    radial-gradient(
+      circle at 24% -10%,
+      color-mix(in srgb, var(--primary) 13%, transparent),
+      transparent 31%
+    ),
+    var(--surface-subtle);
 }
 
 .practice-player-header {
@@ -30,9 +39,9 @@
 .practice-player-progress {
   min-width: 286px;
   padding: 11px 13px;
-  border: 1px solid rgba(192, 207, 227, 0.84);
+  border: 1px solid color-mix(in srgb, var(--primary) 17%, var(--outline));
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.74);
+  background: color-mix(in srgb, var(--surface) 76%, transparent);
 }
 
 .practice-player-layout {
@@ -61,13 +70,13 @@
 }
 
 .practice-nav-title span {
-  color: #5975aa;
+  color: var(--primary-strong);
   font-size: 9px;
   letter-spacing: 0.11em;
 }
 
 .practice-nav-title strong {
-  color: #243858;
+  color: var(--ink);
   font-size: 15px;
 }
 
@@ -84,13 +93,13 @@
   border-color: transparent;
   border-radius: 12px;
   padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.66);
-  box-shadow: inset 0 0 0 1px rgba(210, 221, 236, 0.75);
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 13%, var(--outline));
 }
 
 .practice-nav-items button:hover:not(:disabled) {
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px #a9c3ed;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 47%, var(--outline));
 }
 
 .practice-nav-items button > span {
@@ -106,14 +115,14 @@
 }
 
 .practice-nav-items button.active {
-  border-color: #79a2eb;
-  background: #edf4ff;
-  box-shadow: 0 7px 18px rgba(45, 99, 188, 0.12);
+  border-color: color-mix(in srgb, var(--primary) 56%, var(--outline));
+  background: var(--primary-soft);
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
 .practice-nav-items button.active > span {
-  background: #2e67d2;
-  color: #ffffff;
+  background: var(--primary);
+  color: var(--surface);
 }
 
 .practice-nav-legend {
@@ -130,7 +139,7 @@
   min-height: 0;
   border-radius: 22px;
   padding: clamp(28px, 3vw, 42px);
-  box-shadow: 0 18px 42px rgba(35, 57, 92, 0.08);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 .practice-question-stage h1 {
@@ -141,15 +150,15 @@
 }
 
 .practice-question-stem {
-  color: #5b6d86;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
 .practice-stage-meta span,
 .practice-stage-tags span {
-  border: 1px solid #d8e3f3;
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--outline));
   border-radius: 999px;
-  background: #f7faff;
+  background: color-mix(in srgb, var(--primary-soft) 64%, var(--surface));
 }
 
 .practice-answer-editor {
@@ -160,24 +169,46 @@
   min-height: clamp(245px, 35vh, 410px);
   border-radius: 15px;
   padding: 18px;
-  background: #fbfcff;
+  background: color-mix(in srgb, var(--surface-subtle) 74%, var(--surface));
   font-size: 15px;
 }
 
 .practice-answer-editor textarea::placeholder {
-  color: #98a5b6;
+  color: var(--text-subtle);
 }
 
-.practice-save-row {
+.practice-answer-actions {
   border-radius: 12px;
   padding: 10px 0 0;
 }
 
-.practice-save-row button,
+.practice-answer-actions button,
 .practice-round-actions button {
   border-radius: 10px;
   padding-inline: 17px;
-  box-shadow: 0 8px 16px rgba(29, 93, 225, 0.18);
+}
+
+.practice-save-button {
+  border-color: color-mix(in srgb, var(--primary) 31%, var(--outline));
+  background: var(--surface);
+  color: var(--primary-strong);
+}
+
+.practice-save-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--primary) 54%, var(--outline));
+  background: color-mix(in srgb, var(--primary-soft) 52%, var(--surface));
+}
+
+.practice-save-next-button,
+.practice-round-actions button {
+  background: var(--primary);
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--primary) 18%, transparent);
+  color: var(--surface);
+}
+
+.practice-save-next-button:hover:not(:disabled) {
+  background: var(--primary-strong);
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--primary) 28%, transparent);
 }
 
 .practice-question-stage > footer {
@@ -193,16 +224,20 @@
 .practice-coach-panel {
   top: 22px;
   border-radius: 22px;
-  box-shadow: 0 18px 42px rgba(25, 51, 85, 0.11);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--ink) 11%, transparent);
 }
 
 .practice-coach-panel > header {
   padding: 21px 21px 19px;
-  background: linear-gradient(150deg, #173961, #0c2542);
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--sidebar-bg) 78%, var(--primary)),
+    var(--sidebar-bg)
+  );
 }
 
 .practice-coach-panel > header span {
-  color: #8cdbc8;
+  color: color-mix(in srgb, var(--success) 66%, var(--agent-text));
 }
 
 .practice-coach-panel > header h2 {
@@ -223,48 +258,48 @@
   display: grid;
   gap: 8px;
   margin: 0 16px 16px;
-  border: 1px solid #d9e3f2;
-  border-left: 3px solid #6d8dcb;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--outline));
+  border-left: 3px solid var(--primary);
   border-radius: 13px;
   padding: 13px 14px;
-  background: #f6f9fe;
+  background: color-mix(in srgb, var(--primary-soft) 58%, var(--surface));
 }
 
 .practice-coach-review-trigger {
   width: calc(100% - 32px);
   min-height: 42px;
   margin: 0 16px 16px;
-  border: 1px solid #b8ccec;
+  border: 1px solid color-mix(in srgb, var(--primary) 34%, var(--outline));
   border-radius: 11px;
-  background: #f4f8ff;
-  color: #2459c7;
+  background: color-mix(in srgb, var(--primary-soft) 74%, var(--surface));
+  color: var(--primary-strong);
   font-size: 13px;
   font-weight: 750;
 }
 
 .practice-coach-review-trigger:hover {
-  border-color: #789fe6;
-  background: #eaf1ff;
+  border-color: color-mix(in srgb, var(--primary) 52%, var(--outline));
+  background: var(--primary-soft);
 }
 
 .practice-item-ai-confirmation {
   display: grid;
   gap: 9px;
   margin: 14px 0 0;
-  border: 1px solid #c3d5f2;
+  border: 1px solid color-mix(in srgb, var(--primary) 27%, var(--outline));
   border-radius: 12px;
   padding: 13px;
-  background: #f5f9ff;
+  background: color-mix(in srgb, var(--primary-soft) 68%, var(--surface));
 }
 
 .practice-item-ai-confirmation strong {
-  color: #254f9b;
+  color: var(--primary-strong);
   font-size: 13px;
 }
 
 .practice-item-ai-confirmation p {
   margin: 0;
-  color: #65758d;
+  color: var(--text-muted);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -276,9 +311,9 @@
 }
 
 .practice-learning-notice[data-state='ready'] {
-  border-color: rgba(22, 128, 108, 0.3);
-  border-left-color: #16806c;
-  background: #f0faf6;
+  border-color: color-mix(in srgb, var(--success) 30%, var(--outline));
+  border-left-color: var(--success);
+  background: var(--success-soft);
 }
 
 .practice-learning-notice > div {
@@ -287,7 +322,7 @@
 }
 
 .practice-learning-notice span {
-  color: #5b74a1;
+  color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 8px;
   font-weight: 850;
@@ -296,17 +331,17 @@
 }
 
 .practice-learning-notice[data-state='ready'] span {
-  color: #16806c;
+  color: var(--success);
 }
 
 .practice-learning-notice strong {
-  color: #28405f;
+  color: var(--ink);
   font-size: 12px;
 }
 
 .practice-learning-notice p {
   margin: 0;
-  color: #65758d;
+  color: var(--text-muted);
   font-size: 11px;
   line-height: 1.65;
 }
@@ -324,11 +359,15 @@
   justify-content: space-between;
   gap: 18px;
   margin-top: 6px;
-  border: 1px solid #b9cdec;
-  border-left: 4px solid #3b6fea;
+  border: 1px solid color-mix(in srgb, var(--primary) 31%, var(--outline));
+  border-left: 4px solid var(--primary);
   border-radius: 14px;
   padding: 16px 18px;
-  background: linear-gradient(115deg, #f4f8ff, #ffffff);
+  background: linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--primary-soft) 70%, var(--surface)),
+    var(--surface)
+  );
 }
 
 .practice-ai-confirmation > div:first-child {
@@ -337,7 +376,7 @@
 }
 
 .practice-ai-confirmation span {
-  color: #3b6fea;
+  color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 800;
@@ -345,13 +384,13 @@
 }
 
 .practice-ai-confirmation strong {
-  color: #14213d;
+  color: var(--ink);
   font-size: 15px;
 }
 
 .practice-ai-confirmation p {
   margin: 0;
-  color: #60708a;
+  color: var(--text-muted);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -367,10 +406,10 @@
   margin: 26px auto 0;
   display: grid;
   gap: 15px;
-  border: 1px solid #dce6f3;
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--outline));
   border-radius: 18px;
   padding: 22px;
-  background: #f8fbff;
+  background: color-mix(in srgb, var(--primary-soft) 50%, var(--surface));
 }
 
 .practice-completion-review-list > div:first-child {
@@ -379,7 +418,7 @@
 }
 
 .practice-completion-review-list > div:first-child span {
-  color: #3b6fea;
+  color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 800;
@@ -388,7 +427,7 @@
 
 .practice-completion-review-list h2 {
   margin: 0;
-  color: #182744;
+  color: var(--ink);
   font-size: 18px;
 }
 
@@ -402,16 +441,16 @@
   grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center;
   gap: 11px;
-  border: 1px solid #dbe5f2;
+  border: 1px solid color-mix(in srgb, var(--primary) 15%, var(--outline));
   border-radius: 11px;
   padding: 11px;
-  background: #ffffff;
+  background: var(--surface);
   text-align: left;
 }
 
 .practice-completion-review-list button:hover {
-  border-color: #9db9e8;
-  background: #f5f9ff;
+  border-color: color-mix(in srgb, var(--primary) 48%, var(--outline));
+  background: color-mix(in srgb, var(--primary-soft) 66%, var(--surface));
 }
 
 .practice-completion-review-list button > span {
@@ -420,26 +459,95 @@
   height: 28px;
   place-items: center;
   border-radius: 8px;
-  background: #eaf1ff;
-  color: #2b62cf;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
   font-size: 11px;
   font-weight: 800;
 }
 
 .practice-completion-review-list button strong {
   overflow: hidden;
-  color: #21324e;
+  color: var(--ink);
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .practice-completion-review-list button small {
-  color: #667792;
+  color: var(--text-muted);
   font-size: 11px;
 }
 
+.practice-completion-page {
+  background:
+    radial-gradient(
+      circle at 76% 0,
+      color-mix(in srgb, var(--primary) 12%, transparent),
+      transparent 29%
+    ),
+    var(--surface-subtle);
+}
+
+.practice-completion-page > header h1 {
+  color: var(--ink);
+}
+
+.practice-completion-page > header p,
+.practice-report-retry p {
+  color: var(--text-muted);
+}
+
+.practice-completion-page > header a,
+.practice-completion-page > header button,
+.practice-report-retry button {
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--outline));
+  background: var(--surface);
+  color: var(--primary-strong);
+}
+
+.practice-completion-page > header button {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--surface);
+}
+
+.practice-completion-evidence {
+  width: min(980px, 100%);
+  display: grid;
+  gap: 12px;
+  margin: 0 auto 24px;
+}
+
+.practice-completion-next-step {
+  display: grid;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--primary) 26%, var(--outline));
+  border-radius: 16px;
+  padding: 16px 18px;
+  background: color-mix(in srgb, var(--primary-soft) 68%, var(--surface));
+}
+
+.practice-completion-next-step > span {
+  color: var(--primary-strong);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.practice-completion-next-step strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.practice-completion-next-step p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .practice-player-page :is(button, textarea):focus-visible {
-  outline: 3px solid rgba(46, 103, 210, 0.3);
+  outline: 3px solid var(--primary-glow);
   outline-offset: 2px;
 }

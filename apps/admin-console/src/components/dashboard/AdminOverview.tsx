@@ -22,6 +22,8 @@ import {
 import type { Dashboard } from '@interview-agent/contracts';
 import type { AdminView } from '@/components/admin-navigation';
 import type { SectionState } from '@/hooks/useAdminDashboard';
+import { AdminAttentionQueue } from './AdminAttentionQueue';
+import { AdminWorkspacePanel } from './AdminWorkspacePanel';
 import { DashboardStats } from './DashboardStats';
 
 const COMPACT_GUTTER = 12;
@@ -77,6 +79,12 @@ function OverviewDetails(props: {
       </Col>
       <Col lg={8} xs={24}>
         <RecentRuns dashboard={props.dashboard} onNavigate={props.onNavigate} />
+      </Col>
+      <Col lg={14} xs={24}>
+        <AdminAttentionQueue dashboard={props.dashboard} onNavigate={props.onNavigate} />
+      </Col>
+      <Col lg={10} xs={24}>
+        <AdminWorkspacePanel onNavigate={props.onNavigate} />
       </Col>
       <Col span={24}>
         <AdminCapabilityGrid onNavigate={props.onNavigate} />

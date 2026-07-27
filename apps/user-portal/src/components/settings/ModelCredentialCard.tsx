@@ -1,24 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import type { ModelCredentialView } from '@interview-agent/contracts';
 import { removeModelCredential, testModelCredential } from '@/lib/model-credentials-api';
-import { useNotifications } from '@/components/notifications/NotificationProvider';
+import {
+  useNotifications,
+  type NotificationApi,
+} from '@/components/notifications/NotificationProvider';
 import { MODEL_PROVIDER_OPTIONS } from './model-connection-form';
+import {
+  createExclusiveCredentialActionRunner,
+  credentialActionOutcome,
+  runCredentialAction,
+} from './model-credential-action';
 
 type ModelCredentialCardProps = {
   credential: ModelCredentialView;
-  onChanged: () => Promise<void>;
+  onRefresh: () => Promise<boolean>;
+  onUpdated: (credential: ModelCredentialView) => void;
+  onRemoved: (credentialId: string) => void;
   onEdit: () => void;
 };
 
-export function ModelCredentialCard({ credential, onChanged, onEdit }: ModelCredentialCardProps) {
-  const { busy, message, remove, test } = useCredentialActions(credential.id, onChanged);
+export function ModelCredentialCard(props: ModelCredentialCardProps) {
+  const { credential, onEdit } = props;
+  const { busy, message, remove, test } = useCredentialActions(props);
+  const needsTest = credential.status !== 'verified';
   return (
-    <article className="credential-card">
+    <article className="credential-card" data-status={credential.status}>
       <CredentialHeader credential={credential} onEdit={onEdit} busy={busy} />
       <CredentialFacts credential={credential} />
-      <CredentialActions onEdit={onEdit} onRemove={remove} onTest={test} busy={busy} />
+      <CredentialActions
+        onEdit={onEdit}
+        onRemove={remove}
+        onTest={test}
+        busy={busy}
+        needsTest={needsTest}
+      />
+      {needsTest ? (
+        <p className="credential-readiness">需要重新测试后才能用于 Agent 任务。</p>
+      ) : null}
       {message ? (
         <p className="credential-action-message" role="status">
           {message}
@@ -28,42 +49,70 @@ export function ModelCredentialCard({ credential, onChanged, onEdit }: ModelCred
   );
 }
 
-function useCredentialActions(id: string, onChanged: () => Promise<void>) {
+function useCredentialActions(options: ModelCredentialCardProps) {
   const notifications = useNotifications();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [runExclusive] = useState(createExclusiveCredentialActionRunner);
+  const context = { ...options, notifications, setBusy, setMessage };
   const test = async () => {
-    setBusy(true);
-    setMessage('');
-    try {
-      await testModelCredential(id);
-      await onChanged();
-      setMessage('连接测试成功，已可用于 Agent 任务。');
-      notifications.success('模型连接测试成功', '服务端已完成真实模型调用验证。');
-    } catch (reason) {
-      setMessage(messageOf(reason));
-      notifications.error('模型连接测试失败', reason, '模型连接测试失败，请检查配置。');
-      await refreshAfterFailure(onChanged);
-    } finally {
-      setBusy(false);
-    }
+    await runExclusive(() => testCredential(context));
   };
   const remove = async () => {
-    if (!window.confirm('删除后 Agent 将不能再使用此模型连接，确定继续吗？')) return;
-    setBusy(true);
-    setMessage('');
-    try {
-      await removeModelCredential(id);
-      await onChanged();
-      notifications.success('模型连接已删除', '服务端已移除该加密凭据。');
-    } catch (reason) {
-      setMessage(messageOf(reason));
-      notifications.error('模型连接删除失败', reason, '模型连接没有删除，请稍后重试。');
-    } finally {
-      setBusy(false);
-    }
+    await runExclusive(() => removeCredential(context));
   };
   return { busy, message, remove, test };
+}
+
+type CredentialActionContext = Pick<
+  ModelCredentialCardProps,
+  'credential' | 'onRefresh' | 'onRemoved' | 'onUpdated'
+> & {
+  notifications: NotificationApi;
+  setBusy: Dispatch<SetStateAction<boolean>>;
+  setMessage: Dispatch<SetStateAction<string>>;
+};
+
+async function testCredential(context: CredentialActionContext) {
+  context.setBusy(true);
+  context.setMessage('');
+  try {
+    const action = await runCredentialAction({
+      action: () => testModelCredential(context.credential.id),
+      refresh: context.onRefresh,
+    });
+    context.onUpdated(action.result);
+    const outcome = credentialActionOutcome('test', action.synchronizationComplete);
+    context.setMessage(outcome.message);
+    context.notifications[outcome.tone]('模型连接测试成功', outcome.notificationDetail);
+  } catch (reason) {
+    context.setMessage(messageOf(reason));
+    context.notifications.error('模型连接测试失败', reason, '模型连接测试失败，请检查配置。');
+    await refreshAfterFailure(context.onRefresh);
+  } finally {
+    context.setBusy(false);
+  }
+}
+
+async function removeCredential(context: CredentialActionContext) {
+  if (!window.confirm('删除后 Agent 将不能再使用此模型连接，确定继续吗？')) return;
+  context.setBusy(true);
+  context.setMessage('');
+  try {
+    const action = await runCredentialAction({
+      action: () => removeModelCredential(context.credential.id),
+      refresh: context.onRefresh,
+    });
+    context.onRemoved(context.credential.id);
+    const outcome = credentialActionOutcome('remove', action.synchronizationComplete);
+    context.setMessage(outcome.message);
+    context.notifications[outcome.tone]('模型连接已删除', outcome.notificationDetail);
+  } catch (reason) {
+    context.setMessage(messageOf(reason));
+    context.notifications.error('模型连接删除失败', reason, '模型连接没有删除，请稍后重试。');
+  } finally {
+    context.setBusy(false);
+  }
 }
 
 function CredentialHeader({
@@ -84,7 +133,7 @@ function CredentialHeader({
         <span className={`credential-status ${credential.status}`}>
           {statusLabel(credential.status)}
         </span>
-        {credential.isDefault ? <span className="credential-default">默认</span> : null}
+        {credential.isDefault ? <span className="credential-default">默认模型</span> : null}
       </div>
       <button
         className="credential-more"
@@ -140,16 +189,18 @@ function CredentialActions({
   onRemove,
   onTest,
   busy,
+  needsTest,
 }: {
   onEdit: () => void;
   onRemove: () => Promise<void>;
   onTest: () => Promise<void>;
   busy: boolean;
+  needsTest: boolean;
 }) {
   return (
     <footer className="credential-actions">
       <button
-        className="connection-action"
+        className={`connection-action${needsTest ? ' primary' : ''}`}
         type="button"
         onClick={() => void onTest()}
         disabled={busy}
@@ -181,9 +232,9 @@ function statusLabel(status: ModelCredentialView['status']) {
   ];
 }
 
-async function refreshAfterFailure(onChanged: () => Promise<void>) {
+async function refreshAfterFailure(onRefresh: () => Promise<boolean>) {
   try {
-    await onChanged();
+    await onRefresh();
   } catch {
     // 保留原始测试错误；列表可由用户稍后重新加载。
   }

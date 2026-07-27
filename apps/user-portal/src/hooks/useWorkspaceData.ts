@@ -10,6 +10,12 @@ type WorkspaceState = {
   error: Error | null;
 };
 
+type LatestWorkspaceHandlers<T> = {
+  load: () => Promise<T>;
+  onSuccess: (value: T) => void;
+  onError: (reason: unknown) => void;
+};
+
 const IDLE_STATE: WorkspaceState = {
   status: 'idle',
   data: null,
@@ -27,19 +33,19 @@ export function useWorkspaceData(options: { loadOnMount?: boolean } = {}) {
     options.loadOnMount === false ? IDLE_STATE : INITIAL_STATE,
   );
   const [loadWorkspace] = useState(() => createWorkspaceLoader());
+  const [request] = useState(createLatestWorkspaceRequest);
   const reload = useCallback(async () => {
     setState(INITIAL_STATE);
-    try {
-      const data = await loadWorkspace();
-      setState({ status: 'ready', data, error: null });
-    } catch (error) {
-      setState({ status: 'error', data: null, error: toError(error) });
-    }
-  }, [loadWorkspace]);
+    await request.run({
+      load: loadWorkspace,
+      onSuccess: (data) => setState({ status: 'ready', data, error: null }),
+      onError: (error) => setState({ status: 'error', data: null, error: toError(error) }),
+    });
+  }, [loadWorkspace, request]);
   useEffect(() => {
-    if (options.loadOnMount === false) return;
-    void reload();
-  }, [options.loadOnMount, reload]);
+    if (options.loadOnMount !== false) void reload();
+    return request.invalidate;
+  }, [options.loadOnMount, reload, request]);
   const updateProfile = useCallback((profile: ProfilePayload) => {
     setState((current) => updateData(current, { profile }));
   }, []);
@@ -47,6 +53,27 @@ export function useWorkspaceData(options: { loadOnMount?: boolean } = {}) {
     setState((current) => updateData(current, { job }));
   }, []);
   return { state, reload, updateProfile, addJob };
+}
+
+export function createLatestWorkspaceRequest() {
+  let latestSequence = 0;
+  const invalidate = () => {
+    latestSequence += 1;
+  };
+  const run = async <T>(handlers: LatestWorkspaceHandlers<T>): Promise<boolean> => {
+    const sequence = ++latestSequence;
+    try {
+      const value = await handlers.load();
+      if (sequence !== latestSequence) return false;
+      handlers.onSuccess(value);
+      return true;
+    } catch (reason) {
+      if (sequence !== latestSequence) return false;
+      handlers.onError(reason);
+      return false;
+    }
+  };
+  return { invalidate, run };
 }
 
 export function createWorkspaceLoader(

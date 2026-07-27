@@ -26,6 +26,10 @@ const NAVIGATION_LABELS: Record<NavigationId, string> = {
 };
 type ToolFactory = <TParams>(options: PageAgentTool<TParams>) => PageAgentTool<TParams>;
 
+export function userAgentNavigationPath(view: NavigationId) {
+  return view === 'questions' ? '/questions?source=agent' : NAVIGATION_PATHS[view];
+}
+
 export function createUserPageAgentTools(tool: ToolFactory) {
   return {
     navigate_user_view: createNavigationTool(tool),
@@ -44,7 +48,7 @@ function createNavigationTool(tool: ToolFactory) {
     }),
     execute: async (input, { signal }) => {
       signal.throwIfAborted();
-      window.location.href = NAVIGATION_PATHS[input.view];
+      window.location.href = userAgentNavigationPath(input.view);
       return `已打开${NAVIGATION_LABELS[input.view]}。`;
     },
   });

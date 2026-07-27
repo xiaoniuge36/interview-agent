@@ -4,6 +4,7 @@ import {
   clearQuestionSelection,
   composeQuestionSelection,
   composeQuestionSelectionWithFeedback,
+  shouldShowSelfPicker,
   toggleQuestionSelection,
 } from './question-picker-model';
 
@@ -46,5 +47,45 @@ describe('自选题单状态', () => {
       ids: ['q-1', 'q-2'],
       message: '已按当前推荐顺序生成 2 题训练单。',
     });
+  });
+});
+
+describe('推荐优先的自选入口', () => {
+  it('有推荐且用户尚未选题时默认收束自选工作区', () => {
+    expect(
+      shouldShowSelfPicker({
+        recommendationAvailable: true,
+        recommendationLoading: false,
+        selectionCount: 0,
+        manuallyOpened: false,
+      }),
+    ).toBe(false);
+  });
+
+  it('在无推荐、已有选题或用户主动打开时展示自选工作区', () => {
+    expect(
+      shouldShowSelfPicker({
+        recommendationAvailable: false,
+        recommendationLoading: false,
+        selectionCount: 0,
+        manuallyOpened: false,
+      }),
+    ).toBe(true);
+    expect(
+      shouldShowSelfPicker({
+        recommendationAvailable: true,
+        recommendationLoading: false,
+        selectionCount: 1,
+        manuallyOpened: false,
+      }),
+    ).toBe(true);
+    expect(
+      shouldShowSelfPicker({
+        recommendationAvailable: true,
+        recommendationLoading: true,
+        selectionCount: 0,
+        manuallyOpened: true,
+      }),
+    ).toBe(true);
   });
 });

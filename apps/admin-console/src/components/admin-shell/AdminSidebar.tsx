@@ -11,6 +11,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   RadarChartOutlined,
+  StarFilled,
   TeamOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@interview-agent/auth-client';
@@ -19,8 +20,11 @@ import type { ReactNode } from 'react';
 import {
   ADMIN_NAV_GROUPS,
   canAccessAdminView,
+  isAdminView,
+  type AdminNavigationItem,
   type AdminView,
 } from '@/components/admin-navigation';
+import { useAdminWorkspace } from '@/components/admin-workspace-context';
 
 type AdminSidebarProps = {
   activeView: AdminView;
@@ -31,10 +35,18 @@ type AdminSidebarProps = {
 
 export function AdminSidebar(props: AdminSidebarProps) {
   const auth = useAuth();
-  const groups = ADMIN_NAV_GROUPS.map((group) => ({
+  const { preferences } = useAdminWorkspace();
+  const navigationGroups = ADMIN_NAV_GROUPS.map((group) => ({
     ...group,
     items: group.items.filter((item) => canAccessAdminView(auth.identity?.role, item.id)),
   })).filter((group) => group.items.length > 0);
+  const favorites = preferences.favorites
+    .map((view) => navigationItem(view))
+    .filter((item): item is AdminNavigationItem => Boolean(item))
+    .filter((item) => canAccessAdminView(auth.identity?.role, item.id));
+  const groups: SidebarGroup[] = favorites.length
+    ? [{ id: 'favorites', label: '我的工作台', items: favorites }, ...navigationGroups]
+    : navigationGroups;
   return (
     <aside className="admin-sidebar" aria-label="管理后台侧栏">
       <SidebarBrand collapsed={props.collapsed} onViewChange={props.onViewChange} />
@@ -42,9 +54,9 @@ export function AdminSidebar(props: AdminSidebarProps) {
         className="admin-sidebar-menu"
         items={menuItems(groups)}
         mode="inline"
-        selectedKeys={[props.activeView]}
+        selectedKeys={[selectedMenuKey(props.activeView, favorites)]}
         theme="dark"
-        onClick={({ key }) => props.onViewChange(key as AdminView)}
+        onClick={({ key }) => props.onViewChange(viewFromMenuKey(key))}
       />
       <SidebarFooter collapsed={props.collapsed} onToggle={props.onToggle} />
     </aside>
@@ -87,18 +99,39 @@ function SidebarFooter({ collapsed, onToggle }: Pick<AdminSidebarProps, 'collaps
   );
 }
 
-function menuItems(groups: typeof ADMIN_NAV_GROUPS): NonNullable<MenuProps['items']> {
+type SidebarGroup = { id: string; label: string; items: readonly AdminNavigationItem[] };
+
+function menuItems(groups: readonly SidebarGroup[]): NonNullable<MenuProps['items']> {
   return groups.map((group) => ({
     key: group.id,
     type: 'group',
     label: group.label,
     children: group.items.map((item) => ({
-      key: item.id,
-      icon: navigationIcon(item.id),
+      key: menuKey(group.id, item.id),
+      icon: group.id === 'favorites' ? <StarFilled /> : navigationIcon(item.id),
       label: item.label,
       title: `${item.label} · ${item.helper}`,
     })),
   }));
+}
+
+function navigationItem(view: AdminView): AdminNavigationItem | undefined {
+  return ADMIN_NAV_GROUPS.flatMap((group) => group.items).find((item) => item.id === view);
+}
+
+function selectedMenuKey(activeView: AdminView, favorites: readonly AdminNavigationItem[]) {
+  return favorites.some((item) => item.id === activeView)
+    ? menuKey('favorites', activeView)
+    : activeView;
+}
+
+function menuKey(groupId: string, view: AdminView) {
+  return groupId === 'favorites' ? `favorite:${view}` : view;
+}
+
+function viewFromMenuKey(key: string): AdminView {
+  const value = key.replace(/^favorite:/, '');
+  return isAdminView(value) ? value : 'overview';
 }
 
 function navigationIcon(view: AdminView): ReactNode {

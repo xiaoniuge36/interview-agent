@@ -10,13 +10,24 @@ import {
   type UserAgentConversationSummary,
   type UserAgentMessageInput,
 } from '@/lib/user-agent-conversation-api';
+import { createSingleFlightRunner } from './conversation-creation';
+import { runConversationMutation } from './conversation-management';
+import { reconcilePersistedConversation } from './conversation-persistence';
+import {
+  createConversationSelectionCleanup,
+  createLatestConversationSelectionRunner,
+} from './conversation-selection';
 
 type State = ReturnType<typeof useConversationState>;
+type SelectionRunner = ReturnType<typeof createLatestConversationSelectionRunner>;
 
 export function useUserAgentConversations() {
   const state = useConversationState();
-  const selectConversation = useSelectConversation(state);
-  const createConversation = useCreateConversation(state);
+  const [selectionRunner] = useState(createLatestConversationSelectionRunner);
+  const [creationRunner] = useState(() => createSingleFlightRunner<UserAgentConversation | null>());
+  useEffect(() => createConversationSelectionCleanup(selectionRunner), [selectionRunner]);
+  const selectConversation = useSelectConversation(state, selectionRunner);
+  const createConversation = useCreateConversation(state, selectionRunner, creationRunner);
   const removeConversation = useRemoveConversation(state, selectConversation, createConversation);
   const renameConversation = useRenameConversation(state);
   const persistMessages = usePersistMessages(state);
@@ -55,55 +66,91 @@ function useConversationState() {
   };
 }
 
-function useSelectConversation(state: State) {
+function useSelectConversation(state: State, selection: SelectionRunner) {
   const { setActiveConversation, setActiveId, setError, setLoading } = state;
   return useCallback(
     async (conversationId: string) => {
       setLoading(true);
       setError(null);
       setActiveId(conversationId);
-      try {
-        setActiveConversation(await getUserAgentConversation(conversationId));
-      } catch (reason) {
-        setError(messageOf(reason, '无法加载历史对话。'));
-      } finally {
-        setLoading(false);
-      }
+      setActiveConversation(null);
+      return selection.run({
+        load: () => getUserAgentConversation(conversationId),
+        onError: (reason) => setError(messageOf(reason, '无法加载历史对话。')),
+        onSettled: () => setLoading(false),
+        onSuccess: setActiveConversation,
+      });
     },
-    [setActiveConversation, setActiveId, setError, setLoading],
+    [selection, setActiveConversation, setActiveId, setError, setLoading],
   );
 }
 
-function useCreateConversation(state: State) {
-  const { setActiveConversation, setActiveId, setError, setSummaries } = state;
-  return useCallback(async () => {
-    try {
-      const created = await createUserAgentConversation();
-      const conversation = { ...created, messages: [] } as UserAgentConversation;
-      setSummaries((current) => [created, ...current]);
-      setActiveId(created.id);
-      setActiveConversation(conversation);
-      setError(null);
-      return conversation;
-    } catch (reason) {
-      setError(messageOf(reason, '无法新建对话。'));
-      return null;
-    }
-  }, [setActiveConversation, setActiveId, setError, setSummaries]);
+function useCreateConversation(
+  state: State,
+  selection: SelectionRunner,
+  runCreation: (
+    action: () => Promise<UserAgentConversation | null>,
+  ) => Promise<UserAgentConversation | null>,
+) {
+  const { setActiveConversation, setActiveId, setError, setLoading, setSummaries } = state;
+  return useCallback(
+    () =>
+      runCreation(async () => {
+        const activationToken = selection.invalidate();
+        setLoading(true);
+        setError(null);
+        setActiveId(null);
+        setActiveConversation(null);
+        try {
+          const created = await createUserAgentConversation();
+          const conversation = { ...created, messages: [] } as UserAgentConversation;
+          setSummaries((current) => [created, ...current]);
+          if (selection.isCurrent(activationToken)) {
+            setActiveId(created.id);
+            setActiveConversation(conversation);
+          }
+          return conversation;
+        } catch (reason) {
+          if (selection.isCurrent(activationToken)) {
+            setError(messageOf(reason, '无法新建对话。'));
+          }
+          return null;
+        } finally {
+          if (selection.isCurrent(activationToken)) setLoading(false);
+        }
+      }),
+    [
+      runCreation,
+      selection,
+      setActiveConversation,
+      setActiveId,
+      setError,
+      setLoading,
+      setSummaries,
+    ],
+  );
 }
 
 function useRemoveConversation(
   state: State,
-  selectConversation: (conversationId: string) => Promise<void>,
+  selectConversation: (conversationId: string) => Promise<boolean>,
   createConversation: () => Promise<UserAgentConversation | null>,
 ) {
-  const { activeId, setActiveConversation, setActiveId, setSummaries, summaries } = state;
+  const { activeId, setActiveConversation, setActiveId, setError, setSummaries, summaries } = state;
   return useCallback(
     async (conversationId: string) => {
-      await deleteUserAgentConversation(conversationId);
+      const outcome = await runConversationMutation({
+        action: () => deleteUserAgentConversation(conversationId),
+        fallbackMessage: '无法删除对话。',
+      });
+      if (!outcome.success) {
+        setError(outcome.message);
+        return false;
+      }
       const next = summaries.filter((item) => item.id !== conversationId);
       setSummaries(next);
-      if (activeId !== conversationId) return;
+      setError(null);
+      if (activeId !== conversationId) return true;
       const replacement = next[0];
       if (replacement) await selectConversation(replacement.id);
       else {
@@ -111,6 +158,7 @@ function useRemoveConversation(
         setActiveConversation(null);
         await createConversation();
       }
+      return true;
     },
     [
       activeId,
@@ -118,6 +166,7 @@ function useRemoveConversation(
       selectConversation,
       setActiveConversation,
       setActiveId,
+      setError,
       setSummaries,
       summaries,
     ],
@@ -125,18 +174,28 @@ function useRemoveConversation(
 }
 
 function useRenameConversation(state: State) {
-  const { setActiveConversation, setSummaries } = state;
+  const { setActiveConversation, setError, setSummaries } = state;
   return useCallback(
     async (conversationId: string, title: string) => {
-      const updated = await renameUserAgentConversation(conversationId, title);
+      const outcome = await runConversationMutation({
+        action: () => renameUserAgentConversation(conversationId, title),
+        fallbackMessage: '无法重命名对话。',
+      });
+      if (!outcome.success) {
+        setError(outcome.message);
+        return false;
+      }
+      const updated = outcome.value;
       setSummaries((current) =>
         current.map((item) => (item.id === conversationId ? updated : item)),
       );
       setActiveConversation((current) =>
         current?.id === conversationId ? { ...current, ...updated } : current,
       );
+      setError(null);
+      return true;
     },
-    [setActiveConversation, setSummaries],
+    [setActiveConversation, setError, setSummaries],
   );
 }
 
@@ -145,7 +204,7 @@ function usePersistMessages(state: State) {
   return useCallback(
     async (conversationId: string, messages: UserAgentMessageInput[]) => {
       const next = await appendUserAgentMessages(conversationId, messages);
-      setActiveConversation(next);
+      setActiveConversation((current) => reconcilePersistedConversation(current, next));
       setSummaries((current) => upsertSummary(current, next));
       return next;
     },
@@ -155,7 +214,7 @@ function usePersistMessages(state: State) {
 
 function useConversationBootstrap(
   state: State,
-  selectConversation: (conversationId: string) => Promise<void>,
+  selectConversation: (conversationId: string) => Promise<boolean>,
   createConversation: () => Promise<UserAgentConversation | null>,
 ) {
   const { setError, setLoading, setSummaries } = state;

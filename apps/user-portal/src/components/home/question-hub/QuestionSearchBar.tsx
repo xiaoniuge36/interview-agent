@@ -4,7 +4,13 @@ import { FormEvent } from 'react';
 import Link from 'next/link';
 import { useGlobalSearch } from '../../search/GlobalSearchProvider';
 
-export function QuestionSearchBar({ total }: { total: number | undefined }) {
+export function QuestionSearchBar({
+  total,
+  compact = false,
+}: {
+  total: number | undefined;
+  compact?: boolean;
+}) {
   const search = useGlobalSearch();
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -13,10 +19,15 @@ export function QuestionSearchBar({ total }: { total: number | undefined }) {
   }
 
   return (
-    <section className="question-search-hero" aria-labelledby="question-hub-heading">
+    <section
+      className={compact ? 'question-search-hero compact' : 'question-search-hero'}
+      aria-labelledby="question-hub-heading"
+    >
       <div className="question-search-copy">
         <span className="question-hub-kicker">Question library · 自主训练</span>
-        <h1 id="question-hub-heading">今天，想把哪类问题练明白？</h1>
+        <h1 id="question-hub-heading">
+          {compact ? '想按自己的节奏练？' : '今天，想把哪类问题练明白？'}
+        </h1>
         <p>直接搜索题目、技能或岗位方向。个人档案只用于增强 Agent 推荐，不限制你浏览和刷题。</p>
       </div>
       <form className="question-search-form" onSubmit={submit}>

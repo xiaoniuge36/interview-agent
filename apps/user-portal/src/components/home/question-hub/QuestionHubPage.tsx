@@ -4,61 +4,34 @@ import Link from 'next/link';
 import { AgentRecommendationRail } from './AgentRecommendationRail';
 import { QuestionSearchBar } from './QuestionSearchBar';
 import { QuestionTopicGrid } from './QuestionTopicGrid';
+import { TrainingContinuationCard } from './TrainingContinuationCard';
 import { useQuestionHubData } from './useQuestionHubData';
 
-const PERCENTAGE_TOTAL = 100;
 const DISCOVERY_TAG_LIMIT = 8;
 
 export function QuestionHubPage() {
   const data = useQuestionHubData();
   return (
     <div className="question-hub-page">
-      <QuestionSearchBar total={data.catalog?.total} />
-      <div className="question-hub-layout">
-        <div className="question-hub-main">
-          {data.recent ? <RecentPracticeCard recent={data.recent} /> : null}
-          {data.catalogError ? (
-            <CatalogError message={data.catalogError} onRetry={data.reloadCatalog} />
-          ) : null}
-          <QuestionTopicGrid catalog={data.catalog} />
-          <QuestionDiscovery catalog={data.catalog} />
-        </div>
-        <AgentRecommendationRail
-          recommendations={data.recommendations}
-          loading={data.recommendationsLoading}
-          error={data.recommendationError}
-          actionError={data.actionError}
-          busyRecommendationId={data.busyRecommendationId}
-          onRetry={data.reloadRecommendations}
-          onStart={(recommendation) => void data.startRecommendation(recommendation)}
-        />
+      <AgentRecommendationRail
+        recommendations={data.recommendations}
+        loading={data.recommendationsLoading}
+        error={data.recommendationError}
+        actionError={data.actionError}
+        busyRecommendationId={data.busyRecommendationId}
+        onRetry={data.reloadRecommendations}
+        onStart={(recommendation) => void data.startRecommendation(recommendation)}
+      />
+      <div className="question-hub-supporting-content">
+        {data.continuation ? <TrainingContinuationCard continuation={data.continuation} /> : null}
+        <QuestionSearchBar total={data.catalog?.total} compact />
+        {data.catalogError ? (
+          <CatalogError message={data.catalogError} onRetry={data.reloadCatalog} />
+        ) : null}
+        <QuestionTopicGrid catalog={data.catalog} />
+        <QuestionDiscovery catalog={data.catalog} />
       </div>
     </div>
-  );
-}
-
-function RecentPracticeCard({
-  recent,
-}: {
-  recent: NonNullable<ReturnType<typeof useQuestionHubData>['recent']>;
-}) {
-  const percent = Math.round((recent.answeredCount / recent.questionCount) * PERCENTAGE_TOTAL);
-  return (
-    <section className="recent-practice-card" aria-labelledby="recent-practice-heading">
-      <div className="recent-practice-copy">
-        <span>继续上次</span>
-        <h2 id="recent-practice-heading">{recent.title}</h2>
-        <p>
-          已回答 {recent.answeredCount}/{recent.questionCount} 题，进度已保留。
-        </p>
-      </div>
-      <div className="recent-practice-progress" aria-label={`练习进度 ${percent}%`}>
-        <span style={{ width: `${percent}%` }} />
-      </div>
-      <Link href={`/practice?session=${recent.id}`}>
-        继续练习 <span aria-hidden="true">→</span>
-      </Link>
-    </section>
   );
 }
 

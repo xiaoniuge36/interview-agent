@@ -147,6 +147,98 @@
   outline: 0;
 }
 
+.search-input {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--outline));
+  border-radius: 10px;
+  padding: 0 7px 0 11px;
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 72%, transparent);
+  transition:
+    border-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out),
+    background 160ms var(--ease-out);
+}
+
+.search-input:hover {
+  border-color: color-mix(in srgb, var(--primary) 34%, var(--outline));
+}
+
+.search-input:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 60%, var(--outline));
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--primary) 13%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 76%, transparent);
+}
+
+.search-input-glyph {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--primary-strong);
+  stroke-linecap: round;
+  stroke-width: 1.9;
+  opacity: 0.72;
+}
+
+.search-input-control {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  appearance: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.search-input-control::placeholder {
+  color: var(--text-muted);
+}
+
+.search-input-control:focus,
+.search-input-control:focus-visible {
+  outline: 0;
+  box-shadow: none;
+}
+
+.search-input-control::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-input-clear {
+  width: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  padding: 0;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  font-size: 17px;
+  font-weight: 450;
+  line-height: 1;
+}
+
+.search-input-clear:hover {
+  background: color-mix(in srgb, var(--primary) 16%, var(--surface));
+}
+
+.search-input-clear:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+  outline-offset: 1px;
+}
+
 .button {
   min-height: 42px;
   border: 1px solid transparent;

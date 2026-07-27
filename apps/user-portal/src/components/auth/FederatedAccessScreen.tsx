@@ -1,10 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@interview-agent/auth-client';
 import { AccessStory } from './AccessStory';
+import { createExclusiveAccessActionRunner } from './access-action-single-flight';
 
 export function FederatedAccessScreen() {
   const auth = useAuth();
+  const [runAccessAction] = useState(createExclusiveAccessActionRunner);
+  const signIn = () => void runAccessAction(() => auth.signIn());
   return (
     <main className="access-shell">
       <AccessStory />
@@ -16,7 +20,12 @@ export function FederatedAccessScreen() {
         <h1 id="federated-access-title">进入你的训练空间</h1>
         <p>登录后接续画像、岗位、面试记录与可记忆的训练进度。</p>
         {auth.status === 'error' && auth.error ? <AccessError message={auth.error} /> : null}
-        <button className="button access-submit" type="button" onClick={() => void auth.signIn()}>
+        <button
+          className="button access-submit"
+          disabled={auth.status === 'loading'}
+          type="button"
+          onClick={signIn}
+        >
           继续登录
         </button>
       </section>

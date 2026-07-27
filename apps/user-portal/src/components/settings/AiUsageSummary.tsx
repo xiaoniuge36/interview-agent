@@ -6,6 +6,7 @@ import type {
   AiUsageSummary as AiUsageSummaryData,
 } from '@interview-agent/contracts';
 import { getAiUsageSummary } from '../../lib/ai-usage-api';
+import { createLatestAiUsageRequest } from './ai-usage-request';
 
 const PERIODS: { value: AiUsagePeriod; label: string }[] = [
   { value: 'today', label: '今日' },
@@ -143,17 +144,16 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function useAiUsageSummary(period: AiUsagePeriod): UsageState {
   const [state, setState] = useState<UsageState>({ status: 'loading' });
+  const [request] = useState(createLatestAiUsageRequest);
   useEffect(() => {
-    const controller = new AbortController();
     setState({ status: 'loading' });
-    void getAiUsageSummary(period, controller.signal)
-      .then((summary) => setState({ status: 'ready', summary }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setState({ status: 'error', message: messageOf(error) });
-      });
-    return () => controller.abort();
-  }, [period]);
+    void request.run({
+      load: (signal) => getAiUsageSummary(period, signal),
+      onError: (error) => setState({ status: 'error', message: messageOf(error) }),
+      onSuccess: (summary) => setState({ status: 'ready', summary }),
+    });
+    return request.invalidate;
+  }, [period, request]);
   return state;
 }
 

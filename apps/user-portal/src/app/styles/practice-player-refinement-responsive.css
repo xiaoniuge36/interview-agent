@@ -50,6 +50,22 @@
     font-size: 27px;
   }
 
+  .practice-answer-actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .practice-answer-actions > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
+  }
+
+  .practice-answer-actions button {
+    min-width: 0;
+    padding-inline: 11px;
+  }
+
   .practice-learning-notice {
     margin: 0 14px 14px;
   }
@@ -62,6 +78,22 @@
   .practice-ai-confirmation-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+
+  .practice-completion-page > header div {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .practice-completion-page > header a,
+  .practice-completion-page > header button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .practice-completion-evidence {
+    margin-bottom: 18px;
   }
 }
 

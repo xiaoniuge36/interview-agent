@@ -3,10 +3,14 @@ import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
 import {
   UserAgentAppendMessagesSchema,
+  UserPageAgentCompleteRunSchema,
+  UserPageAgentCreateRunSchema,
   UserAgentCreateConversationSchema,
+  UserPageAgentHeartbeatRunSchema,
   UserAgentRenameConversationSchema,
 } from './user-page-agent.schemas';
 import { UserPageAgentConversationService } from './user-page-agent-conversation.service';
+import { UserPageAgentRunService } from './user-page-agent-run.service';
 import { UserPageAgentService } from './user-page-agent.service';
 
 @Roles('user')
@@ -15,6 +19,7 @@ export class UserPageAgentController {
   constructor(
     private readonly assistant: UserPageAgentService,
     private readonly conversations: UserPageAgentConversationService,
+    private readonly runs: UserPageAgentRunService,
   ) {}
 
   @Get('config')
@@ -69,5 +74,46 @@ export class UserPageAgentController {
   ) {
     const input = UserAgentAppendMessagesSchema.parse(body);
     return this.conversations.appendMessages(request.context, conversationId, input.messages);
+  }
+
+  @Get('conversations/:conversationId/runs')
+  listRuns(@Req() request: ProductRequest, @Param('conversationId') conversationId: string) {
+    return this.runs.list(request.context, conversationId);
+  }
+
+  @Get('conversations/:conversationId/runs/latest')
+  latestRun(@Req() request: ProductRequest, @Param('conversationId') conversationId: string) {
+    return this.runs.latest(request.context, conversationId);
+  }
+
+  @Post('conversations/:conversationId/runs')
+  createRun(
+    @Req() request: ProductRequest,
+    @Param('conversationId') conversationId: string,
+    @Body() body: unknown,
+  ) {
+    return this.runs.create(
+      request.context,
+      conversationId,
+      UserPageAgentCreateRunSchema.parse(body),
+    );
+  }
+
+  @Patch('runs/:runId/heartbeat')
+  heartbeatRun(
+    @Req() request: ProductRequest,
+    @Param('runId') runId: string,
+    @Body() body: unknown,
+  ) {
+    return this.runs.heartbeat(request.context, runId, UserPageAgentHeartbeatRunSchema.parse(body));
+  }
+
+  @Post('runs/:runId/complete')
+  completeRun(
+    @Req() request: ProductRequest,
+    @Param('runId') runId: string,
+    @Body() body: unknown,
+  ) {
+    return this.runs.complete(request.context, runId, UserPageAgentCompleteRunSchema.parse(body));
   }
 }

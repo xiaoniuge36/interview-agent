@@ -14,12 +14,15 @@ type AgentRecommendationRailProps = {
 export function AgentRecommendationRail(props: AgentRecommendationRailProps) {
   const { actionError } = props;
   return (
-    <aside className="agent-recommendation-rail" aria-labelledby="agent-recommendation-heading">
-      <header className="agent-rail-header">
-        <span className="agent-status-dot" aria-hidden="true" />
+    <section className="home-training-plan" aria-labelledby="home-training-plan-heading">
+      <header className="home-training-plan-header">
         <div>
-          <span>OfferPilot Agent · 在线推荐</span>
-          <h2 id="agent-recommendation-heading">为你整理的下一组题</h2>
+          <span className="home-training-plan-kicker">
+            <span className="agent-status-dot" aria-hidden="true" />
+            今天的训练计划
+          </span>
+          <h2 id="home-training-plan-heading">为你整理的下一组题</h2>
+          <p>Agent 会结合你的练习反馈、目标方向和档案信息持续更新建议。</p>
         </div>
       </header>
       <RailPrimaryContent {...props} />
@@ -28,14 +31,14 @@ export function AgentRecommendationRail(props: AgentRecommendationRailProps) {
           {actionError}
         </p>
       ) : null}
-      <div className="agent-rail-note">
+      <footer className="agent-rail-note">
         <strong>推荐如何变化？</strong>
         <p>修改档案、目标岗位或完成一次 AI 评价后，下次进入会自动重新计算。</p>
         <Link href="/profile">
           完善我的 Agent 档案 <span aria-hidden="true">→</span>
         </Link>
-      </div>
-    </aside>
+      </footer>
+    </section>
   );
 }
 
@@ -60,14 +63,19 @@ function RailPrimaryContent(props: AgentRecommendationRailProps) {
           <i />
         </span>
         <strong>正在读取你的最新训练线索</strong>
-        <p>推荐生成不会影响左侧题库，你可以先自主选择。</p>
+        <p>推荐生成不会阻塞训练；你随时可以先按自己的节奏组题。</p>
+        <Link className="agent-self-picker-link" href="/questions">
+          自己组一轮
+        </Link>
       </div>
     );
   return (
     <div className="agent-rail-empty">
       <strong>本次没有需要优先补强的新题</strong>
       <p>你可以从公共题库自由组合题单；完成新一轮评价后，Agent 会再次计算。</p>
-      <Link href="/questions">前往自主选题 →</Link>
+      <Link className="agent-self-picker-link" href="/questions">
+        自己组一轮
+      </Link>
     </div>
   );
 }
@@ -97,7 +105,9 @@ function RecommendationCard({
       <button type="button" onClick={onStart} disabled={busy}>
         {busy ? '正在创建题单…' : '采用这组题开始练习'}
       </button>
-      <Link href="/questions">我想自己选题</Link>
+      <Link className="agent-self-picker-link" href="/questions">
+        自己组一轮
+      </Link>
     </article>
   );
 }
@@ -110,6 +120,9 @@ function RailError({ message, onRetry }: { message: string; onRetry: () => void 
       <button type="button" onClick={onRetry}>
         重新获取推荐
       </button>
+      <Link className="agent-self-picker-link" href="/questions">
+        自己组一轮
+      </Link>
     </div>
   );
 }

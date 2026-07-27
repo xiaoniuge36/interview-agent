@@ -7,8 +7,11 @@ import {
   hasUnsavedPracticeAnswer,
   initialPracticeItemIndex,
   pendingEvaluationCount,
+  practiceEvidence,
   practiceProgress,
+  practiceRecoveryMessage,
   requiresAiReportConfirmation,
+  restorePracticeWorkspace,
 } from './practice-player-model';
 
 describe('单题播放器状态', () => {
@@ -59,15 +62,94 @@ describe('单题播放器状态', () => {
   });
 });
 
-function session(options: { answerAll?: boolean; evaluateAll?: boolean } = {}): PracticeSession {
+describe('刷题本地恢复', () => {
+  it('只恢复本轮真实题目的未保存差异和合法题号', () => {
+    const restored = restorePracticeWorkspace(session(), {
+      drafts: {
+        'item-1': 'answer-1',
+        'item-2': 'answer-2 的未保存补充',
+        'unknown-item': '不可信草稿',
+      },
+      currentIndex: 2,
+    });
+
+    expect(restored).toEqual({
+      drafts: {
+        'item-1': 'answer-1',
+        'item-2': 'answer-2 的未保存补充',
+        'item-3': '',
+      },
+      currentIndex: 2,
+      recoveredDraftCount: 1,
+    });
+  });
+
+  it('本地题号越界时仍定位第一道未评价题', () => {
+    expect(restorePracticeWorkspace(session(), { drafts: {}, currentIndex: 99 }).currentIndex).toBe(
+      1,
+    );
+  });
+
+  it('空白本地值不能覆盖服务端已保存答案', () => {
+    const restored = restorePracticeWorkspace(session(), {
+      drafts: { 'item-1': '   ' },
+      currentIndex: null,
+    });
+
+    expect(restored.drafts['item-1']).toBe('answer-1');
+    expect(restored.recoveredDraftCount).toBe(0);
+  });
+
+  it('只在确实恢复未保存回答时显示提示', () => {
+    expect(practiceRecoveryMessage(1)).toBe('已恢复当前标签页内未保存的回答。');
+    expect(practiceRecoveryMessage(0)).toBe('');
+  });
+
+  it('已完成练习不再恢复过期本地草稿', () => {
+    const restored = restorePracticeWorkspace(session({ status: 'report_ready' }), {
+      drafts: { 'item-2': '过期草稿' },
+      currentIndex: 2,
+    });
+
+    expect(restored.drafts['item-2']).toBe('answer-2');
+    expect(restored.recoveredDraftCount).toBe(0);
+  });
+});
+
+describe('训练证据摘要', () => {
+  it('将练习进度归纳为真实的训练证据状态', () => {
+    expect(practiceEvidence(session())).toEqual({
+      answered: 2,
+      evaluated: 1,
+      total: 3,
+      pending: 2,
+      profileState: 'awaiting_report',
+    });
+    expect(practiceEvidence(session({ status: 'report_ready', evaluateAll: true }))).toMatchObject({
+      profileState: 'updated',
+    });
+    expect(practiceEvidence(session({ status: 'submitted' }))).toMatchObject({
+      profileState: 'preserved',
+    });
+  });
+});
+
+function session(
+  options: {
+    answerAll?: boolean;
+    evaluateAll?: boolean;
+    status?: PracticeSession['status'];
+  } = {},
+): PracticeSession {
   return {
     id: 'session-1',
     tenantId: 'tenant-1',
     userId: 'user-1',
     jobIntentId: null,
+    sourceInterviewSessionId: null,
     mode: 'manual',
     title: '系统设计强化',
-    status: 'in_progress',
+    status: options.status ?? 'in_progress',
     startedAt: '2026-07-15T00:00:00.000Z',
     submittedAt: null,
     reportedAt: null,

@@ -10,6 +10,7 @@ import {
   type AdminViewLocation,
   type AdminViewParams,
 } from '@/components/admin-navigation';
+import { useAdminWorkspace } from '@/components/admin-workspace-context';
 import { AdminShell } from '@/components/AdminShell';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { AdminOverview } from './AdminOverview';
@@ -25,12 +26,14 @@ import { TrainingContentWorkbench } from './TrainingContentWorkbench';
 export function AdminDashboard() {
   const { state, isRefreshing, lastUpdatedAt, reload } = useAdminDashboard();
   const auth = useAuth();
+  const { recordView } = useAdminWorkspace();
   const { activeView: requestedView, params, selectView } = useAdminView();
   const activeView = resolveAdminViewForRole(auth.identity?.role, requestedView);
   const [listReloadKey, setListReloadKey] = useState(0);
   useEffect(() => {
     if (activeView !== requestedView) selectView(activeView);
   }, [activeView, requestedView, selectView]);
+  useEffect(() => recordView(activeView), [activeView, recordView]);
   const reloadAll = useCallback(() => {
     reload();
     setListReloadKey((value) => value + 1);

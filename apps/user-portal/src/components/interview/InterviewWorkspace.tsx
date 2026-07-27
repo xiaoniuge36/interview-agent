@@ -5,6 +5,7 @@ import { useInterviewController } from '@/hooks/useInterviewController';
 import { InterviewConsole } from './InterviewConsole';
 import { ReportPanel } from './ReportPanel';
 import { RuntimeEventList } from './RuntimeEventList';
+import { useInterviewReviewPractice } from './useInterviewReviewPractice';
 
 type InterviewWorkspaceProps = {
   jobs: JobIntentPayload[];
@@ -12,6 +13,7 @@ type InterviewWorkspaceProps = {
 
 export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
   const controller = useInterviewController(jobs);
+  const reviewPractice = useInterviewReviewPractice();
   return (
     <section className="interview section-gap">
       <InterviewConsole jobs={jobs} controller={controller} />
@@ -21,7 +23,15 @@ export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
           phase={controller.state.phase}
           basisSummary={controller.state.basisSummary}
         />
-        <ReportPanel report={controller.state.report} />
+        <ReportPanel
+          report={controller.state.report}
+          sessionStatus={controller.state.session?.status ?? null}
+          onRetry={controller.restoredSessionId ? controller.reloadArchivedInterview : undefined}
+          retrying={controller.state.busy}
+          sessionId={controller.state.session?.id}
+          onStartInterviewReview={reviewPractice.start}
+          reviewStarting={reviewPractice.starting}
+        />
       </aside>
     </section>
   );

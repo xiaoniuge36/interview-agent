@@ -1,10 +1,6 @@
 'use client';
 
-import type {
-  PracticeRecommendation,
-  QuestionCatalogResponse,
-  RecentPracticeSummary,
-} from '@interview-agent/contracts';
+import type { PracticeRecommendation, QuestionCatalogResponse } from '@interview-agent/contracts';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -12,8 +8,15 @@ import {
   getQuestionCatalog,
   getRecentPractice,
 } from '@/lib/question-catalog-api';
+import { listInterviews } from '@/lib/interview-api';
 import { createPracticeSession } from '@/lib/practice-api';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
+import {
+  createExclusiveHomeRecommendationStartRunner,
+  startHomeRecommendation,
+} from './home-recommendation-start';
+import { createLatestHomeQueryRequest } from './home-query-request';
+import { selectTrainingContinuation, type TrainingContinuation } from './training-continuation';
 
 export function useQuestionHubData() {
   return { ...useQuestionHubQueries(), ...useRecommendationStarter() };
@@ -22,44 +25,39 @@ export function useQuestionHubData() {
 function useQuestionHubQueries() {
   const [catalog, setCatalog] = useState<QuestionCatalogResponse | null>(null);
   const [recommendations, setRecommendations] = useState<PracticeRecommendation[]>([]);
-  const [recent, setRecent] = useState<RecentPracticeSummary | null>(null);
+  const [continuation, setContinuation] = useState<TrainingContinuation | null>(null);
   const [catalogError, setCatalogError] = useState('');
   const [recommendationError, setRecommendationError] = useState('');
   const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const [requests] = useState(createHomeQueryRequests);
 
-  const loadCatalog = useCallback(async () => {
+  const loadCatalog = useCallback(() => {
     setCatalogError('');
-    try {
-      setCatalog(await getQuestionCatalog({ pageSize: 20 }));
-    } catch {
-      setCatalogError('题库暂时没有加载成功，你仍可以进入选题页重试。');
-    }
-  }, []);
+    return requests.catalog.run({
+      load: () => getQuestionCatalog({ pageSize: 20 }),
+      onSuccess: setCatalog,
+      onError: () => setCatalogError('题库暂时没有加载成功，你仍可以进入选题页重试。'),
+      onSettled: () => undefined,
+    });
+  }, [requests.catalog]);
 
-  const loadRecommendations = useCallback(async () => {
+  const loadRecommendations = useCallback(() => {
     setRecommendationError('');
     setRecommendationsLoading(true);
-    try {
-      setRecommendations(await getPracticeRecommendations());
-    } catch {
-      setRecommendationError('Agent 推荐暂时不可用，不影响你自主选题。');
-    } finally {
-      setRecommendationsLoading(false);
-    }
-  }, []);
+    return requests.recommendations.run({
+      load: getPracticeRecommendations,
+      onSuccess: setRecommendations,
+      onError: () => setRecommendationError('Agent 推荐暂时不可用，不影响你自主选题。'),
+      onSettled: () => setRecommendationsLoading(false),
+    });
+  }, [requests.recommendations]);
 
-  useEffect(() => {
-    void loadCatalog();
-    void loadRecommendations();
-    void getRecentPractice()
-      .then(setRecent)
-      .catch(() => setRecent(null));
-  }, [loadCatalog, loadRecommendations]);
+  useHomeQueryLifecycle({ requests, loadCatalog, loadRecommendations, setContinuation });
 
   return {
     catalog,
     recommendations,
-    recent,
+    continuation,
     catalogError,
     recommendationError,
     recommendationsLoading,
@@ -68,33 +66,75 @@ function useQuestionHubQueries() {
   };
 }
 
+function createHomeQueryRequests() {
+  return {
+    catalog: createLatestHomeQueryRequest(),
+    recommendations: createLatestHomeQueryRequest(),
+    continuation: createLatestHomeQueryRequest(),
+  };
+}
+
+type HomeQueryLifecycle = {
+  requests: ReturnType<typeof createHomeQueryRequests>;
+  loadCatalog: () => Promise<boolean>;
+  loadRecommendations: () => Promise<boolean>;
+  setContinuation: (value: TrainingContinuation | null) => void;
+};
+
+function useHomeQueryLifecycle(input: HomeQueryLifecycle) {
+  const { requests, loadCatalog, loadRecommendations, setContinuation } = input;
+  useEffect(() => {
+    void loadCatalog();
+    void loadRecommendations();
+    void requests.continuation.run({
+      load: loadTrainingContinuation,
+      onSuccess: setContinuation,
+      onError: () => undefined,
+      onSettled: () => undefined,
+    });
+    return () => {
+      requests.catalog.invalidate();
+      requests.recommendations.invalidate();
+      requests.continuation.invalidate();
+    };
+  }, [loadCatalog, loadRecommendations, requests, setContinuation]);
+}
+
+async function loadTrainingContinuation() {
+  const [recentPractice, interviews] = await Promise.all([
+    getRecentPractice().catch(() => null),
+    listInterviews().catch(() => []),
+  ]);
+  return selectTrainingContinuation(recentPractice, interviews);
+}
+
 function useRecommendationStarter() {
   const router = useRouter();
   const notifications = useNotifications();
   const [actionError, setActionError] = useState('');
   const [busyRecommendationId, setBusyRecommendationId] = useState<string | null>(null);
+  const [runExclusive] = useState(createExclusiveHomeRecommendationStartRunner);
 
   const startRecommendation = useCallback(
-    async (recommendation: PracticeRecommendation) => {
-      setActionError('');
-      setBusyRecommendationId(recommendation.id);
-      try {
-        const session = await createPracticeSession({
-          title: recommendation.title,
-          mode: 'manual',
-          questionIds: recommendation.questionIds,
+    (recommendation: PracticeRecommendation) =>
+      runExclusive(async () => {
+        setActionError('');
+        await startHomeRecommendation({
+          recommendation,
+          createSession: createPracticeSession,
+          setBusyRecommendationId,
+          onSuccess: (sessionId) => {
+            notifications.success('Agent 推荐训练已创建', '服务端已保存推荐题单，即将开始训练。');
+            router.push(`/practice?session=${sessionId}`);
+          },
+          onError: (error) => {
+            const message = '推荐题单未能创建，请稍后重试或前往题库自主选题。';
+            setActionError(message);
+            notifications.error('Agent 推荐训练创建失败', error, message);
+          },
         });
-        notifications.success('Agent 推荐训练已创建', '服务端已保存推荐题单，即将开始训练。');
-        router.push(`/practice?session=${session.id}`);
-      } catch (error) {
-        const message = '推荐题单未能创建，请稍后重试或前往题库自主选题。';
-        setActionError(message);
-        notifications.error('Agent 推荐训练创建失败', error, message);
-      } finally {
-        setBusyRecommendationId(null);
-      }
-    },
-    [notifications, router],
+      }),
+    [notifications, router, runExclusive],
   );
 
   return {

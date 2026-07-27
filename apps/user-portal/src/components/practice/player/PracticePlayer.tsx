@@ -1,10 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { confirmPracticeNavigation, practiceProgress } from './practice-player-model';
 import { PracticeCoachPanel } from './PracticeCoachPanel';
 import { PracticeCompletedReview } from './PracticeCompletedReview';
+import { PracticeEntry } from './PracticeEntry';
+import { PracticeEvidenceStrip } from './PracticeEvidenceStrip';
+import { PracticeFeedbackLauncher } from './PracticeFeedbackLauncher';
 import { PracticeItemReviewDialog } from './PracticeItemReviewDialog';
 import { PracticeQuestionNav } from './PracticeQuestionNav';
 import { PracticeQuestionStage } from './PracticeQuestionStage';
@@ -12,6 +15,7 @@ import { PracticeRoundCompletionBar } from './PracticeRoundCompletionBar';
 import { usePracticePlayer } from './usePracticePlayer';
 
 type PracticePlayerState = ReturnType<typeof usePracticePlayer>;
+type PracticeStep = 'answer' | 'feedback';
 
 export function PracticePlayer() {
   const player = usePracticePlayer();
@@ -30,21 +34,35 @@ function Completion({ player }: { player: PracticePlayerState }) {
 
 function ActivePractice({ player }: { player: PracticePlayerState }) {
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [step, setStep] = useState<PracticeStep>('answer');
+  const [confirmAiOnOpen, setConfirmAiOnOpen] = useState(false);
   const session = player.session;
   if (!session) return null;
   const item = session.items[player.currentIndex] ?? session.items[0]!;
   const draft = player.drafts[item.id] ?? '';
+  const openFeedback = (confirmAi: boolean) => {
+    setConfirmAiOnOpen(confirmAi);
+    setStep('feedback');
+  };
+  const showAnswer = () => {
+    setConfirmAiOnOpen(false);
+    setStep('answer');
+  };
   return (
     <div className="practice-player-page" data-user-agent-scope="practice-player">
       <PlayerHeader title={session.title} progress={practiceProgress(session)} />
+      <PracticeEvidenceStrip session={session} compact />
       {player.message ? <PlayerMessage message={player.message} /> : null}
       <PracticeSessionContent
         player={player}
         item={item}
         draft={draft}
+        step={step}
+        confirmAiOnOpen={confirmAiOnOpen}
+        onOpenFeedback={openFeedback}
+        onShowAnswer={showAnswer}
         onOpenReview={() => setReviewOpen(true)}
       />
-      <PracticeRoundCompletionBar player={player} />
       <PracticeItemReviewDialog
         open={reviewOpen}
         item={item}
@@ -56,59 +74,113 @@ function ActivePractice({ player }: { player: PracticePlayerState }) {
   );
 }
 
-function PracticeSessionContent({
-  player,
-  item,
-  draft,
-  onOpenReview,
-}: {
+type PracticeItem = NonNullable<PracticePlayerState['session']>['items'][number];
+
+type PracticeSessionContentProps = {
   player: PracticePlayerState;
-  item: NonNullable<PracticePlayerState['session']>['items'][number];
+  item: PracticeItem;
   draft: string;
+  step: PracticeStep;
+  confirmAiOnOpen: boolean;
+  onOpenFeedback: (confirmAi: boolean) => void;
+  onShowAnswer: () => void;
   onOpenReview: () => void;
-}) {
-  const session = player.session!;
-  const navigation = practiceNavigation(player, session, item);
+};
+
+function PracticeSessionContent(props: PracticeSessionContentProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const session = props.player.session!;
+  const navigation = practiceNavigation(props.player, props.item, props.onOpenFeedback);
+  useEffect(() => {
+    if (props.step === 'feedback') contentRef.current?.scrollIntoView({ block: 'start' });
+  }, [props.step]);
+  const selectQuestion = (index: number) => {
+    props.onShowAnswer();
+    navigation.selectIndex(index);
+  };
   return (
-    <div className="practice-player-layout">
+    <div ref={contentRef} className="practice-player-layout" data-step={props.step}>
       <PracticeQuestionNav
         session={session}
-        currentIndex={player.currentIndex}
-        disabled={player.busy !== null}
-        onSelect={navigation.selectIndex}
+        currentIndex={props.player.currentIndex}
+        disabled={props.player.busy !== null}
+        onSelect={selectQuestion}
       />
+      {props.step === 'answer' ? (
+        <PracticeAnswerStep {...props} navigation={navigation} />
+      ) : (
+        <PracticeFeedbackStep {...props} />
+      )}
+    </div>
+  );
+}
+
+function PracticeAnswerStep(
+  props: PracticeSessionContentProps & { navigation: ReturnType<typeof practiceNavigation> },
+) {
+  const { player, item, draft, navigation, onOpenFeedback } = props;
+  return (
+    <>
       <PracticeQuestionStage
         item={item}
         draft={draft}
         busy={player.busy}
         currentIndex={player.currentIndex}
-        total={session.items.length}
+        total={player.session!.items.length}
         onDraft={(value) => player.updateDraft(item.id, value)}
         onSave={() => void player.save(item.id)}
         onSaveAndNext={() => void navigation.saveAndNext()}
+        onSaveAndFeedback={() => void navigation.saveAndFeedback()}
+        onOpenFeedback={() => onOpenFeedback(true)}
         onPrevious={navigation.movePrevious}
         onNext={navigation.moveNext}
       />
-      <PracticeCoachPanel
+      <PracticeFeedbackLauncher
         item={item}
         draft={draft}
+        busy={player.busy}
+        onOpen={() => onOpenFeedback(false)}
+      />
+    </>
+  );
+}
+
+function PracticeFeedbackStep(props: PracticeSessionContentProps) {
+  const { player, item } = props;
+  const hasNextQuestion = player.currentIndex < player.session!.items.length - 1;
+  const showNextQuestion = () => {
+    if (!hasNextQuestion || player.busy !== null) return;
+    player.setCurrentIndex(player.currentIndex + 1);
+    props.onShowAnswer();
+  };
+  return (
+    <>
+      <PracticeCoachPanel
+        item={item}
+        draft={props.draft}
         solution={player.solutions[item.id]}
         busy={player.busy}
         issue={player.issue}
         aiOperation={player.aiOperation}
+        confirmAiOnOpen={props.confirmAiOnOpen}
         onRevealSolution={() => void player.revealSolution(item.id)}
         onEvaluate={() => void player.evaluate(item.id)}
-        onOpenReview={onOpenReview}
+        onOpenReview={props.onOpenReview}
+        onBackToAnswer={props.onShowAnswer}
+        hasNextQuestion={hasNextQuestion}
+        onNextQuestion={showNextQuestion}
       />
-    </div>
+      <PracticeRoundCompletionBar player={player} />
+    </>
   );
 }
 
 function practiceNavigation(
   player: PracticePlayerState,
-  session: NonNullable<PracticePlayerState['session']>,
-  item: NonNullable<PracticePlayerState['session']>['items'][number],
+  item: PracticeItem,
+  onOpenFeedback: (confirmAi: boolean) => void,
 ) {
+  const session = player.session!;
   const selectIndex = (index: number) => {
     if (index === player.currentIndex || player.busy !== null) return;
     const allowed = confirmPracticeNavigation(item, player.drafts[item.id] ?? '', window.confirm);
@@ -118,9 +190,13 @@ function practiceNavigation(
     if (await player.save(item.id))
       player.setCurrentIndex(Math.min(session.items.length - 1, player.currentIndex + 1));
   };
+  const saveAndFeedback = async () => {
+    if (await player.save(item.id)) onOpenFeedback(true);
+  };
   return {
     selectIndex,
     saveAndNext,
+    saveAndFeedback,
     movePrevious: () => selectIndex(Math.max(0, player.currentIndex - 1)),
     moveNext: () => selectIndex(Math.min(session.items.length - 1, player.currentIndex + 1)),
   };
@@ -155,84 +231,6 @@ function PlayerMessage({ message }: { message: string }) {
     <p className="practice-player-message" role="status">
       {message}
     </p>
-  );
-}
-
-function PracticeEntry() {
-  return (
-    <div className="practice-entry-page">
-      <section className="practice-entry" aria-labelledby="practice-entry-heading">
-        <section className="practice-entry-hero">
-          <span>Practice workspace · 自主训练</span>
-          <h1 id="practice-entry-heading">
-            把想练的题，
-            <br />
-            组合成一轮专注练习
-          </h1>
-          <p>
-            无需完善个人档案，直接从公共题库选择 1–10 道题。作答、查看解析和 AI 评价都由你决定。
-          </p>
-          <div className="practice-entry-actions">
-            <Link href="/questions">
-              去题库选择题目 <span aria-hidden="true">→</span>
-            </Link>
-            <Link href="/home">返回题库大厅</Link>
-          </div>
-          <div className="practice-entry-facts" aria-label="练习说明">
-            <span>
-              <strong>1–10</strong> 每轮题目
-            </span>
-            <span>
-              <strong>≥4 分钟</strong> 单题建议
-            </span>
-            <span>
-              <strong>可选</strong> AI 评价
-            </span>
-          </div>
-        </section>
-        <PracticeEntryGuide />
-      </section>
-    </div>
-  );
-}
-
-function PracticeEntryGuide() {
-  return (
-    <aside className="practice-entry-guide" aria-labelledby="practice-entry-guide-heading">
-      <header>
-        <span>本轮流程</span>
-        <strong id="practice-entry-guide-heading">从选题到复盘，保持一个节奏</strong>
-      </header>
-      <ol>
-        <li>
-          <span>01</span>
-          <div>
-            <strong>组合题单</strong>
-            <p>按方向、题型和难度自由筛选，题单跨分页保留。</p>
-          </div>
-        </li>
-        <li>
-          <span>02</span>
-          <div>
-            <strong>逐题作答</strong>
-            <p>回答会随时保存，可以在本轮题目间自由切换。</p>
-          </div>
-        </li>
-        <li>
-          <span>03</span>
-          <div>
-            <strong>查看解析与评价</strong>
-            <p>先独立思考，再按需查看标准解析或调用自己的模型评价。</p>
-          </div>
-        </li>
-      </ol>
-      <div className="practice-entry-note">
-        <span aria-hidden="true">✓</span>
-        <p>
-          <strong>个人档案不是刷题门槛</strong> 档案和目标岗位仅用于增强 Agent 推荐。
-        </p>
-      </div>
-    </aside>
   );
 }
 

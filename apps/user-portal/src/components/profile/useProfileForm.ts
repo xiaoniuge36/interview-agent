@@ -1,22 +1,38 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { UpsertProfileInputSchema, type ProfilePayload } from '@interview-agent/contracts';
 import { upsertProfile } from '@/lib/workspace-api';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import { profileFormFrom, profileInput, type ProfileFormValue } from './profile-form';
+import { createExclusiveProfileSubmissionRunner } from './profile-submission-single-flight';
 
 export function useProfileForm(
   initialProfile: ProfilePayload,
   onChanged: (payload: ProfilePayload) => void,
 ) {
-  const notifications = useNotifications();
   const [form, setForm] = useState(() => profileFormFrom(initialProfile));
-  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('填写真实经历，AI 会据此匹配问题与复盘建议。');
   const update = <Key extends keyof ProfileFormValue>(key: Key, value: ProfileFormValue[Key]) =>
     setForm((current) => ({ ...current, [key]: value }));
 
+  const submission = useProfileSubmission({ form, onChanged, setMessage });
+  return { form, message, update, ...submission };
+}
+
+function useProfileSubmission({
+  form,
+  onChanged,
+  setMessage,
+}: {
+  form: ProfileFormValue;
+  onChanged: (payload: ProfilePayload) => void;
+  setMessage: Dispatch<SetStateAction<string>>;
+}) {
+  const notifications = useNotifications();
+  const [busy, setBusy] = useState(false);
+  const [submission] = useState(createExclusiveProfileSubmissionRunner);
+  useEffect(() => submission.invalidate, [submission]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsed = UpsertProfileInputSchema.safeParse(profileInput(form));
@@ -26,21 +42,23 @@ export function useProfileForm(
       notifications.error('个人画像未保存', new Error(issue), issue);
       return;
     }
-    setBusy(true);
-    try {
-      const payload = await upsertProfile(parsed.data);
-      onChanged(payload);
-      setMessage('个人画像已保存，新的训练重点已准备好。');
-      notifications.success('个人画像已保存', 'Agent 记忆已根据服务端结果同步更新。');
-    } catch (error) {
-      setMessage(errorMessage(error));
-      notifications.error('个人画像保存失败', error, '个人画像保存失败，请稍后重试。');
-    } finally {
-      setBusy(false);
-    }
+    await submission.run({
+      submit: () => upsertProfile(parsed.data),
+      onStart: () => setBusy(true),
+      onSuccess: (payload) => {
+        onChanged(payload);
+        setMessage('个人画像已保存，新的训练重点已准备好。');
+        notifications.success('个人画像已保存', 'Agent 记忆已根据服务端结果同步更新。');
+      },
+      onError: (error) => {
+        setMessage(errorMessage(error));
+        notifications.error('个人画像保存失败', error, '个人画像保存失败，请稍后重试。');
+      },
+      onSettled: () => setBusy(false),
+    });
   }
 
-  return { form, busy, message, update, submit };
+  return { busy, submit };
 }
 
 function errorMessage(error: unknown): string {

@@ -1,6 +1,7 @@
 import type { JobIntentPayload } from '@interview-agent/contracts';
 import type { InterviewController } from '@/hooks/useInterviewController';
 import { AnswerComposer } from './AnswerComposer';
+import { InterviewSessionPulse } from './InterviewSessionPulse';
 import { InterviewToolbar } from './InterviewToolbar';
 import { Transcript } from './Transcript';
 
@@ -36,10 +37,14 @@ export function InterviewConsole({ jobs, controller }: InterviewConsoleProps) {
           ))}
         </div>
       </div>
+      <InterviewSessionPulse
+        session={controller.state.session}
+        phase={controller.state.phase}
+        statusLabel={controller.statusLabel}
+      />
       <InterviewToolbar jobs={jobs} controller={controller} />
       <Transcript turns={controller.turns} streamingText={controller.state.streamingText} />
       <AnswerComposer controller={controller} />
     </div>
   );
 }
-

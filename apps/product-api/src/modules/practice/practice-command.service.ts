@@ -17,11 +17,9 @@ import type { ProductRequestContext } from '../../common/context/request-context
 import { PrismaService } from '../../common/database/prisma.service';
 import { runSerializable } from '../../common/database/serializable-transaction';
 import { practiceCategoryTagFor } from './practice-question-categories';
-import {
-  mapSession,
-  practiceSessionData,
-  SESSION_INCLUDE,
-} from './practice-mappers';
+import { selectInterviewReviewQuestions } from './interview-review-selector';
+import { selectWeaknessQuestions } from './practice-weakness-selector';
+import { mapSession, practiceSessionData, SESSION_INCLUDE } from './practice-mappers';
 import { loadPracticeSession } from './practice-records';
 
 const QUESTION_COUNT = 5;
@@ -103,12 +101,44 @@ export class PracticeCommandService {
   }
 
   private async selectQuestions(context: ProductRequestContext, input: CreatePracticeSession) {
-    const job = input.jobIntentId ? await this.findJobIntent(context, input.jobIntentId) : null;
-    const where: Prisma.QuestionWhereInput = {
-      status: 'published',
-      OR: [{ tenantId: context.tenantId }, { visibility: 'public' }],
-    };
+    const where = publishedQuestionScope(context);
     if (input.questionIds?.length) return this.selectedQuestions(where, input.questionIds);
+    const modeQuestions = await this.selectModeQuestions(context, input);
+    if (modeQuestions) return modeQuestions;
+    return this.suggestedQuestions(context, input.jobIntentId, where);
+  }
+
+  private async selectModeQuestions(context: ProductRequestContext, input: CreatePracticeSession) {
+    if (input.mode === 'interview_review') return this.interviewReviewQuestions(context, input);
+    if (input.mode === 'weakness_review') return this.weaknessReviewQuestions(context);
+    return null;
+  }
+
+  private async interviewReviewQuestions(
+    context: ProductRequestContext,
+    input: CreatePracticeSession,
+  ) {
+    if (!input.sourceInterviewSessionId) {
+      throw new BadRequestException({ code: 'INTERVIEW_REVIEW_SOURCE_REQUIRED' });
+    }
+    return selectInterviewReviewQuestions(this.prisma, context, input.sourceInterviewSessionId);
+  }
+
+  private async weaknessReviewQuestions(context: ProductRequestContext) {
+    const questions = await selectWeaknessQuestions(this.prisma, context);
+    if (questions.length) return questions;
+    throw new BadRequestException({
+      code: 'PRACTICE_WEAKNESSES_UNAVAILABLE',
+      message: '还没有可复练的薄弱项，请先完成一轮 AI 评价。',
+    });
+  }
+
+  private async suggestedQuestions(
+    context: ProductRequestContext,
+    jobIntentId: string | undefined,
+    where: Prisma.QuestionWhereInput,
+  ) {
+    const job = jobIntentId ? await this.findJobIntent(context, jobIntentId) : null;
     const roleTag = job ? practiceCategoryTagFor(classifyRole(job.targetRole)) : null;
     const questions = await this.prisma.question.findMany({
       where: roleTag ? { ...where, tags: { has: roleTag } } : where,
@@ -149,4 +179,11 @@ export class PracticeCommandService {
 
 function sessionClosed() {
   return new ConflictException({ code: 'PRACTICE_SESSION_CLOSED' });
+}
+
+function publishedQuestionScope(context: ProductRequestContext): Prisma.QuestionWhereInput {
+  return {
+    status: 'published',
+    OR: [{ tenantId: context.tenantId }, { visibility: 'public' }],
+  };
 }

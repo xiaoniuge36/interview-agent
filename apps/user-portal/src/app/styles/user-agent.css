@@ -110,6 +110,20 @@
 .user-agent-confirmation { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #f0d39b; margin-top: 12px; padding: 10px 12px; background: #fff9ec; }
 .user-agent-confirmation p { margin: 3px 0 0; color: #705d39; font-size: 11px; }
 .user-agent-confirmation button { border: 1px solid #d6b56f; margin-left: 6px; padding: 5px 8px; background: #fff; cursor: pointer; }
+.user-agent-run-recovery { display: grid; gap: 8px; margin-top: 12px; }
+.user-agent-run-recovery-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #efd29c; border-radius: 7px; padding: 10px 12px; background: #fff9ed; }
+.user-agent-run-recovery-card strong { color: #6b4d18; font-size: 12px; }
+.user-agent-run-recovery-card p { margin: 4px 0 0; color: #80683e; font-size: 11px; }
+.user-agent-run-recovery-card button { flex: 0 0 auto; border: 1px solid #d0a855; border-radius: 5px; padding: 6px 9px; background: #fff; color: #795b23; cursor: pointer; font-size: 11px; font-weight: 700; }
+.user-agent-run-history { border: 1px solid #dce6f1; border-radius: 7px; padding: 7px 10px; background: #fff; color: #52657e; font-size: 11px; }
+.user-agent-run-history summary { cursor: pointer; font-weight: 700; }
+.user-agent-run-history ol { display: grid; gap: 7px; margin: 9px 0 0; padding: 0; list-style: none; }
+.user-agent-run-history li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 7px; }
+.user-agent-run-history li > span { border-radius: 999px; padding: 2px 6px; background: #edf3fb; color: #52657e; font-size: 10px; }
+.user-agent-run-history li > span.is-interrupted, .user-agent-run-history li > span.is-failed { background: #fff1e0; color: #a45d17; }
+.user-agent-run-history li > span.is-succeeded { background: #e8f7f1; color: #238265; }
+.user-agent-run-history small { overflow: hidden; color: #7b889b; text-overflow: ellipsis; white-space: nowrap; }
+.user-agent-run-history em { color: #3974c6; font-size: 10px; font-style: normal; }
 .user-agent-setup-state { display: grid; flex: 1; place-content: center; justify-items: center; padding: 30px; text-align: center; }
 .user-agent-setup-state > span { color: #55c6a9; font-size: 32px; }
 .user-agent-setup-state strong { margin-top: 10px; }

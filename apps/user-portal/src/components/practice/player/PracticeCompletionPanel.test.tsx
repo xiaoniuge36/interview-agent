@@ -27,6 +27,22 @@ const report = {
   updatedAt: '2026-07-21T00:00:00.000Z',
 } satisfies PracticeReport;
 
+const weakReport = {
+  ...report,
+  itemEvaluations: [
+    {
+      id: 'evaluation-weak',
+      sessionItemId: 'item-1',
+      score: 59,
+      feedback: '关键边界仍需补强。',
+      missingPoints: ['异常恢复'],
+      rubricScores: [{ point: '异常恢复', score: 59 }],
+      followUpQuestion: null,
+      createdAt: '2026-07-21T00:00:00.000Z',
+    },
+  ],
+} satisfies PracticeReport;
+
 describe('PracticeCompletionPanel', () => {
   it('keeps the AI completion state when a completed report needs to be reloaded', () => {
     const markup = renderToStaticMarkup(
@@ -39,6 +55,8 @@ describe('PracticeCompletionPanel', () => {
         onReviewItem: () => undefined,
         onStartNextRecommendation: () => undefined,
         startingNextRecommendation: false,
+        onStartWeaknessReview: () => undefined,
+        startingWeaknessReview: false,
       }),
     );
 
@@ -59,10 +77,60 @@ describe('PracticeCompletionPanel', () => {
         onReviewItem: () => undefined,
         onStartNextRecommendation: () => undefined,
         startingNextRecommendation: false,
+        onStartWeaknessReview: () => undefined,
+        startingWeaknessReview: false,
       }),
     );
 
     expect(markup).toContain('按最新推荐开始下一轮');
     expect(markup).toContain('逐题回看');
+    expect(markup).toContain('训练证据');
+    expect(markup).toContain('能力画像已更新');
+    expect(markup).toContain('用模拟面试检验本轮提升');
+    expect(markup).toContain('href="/interview"');
+  });
+});
+
+it('prioritizes weakness review when the completed report has a low-score answer', () => {
+  const markup = renderToStaticMarkup(
+    createElement(PracticeCompletionPanel, {
+      session,
+      report: weakReport,
+      mastery: [],
+      message: '',
+      onRetry: () => undefined,
+      onReviewItem: () => undefined,
+      onStartNextRecommendation: () => undefined,
+      startingNextRecommendation: false,
+      onStartWeaknessReview: () => undefined,
+      startingWeaknessReview: false,
+    }),
+  );
+
+  expect(markup).toContain('复练薄弱项');
+  expect(markup).not.toContain('按最新推荐开始下一轮');
+});
+
+describe('PracticeCompletionPanel self-study', () => {
+  it('明确自主结束只保留回答而不更新能力画像', () => {
+    const markup = renderToStaticMarkup(
+      createElement(PracticeCompletionPanel, {
+        session: { ...session, status: 'submitted' },
+        report: null,
+        mastery: [],
+        message: '',
+        onRetry: () => undefined,
+        onReviewItem: () => undefined,
+        onStartNextRecommendation: () => undefined,
+        startingNextRecommendation: false,
+        onStartWeaknessReview: () => undefined,
+        startingWeaknessReview: false,
+      }),
+    );
+
+    expect(markup).toContain('回答已保留');
+    expect(markup).toContain('不会更新能力画像');
+    expect(markup).toContain('选择新的题目继续训练');
+    expect(markup).not.toContain('用模拟面试检验本轮提升');
   });
 });

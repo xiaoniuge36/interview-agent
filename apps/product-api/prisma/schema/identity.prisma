@@ -33,8 +33,10 @@ model Tenant {
   aiInvocations      AiInvocation[]
   pageAgentConversations AdminPageAgentConversation[]
   pageAgentMessages  AdminPageAgentMessage[]
+  pageAgentRuns      AdminPageAgentRun[]
   userAgentConversations UserAgentConversation[]
   userAgentMessages  UserAgentMessage[]
+  userPageAgentRuns  UserPageAgentRun[]
   auditLogs          AuditLog[]
 }
 
@@ -63,7 +65,9 @@ model User {
   modelCredentials UserModelCredential[]
   aiInvocations AiInvocation[]
   pageAgentConversations AdminPageAgentConversation[]
+  pageAgentRuns AdminPageAgentRun[]
   userAgentConversations UserAgentConversation[]
+  userPageAgentRuns UserPageAgentRun[]
 
   @@unique([tenantId, id])
   @@unique([tenantId, subject])

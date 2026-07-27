@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   appendPageAgentExecutionStep,
   buildUserAgentInstructions,
+  createUserPageAgentRuntimeTools,
+  createUserAgentRuntimeInstructions,
   formatUserAgentConversationContext,
   hidePageAgentHighlightsAfterUpdate,
-  PAGE_AGENT_VISUAL_MASK_ENABLED,
-  shouldShowPageAgentVisualFeedback,
 } from './user-agent-runtime';
 
 describe('formatUserAgentConversationContext', () => {
@@ -32,25 +32,41 @@ describe('buildUserAgentInstructions', () => {
   });
 });
 
-it('enables the practice interaction animation without keeping element labels', () => {
-  expect(PAGE_AGENT_VISUAL_MASK_ENABLED).toBe(true);
+describe('createUserAgentRuntimeInstructions', () => {
+  it('reads the latest conversation context for every page-instruction call', () => {
+    let context = '第一轮摘要';
+    const instructions = createUserAgentRuntimeInstructions({
+      getConversationContext: () => context,
+      pageContext: '当前在练习空间。',
+    });
+
+    expect(instructions.system).toContain('未经用户确认');
+    expect(instructions.getPageInstructions('https://app.test/practice')).toContain('第一轮摘要');
+
+    context = '第二轮摘要';
+
+    const latest = instructions.getPageInstructions('https://app.test/practice');
+    expect(latest).toContain('当前在练习空间。');
+    expect(latest).toContain('第二轮摘要');
+    expect(latest).not.toContain('第一轮摘要');
+  });
 });
 
-it('shows the interaction animation only for real page controls', () => {
-  expect(
-    shouldShowPageAgentVisualFeedback({
-      type: 'executing',
-      tool: 'input_text',
-      input: { index: 3, text: 'Java' },
-    }),
-  ).toBe(true);
-  expect(
-    shouldShowPageAgentVisualFeedback({
-      type: 'executing',
-      tool: 'get_practice_recommendations',
-      input: {},
-    }),
-  ).toBe(false);
+describe('User Agent runtime tool boundary', () => {
+  it('retains project read/navigation tools while disabling default page mutation tools', () => {
+    const tools = createUserPageAgentRuntimeTools((options) => options);
+
+    expect(tools.navigate_user_view).toBeDefined();
+    expect(tools.get_practice_recommendations).toBeDefined();
+    expect(tools.get_mastery_summary).toBeDefined();
+    expect(tools.get_recent_practice).toBeDefined();
+    expect(tools.get_profile_summary).toBeDefined();
+    expect(tools.click_element_by_index).toBeNull();
+    expect(tools.input_text).toBeNull();
+    expect(tools.select_dropdown_option).toBeNull();
+    expect(tools.execute_javascript).toBeNull();
+    expect(tools.scroll_horizontally).toBeNull();
+  });
 });
 
 it('clears Page Agent element labels immediately after the practice page is indexed', () => {

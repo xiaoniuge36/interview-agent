@@ -18,9 +18,9 @@ export function ProfilePanel({ profile, onChanged }: ProfilePanelProps) {
       noValidate={false}
     >
       <div className="profile-panel-heading">
-        <div className="eyebrow">候选人上下文</div>
+        <div className="eyebrow">给 Agent 的训练线索</div>
         <h2 className="h2">能力与项目证据</h2>
-        <p className="muted-text">只填写会影响面试的问题：目标岗位、经验、技术栈和项目证据。</p>
+        <p className="muted-text">这些信息会直接影响推荐题、项目追问和复盘建议。</p>
       </div>
       <ProfileFields value={controller.form} onChange={controller.update} />
       <div className="row-between profile-form-actions">

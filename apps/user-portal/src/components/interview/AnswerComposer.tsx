@@ -12,16 +12,16 @@ export function AnswerComposer({ controller }: AnswerComposerProps) {
     event.preventDefault();
     void controller.submitAnswer();
   };
+  const characterCount = controller.state.draft.length.toLocaleString();
+  const characterLimit = CONTRACT_LIMITS.longText.toLocaleString();
   return (
-    <form className="stack compact" onSubmit={submit}>
+    <form className="interview-answer-composer stack compact" onSubmit={submit}>
       <label className="label" htmlFor="candidate-answer">
         <span className="field-label-title">
           <FieldIcon name="message" />
           我的回答
         </span>
-        <span className="answer-guidance">
-          可按背景、目标、行动、结果组织回答，重点说清个人贡献、关键判断和可验证结果。
-        </span>
+        <span className="answer-guidance">重点说清个人贡献、关键判断和可验证结果。</span>
         <textarea
           id="candidate-answer"
           className="textarea answer-box"
@@ -32,6 +32,12 @@ export function AnswerComposer({ controller }: AnswerComposerProps) {
           value={controller.state.draft}
           onChange={(event) => controller.setDraft(event.target.value)}
         />
+        <span className="interview-answer-meta">
+          <span>{answerMetaLabel(controller.draftRecovered)}</span>
+          <span>
+            {characterCount} / {characterLimit}
+          </span>
+        </span>
       </label>
       <div className="row-between">
         <button
@@ -49,3 +55,6 @@ export function AnswerComposer({ controller }: AnswerComposerProps) {
   );
 }
 
+function answerMetaLabel(draftRecovered: boolean): string {
+  return draftRecovered ? '已恢复当前标签页草稿' : '回答结构提示：背景、行动、判断、结果';
+}

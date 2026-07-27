@@ -1,0 +1,155 @@
+.practice-feedback-launcher,
+.practice-feedback-stage {
+  border: 1px solid color-mix(in srgb, var(--primary) 17%, var(--outline));
+  background: var(--surface);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.practice-feedback-launcher {
+  position: sticky;
+  top: 22px;
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.practice-feedback-launcher > header {
+  display: grid;
+  gap: 8px;
+  padding: 23px 22px 21px;
+  background:
+    radial-gradient(circle at 88% 10%, rgba(83, 217, 186, 0.18), transparent 35%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--sidebar-bg) 82%, var(--primary)),
+      var(--sidebar-bg)
+    );
+}
+
+.practice-feedback-launcher > header span,
+.practice-feedback-header span {
+  color: color-mix(in srgb, var(--success) 68%, white);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+}
+
+.practice-feedback-launcher > header strong {
+  color: white;
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+
+.practice-feedback-launcher > header p {
+  margin: 0;
+  color: color-mix(in srgb, var(--agent-text) 76%, transparent);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.practice-feedback-launcher ol {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 8px 22px 0;
+  list-style: none;
+}
+
+.practice-feedback-launcher li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 11px;
+  padding: 14px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--outline) 72%, transparent);
+}
+
+.practice-feedback-launcher li > span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.practice-feedback-launcher li div {
+  display: grid;
+  gap: 3px;
+}
+
+.practice-feedback-launcher li strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.practice-feedback-launcher li small {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.practice-feedback-launcher-action {
+  display: grid;
+  gap: 9px;
+  padding: 17px 22px 22px;
+}
+
+.practice-feedback-launcher-action > span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.practice-feedback-launcher-action > span[data-ready='true'] {
+  color: var(--success);
+}
+
+.practice-feedback-launcher-action button {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 16px;
+  background: var(--primary);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--primary) 24%, transparent);
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.practice-feedback-launcher-action button:hover:not(:disabled) {
+  background: var(--primary-strong);
+  transform: translateY(-1px);
+}
+
+.practice-feedback-launcher-action button:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.practice-save-feedback-button:not(:disabled) {
+  background: linear-gradient(
+    115deg,
+    var(--primary),
+    color-mix(in srgb, var(--primary) 70%, #5042d8)
+  );
+  box-shadow: 0 11px 24px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+@media (max-width: 1080px) {
+  .practice-feedback-launcher {
+    position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .practice-feedback-launcher-action button {
+    transform: none;
+  }
+}

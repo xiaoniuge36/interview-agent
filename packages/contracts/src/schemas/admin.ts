@@ -15,6 +15,7 @@ const ADMIN_PAGE_SIZE_MAX = 100;
 const ADMIN_KEYWORD_MAX_LENGTH = 120;
 const PLATFORM_TREND_MAX = 30;
 const PLATFORM_ALERT_MAX = 3;
+const PLATFORM_AGENT_USAGE_COUNT = 4;
 const ADMIN_NAME_MAX_LENGTH = 80;
 const EMAIL_MAX_LENGTH = 320;
 const ACCOUNT_AUDIT_LOG_MAX = 20;
@@ -121,6 +122,13 @@ export const PlatformAlertSchema = z.object({
   count: z.number().int().nonnegative(),
 });
 
+export const PlatformAgentUsageSchema = z.object({
+  agent: z.enum(['interview', 'practice_evaluation', 'user_assistant', 'admin_assistant']),
+  runs: z.number().int().nonnegative(),
+  succeeded: z.number().int().nonnegative(),
+  successRate: z.number().min(0).max(CONTRACT_LIMITS.percentage),
+});
+
 export const PlatformDashboardSchema = z.object({
   period: PlatformDashboardPeriodSchema,
   range: z.object({
@@ -148,6 +156,13 @@ export const PlatformDashboardSchema = z.object({
     practiceSubmissions: z.number().int().nonnegative(),
     practiceReports: z.number().int().nonnegative(),
   }),
+  userUsage: z.object({
+    activeUsers: z.number().int().nonnegative(),
+    interviews: z.number().int().nonnegative(),
+    practiceSubmissions: z.number().int().nonnegative(),
+    reports: z.number().int().nonnegative(),
+  }),
+  agentUsage: z.array(PlatformAgentUsageSchema).length(PLATFORM_AGENT_USAGE_COUNT),
   runtime: z.object({
     runs: z.number().int().nonnegative(),
     successRate: z.number().min(0).max(CONTRACT_LIMITS.percentage),

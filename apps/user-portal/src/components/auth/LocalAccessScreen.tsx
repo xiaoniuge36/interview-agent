@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useAuth } from '@interview-agent/auth-client';
 import { FieldIcon } from '@/components/FieldIcon';
 import { AccessStory } from './AccessStory';
+import { createExclusiveAccessActionRunner } from './access-action-single-flight';
 import { INITIAL_ACCESS_FORM, type AccessForm, type AccessMode } from './access-types';
 import {
   clearAccessFormError,
@@ -36,6 +37,7 @@ function useLocalAccess() {
   const [mode, setMode] = useState<AccessMode>('sign-in');
   const [form, setForm] = useState<AccessForm>(INITIAL_ACCESS_FORM);
   const [formErrors, setFormErrors] = useState<AccessFormErrors>({});
+  const [runAccessAction] = useState(createExclusiveAccessActionRunner);
   const isRegistering = mode === 'register';
 
   function selectMode(nextMode: AccessMode) {
@@ -54,11 +56,7 @@ function useLocalAccess() {
     setFormErrors(errors);
     if (hasAccessFormErrors(errors)) return;
 
-    if (isRegistering) {
-      await auth.register({ ...form, name: form.name.trim() });
-      return;
-    }
-    await auth.signInWithPassword({ email: form.email, password: form.password });
+    await runAccessAction(() => authenticateLocalAccess(auth, form, isRegistering));
   }
 
   return {
@@ -72,6 +70,15 @@ function useLocalAccess() {
     updateField,
     submit,
   };
+}
+
+function authenticateLocalAccess(
+  auth: ReturnType<typeof useAuth>,
+  form: AccessForm,
+  isRegistering: boolean,
+): Promise<void> {
+  if (isRegistering) return auth.register({ ...form, name: form.name.trim() });
+  return auth.signInWithPassword({ email: form.email, password: form.password });
 }
 
 function AccessHeading({ isRegistering }: { isRegistering: boolean }) {
@@ -148,11 +155,7 @@ function LocalAccessForm(props: LocalAccessFormProps) {
         </p>
       ) : null}
       <button className="button access-submit" type="submit" disabled={props.isSubmitting}>
-        {props.isSubmitting
-          ? '请稍候…'
-          : props.isRegistering
-            ? '创建并开始'
-            : '登录'}
+        {props.isSubmitting ? '请稍候…' : props.isRegistering ? '创建并开始' : '登录'}
       </button>
     </form>
   );

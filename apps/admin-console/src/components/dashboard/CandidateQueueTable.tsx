@@ -41,7 +41,7 @@ export function CandidateQueueTable(props: CandidateQueueTableProps) {
           selectedRowKeys: batch.selectedCandidateIds,
           onChange: (keys) => batch.setSelectedCandidateIds(keys.map(String)),
         }}
-        scroll={{ x: 960 }}
+        scroll={{ x: 1080 }}
         size="middle"
       />
     </>
@@ -183,6 +183,12 @@ function candidateColumns(
       ),
     },
     {
+      title: '发布状态',
+      key: 'publishedQuestionId',
+      width: 118,
+      render: (_, candidate) => <PublicationStatusCell candidate={candidate} />,
+    },
+    {
       title: '来源资料',
       key: 'sourceImport',
       width: 220,
@@ -206,6 +212,13 @@ function candidateColumns(
       ),
     },
   ];
+}
+
+function PublicationStatusCell({ candidate }: { candidate: CandidateReview }) {
+  const isPublished = Boolean(candidate.publishedQuestionId);
+  return (
+    <Tag color={isPublished ? 'blue' : 'default'}>{isPublished ? '已发布题库' : '尚未发布'}</Tag>
+  );
 }
 
 function SourceImportCell({ candidate }: { candidate: CandidateReview }) {

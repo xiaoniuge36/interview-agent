@@ -10,6 +10,12 @@ const accounts = [
 
 describe('account management model', () => {
   it('summarizes the currently loaded account result set', () => {
-    expect(summarizeAccounts(accounts)).toEqual({ total: 3, active: 2, disabled: 1, admin: 2 });
+    expect(summarizeAccounts(accounts)).toEqual({
+      total: 3,
+      active: 2,
+      disabled: 1,
+      user: 1,
+      admin: 2,
+    });
   });
 });

@@ -18,30 +18,15 @@ const context: ProductRequestContext = {
 };
 
 describe('AccountGovernanceService', () => {
-  it('pages cross-tenant accounts and maps local credentials without exposing hashes', async () => {
-    const { service, prisma, policy } = dependencies();
-    prisma.user.count.mockResolvedValue(2);
-    prisma.user.findMany.mockResolvedValue([
-      accountRecord(),
-      accountRecord({ id: 'user-2', credential: null }),
-    ]);
+  it('lists user accounts first, then backend accounts, with recent logins first in each group', async () => {
+    const fixture = dependencies();
+    arrangeAccountList(fixture.prisma);
 
-    await expect(service.query(context, { page: 1, pageSize: 20 })).resolves.toMatchObject({
-      total: 2,
-      items: [
-        { id: 'user-1', authSource: 'local', kind: 'user' },
-        { id: 'user-2', authSource: 'oidc', kind: 'user' },
-      ],
+    await expectDefaultAccountOrder(fixture.service);
+    expect(fixture.policy.assert).toHaveBeenCalledWith(context.actor, 'account:read', {
+      platform: true,
     });
-    expect(policy.assert).toHaveBeenCalledWith(context.actor, 'account:read', { platform: true });
-    expect(prisma.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { role: { not: 'agent_runtime' } },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        skip: 0,
-        take: 20,
-      }),
-    );
+    expectAccountGroupQueries(fixture.prisma);
   });
 
   it('rejects disabling the current platform administrator before updating the account', async () => {
@@ -86,6 +71,57 @@ describe('AccountGovernanceService protection rules', () => {
     });
   });
 });
+
+function arrangeAccountList(prisma: ReturnType<typeof dependencies>['prisma']) {
+  prisma.user.count.mockResolvedValueOnce(3).mockResolvedValueOnce(2);
+  prisma.user.findMany
+    .mockResolvedValueOnce([
+      accountRecord({ id: 'user-recent', lastSignedInAt: new Date('2026-07-27T14:59:00.000Z') }),
+      accountRecord({ id: 'user-older', lastSignedInAt: new Date('2026-07-27T14:20:00.000Z') }),
+    ])
+    .mockResolvedValueOnce([
+      accountRecord({
+        id: 'admin-recent',
+        role: 'platform_admin',
+        lastSignedInAt: new Date('2026-07-27T14:58:00.000Z'),
+      }),
+    ]);
+}
+
+function expectDefaultAccountOrder(service: AccountGovernanceService) {
+  return expect(service.query(context, { page: 1, pageSize: 20 })).resolves.toMatchObject({
+    total: 3,
+    items: [
+      { id: 'user-recent', kind: 'user' },
+      { id: 'user-older', kind: 'user' },
+      { id: 'admin-recent', kind: 'admin' },
+    ],
+  });
+}
+
+function expectAccountGroupQueries(prisma: ReturnType<typeof dependencies>['prisma']) {
+  const orderBy = [{ lastSignedInAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }];
+  expect(prisma.user.findMany).toHaveBeenNthCalledWith(
+    1,
+    expect.objectContaining({
+      where: { AND: [{ role: { not: 'agent_runtime' } }, { role: 'user' }] },
+      orderBy,
+      skip: 0,
+      take: 2,
+    }),
+  );
+  expect(prisma.user.findMany).toHaveBeenNthCalledWith(
+    2,
+    expect.objectContaining({
+      where: {
+        AND: [{ role: { not: 'agent_runtime' } }, { role: { notIn: ['user', 'agent_runtime'] } }],
+      },
+      orderBy,
+      skip: 0,
+      take: 18,
+    }),
+  );
+}
 
 async function expectLocalTenantAdministratorCreation() {
   const fixture = dependencies();

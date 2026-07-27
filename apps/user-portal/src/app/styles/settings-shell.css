@@ -1,0 +1,176 @@
+.settings-workspace {
+  width: min(1220px, 100%);
+  gap: 24px;
+  padding-top: 42px;
+}
+
+.settings-page-intro {
+  align-items: center;
+}
+
+.settings-page-intro .h1 {
+  font-size: clamp(38px, 3.5vw, 48px);
+}
+
+.settings-page-intro .muted-text {
+  max-width: 720px;
+  font-size: 16px;
+}
+
+.settings-add-button {
+  min-width: 174px;
+  min-height: 54px;
+  font-size: 15px;
+}
+
+.settings-add-button > span {
+  font-size: 21px;
+  font-weight: 400;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 32px;
+  border-bottom: 1px solid var(--outline);
+}
+
+.settings-tabs button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  padding: 0 4px 15px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.settings-tabs button:hover {
+  color: var(--primary-strong);
+}
+
+.settings-tabs button.active {
+  border-bottom-color: var(--primary);
+  color: var(--primary-strong);
+}
+
+.settings-section {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.behavior-preferences > header,
+.settings-placeholder > header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--outline);
+}
+
+.behavior-preferences .h2,
+.settings-placeholder .h2 {
+  font-size: 21px;
+}
+
+.behavior-preferences header p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.behavior-row {
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 15px 24px;
+  border-bottom: 1px solid var(--outline);
+}
+
+.behavior-row:last-child,
+.account-settings-row:last-child {
+  border-bottom: 0;
+}
+
+.behavior-row > div,
+.behavior-row > span:first-child,
+.account-settings-row > div,
+.account-settings-row > span {
+  display: grid;
+  gap: 5px;
+}
+
+.behavior-row strong,
+.account-settings-row strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.behavior-row span:not(.behavior-select):not(.range-control),
+.account-settings-row span {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.settings-placeholder {
+  min-height: 220px;
+  align-content: start;
+}
+
+.settings-placeholder .muted-text {
+  max-width: 700px;
+  margin: 7px 0 0;
+}
+
+.account-settings-row {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px 24px;
+  border-bottom: 1px solid var(--outline);
+}
+
+.text-button.danger {
+  color: var(--danger);
+}
+
+@media (max-width: 760px) {
+  .settings-workspace {
+    padding-top: 30px;
+  }
+
+  .settings-page-intro {
+    align-items: flex-start;
+  }
+
+  .settings-add-button {
+    min-width: 100%;
+  }
+
+  .settings-tabs {
+    gap: 24px;
+    overflow-x: auto;
+  }
+
+  .settings-tabs button {
+    flex: 0 0 auto;
+    font-size: 14px;
+  }
+
+  .behavior-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .behavior-preferences > header,
+  .settings-placeholder > header,
+  .account-settings-row {
+    padding-inline: 18px;
+  }
+}

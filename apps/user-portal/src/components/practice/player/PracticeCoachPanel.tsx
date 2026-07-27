@@ -2,6 +2,12 @@ import type { PracticeItemSolution, PracticeSession } from '@interview-agent/con
 import Link from 'next/link';
 import { useState } from 'react';
 import type { PlayerAiOperation, PlayerBusy, PlayerIssue } from './practice-player-actions';
+import { PracticeAiConfirmationDialog } from './PracticeAiConfirmationDialog';
+import { PracticeAnswerReview } from './PracticeAnswerReview';
+import { PracticeEvaluationResult } from './PracticeEvaluationResult';
+import { PracticeLearningNotice } from './PracticeLearningNotice';
+
+export { PracticeLearningNotice } from './PracticeLearningNotice';
 
 type PracticeCoachPanelProps = {
   item: PracticeSession['items'][number];
@@ -10,55 +16,48 @@ type PracticeCoachPanelProps = {
   busy: PlayerBusy;
   issue: PlayerIssue;
   aiOperation: PlayerAiOperation | null;
+  confirmAiOnOpen: boolean;
   onRevealSolution: () => void;
   onEvaluate: () => void;
   onOpenReview: () => void;
+  onBackToAnswer: () => void;
+  hasNextQuestion: boolean;
+  onNextQuestion: () => void;
 };
 
 export function PracticeCoachPanel(props: PracticeCoachPanelProps) {
   const answerSaved = Boolean(props.item.answer);
   const answerCurrent = answerSaved && props.draft.trim() === props.item.answer?.trim();
   return (
-    <aside
-      className="practice-coach-panel"
+    <article
+      className="practice-feedback-stage"
       aria-label="解析与 AI 教练"
       data-user-agent-scope="practice-feedback"
     >
-      <header>
-        <span>答题教练</span>
-        <h2>解析与反馈</h2>
-      </header>
-      <SolutionSection {...props} answerSaved={answerSaved} />
-      <AiEvaluationSection {...props} answerCurrent={answerCurrent} />
-      {props.solution || props.item.evaluation ? (
-        <button
-          className="practice-coach-review-trigger"
-          type="button"
-          onClick={props.onOpenReview}
-        >
-          打开本题复盘
+      <header className="practice-feedback-header">
+        <div>
+          <span>STEP 02 · 本题反馈</span>
+          <h1>解析与 AI 评价</h1>
+          <p>
+            第 {String(props.item.sequence).padStart(2, '0')} 题 · {props.item.question.title}
+          </p>
+        </div>
+        <button type="button" onClick={props.onBackToAnswer}>
+          ← 返回修改回答
         </button>
-      ) : null}
-      <PracticeLearningNotice item={props.item} />
-    </aside>
-  );
-}
-
-export function PracticeLearningNotice({ item }: Pick<PracticeCoachPanelProps, 'item'>) {
-  const focus = item.question.tags.slice(0, 2).join('、') || '相关能力';
-  const evaluated = Boolean(item.evaluation);
-  const copy = evaluated
-    ? `完成整轮 AI 复盘后，会把本题的 ${focus} 证据写入能力画像，并用于下一轮推荐。`
-    : `保存回答并完成 AI 评价后，系统会在整轮 AI 复盘时更新你的 ${focus} 能力画像。`;
-
-  return (
-    <section className="practice-learning-notice" data-state={evaluated ? 'ready' : 'pending'}>
-      <div>
-        <span>Agent 学习轨迹</span>
-        <strong>{evaluated ? '本题反馈已就绪' : '等待本题 AI 评价'}</strong>
+      </header>
+      <PracticeAnswerReview
+        answer={props.draft}
+        answerCurrent={answerCurrent}
+        tags={props.item.question.tags}
+      />
+      <div className="practice-feedback-content">
+        <SolutionSection {...props} answerSaved={answerSaved} />
+        <AiEvaluationSection {...props} answerCurrent={answerCurrent} />
       </div>
-      <p>{copy}</p>
-    </section>
+      <PracticeLearningNotice item={props.item} />
+      <PracticeFeedbackActions {...props} />
+    </article>
   );
 }
 
@@ -67,7 +66,7 @@ function SolutionSection(props: PracticeCoachPanelProps & { answerSaved: boolean
   return (
     <section className="practice-coach-section">
       <div className="practice-coach-heading">
-        <span>01</span>
+        <span>解析</span>
         <strong>标准解析</strong>
       </div>
       {props.solution ? (
@@ -103,18 +102,20 @@ function SolutionSection(props: PracticeCoachPanelProps & { answerSaved: boolean
 }
 
 function AiEvaluationSection(props: PracticeCoachPanelProps & { answerCurrent: boolean }) {
-  const [confirming, setConfirming] = useState(false);
   const evaluation = props.item.evaluation;
+  const [confirming, setConfirming] = useState(
+    Boolean(props.confirmAiOnOpen && props.answerCurrent && !evaluation),
+  );
   const evaluating = props.busy === `evaluate:${props.item.id}`;
   return (
     <section className="practice-coach-section ai-section">
       <div className="practice-coach-heading">
-        <span>02</span>
-        <strong>真实 AI 评价</strong>
+        <span>评价</span>
+        <strong>AI 评分与追问</strong>
         <i>BYOK</i>
       </div>
       {evaluation ? (
-        <EvaluationResult evaluation={evaluation} />
+        <PracticeEvaluationResult evaluation={evaluation} />
       ) : evaluating ? (
         <AiEvaluationProgress stream={props.aiOperation} />
       ) : (
@@ -129,12 +130,12 @@ function AiEvaluationSection(props: PracticeCoachPanelProps & { answerCurrent: b
             disabled={!props.answerCurrent || props.busy !== null}
             onClick={() => setConfirming(true)}
           >
-            {evaluating ? '模型评价中…' : '调用我的模型评价'}
+            {evaluating ? '模型评价中…' : '生成本题 AI 评分'}
           </button>
         </div>
       )}
       {confirming ? (
-        <AiEvaluationConfirmation
+        <PracticeItemAiConfirmation
           onCancel={() => setConfirming(false)}
           onConfirm={() => {
             setConfirming(false);
@@ -147,7 +148,7 @@ function AiEvaluationSection(props: PracticeCoachPanelProps & { answerCurrent: b
   );
 }
 
-function AiEvaluationConfirmation({
+function PracticeItemAiConfirmation({
   onCancel,
   onConfirm,
 }: {
@@ -155,18 +156,18 @@ function AiEvaluationConfirmation({
   onConfirm: () => void;
 }) {
   return (
-    <section className="practice-item-ai-confirmation" aria-live="polite">
-      <strong>确认调用 AI 评价</strong>
-      <p>将使用你在设置中验证的默认模型，生成本题评分、缺失要点与追问。</p>
-      <div>
-        <button className="secondary" type="button" onClick={onCancel}>
-          暂不评价
-        </button>
-        <button type="button" onClick={onConfirm}>
-          开始评价
-        </button>
-      </div>
-    </section>
+    <PracticeAiConfirmationDialog
+      titleId="practice-ai-confirmation-title"
+      eyebrow="模型调用确认 · BYOK"
+      title="确认生成本题 AI 评价"
+      copy="将调用一次你在设置中验证的默认模型，并返回以下反馈："
+      benefits={['本题评分', '缺失要点', '针对性追问']}
+      securityNote="API Key 仅在本次调用期间从加密存储中解密，不会展示在页面中。"
+      cancelLabel="暂不评价"
+      confirmLabel="使用我的模型开始评价"
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    />
   );
 }
 
@@ -195,45 +196,29 @@ function AiEvaluationProgress({ stream }: { stream: PlayerAiOperation | null }) 
   );
 }
 
-function EvaluationResult({
-  evaluation,
-}: {
-  evaluation: NonNullable<PracticeSession['items'][number]['evaluation']>;
-}) {
+function PracticeFeedbackActions(props: PracticeCoachPanelProps) {
+  const canOpenReview = Boolean(props.solution || props.item.evaluation);
   return (
-    <div className="practice-evaluation-result">
-      <div className="practice-evaluation-score">
-        <strong>{Math.round(evaluation.score)}</strong>
-        <span>本题得分</span>
+    <footer className="practice-feedback-actions">
+      <div>
+        <span>{props.hasNextQuestion ? '本题反馈已整理' : '最后一题反馈已整理'}</span>
+        <strong>
+          {props.hasNextQuestion ? '继续下一题，保持练习节奏。' : '继续下方 STEP 03 完成本轮。'}
+        </strong>
       </div>
-      <p>{evaluation.feedback}</p>
-      {evaluation.missingPoints.length ? (
-        <div>
-          <strong>回答还缺少</strong>
-          <ul>
-            {evaluation.missingPoints.map((point) => (
-              <li key={point}>{point}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-      {evaluation.rubricScores.length ? (
-        <div className="practice-rubric-scores">
-          {evaluation.rubricScores.map((score) => (
-            <span key={score.point}>
-              <b>{score.point}</b>
-              <i>{Math.round(score.score)}</i>
-            </span>
-          ))}
-        </div>
-      ) : null}
-      {evaluation.followUpQuestion ? (
-        <blockquote>
-          <span>Agent 追问</span>
-          {evaluation.followUpQuestion}
-        </blockquote>
-      ) : null}
-    </div>
+      <div>
+        {canOpenReview ? (
+          <button className="secondary" type="button" onClick={props.onOpenReview}>
+            查看完整复盘
+          </button>
+        ) : null}
+        {props.hasNextQuestion ? (
+          <button type="button" disabled={props.busy !== null} onClick={props.onNextQuestion}>
+            进入下一题 →
+          </button>
+        ) : null}
+      </div>
+    </footer>
   );
 }
 

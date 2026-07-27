@@ -1,0 +1,252 @@
+.job-page-workspace {
+  width: min(1320px, 100%);
+  gap: 26px;
+  padding-top: 38px;
+}
+
+.job-page-intro {
+  align-items: center;
+  padding-bottom: 4px;
+}
+
+.job-page-intro .h2 {
+  max-width: 780px;
+  margin-top: 4px;
+  font-size: clamp(30px, 3vw, 40px);
+}
+
+.job-page-intro .muted-text {
+  max-width: 760px;
+  font-size: 15px;
+}
+
+.job-intent-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 840px) minmax(300px, 360px);
+  align-items: start;
+  gap: 24px;
+}
+
+.job-intent-panel {
+  padding: 28px;
+  border-radius: 15px;
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.job-intent-heading {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--outline);
+}
+
+.job-intent-heading .muted-text {
+  max-width: 690px;
+  margin: 9px 0 0;
+}
+
+.job-submit-bar {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.78fr) minmax(340px, 1.22fr);
+  gap: 22px;
+  margin: 6px -28px -28px;
+  padding: 18px 28px;
+  border-top: 1px solid color-mix(in srgb, var(--primary) 18%, var(--outline));
+  border-radius: 0 0 15px 15px;
+  background: color-mix(in srgb, var(--surface) 82%, var(--primary-soft));
+}
+
+.job-submit-context span,
+.job-analysis-card > span {
+  display: block;
+  color: var(--primary-strong);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.job-submit-context strong,
+.job-submit-context small {
+  display: block;
+}
+
+.job-submit-context strong {
+  margin-top: 5px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.job-submit-context small {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.job-submit-controls,
+.job-submit-actions {
+  display: flex;
+}
+
+.job-submit-controls {
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 9px;
+}
+
+.job-submit-actions {
+  width: 100%;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.job-save-button {
+  min-width: 106px;
+}
+
+.job-start-button {
+  min-width: 218px;
+  justify-content: center;
+  box-shadow: 0 9px 20px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.job-start-button span {
+  font-size: 17px;
+  transition: transform 160ms var(--ease-out);
+}
+
+.job-start-button:hover span {
+  transform: translateX(3px);
+}
+
+.job-submit-status {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.job-submit-status i {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 4px var(--success-soft);
+}
+
+.job-training-preview {
+  position: sticky;
+  top: 26px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--outline));
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--surface) 95%, var(--primary-soft));
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.job-training-preview-heading,
+.job-analysis-card,
+.job-training-path {
+  padding: 20px;
+}
+
+.job-training-preview-heading {
+  border-bottom: 1px solid var(--outline);
+}
+
+.job-training-preview-heading h2 {
+  margin: 7px 0 0;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.job-training-preview-heading p {
+  margin: 9px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.job-analysis-card {
+  border-bottom: 1px solid var(--outline);
+  background: color-mix(in srgb, var(--primary-soft) 38%, var(--surface));
+}
+
+.job-analysis-card h3 {
+  margin: 7px 0 0;
+  color: var(--ink);
+  font-size: 19px;
+}
+
+.job-analysis-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.job-analysis-signals i {
+  padding: 6px 9px;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--outline));
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.job-analysis-card .score-list {
+  margin-top: 15px;
+}
+
+.job-training-path {
+  display: grid;
+  gap: 14px;
+}
+
+.job-training-path > div {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+}
+
+.job-training-path > div > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary-soft) 72%, var(--surface));
+  color: var(--primary-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.job-training-path p,
+.job-training-path strong,
+.job-training-path small {
+  display: block;
+  margin: 0;
+}
+
+.job-training-path strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.job-training-path small {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}

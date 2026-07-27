@@ -1,0 +1,251 @@
+.credential-list {
+  display: grid;
+  gap: 14px;
+}
+
+.credential-card {
+  overflow: hidden;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.credential-card[data-status='failed'] {
+  border-color: color-mix(in srgb, var(--danger) 36%, var(--outline));
+}
+
+.credential-card[data-status='disabled'] {
+  border-color: color-mix(in srgb, var(--warning) 36%, var(--outline));
+}
+
+.credential-card-header {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+}
+
+.credential-provider {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.provider-badge {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--outline));
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.credential-provider > strong {
+  color: var(--ink);
+  font-size: 19px;
+  letter-spacing: -0.03em;
+}
+
+.credential-status,
+.credential-default {
+  border: 1px solid color-mix(in srgb, var(--success) 32%, var(--outline));
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.credential-status.unverified {
+  border-color: var(--outline);
+  background: var(--surface-subtle);
+  color: var(--text-muted);
+}
+
+.credential-status.failed {
+  border-color: color-mix(in srgb, var(--danger) 34%, var(--outline));
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.credential-status.disabled {
+  border-color: color-mix(in srgb, var(--warning) 34%, var(--outline));
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.credential-default {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--outline));
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.credential-more {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 22px;
+}
+
+.credential-more:hover:not(:disabled) {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.credential-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 22px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid var(--outline);
+}
+
+.credential-facts > div {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding-right: 18px;
+}
+
+.credential-facts > div + div {
+  padding-left: 18px;
+  border-left: 1px solid var(--outline);
+}
+
+.credential-facts span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.credential-facts strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.credential-key-hint {
+  width: fit-content;
+  min-width: 150px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--surface-subtle);
+}
+
+.credential-key-hint i {
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.credential-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 18px 22px;
+}
+
+.connection-action {
+  min-height: 40px;
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--outline));
+  border-radius: 9px;
+  padding: 8px 13px;
+  background: var(--surface);
+  color: var(--primary-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.connection-action:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.connection-action.primary,
+.credential-card[data-status='failed'] .connection-action:first-child {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--surface);
+}
+
+.connection-action.primary:hover:not(:disabled) {
+  background: var(--primary-strong);
+}
+
+.connection-action.danger {
+  border-color: color-mix(in srgb, var(--danger) 34%, var(--outline));
+  color: var(--danger);
+}
+
+.connection-action.danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+.connection-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.credential-readiness,
+.credential-action-message {
+  margin: 0;
+  border-top: 1px solid var(--outline);
+  padding: 10px 22px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.credential-readiness {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+@media (max-width: 760px) {
+  .credential-card-header,
+  .credential-actions,
+  .credential-readiness,
+  .credential-action-message {
+    padding-inline: 18px;
+  }
+
+  .credential-facts {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-inline: 18px;
+  }
+
+  .credential-facts > div,
+  .credential-facts > div + div {
+    padding: 0;
+    border: 0;
+  }
+
+  .credential-actions {
+    justify-content: stretch;
+  }
+
+  .connection-action {
+    flex: 1 1 130px;
+  }
+}

@@ -9,7 +9,12 @@ type TranscriptProps = {
 export function Transcript({ turns, streamingText }: TranscriptProps) {
   const empty = turns.length === 0 && !streamingText;
   return (
-    <div className="transcript" aria-live="polite" aria-label="面试对话">
+    <div
+      className="transcript"
+      data-state={streamingText ? 'streaming' : 'ready'}
+      aria-live="polite"
+      aria-label="面试对话"
+    >
       {empty ? <EmptyTranscript /> : null}
       {turns.map((turn) => (
         <TranscriptTurn turn={turn} key={turn.id} />
@@ -51,4 +56,3 @@ function StreamingTurn({ content }: { content: string }) {
     </article>
   );
 }
-

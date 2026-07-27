@@ -4,11 +4,12 @@ import { AiUsageModule } from '../ai-usage/ai-usage.module';
 import { ModelCredentialModule } from '../model-credential/model-credential.module';
 import { UserPageAgentController } from './user-page-agent.controller';
 import { UserPageAgentConversationService } from './user-page-agent-conversation.service';
+import { UserPageAgentRunService } from './user-page-agent-run.service';
 import { UserPageAgentService } from './user-page-agent.service';
 
 @Module({
   imports: [CommonModule, AiUsageModule, ModelCredentialModule],
   controllers: [UserPageAgentController],
-  providers: [UserPageAgentService, UserPageAgentConversationService],
+  providers: [UserPageAgentService, UserPageAgentConversationService, UserPageAgentRunService],
 })
 export class UserPageAgentModule {}

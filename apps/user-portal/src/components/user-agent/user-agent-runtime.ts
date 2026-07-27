@@ -1,20 +1,16 @@
-import type { AgentActivity, AgentStatus, HistoricalEvent, PageAgentCore } from '@page-agent/core';
+import type {
+  AgentActivity,
+  AgentStatus,
+  HistoricalEvent,
+  PageAgentCore,
+  PageAgentTool,
+} from '@page-agent/core';
 import { userPageAgentFetch, type UserPageAgentConfig } from '@/lib/user-page-agent-api';
 import { createUserPageAgentTools } from './user-agent-tools';
 
 const MAX_CONTEXT_MESSAGES = 12;
 const MAX_CONTEXT_LENGTH = 12_000;
 const MAX_EXECUTION_STEPS = 6;
-const TARGET_HIGHLIGHT_DURATION_MS = 1_400;
-const INTERACTIVE_PAGE_AGENT_TOOLS = new Set([
-  'click_element_by_index',
-  'input_text',
-  'select_dropdown_option',
-]);
-const PAGE_AGENT_INTERACTIVE_SELECTOR =
-  'a,button,input,select,textarea,[contenteditable="true"],[role="button"],[role="link"]';
-const PAGE_AGENT_ACTIVE_TARGET_CLASS = 'page-agent-active-target';
-export const PAGE_AGENT_VISUAL_MASK_ENABLED = true;
 const BASE_AGENT_INSTRUCTIONS =
   '你是 OfferPilot 的 AI 刷题教练，服务于当前登录的求职者。你要结合目标岗位、个人档案、掌握度、最近练习和复盘结果，给出具体、可执行的中文建议。优先使用只读查询工具了解训练状态。未经用户确认，不要创建练习、提交答案、调用评价、生成整轮复盘或执行其他会消耗模型额度的动作。不要读取或输出 API Key、Token、密码、手机号和邮箱。禁止执行任意 JavaScript。回答简洁，固定使用“结论、依据、下一步”三个部分，不使用 Markdown 表格。';
 
@@ -35,27 +31,19 @@ export async function createUserAgentRuntime(options: RuntimeOptions): Promise<P
     import('@page-agent/page-controller'),
   ]);
   const controller = new PageController({
-    enableMask: PAGE_AGENT_VISUAL_MASK_ENABLED,
+    enableMask: false,
     includeAttributes: ['aria-label', 'name', 'data-user-agent-scope'],
     keepSemanticTags: true,
     viewportExpansion: 0,
   });
   hidePageAgentHighlightsAfterUpdate(controller);
-  const disposeVisualFeedback = bindPageAgentVisualFeedback();
   const runtimeConfig = {
     pageController: controller,
     baseURL: '/user/page-agent',
     customFetch: userPageAgentFetch,
-    customTools: {
-      ...createUserPageAgentTools(tool),
-      execute_javascript: null,
-      scroll_horizontally: null,
-    },
+    customTools: createUserPageAgentRuntimeTools(tool),
     experimentalScriptExecutionTool: false,
-    instructions: {
-      system: buildUserAgentInstructions(options.conversationContext, options.pageContext),
-      getPageInstructions: (url: string) => `当前用户端页面：${url}。优先使用已有导航和只读工具。`,
-    },
+    instructions: createUserAgentRuntimeInstructions(options),
     language: 'zh-CN' as const,
     maxSteps: 10,
     model: options.config.model as string,
@@ -63,8 +51,21 @@ export async function createUserAgentRuntime(options: RuntimeOptions): Promise<P
     transformPageContent: maskPageContent,
   };
   const agent = new PageAgentCore(runtimeConfig);
-  bindRuntimeEvents({ agent, options, controller, disposeVisualFeedback });
+  bindRuntimeEvents({ agent, options });
   return agent;
+}
+
+type ToolFactory = <TParams>(options: PageAgentTool<TParams>) => PageAgentTool<TParams>;
+
+export function createUserPageAgentRuntimeTools(tool: ToolFactory) {
+  return {
+    ...createUserPageAgentTools(tool),
+    click_element_by_index: null,
+    execute_javascript: null,
+    input_text: null,
+    select_dropdown_option: null,
+    scroll_horizontally: null,
+  };
 }
 
 type HighlightCleaningController = Pick<
@@ -76,40 +77,6 @@ export function hidePageAgentHighlightsAfterUpdate(controller: HighlightCleaning
   controller.addEventListener('afterUpdate', () => {
     void controller.cleanUpHighlights();
   });
-}
-
-export function shouldShowPageAgentVisualFeedback(activity: AgentActivity) {
-  return activity.type === 'executing' && INTERACTIVE_PAGE_AGENT_TOOLS.has(activity.tool);
-}
-
-function bindPageAgentVisualFeedback() {
-  let activeElement: HTMLElement | null = null;
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const clearActiveElement = () => {
-    if (timeoutId) clearTimeout(timeoutId);
-    activeElement?.classList.remove(PAGE_AGENT_ACTIVE_TARGET_CLASS);
-    activeElement = null;
-  };
-  const onMovePointer = (event: Event) => {
-    const { x, y } = (event as CustomEvent<{ x?: unknown; y?: unknown }>).detail ?? {};
-    if (typeof x !== 'number' || typeof y !== 'number') return;
-    const target = resolvePointerTarget(document.elementFromPoint(x, y));
-    if (!target) return;
-    clearActiveElement();
-    activeElement = target;
-    target.classList.add(PAGE_AGENT_ACTIVE_TARGET_CLASS);
-    timeoutId = setTimeout(clearActiveElement, TARGET_HIGHLIGHT_DURATION_MS);
-  };
-  window.addEventListener('PageAgent::MovePointerTo', onMovePointer);
-  return () => {
-    window.removeEventListener('PageAgent::MovePointerTo', onMovePointer);
-    clearActiveElement();
-  };
-}
-
-function resolvePointerTarget(element: Element | null) {
-  if (!(element instanceof HTMLElement)) return null;
-  return element.closest<HTMLElement>(PAGE_AGENT_INTERACTIVE_SELECTOR) ?? element;
 }
 
 export type PageAgentExecutionStep = {
@@ -168,7 +135,7 @@ function executionStep(activity: AgentActivity): PageAgentExecutionStep {
 
 type RuntimeOptions = {
   config: UserPageAgentConfig;
-  conversationContext?: string;
+  getConversationContext: () => string;
   pageContext?: string;
   onActivity: (value: string) => void;
   onExecutionActivity: (activity: AgentActivity) => void;
@@ -177,27 +144,39 @@ type RuntimeOptions = {
   onAskUser: (question: string, options?: { signal: AbortSignal }) => Promise<string>;
 };
 
+type RuntimeInstructionOptions = Pick<RuntimeOptions, 'getConversationContext' | 'pageContext'>;
+
+export function createUserAgentRuntimeInstructions(options: RuntimeInstructionOptions) {
+  return {
+    system: buildUserAgentInstructions(),
+    getPageInstructions: (url: string) =>
+      buildUserAgentPageInstructions(url, options.pageContext, options.getConversationContext()),
+  };
+}
+
 export function buildUserAgentInstructions(conversationContext?: string, pageContext?: string) {
   const sections = [BASE_AGENT_INSTRUCTIONS];
   if (pageContext) sections.push(`当前页面场景：\n${pageContext}`);
-  if (conversationContext) sections.push(`以下是当前会话最近消息，仅用于保持上下文：\n${conversationContext}`);
+  if (conversationContext)
+    sections.push(`以下是当前会话最近消息，仅用于保持上下文：\n${conversationContext}`);
   return sections.join('\n\n');
 }
 
-function bindRuntimeEvents({
-  agent,
-  options,
-  controller,
-  disposeVisualFeedback,
-}: {
-  agent: PageAgentCore;
-  options: RuntimeOptions;
-  controller: InstanceType<typeof import('@page-agent/page-controller').PageController>;
-  disposeVisualFeedback: () => void;
-}) {
+function buildUserAgentPageInstructions(
+  url: string,
+  pageContext?: string,
+  conversationContext?: string,
+) {
+  const sections = [`当前用户端页面：${url}。优先使用已有导航和只读工具。`];
+  if (pageContext) sections.push(`当前页面场景：\n${pageContext}`);
+  if (conversationContext)
+    sections.push(`以下是当前会话最近消息，仅用于保持上下文：\n${conversationContext}`);
+  return sections.join('\n\n');
+}
+
+function bindRuntimeEvents({ agent, options }: { agent: PageAgentCore; options: RuntimeOptions }) {
   const onActivity = (event: Event) => {
     const activity = (event as CustomEvent<AgentActivity>).detail;
-    if (shouldShowPageAgentVisualFeedback(activity)) void controller.showMask();
     options.onActivity(activityLabel(activity));
     options.onExecutionActivity(activity);
     if (activity.type === 'error') options.onStatus('error');
@@ -212,7 +191,6 @@ function bindRuntimeEvents({
     agent.removeEventListener('activity', onActivity);
     agent.removeEventListener('statuschange', onStatus);
     agent.removeEventListener('historychange', onHistory);
-    disposeVisualFeedback();
     dispose();
   };
 }

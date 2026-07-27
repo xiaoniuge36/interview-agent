@@ -7,6 +7,11 @@ const MAX_TOKENS = 4_000;
 const MAX_REASONING_TEXT = 32;
 const TITLE_MAX_LENGTH = 80;
 const MESSAGE_MAX_LENGTH = 20_000;
+const USER_AGENT_RUN_PROMPT_MAX_LENGTH = 4_000;
+const USER_AGENT_RUN_STEP_MAX_LENGTH = 500;
+const USER_AGENT_RUN_ERROR_CODE_MAX_LENGTH = 100;
+const USER_AGENT_RUN_ERROR_SUMMARY_MAX_LENGTH = 2_000;
+const USER_AGENT_RUN_ID_MAX_LENGTH = 128;
 
 export const UserPageAgentCompletionRequestSchema = z
   .object({
@@ -77,6 +82,36 @@ export const UserAgentAppendMessagesSchema = z.object({
 export type UserAgentMessageInput = z.infer<
   typeof UserAgentAppendMessagesSchema
 >['messages'][number];
+
+export const UserPageAgentRunStatusSchema = z.enum([
+  'running',
+  'waiting_confirmation',
+  'succeeded',
+  'failed',
+  'cancelled',
+  'interrupted',
+]);
+export const UserPageAgentCreateRunSchema = z.object({
+  prompt: z.string().trim().min(1).max(USER_AGENT_RUN_PROMPT_MAX_LENGTH),
+  clientRequestId: z.string().uuid(),
+  retryOfRunId: z.string().max(USER_AGENT_RUN_ID_MAX_LENGTH).optional(),
+});
+export const UserPageAgentHeartbeatRunSchema = z.object({
+  status: z.enum(['running', 'waiting_confirmation']),
+  currentStep: z.string().trim().max(USER_AGENT_RUN_STEP_MAX_LENGTH).optional(),
+  tokenCount: z.number().int().nonnegative().optional(),
+});
+export const UserPageAgentCompleteRunSchema = z.object({
+  status: z.enum(['succeeded', 'failed', 'cancelled']),
+  currentStep: z.string().trim().max(USER_AGENT_RUN_STEP_MAX_LENGTH).optional(),
+  tokenCount: z.number().int().nonnegative().optional(),
+  errorCode: z.string().trim().max(USER_AGENT_RUN_ERROR_CODE_MAX_LENGTH).optional(),
+  errorSummary: z.string().trim().max(USER_AGENT_RUN_ERROR_SUMMARY_MAX_LENGTH).optional(),
+});
+
+export type UserPageAgentCreateRunInput = z.infer<typeof UserPageAgentCreateRunSchema>;
+export type UserPageAgentHeartbeatRunInput = z.infer<typeof UserPageAgentHeartbeatRunSchema>;
+export type UserPageAgentCompleteRunInput = z.infer<typeof UserPageAgentCompleteRunSchema>;
 
 export function parseUserPageAgentCompletion(body: unknown): UserPageAgentCompletionRequest {
   const serialized = JSON.stringify(body) ?? '';

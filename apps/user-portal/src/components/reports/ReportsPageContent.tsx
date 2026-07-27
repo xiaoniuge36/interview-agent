@@ -7,15 +7,15 @@ import { listPracticeHistory } from '@/lib/practice-api';
 import {
   buildTrainingRecords,
   filterTrainingRecords,
+  formatTrainingRecordDate,
+  searchTrainingRecords,
+  summarizeTrainingRecords,
+  trainingRecordStatusLabel,
   type TrainingRecord,
   type TrainingRecordFilter,
 } from './training-records-model';
-
-const FILTERS: Array<{ id: TrainingRecordFilter; label: string }> = [
-  { id: 'all', label: '全部记录' },
-  { id: 'practice', label: '刷题复盘' },
-  { id: 'interview', label: '模拟面试' },
-];
+import { TrainingArchiveFilters } from './TrainingArchiveFilters';
+import { WeaknessReviewAction } from './WeaknessReviewAction';
 
 type ArchiveState = {
   records: TrainingRecord[];
@@ -24,17 +24,30 @@ type ArchiveState = {
 
 export function ReportsPageContent() {
   const [filter, setFilter] = useState<TrainingRecordFilter>('all');
+  const [query, setQuery] = useState('');
   const archive = useTrainingArchive();
   const records = useMemo(
-    () => filterTrainingRecords(archive.records, filter),
-    [archive.records, filter],
+    () => searchTrainingRecords(filterTrainingRecords(archive.records, filter), query),
+    [archive.records, filter, query],
   );
+  const summary = useMemo(() => summarizeTrainingRecords(records), [records]);
 
   return (
     <div className="workspace page-workspace training-archive">
       <ArchiveIntro />
-      <ArchiveFilters filter={filter} onChange={setFilter} />
-      <ArchiveDelivery state={archive} records={records} filter={filter} />
+      <TrainingArchiveFilters
+        filter={filter}
+        query={query}
+        onChange={setFilter}
+        onQueryChange={setQuery}
+      />
+      <ArchiveDelivery
+        state={archive}
+        records={records}
+        summary={summary}
+        filter={filter}
+        query={query}
+      />
     </div>
   );
 }
@@ -90,38 +103,18 @@ function ArchiveIntro() {
   );
 }
 
-function ArchiveFilters({
-  filter,
-  onChange,
-}: {
-  filter: TrainingRecordFilter;
-  onChange: (filter: TrainingRecordFilter) => void;
-}) {
-  return (
-    <div className="training-archive-filters" aria-label="筛选训练记录">
-      {FILTERS.map((item) => (
-        <button
-          className={filter === item.id ? 'active' : ''}
-          key={item.id}
-          type="button"
-          aria-pressed={filter === item.id}
-          onClick={() => onChange(item.id)}
-        >
-          {item.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function ArchiveDelivery({
   state,
   records,
+  summary,
   filter,
+  query,
 }: {
   state: ReturnType<typeof useTrainingArchive>;
   records: TrainingRecord[];
+  summary: ReturnType<typeof summarizeTrainingRecords>;
   filter: TrainingRecordFilter;
+  query: string;
 }) {
   if (state.status === 'loading')
     return <ArchiveState title="正在整理训练记录" copy="刷题和面试记录正在同步。" />;
@@ -134,9 +127,10 @@ function ArchiveDelivery({
       />
     );
   }
-  if (!records.length) return <ArchiveEmpty filter={filter} />;
+  if (!records.length) return <ArchiveEmpty filter={filter} query={query} />;
   return (
     <section className="training-archive-list" aria-label="训练记录列表">
+      <ArchiveSummary summary={summary} />
       {state.status === 'partial' ? (
         <p className="training-archive-partial" role="status">
           部分记录暂时未能读取，其余历史已为你保留。
@@ -152,6 +146,37 @@ function ArchiveDelivery({
   );
 }
 
+export function ArchiveSummary({
+  summary,
+}: {
+  summary: ReturnType<typeof summarizeTrainingRecords>;
+}) {
+  return (
+    <section className="training-archive-summary" aria-label="训练概览">
+      <div>
+        <span>训练证据</span>
+        <strong>{summary.total} 条记录已沉淀</strong>
+        <p>从真实的复盘出发，选择下一轮训练。</p>
+        {summary.practice ? <WeaknessReviewAction /> : null}
+      </div>
+      <dl>
+        <SummaryFact label="刷题" value={summary.practice} />
+        <SummaryFact label="模拟面试" value={summary.interview} />
+        <SummaryFact label="已完成复盘" value={summary.reviewed} />
+      </dl>
+    </section>
+  );
+}
+
+function SummaryFact({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
 function ArchiveRecord({ record }: { record: TrainingRecord }) {
   return (
     <Link className="training-archive-record" href={record.href}>
@@ -160,7 +185,8 @@ function ArchiveRecord({ record }: { record: TrainingRecord }) {
       </span>
       <span className="training-archive-record-main">
         <small>
-          {record.kind === 'practice' ? '刷题复盘' : '模拟面试'} · {formatDate(record.updatedAt)}
+          {record.kind === 'practice' ? '刷题复盘' : '模拟面试'} ·{' '}
+          {formatTrainingRecordDate(record.updatedAt)}
         </small>
         <strong>{record.title}</strong>
         <span className="training-archive-record-facts">{record.facts.join(' · ')}</span>
@@ -174,16 +200,20 @@ function ArchiveRecord({ record }: { record: TrainingRecord }) {
       </span>
       <span className="training-archive-record-result">
         {record.score !== null ? <b>{Math.round(record.score)}</b> : null}
-        <small>{record.score !== null ? 'AI 复盘得分' : recordStatusLabel(record.status)}</small>
+        <small>
+          {record.score !== null ? 'AI 复盘得分' : trainingRecordStatusLabel(record.status)}
+        </small>
         <em>查看记录 →</em>
       </span>
     </Link>
   );
 }
 
-function ArchiveEmpty({ filter }: { filter: TrainingRecordFilter }) {
-  const copy =
-    filter === 'interview'
+function ArchiveEmpty({ filter, query }: { filter: TrainingRecordFilter; query: string }) {
+  const search = query.trim();
+  const copy = search
+    ? `没有找到包含“${search}”的训练记录。试试标题、类型、状态或薄弱项。`
+    : filter === 'interview'
       ? '还没有模拟面试记录。开始一场面试，让反馈沉淀下来。'
       : filter === 'practice'
         ? '还没有刷题复盘。完成一轮题单后，这里会标出可补强的要点。'
@@ -221,17 +251,4 @@ function ArchiveState({
       ) : null}
     </section>
   );
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric' }).format(
-    new Date(value),
-  );
-}
-
-function recordStatusLabel(status: string) {
-  if (status === 'report_ready') return '复盘已完成';
-  if (status === 'in_progress' || status === 'waiting_user') return '进行中';
-  if (status === 'submitted' || status === 'generating_report') return '报告生成中';
-  return '已保存';
 }

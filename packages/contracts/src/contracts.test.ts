@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   AgentRuntimeNextRequestSchema,
   ActionSchema,
+  CreatePracticeSessionSchema,
   CreateLocalAdminInputSchema,
   PlatformDashboardSchema,
   PracticeHistoryListSchema,
@@ -83,6 +84,24 @@ test('practice history only accepts compact training summaries', () => {
       },
     ]).success,
     true,
+  );
+});
+
+test('practice sessions accept only a source-bound interview review mode', () => {
+  assert.deepEqual(
+    CreatePracticeSessionSchema.parse({
+      mode: 'interview_review',
+      sourceInterviewSessionId: 'interview-1',
+    }),
+    { mode: 'interview_review', sourceInterviewSessionId: 'interview-1' },
+  );
+  assert.equal(CreatePracticeSessionSchema.safeParse({ mode: 'interview_review' }).success, false);
+  assert.equal(
+    CreatePracticeSessionSchema.safeParse({
+      mode: 'smart',
+      sourceInterviewSessionId: 'interview-1',
+    }).success,
+    false,
   );
 });
 

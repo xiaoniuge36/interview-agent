@@ -105,10 +105,28 @@ enum AdminPageAgentMessageRole {
   error
 }
 
+enum AdminPageAgentRunStatus {
+  running
+  waiting_confirmation
+  succeeded
+  failed
+  cancelled
+  interrupted
+}
+
 enum UserAgentMessageRole {
   user
   assistant
   error
+}
+
+enum UserPageAgentRunStatus {
+  running
+  waiting_confirmation
+  succeeded
+  failed
+  cancelled
+  interrupted
 }
 
 enum CredentialStatus {
@@ -213,4 +231,5 @@ enum PracticeMode {
   smart
   manual
   weakness_review
+  interview_review
 }
