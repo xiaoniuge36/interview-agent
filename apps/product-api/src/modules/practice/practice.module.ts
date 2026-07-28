@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CommonModule } from '../../common/common.module';
 import { AiUsageModule } from '../ai-usage/ai-usage.module';
 import { ModelCredentialModule } from '../model-credential/model-credential.module';
+import { MemoryModule } from '../memory/memory.module';
 import { PracticeCommandService } from './practice-command.service';
 import { PracticeCompletionService } from './practice-completion.service';
 import { PracticeController } from './practice.controller';
@@ -14,7 +15,7 @@ import { PracticeService } from './practice.service';
 import { PracticeWriteService } from './practice-write.service';
 
 @Module({
-  imports: [CommonModule, AiUsageModule, ModelCredentialModule],
+  imports: [CommonModule, AiUsageModule, ModelCredentialModule, MemoryModule],
   controllers: [PracticeController],
   providers: [
     PracticeService,

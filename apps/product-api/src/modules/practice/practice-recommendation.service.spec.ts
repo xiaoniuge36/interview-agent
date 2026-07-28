@@ -87,6 +87,8 @@ describe('PracticeRecommendationService', () => {
     );
   });
 
+  it('returns source-backed evidence for a low-mastery recommendation', verifyEvidence);
+
   it('falls back to curated questions when profile context is empty', async () => {
     const { service, prisma } = createRecommendationService();
     prisma.jobIntent.findFirst.mockResolvedValue(null);
@@ -114,6 +116,35 @@ describe('PracticeRecommendationService', () => {
     expect(prisma.question.findMany).toHaveBeenCalledTimes(2);
   });
 });
+
+async function verifyEvidence() {
+  const { service, prisma } = createRecommendationService();
+  prisma.jobIntent.findFirst.mockResolvedValue(null);
+  prisma.userProfile.findUnique.mockResolvedValue(null);
+  prisma.masteryProfile.findMany.mockResolvedValue([lowMasteryRecord()]);
+  prisma.practiceSessionItem.findMany.mockResolvedValue([]);
+  prisma.question.findMany.mockResolvedValue(questionRecords());
+
+  const result = await service.list(context);
+
+  expect(result[0]?.evidence).toContainEqual({
+    type: 'mastery',
+    sourceId: 'memory-event-1',
+    label: 'observability 掌握度 44 分',
+    detail: '来自 2 条训练证据，当前趋势下降。',
+  });
+}
+
+function lowMasteryRecord() {
+  return {
+    tag: 'observability',
+    score: 44,
+    evidenceCount: 2,
+    lastEvidenceEventId: 'memory-event-1',
+    lastEvidenceSessionId: 'session-1',
+    trend: 'falling',
+  };
+}
 
 describe('PracticeQueryService recent session', () => {
   it('returns the latest unfinished practice summary', async () => {

@@ -62,6 +62,48 @@ test('推荐题单最多包含十道题并说明推荐原因', () => {
   );
 });
 
+test('推荐题单携带最多四条可追溯依据', () => {
+  const result = PracticeRecommendationListSchema.parse([
+    {
+      id: 'recommendation-system-design',
+      title: '系统设计强化题单',
+      reason: '系统设计的近期掌握度偏低。',
+      source: 'mastery',
+      category: 'engineering',
+      estimatedMinutes: 20,
+      questionIds: ['question-1'],
+      evidence: [
+        {
+          type: 'mastery',
+          sourceId: 'memory-event-1',
+          label: '系统设计掌握度 42 分',
+          detail: '来自 2 条训练证据。',
+        },
+      ],
+    },
+  ]);
+
+  const recommendation = result[0] as unknown as { evidence?: Array<{ type: string }> };
+  assert.deepEqual(
+    recommendation.evidence?.map((item) => item.type),
+    ['mastery'],
+  );
+  assert.equal(
+    PracticeRecommendationListSchema.safeParse([
+      {
+        ...result[0],
+        evidence: Array.from({ length: 5 }, (_, index) => ({
+          type: 'mastery',
+          sourceId: `memory-event-${index}`,
+          label: '掌握度证据',
+          detail: '来自训练。',
+        })),
+      },
+    ]).success,
+    false,
+  );
+});
+
 test('最近练习摘要与逐题反馈支持恢复学习状态', () => {
   const recent = RecentPracticeSummarySchema.parse({
     id: 'session-1',

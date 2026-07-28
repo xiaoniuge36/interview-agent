@@ -1,12 +1,12 @@
 ﻿import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { AuditService, jsonValue } from '../../common/audit/audit.service';
+import { MemoryProjectionService } from '../memory/memory-projection.service';
 import { completionAuditEvent, failureAuditEvent } from './interview-command.audit';
 import { lostCommandLease, versionConflict } from './interview-command.errors';
 import {
   commandLeaseWhere,
   eventRecords,
-  memoryRecords,
   reportRecord,
   runOutput,
   turnRecord,
@@ -15,7 +15,10 @@ import type { CompleteCommandRequest, FailCommandRequest } from './interview.typ
 
 @Injectable()
 export class InterviewCommandCompletionHandler {
-  constructor(private readonly audit: AuditService) {}
+  constructor(
+    private readonly audit: AuditService,
+    private readonly memory: MemoryProjectionService,
+  ) {}
 
   async complete(transaction: Prisma.TransactionClient, request: CompleteCommandRequest) {
     await this.updateSession(transaction, request);
@@ -82,7 +85,7 @@ export class InterviewCommandCompletionHandler {
     const report = request.artifacts.report;
     if (!report) return;
     await transaction.interviewReport.create({ data: reportRecord(report) });
-    await transaction.memoryEvent.createMany({ data: memoryRecords(report) });
+    await this.memory.apply(transaction, report.memoryEvents);
   }
 
   private async completeRun(

@@ -211,7 +211,10 @@ model MasteryProfile {
   tag                   String
   score                 Float
   evidenceCount         Int      @default(0)
+  weightedEvidence      Float    @default(0)
+  lastEvidenceEventId   String?
   lastEvidenceSessionId String?
+  trend                 MasteryTrend @default(stable)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

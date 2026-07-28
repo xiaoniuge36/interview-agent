@@ -185,9 +185,21 @@ enum ModelBudget {
 
 enum MemoryEventType {
   skill_delta
+  skill_observation
   risk_signal
   strength_confirmed
   next_action
+}
+
+enum MemorySourceType {
+  practice
+  interview
+}
+
+enum MasteryTrend {
+  rising
+  stable
+  falling
 }
 
 enum KnowledgeSourceType {

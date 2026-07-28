@@ -68,12 +68,20 @@ export const QuestionCatalogResponseSchema = z.object({
   totalPages: z.number().int().nonnegative(),
 });
 
-export const PracticeRecommendationSourceSchema = z.enum([
-  'profile',
-  'job',
+export const PracticeRecommendationSourceSchema = z.enum(['profile', 'job', 'mastery', 'curated']);
+export const PracticeRecommendationEvidenceTypeSchema = z.enum([
   'mastery',
+  'practice',
+  'job',
+  'profile',
   'curated',
 ]);
+export const PracticeRecommendationEvidenceSchema = z.object({
+  type: PracticeRecommendationEvidenceTypeSchema,
+  sourceId: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  label: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  detail: z.string().min(1).max(CONTRACT_LIMITS.mediumText),
+});
 export const PracticeRecommendationSchema = z.object({
   id: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   title: z.string().min(1).max(CONTRACT_LIMITS.shortText),
@@ -82,6 +90,7 @@ export const PracticeRecommendationSchema = z.object({
   category: QuestionCatalogCategorySchema.nullable(),
   estimatedMinutes: z.number().int().positive(),
   questionIds: z.array(z.string().min(1)).min(1).max(RECOMMENDATION_QUESTION_LIMIT),
+  evidence: z.array(PracticeRecommendationEvidenceSchema).max(4).optional(),
 });
 export const PracticeRecommendationListSchema = z
   .array(PracticeRecommendationSchema)
@@ -102,4 +111,5 @@ export type QuestionCatalogCategory = z.infer<typeof QuestionCatalogCategorySche
 export type QuestionCatalogQuery = z.infer<typeof QuestionCatalogQuerySchema>;
 export type QuestionCatalogResponse = z.infer<typeof QuestionCatalogResponseSchema>;
 export type PracticeRecommendation = z.infer<typeof PracticeRecommendationSchema>;
+export type PracticeRecommendationEvidence = z.infer<typeof PracticeRecommendationEvidenceSchema>;
 export type RecentPracticeSummary = z.infer<typeof RecentPracticeSummarySchema>;

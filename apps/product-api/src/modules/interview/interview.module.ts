@@ -1,6 +1,7 @@
 ﻿import { Module } from '@nestjs/common';
 import { CommonModule } from '../../common/common.module';
 import { AgentRuntimeModule } from '../agent-runtime/agent-runtime.module';
+import { MemoryModule } from '../memory/memory.module';
 import { InterviewCommandCompletionHandler } from './interview-command-completion.handler';
 import { InterviewCommandHandlers } from './interview-command.handlers';
 import { InterviewCommandLeaseHandler } from './interview-command-lease.handler';
@@ -23,7 +24,7 @@ const commandProviders = [
 ];
 
 @Module({
-  imports: [CommonModule, AgentRuntimeModule],
+  imports: [CommonModule, AgentRuntimeModule, MemoryModule],
   controllers: [InterviewController],
   providers: [...commandProviders, InterviewQueryService, InterviewService],
 })

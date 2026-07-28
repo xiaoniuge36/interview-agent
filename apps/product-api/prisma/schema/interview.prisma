@@ -71,17 +71,24 @@ model MemoryEvent {
   id         String          @id @default(cuid())
   tenantId   String
   userId     String
+  schemaVersion Int          @default(1)
+  dedupeKey  String?
+  sourceType MemorySourceType?
   eventType  MemoryEventType
   sourceId   String
+  tag        String?
+  observedScore Float?
   evidence   String
   delta      Json
   confidence Float
+  traceId    String?
   createdAt  DateTime        @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
   user   User   @relation(fields: [tenantId, userId], references: [tenantId, id])
 
   @@index([tenantId, userId, eventType, createdAt])
+  @@unique([tenantId, userId, dedupeKey])
   @@index([sourceId])
 }
 

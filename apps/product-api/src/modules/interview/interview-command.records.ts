@@ -93,22 +93,6 @@ export function reportRecord(
   };
 }
 
-export function memoryRecords(
-  report: NonNullable<CompleteCommandRequest['artifacts']['report']>,
-): Prisma.MemoryEventCreateManyInput[] {
-  return report.memoryEvents.map((event) => ({
-    id: event.id,
-    tenantId: event.tenantId,
-    userId: event.userId,
-    eventType: event.eventType,
-    sourceId: event.sourceId,
-    evidence: event.evidence,
-    delta: jsonValue(event.delta),
-    confidence: event.confidence,
-    createdAt: new Date(event.createdAt),
-  }));
-}
-
 export function eventRecords(
   request: CompleteCommandRequest,
 ): Prisma.InterviewEventCreateManyInput[] {

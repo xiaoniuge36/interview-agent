@@ -79,6 +79,7 @@ function RecommendationContent({
           <strong>本轮推荐依据</strong>
           <p>{recommendation.reason}</p>
         </div>
+        <RecommendationEvidence evidence={recommendation.evidence ?? []} />
         <div className="question-agent-meta">
           <span>{recommendation.questionIds.length} 道题</span>
           <span>约 {recommendation.estimatedMinutes} 分钟</span>
@@ -93,6 +94,24 @@ function RecommendationContent({
       <AgentHandoffNotice visible={agentHandoff} />
       <p>{error || '完成一轮评价后，Agent 会重新计算。'}</p>
     </div>
+  );
+}
+
+function RecommendationEvidence({
+  evidence,
+}: {
+  evidence: NonNullable<PracticeRecommendation['evidence']>;
+}) {
+  if (!evidence.length) return null;
+  return (
+    <ul className="question-agent-evidence" aria-label="推荐依据">
+      {evidence.map((item) => (
+        <li key={`${item.type}:${item.sourceId}`}>
+          <strong>{item.label}</strong>
+          <span>{item.detail}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

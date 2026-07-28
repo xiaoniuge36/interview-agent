@@ -44,6 +44,7 @@ test('无模型自学完成要求全部题目已保存并且不创建报告', as
       audit: { record: jest.fn() },
     } as never,
     { evaluate: jest.fn() } as never,
+    { apply: jest.fn() } as never,
   );
 
   await service.completeSelfStudy(context, session.id);
@@ -70,6 +71,16 @@ test('整轮复盘会自动补齐尚未评价的已保存题目', async () => {
     itemId: 'item-2',
   });
   expect(fixture.transaction.practiceReport.create).toHaveBeenCalledTimes(1);
+  expect(fixture.memory.apply).toHaveBeenCalledWith(
+    fixture.transaction,
+    expect.arrayContaining([
+      expect.objectContaining({
+        dedupeKey: 'practice:session-1:系统设计',
+        observedScore: 78,
+        sourceType: 'practice',
+      }),
+    ]),
+  );
   expect(report.itemEvaluations).toHaveLength(2);
 });
 
@@ -106,15 +117,23 @@ function completionFixture() {
     ),
   };
   const evaluations = { evaluate: jest.fn() };
-  const service = new PracticeCompletionService(
+  const memory = { apply: jest.fn() };
+  const service = new (
+    PracticeCompletionService as unknown as new (
+      infrastructure: unknown,
+      evaluations: unknown,
+      memory: unknown,
+    ) => PracticeCompletionService
+  )(
     {
       prisma: prisma as unknown as PrismaService,
       policy: { assert: jest.fn() },
       audit: { record: jest.fn() },
     } as never,
     evaluations as never,
+    memory,
   );
-  return { session, transaction, evaluations, service };
+  return { session, transaction, evaluations, memory, service };
 }
 
 function sessionRecord() {

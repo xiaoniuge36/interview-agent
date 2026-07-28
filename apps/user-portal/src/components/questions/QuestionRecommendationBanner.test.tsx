@@ -14,6 +14,14 @@ const recommendation = {
   category: null,
   estimatedMinutes: 24,
   questionIds: ['question-1', 'question-2', 'question-3'],
+  evidence: [
+    {
+      type: 'mastery',
+      sourceId: 'memory-event-1',
+      label: '系统设计掌握度 42 分',
+      detail: '来自 2 条训练证据，当前趋势下降。',
+    },
+  ],
 } satisfies PracticeRecommendation;
 
 describe('QuestionRecommendationBanner', () => {
@@ -24,6 +32,9 @@ describe('QuestionRecommendationBanner', () => {
     expect(markup).toContain('采用并开始训练');
     expect(markup).toContain('自己组一轮');
     expect(markup).toContain('本轮推荐依据');
+    expect(markup).toContain('aria-label="推荐依据"');
+    expect(markup).toContain('系统设计掌握度 42 分');
+    expect(markup).toContain('来自 2 条训练证据，当前趋势下降。');
     expect(markup).toContain('系统设计薄弱点强化');
   });
 

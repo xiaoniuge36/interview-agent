@@ -1,9 +1,9 @@
-import { ConflictException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
+import { MemoryProjectionService } from '../memory/memory-projection.service';
 import { PracticeCommandService } from './practice-command.service';
 import { PracticeCompletionService } from './practice-completion.service';
 import { PracticeEvaluationInfrastructure } from './practice-evaluation-infrastructure';
@@ -22,6 +22,7 @@ const commands = new PracticeCommandService(prisma, new PolicyService(), new Aud
 const completion = new PracticeCompletionService(
   new PracticeEvaluationInfrastructure(prisma, new PolicyService(), new AuditService(prisma)),
   { evaluate: jest.fn() } as never,
+  new MemoryProjectionService(),
 );
 
 const context: ProductRequestContext = {
@@ -48,50 +49,52 @@ describeDatabase('PracticeCommandService database integration', () => {
     await prisma.$disconnect();
   });
 
-  it('returns one persisted report when the same session is submitted twice', async () => {
-    const results = await Promise.allSettled([
-      completion.submit(context, replaySessionId),
-      completion.submit(context, replaySessionId),
-    ]);
-
-    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(2);
-    expect(await prisma.practiceReport.count({ where: { sessionId: replaySessionId } })).toBe(1);
-    expect(
-      await prisma.evaluationResult.count({
-        where: { tenantId, sessionItemId: itemIdFor(replaySessionId) },
-      }),
-    ).toBe(1);
-  });
-
-  it('does not lose mastery evidence when sessions with the same tag submit concurrently', async () => {
-    await Promise.all(parallelSessionIds.map((sessionId) => completion.submit(context, sessionId)));
-
-    const mastery = await prisma.masteryProfile.findUniqueOrThrow({
-      where: { tenantId_userId_tag: { tenantId, userId, tag: 'system-design' } },
-    });
-
-    expect(mastery.evidenceCount).toBe(3);
-  });
-
-  it('rejects a delayed answer after a report has been generated', async () => {
-    await completion.submit(context, closedSessionId);
-
-    try {
-      await commands.submitAnswer({
-        context,
-        sessionId: closedSessionId,
-        itemId: itemIdFor(closedSessionId),
-        input: { answer: 'late answer' },
-      });
-      throw new Error('Expected delayed answer to be rejected');
-    } catch (error) {
-      expect(error).toBeInstanceOf(ConflictException);
-      expect((error as ConflictException).getResponse()).toMatchObject({
-        code: 'PRACTICE_SESSION_CLOSED',
-      });
-    }
-  });
+  it('returns one persisted report when the same session is submitted twice', verifyReplay);
+  it(
+    'does not lose mastery evidence when sessions with the same tag submit concurrently',
+    verifyEvidence,
+  );
+  it('rejects a delayed answer after a report has been generated', verifyDelayedAnswer);
 });
+
+async function verifyReplay() {
+  const results = await Promise.allSettled([
+    completion.submit(context, replaySessionId),
+    completion.submit(context, replaySessionId),
+  ]);
+  expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(2);
+  expect(await prisma.practiceReport.count({ where: { sessionId: replaySessionId } })).toBe(1);
+  expect(
+    await prisma.evaluationResult.count({
+      where: { tenantId, sessionItemId: itemIdFor(replaySessionId) },
+    }),
+  ).toBe(1);
+}
+
+async function verifyEvidence() {
+  await Promise.all(parallelSessionIds.map((sessionId) => completion.submit(context, sessionId)));
+  const mastery = await prisma.masteryProfile.findUniqueOrThrow({
+    where: { tenantId_userId_tag: { tenantId, userId, tag: 'system-design' } },
+  });
+  expect(mastery.evidenceCount).toBe(3);
+  expect(
+    await prisma.memoryEvent.count({
+      where: { tenantId, userId, sourceType: 'practice', sourceId: { in: parallelSessionIds } },
+    }),
+  ).toBe(2);
+}
+
+async function verifyDelayedAnswer() {
+  await completion.submit(context, closedSessionId);
+  await expect(
+    commands.submitAnswer({
+      context,
+      sessionId: closedSessionId,
+      itemId: itemIdFor(closedSessionId),
+      input: { answer: 'late answer' },
+    }),
+  ).rejects.toMatchObject({ response: { code: 'PRACTICE_SESSION_CLOSED' } });
+}
 
 async function seedRecords() {
   await prisma.tenant.create({ data: { id: tenantId, slug: tenantId, name: tenantId } });
@@ -167,6 +170,7 @@ function itemIdFor(sessionId: string) {
 
 async function cleanupRecords() {
   await prisma.auditLog.deleteMany({ where: { tenantId } });
+  await prisma.memoryEvent.deleteMany({ where: { tenantId } });
   await prisma.evaluationResult.deleteMany({ where: { tenantId } });
   await prisma.practiceReport.deleteMany({ where: { tenantId } });
   await prisma.masteryProfile.deleteMany({ where: { tenantId } });

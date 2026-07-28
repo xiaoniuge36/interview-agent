@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { PrismaService } from '../../common/database/prisma.service';
 import { runSerializable } from '../../common/database/serializable-transaction';
+import { MemoryProjectionService } from '../memory/memory-projection.service';
 import { InterviewCommandCompletionHandler } from './interview-command-completion.handler';
 import { buildCompletion } from './interview-command.builder';
 import type { CompleteCommandRequest, InvocationPreparation } from './interview.types';
@@ -32,7 +33,10 @@ const baseSession: InterviewSession = {
 };
 
 const prisma = new PrismaService();
-const handler = new InterviewCommandCompletionHandler(new AuditService(prisma));
+const handler = new InterviewCommandCompletionHandler(
+  new AuditService(prisma),
+  new MemoryProjectionService(),
+);
 
 describeDatabase('Interview command database integration', () => {
   beforeAll(async () => {
@@ -154,6 +158,7 @@ async function seedCommand(commandId: string, runId: string) {
 
 async function cleanupRecords() {
   await prisma.auditLog.deleteMany({ where: { tenantId } });
+  await prisma.memoryEvent.deleteMany({ where: { tenantId } });
   await prisma.interviewEvent.deleteMany({ where: { tenantId } });
   await prisma.interviewTurn.deleteMany({ where: { tenantId } });
   await prisma.agentRun.deleteMany({ where: { tenantId } });

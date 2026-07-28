@@ -1,8 +1,10 @@
-import { SkillWeightSchema } from '@interview-agent/contracts';
+import { SkillWeightSchema, type PracticeRecommendationEvidence } from '@interview-agent/contracts';
 import { classifyRole } from '../../common/role-category';
 import { isPracticeCategoryTag } from './practice-question-categories';
 
 const RECENT_WEAK_SCORE = 60;
+const MASTERY_WEAK_SCORE = 60;
+const MAX_RECOMMENDATION_EVIDENCE = 4;
 
 export type JobRecommendationContext = {
   targetRole: string;
@@ -21,8 +23,25 @@ export type ProfileRecommendationContext = {
 
 export type RecentPracticeSignal = {
   questionId: string;
+  sessionId?: string;
   evaluation?: { score: number } | null;
   question?: { tags: string[] };
+};
+
+export type MasteryRecommendationSignal = {
+  tag: string;
+  score: number;
+  evidenceCount?: number;
+  lastEvidenceEventId?: string | null;
+  lastEvidenceSessionId?: string | null;
+  trend?: 'rising' | 'stable' | 'falling' | null;
+};
+
+export type RecommendationInput = {
+  job: JobRecommendationContext | null;
+  profile: ProfileRecommendationContext | null;
+  mastery: MasteryRecommendationSignal[];
+  recentItems: RecentPracticeSignal[];
 };
 
 export type RecommendationContext = {
@@ -40,19 +59,16 @@ type RecommendationBase = {
   category: ReturnType<typeof classifyRole> | null;
 };
 
-export function recommendationCandidates(input: {
-  job: JobRecommendationContext | null;
-  profile: ProfileRecommendationContext | null;
-  mastery: Array<{ tag: string; score: number }>;
-  recentItems: RecentPracticeSignal[];
-}) {
+export function recommendationCandidates(input: RecommendationInput) {
   const { job, profile, mastery, recentItems } = input;
   const role = job?.targetRole ?? profile?.targetRole ?? undefined;
   const category = role ? classifyRole(role) : null;
   const base = { job, profile, role, category };
   const weakTags = unique([
     ...recentWeakTags(recentItems),
-    ...mastery.filter((item) => !isPracticeCategoryTag(item.tag)).map((item) => item.tag),
+    ...mastery
+      .filter((item) => item.score < MASTERY_WEAK_SCORE && !isPracticeCategoryTag(item.tag))
+      .map((item) => item.tag),
   ]);
   const focusTags = unique([...jobFocusTags(job), ...profileFocusTags(profile)]);
   const candidates = weakTags.flatMap((weakTag) => candidatesForWeakTag(base, weakTag, focusTags));
@@ -61,6 +77,18 @@ export function recommendationCandidates(input: {
   if (category) candidates.push(recommendationContext(base, undefined, undefined));
   candidates.push(curatedContext());
   return uniqueContexts(candidates);
+}
+
+export function recommendationEvidence(
+  context: RecommendationContext,
+  input: RecommendationInput,
+): PracticeRecommendationEvidence[] {
+  const evidence = [
+    ...masteryEvidence(context, input.mastery),
+    ...recentPracticeEvidence(context, input.recentItems),
+    ...focusEvidence(context, input),
+  ];
+  return (evidence.length ? evidence : curatedEvidence()).slice(0, MAX_RECOMMENDATION_EVIDENCE);
 }
 
 export function recommendationTitle(
@@ -120,6 +148,81 @@ function recentWeakTags(items: RecentPracticeSignal[]) {
       return (item.question?.tags ?? []).filter((tag) => !isPracticeCategoryTag(tag));
     }),
   );
+}
+
+function masteryEvidence(context: RecommendationContext, mastery: MasteryRecommendationSignal[]) {
+  const signal = mastery.find((item) => item.tag === context.weakTag);
+  if (!signal) return [];
+  return [
+    {
+      type: 'mastery' as const,
+      sourceId:
+        signal.lastEvidenceEventId ?? signal.lastEvidenceSessionId ?? `mastery:${signal.tag}`,
+      label: `${signal.tag} 掌握度 ${Math.round(signal.score)} 分`,
+      detail: `来自 ${signal.evidenceCount ?? 0} 条训练证据，当前趋势${trendLabel(signal.trend)}。`,
+    },
+  ];
+}
+
+function recentPracticeEvidence(context: RecommendationContext, items: RecentPracticeSignal[]) {
+  const signal = items.find(
+    (item) =>
+      item.evaluation &&
+      item.evaluation.score < RECENT_WEAK_SCORE &&
+      item.question?.tags.includes(context.weakTag ?? ''),
+  );
+  if (!signal?.evaluation) return [];
+  return [
+    {
+      type: 'practice' as const,
+      sourceId: signal.sessionId ?? signal.questionId,
+      label: `最近相关练习得分 ${Math.round(signal.evaluation.score)} 分`,
+      detail: `题目覆盖「${context.weakTag}」能力标签。`,
+    },
+  ];
+}
+
+function focusEvidence(context: RecommendationContext, input: RecommendationInput) {
+  const tag = context.focusTag;
+  if (!tag) return [];
+  if (jobFocusTags(input.job).includes(tag)) {
+    return [
+      {
+        type: 'job' as const,
+        sourceId: 'job:latest',
+        label: `JD 重点能力「${tag}」`,
+        detail: '来自最近目标岗位配置。',
+      },
+    ];
+  }
+  if (profileFocusTags(input.profile).includes(tag)) {
+    return [
+      {
+        type: 'profile' as const,
+        sourceId: 'profile:current',
+        label: `个人档案关注「${tag}」`,
+        detail: '来自当前个人档案与复盘。',
+      },
+    ];
+  }
+  return [];
+}
+
+function curatedEvidence(): PracticeRecommendationEvidence[] {
+  return [
+    {
+      type: 'curated',
+      sourceId: 'catalog:curated',
+      label: '通用高价值题目',
+      detail: '当前没有足够的个性化证据。',
+    },
+  ];
+}
+
+function trendLabel(trend: MasteryRecommendationSignal['trend']) {
+  if (trend === 'rising') return '上升';
+  if (trend === 'falling') return '下降';
+  return '稳定';
 }
 
 function jobFocusTags(job: JobRecommendationContext | null) {

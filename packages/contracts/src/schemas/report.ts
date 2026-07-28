@@ -6,11 +6,17 @@ export const MemoryEventSchema = z.object({
   id: z.string().min(1),
   tenantId: z.string().min(1),
   userId: z.string().min(1),
-  eventType: z.enum(['skill_delta', 'risk_signal', 'strength_confirmed', 'next_action']),
+  schemaVersion: z.literal(1),
+  dedupeKey: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  sourceType: z.enum(['practice', 'interview']),
+  eventType: z.enum(['skill_observation', 'risk_signal', 'strength_confirmed', 'next_action']),
   sourceId: z.string().min(1),
+  tag: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  observedScore: z.number().min(0).max(CONTRACT_LIMITS.percentage),
   evidence: z.string().min(1).max(CONTRACT_LIMITS.mediumText),
   delta: z.record(z.unknown()),
   confidence: z.number().min(0).max(1),
+  traceId: z.string().min(CONTRACT_LIMITS.traceIdMinLength).max(CONTRACT_LIMITS.traceIdMaxLength),
   createdAt: z.string().datetime(),
 });
 

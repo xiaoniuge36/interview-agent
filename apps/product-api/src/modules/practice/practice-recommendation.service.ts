@@ -10,6 +10,7 @@ import { classifyRole } from '../../common/role-category';
 import { practiceCategoryTagFor } from './practice-question-categories';
 import {
   recommendationCandidates,
+  recommendationEvidence,
   recommendationReason,
   recommendationTitle,
   type RecommendationContext,
@@ -34,9 +35,10 @@ export class PracticeRecommendationService {
       this.lowMastery(context),
       this.recentQuestions(context),
     ]);
+    const candidateInput = { job, profile, mastery, recentItems };
     const selection = await this.selectQuestions(
       context,
-      recommendationCandidates({ job, profile, mastery, recentItems }),
+      recommendationCandidates(candidateInput),
       recentItems,
     );
     if (!selection) return [];
@@ -50,6 +52,7 @@ export class PracticeRecommendationService {
         category: recommendation.category,
         estimatedMinutes: questions.length * MINUTES_PER_QUESTION,
         questionIds: questions.map((question) => question.id),
+        evidence: recommendationEvidence(recommendation, candidateInput),
       },
     ]);
   }
@@ -87,7 +90,14 @@ export class PracticeRecommendationService {
       where: { tenantId: context.tenantId, userId: context.actor.id },
       orderBy: { score: 'asc' },
       take: 3,
-      select: { tag: true, score: true },
+      select: {
+        tag: true,
+        score: true,
+        evidenceCount: true,
+        lastEvidenceEventId: true,
+        lastEvidenceSessionId: true,
+        trend: true,
+      },
     });
   }
 
@@ -98,6 +108,7 @@ export class PracticeRecommendationService {
       take: RECENT_QUESTION_LIMIT,
       select: {
         questionId: true,
+        sessionId: true,
         evaluation: { select: { score: true } },
         question: { select: { tags: true } },
       },
