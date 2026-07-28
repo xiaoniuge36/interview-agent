@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useAuth } from '@interview-agent/auth-client';
 import { AgentRecommendationRail } from './AgentRecommendationRail';
 import { QuestionSearchBar } from './QuestionSearchBar';
 import { QuestionTopicGrid } from './QuestionTopicGrid';
@@ -10,10 +11,13 @@ import { useQuestionHubData } from './useQuestionHubData';
 const DISCOVERY_TAG_LIMIT = 8;
 
 export function QuestionHubPage() {
+  const auth = useAuth();
   const data = useQuestionHubData();
   return (
     <div className="question-hub-page">
       <AgentRecommendationRail
+        displayName={auth.identity?.displayName}
+        continuation={data.continuation}
         recommendations={data.recommendations}
         loading={data.recommendationsLoading}
         error={data.recommendationError}

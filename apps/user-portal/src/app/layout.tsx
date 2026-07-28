@@ -11,7 +11,7 @@ const uiFont = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'OfferPilot · AI 面试训练',
+  title: 'Interview Agent · AI 面试训练',
   description: '面向互联网全岗位的 AI 面试训练平台，帮助你把真实经历练成有说服力的能力证据。',
 };
 

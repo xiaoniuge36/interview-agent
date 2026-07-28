@@ -72,9 +72,15 @@ function SidebarBrand() {
       <span className="sidebar-mark" aria-hidden="true">
         <BrandMark />
       </span>
-      <span>
-        <strong>OfferPilot</strong>
-        <small>你的面试 Agent</small>
+      <span className="sidebar-brand-copy">
+        <strong>
+          <span>Interview</span>
+          <span className="sidebar-brand-agent">Agent</span>
+        </strong>
+        <small>
+          <span className="sidebar-brand-signal" aria-hidden="true" />
+          AI 面试训练伙伴
+        </small>
       </span>
     </Link>
   );
@@ -136,11 +142,18 @@ function trackNavigation(options: {
 function BrandMark() {
   return (
     <svg viewBox="0 0 32 32" focusable="false">
-      <path d="M5 14.5 26.5 5.2 18 27l-4.1-9.1L5 14.5Z" fill="currentColor" />
       <path
-        d="m14 17.9 12.5-12.7"
+        d="M8.25 9.5h5.2M10.85 9.5v13M8.25 22.5h5.2M15.8 22.5l4.7-13 4.7 13"
         fill="none"
-        stroke="#BBD3FF"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.1"
+      />
+      <path
+        d="M17.5 18h6"
+        fill="none"
+        stroke="#65E1C2"
         strokeLinecap="round"
         strokeWidth="2"
       />

@@ -45,20 +45,11 @@ export function AdminAgentFloatButton({
 function AdminAgentMark() {
   return (
     <svg aria-hidden="true" className="admin-agent-float-mark" fill="none" viewBox="0 0 32 32">
-      <ellipse
-        className="admin-agent-float-mark-orbit"
-        cx="16"
-        cy="16"
-        rx="11.25"
-        ry="7.4"
-        transform="rotate(-28 16 16)"
-      />
       <path
-        className="admin-agent-float-mark-spark"
-        d="m16 8.9 1.85 5.25 5.25 1.85-5.25 1.85L16 23.1l-1.85-5.25L8.9 16l5.25-1.85L16 8.9Z"
+        className="admin-agent-float-mark-monogram"
+        d="M8.25 9.5h5.2M10.85 9.5v13M8.25 22.5h5.2M15.8 22.5l4.7-13 4.7 13"
       />
-      <circle className="admin-agent-float-mark-core" cx="16" cy="16" r="1.65" />
-      <circle className="admin-agent-float-mark-node" cx="7.7" cy="22.2" r="1.25" />
+      <path className="admin-agent-float-mark-accent" d="M17.5 18h6" />
     </svg>
   );
 }

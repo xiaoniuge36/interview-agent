@@ -28,12 +28,12 @@ export function AccessStory() {
 
 function AccessBrand() {
   return (
-    <Link className="access-brand" href="/" aria-label="OfferPilot 首页">
+    <Link className="access-brand" href="/" aria-label="Interview Agent 首页">
       <span className="brand-mark" aria-hidden="true">
         <span className="brand-mark-core" />
       </span>
       <span>
-        <strong>OfferPilot</strong>
+        <strong>Interview Agent</strong>
         <small>会记住你的面试教练</small>
       </span>
     </Link>

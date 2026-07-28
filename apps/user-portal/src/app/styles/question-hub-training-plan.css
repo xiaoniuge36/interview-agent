@@ -26,6 +26,18 @@
   gap: 10px;
 }
 
+.home-welcome {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(224px, 286px);
+  gap: clamp(18px, 3vw, 42px);
+  align-items: end;
+}
+
+.home-welcome-copy {
+  display: grid;
+  gap: 10px;
+}
+
 .home-training-plan-kicker {
   display: inline-flex;
   align-items: center;
@@ -47,12 +59,55 @@
   letter-spacing: -0.05em;
 }
 
-.home-training-plan-header p {
+.home-welcome-copy p {
   max-width: 710px;
   margin: 0;
   color: var(--agent-text);
   font-size: 14px;
   line-height: 1.65;
+}
+
+.home-welcome-status {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 11px;
+  align-items: start;
+  padding: 15px 16px;
+  border: 1px solid color-mix(in srgb, var(--success) 28%, var(--agent-outline));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--success) 9%, transparent);
+}
+
+.home-welcome-status > .agent-status-dot {
+  margin-top: 5px;
+}
+
+.home-welcome-status div {
+  display: grid;
+  gap: 3px;
+}
+
+.home-welcome-status strong {
+  color: var(--agent-text);
+  font-size: 13px;
+}
+
+.home-welcome-status div span {
+  color: color-mix(in srgb, var(--agent-text) 74%, transparent);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.home-welcome-status a {
+  grid-column: 2;
+  width: fit-content;
+  margin-top: 7px;
+  color: color-mix(in srgb, var(--success) 74%, var(--agent-text));
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--success) 42%, transparent);
+  text-underline-offset: 4px;
 }
 
 .agent-rail-note {
@@ -90,6 +145,15 @@
   .home-training-plan {
     gap: 18px;
     padding: 22px 18px;
+  }
+
+  .home-welcome {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .home-welcome-status {
+    width: 100%;
   }
 
   .agent-recommendation-card,

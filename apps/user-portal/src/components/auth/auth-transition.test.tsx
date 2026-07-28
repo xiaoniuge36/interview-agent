@@ -32,7 +32,7 @@ describe('首次登录过渡界面', () => {
     );
 
     expect(html).toContain('role="status"');
-    expect(html).toContain('OfferPilot');
+    expect(html).toContain('Interview Agent');
     expect(html).toContain('正在确认登录状态');
     expect(html).toContain('正在恢复安全会话');
     expect(html).toContain('无需重复操作，完成后自动进入');

@@ -16,6 +16,19 @@ const recommendation = {
   questionIds: ['question-1', 'question-2', 'question-3'],
 } satisfies PracticeRecommendation;
 
+const continuation = {
+  kind: 'practice',
+  id: 'practice-1',
+  title: '系统设计强化',
+  updatedAt: '2026-07-27T08:00:00.000Z',
+  href: '/practice?session=practice-1',
+  kicker: '继续上次练习',
+  detail: '进度已保留。',
+  actionLabel: '继续练习',
+  progressPercent: 40,
+  statusLabel: null,
+} as const;
+
 function renderRail(overrides: Partial<React.ComponentProps<typeof AgentRecommendationRail>> = {}) {
   return renderToStaticMarkup(
     createElement(AgentRecommendationRail, {
@@ -32,6 +45,18 @@ function renderRail(overrides: Partial<React.ComponentProps<typeof AgentRecommen
 }
 
 describe('AgentRecommendationRail', () => {
+  it('在训练计划中呈现陪练欢迎和现有续练入口', () => {
+    const markup = renderRail({
+      displayName: '林夏',
+      continuation,
+    } as unknown as Partial<React.ComponentProps<typeof AgentRecommendationRail>>);
+
+    expect(markup).toContain('欢迎回来，林夏');
+    expect(markup).toContain('陪练已就位');
+    expect(markup).toContain('href="/practice?session=practice-1"');
+    expect(markup).toContain('采用这组题开始练习');
+  });
+
   it('将推荐训练计划作为首页主操作，并保留自主组题入口', () => {
     const markup = renderRail();
 

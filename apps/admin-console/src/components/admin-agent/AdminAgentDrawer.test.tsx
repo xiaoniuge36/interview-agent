@@ -42,11 +42,12 @@ const BASE_PROPS: ComponentProps<typeof AdminAgentDrawerContent> = {
 };
 
 describe('AdminAgentDrawerContent', () => {
-  it('starts with conversation history collapsed and keeps a visible toggle', () => {
+  it('keeps conversation history fixed on the left without a visibility toggle', () => {
     const markup = renderToStaticMarkup(createElement(AdminAgentDrawerContent, BASE_PROPS));
 
-    expect(markup).toContain('aria-label="打开历史对话"');
-    expect(markup).not.toContain('class="admin-agent-conversation-sidebar"');
+    expect(markup).toContain('class="admin-agent-conversation-sidebar"');
+    expect(markup).not.toContain('打开历史对话');
+    expect(markup).not.toContain('收起历史对话');
   });
 
   it('renders an actionable localized recovery card for an aborted task', () => {

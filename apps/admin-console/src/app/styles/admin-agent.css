@@ -6,35 +6,31 @@
   height: 56px;
   align-items: center;
   justify-items: center;
-  border: 1px solid rgb(157 211 255 / 44%);
+  border: 1px solid rgb(255 255 255 / 32%);
   border-radius: 50%;
   padding: 0;
-  background:
-    radial-gradient(circle at 30% 22%, rgb(87 163 238 / 88%), transparent 34%),
-    linear-gradient(145deg, #1b5dab 0%, #0b3475 68%, #08265a 100%);
+  background: linear-gradient(145deg, #1b548e 0%, #123f73 52%, #0b2d57 100%);
   color: #ffffff;
   box-shadow:
-    0 14px 30px rgb(7 42 85 / 30%),
-    0 4px 10px rgb(7 42 85 / 15%),
-    inset 0 1px 0 rgb(255 255 255 / 25%);
+    0 12px 26px rgb(9 39 76 / 28%),
+    0 3px 8px rgb(9 39 76 / 18%),
+    inset 0 1px 0 rgb(255 255 255 / 20%);
   cursor: grab;
   isolation: isolate;
   overflow: visible;
   touch-action: none;
   user-select: none;
   transition:
-    background 160ms ease,
-    border-color 160ms ease,
     box-shadow 160ms ease,
     transform 160ms ease;
 }
 
 .admin-agent-float::before {
   position: absolute;
-  inset: 5px;
-  z-index: -1;
-  border: 1px solid rgb(220 243 255 / 23%);
-  border-radius: inherit;
+  inset: 3px;
+  z-index: 0;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 50%;
   content: '';
   pointer-events: none;
 }
@@ -44,15 +40,11 @@
 }
 
 .admin-agent-float:hover {
-  border-color: rgb(197 231 255 / 75%);
-  background:
-    radial-gradient(circle at 30% 22%, rgb(113 190 255 / 95%), transparent 34%),
-    linear-gradient(145deg, #2775cb 0%, #10458e 68%, #0b2f6b 100%);
   box-shadow:
-    0 16px 34px rgb(7 42 85 / 35%),
-    0 5px 12px rgb(7 42 85 / 16%),
-    inset 0 1px 0 rgb(255 255 255 / 32%);
-  transform: translateY(-1px);
+    0 16px 32px rgb(9 39 76 / 34%),
+    0 4px 10px rgb(9 39 76 / 20%),
+    inset 0 1px 0 rgb(255 255 255 / 24%);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .admin-agent-float:focus-visible {
@@ -61,43 +53,29 @@
 }
 
 .admin-agent-float-mark {
-  width: 31px;
-  height: 31px;
+  position: relative;
+  z-index: 1;
+  width: 34px;
+  height: 34px;
   overflow: visible;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.admin-agent-float-mark-orbit {
-  stroke: rgb(194 231 255 / 88%);
-  stroke-dasharray: 2.8 2.2;
-  stroke-width: 1.15;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition:
-    stroke 160ms ease,
-    transform 220ms ease;
+.admin-agent-float-mark-monogram,
+.admin-agent-float-mark-accent {
+  fill: none;
+  vector-effect: non-scaling-stroke;
 }
 
-.admin-agent-float:hover .admin-agent-float-mark-orbit {
+.admin-agent-float-mark-monogram {
   stroke: #ffffff;
-  transform: rotate(12deg) scale(1.04);
+  stroke-width: 2.1;
 }
 
-.admin-agent-float-mark-spark {
-  fill: #ffffff;
-  filter: drop-shadow(0 1px 2px rgb(2 27 68 / 34%));
-}
-
-.admin-agent-float-mark-core {
-  fill: #a5ddff;
-  stroke: none;
-}
-
-.admin-agent-float-mark-node {
-  fill: #ffd166;
-  stroke: #fff5d4;
-  stroke-width: 0.75;
+.admin-agent-float-mark-accent {
+  stroke: #72d4f4;
+  stroke-width: 2.2;
 }
 
 .admin-agent-float-label {
@@ -130,19 +108,20 @@
 
 .admin-agent-float-status {
   position: absolute;
+  z-index: 1;
   top: 8px;
   right: 8px;
   width: 9px;
   height: 9px;
-  border: 2px solid #123f7c;
+  border: 2px solid #ffffff;
   border-radius: 50%;
-  background: #a9b7c9;
+  background: #aebed2;
   box-shadow: 0 1px 2px rgb(2 27 68 / 22%);
 }
 
 .admin-agent-float-status.is-running {
   background: #1d9f71;
-  box-shadow: 0 0 0 3px rgb(29 159 113 / 16%);
+  box-shadow: 0 0 0 3px rgb(29 159 113 / 18%);
   animation: admin-agent-pulse 1.4s ease-in-out infinite;
 }
 
@@ -789,7 +768,7 @@
 @media (prefers-reduced-motion: reduce) {
   .admin-agent-float,
   .admin-agent-float-label,
-  .admin-agent-float-mark-orbit {
+  .admin-agent-float-mark {
     transition: none;
   }
 

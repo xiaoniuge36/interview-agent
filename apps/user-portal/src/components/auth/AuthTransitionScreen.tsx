@@ -21,12 +21,12 @@ export function AuthTransitionScreen({ stage }: { stage: AuthTransitionStage }) 
   return (
     <main className={`auth-bootstrap ${stage}`} role="status" aria-live="polite" aria-busy="true">
       <section className="auth-transition-card" aria-labelledby="auth-transition-title">
-        <div className="auth-transition-brand" aria-label="OfferPilot">
+        <div className="auth-transition-brand" aria-label="Interview Agent">
           <span className="brand-mark" aria-hidden="true">
             <span className="brand-mark-core" />
           </span>
           <span>
-            <strong>OfferPilot</strong>
+            <strong>Interview Agent</strong>
             <small>你的面试 Agent</small>
           </span>
         </div>

@@ -151,7 +151,7 @@ function EmptyConnections({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="credential-empty">
       <strong>还没有 AI 模型连接</strong>
-      <p>连接一个模型后，OfferPilot 才能基于你的档案开始真实模拟。</p>
+      <p>连接一个模型后，Interview Agent 才能基于你的档案开始真实模拟。</p>
       <button className="button secondary" type="button" onClick={onAdd}>
         连接第一个模型
       </button>

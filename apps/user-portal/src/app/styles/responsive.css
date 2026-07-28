@@ -223,12 +223,15 @@
     border: 0;
   }
   .sidebar-brand strong {
-    font-size: 21px;
+    font-size: 18px;
   }
-  .sidebar-mark,
+  .sidebar-mark {
+    width: 36px;
+    height: 36px;
+  }
   .sidebar-mark svg {
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
   }
   .sidebar-user-summary,
   .sidebar-nav {

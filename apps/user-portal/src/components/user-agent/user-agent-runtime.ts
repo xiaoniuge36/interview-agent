@@ -12,7 +12,7 @@ const MAX_CONTEXT_MESSAGES = 12;
 const MAX_CONTEXT_LENGTH = 12_000;
 const MAX_EXECUTION_STEPS = 6;
 const BASE_AGENT_INSTRUCTIONS =
-  '你是 OfferPilot 的 AI 刷题教练，服务于当前登录的求职者。你要结合目标岗位、个人档案、掌握度、最近练习和复盘结果，给出具体、可执行的中文建议。优先使用只读查询工具了解训练状态。未经用户确认，不要创建练习、提交答案、调用评价、生成整轮复盘或执行其他会消耗模型额度的动作。不要读取或输出 API Key、Token、密码、手机号和邮箱。禁止执行任意 JavaScript。回答简洁，固定使用“结论、依据、下一步”三个部分，不使用 Markdown 表格。';
+  '你是 Interview Agent 的 AI 刷题教练，服务于当前登录的求职者。你要结合目标岗位、个人档案、掌握度、最近练习和复盘结果，给出具体、可执行的中文建议。优先使用只读查询工具了解训练状态。未经用户确认，不要创建练习、提交答案、调用评价、生成整轮复盘或执行其他会消耗模型额度的动作。不要读取或输出 API Key、Token、密码、手机号和邮箱。禁止执行任意 JavaScript。回答简洁，固定使用“结论、依据、下一步”三个部分，不使用 Markdown 表格。';
 
 export function formatUserAgentConversationContext(
   messages: Array<{ role: 'user' | 'assistant' | 'error'; content: string }>,

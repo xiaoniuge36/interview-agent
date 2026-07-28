@@ -1,6 +1,5 @@
-import { HistoryOutlined, PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { Alert, Button, Empty, Space, Spin, Tag, Typography } from 'antd';
-import { useState } from 'react';
 import type { AgentStatus } from '@page-agent/core';
 import type { AdminAgentConversationSummary } from '@/lib/admin-page-agent-conversation-api';
 import type { AdminAgentRun } from '@/lib/admin-page-agent-run-api';
@@ -48,17 +47,14 @@ export type AdminAgentDrawerContentProps = {
 };
 
 export function AdminAgentDrawerContent(props: AdminAgentDrawerContentProps) {
-  const [historyOpen, setHistoryOpen] = useState(false);
   return (
     <div className="admin-agent-drawer-content" data-page-agent-not-interactive="true">
-      {historyOpen ? <ConversationHistory {...props} /> : null}
+      <ConversationHistory {...props} />
       <main className="admin-agent-chat-pane">
         <ConversationToolbar
           busy={isAgentBusy(props)}
-          historyOpen={historyOpen}
           title={activeConversationTitle(props)}
           onCreate={props.onCreateConversation}
-          onToggleHistory={() => setHistoryOpen((current) => !current)}
         />
         <AgentContextBanner {...props} />
         {props.pendingQuestion ? (
@@ -92,13 +88,7 @@ function ConversationHistory(props: AdminAgentDrawerContentProps) {
   );
 }
 
-function ConversationToolbar(props: {
-  busy: boolean;
-  historyOpen: boolean;
-  title: string;
-  onCreate: () => void;
-  onToggleHistory: () => void;
-}) {
+function ConversationToolbar(props: { busy: boolean; title: string; onCreate: () => void }) {
   return (
     <div className="admin-agent-chat-heading">
       <div>
@@ -114,15 +104,6 @@ function ConversationToolbar(props: {
           onClick={props.onCreate}
         >
           新对话
-        </Button>
-        <Button
-          aria-label={props.historyOpen ? '收起历史对话' : '打开历史对话'}
-          icon={<HistoryOutlined />}
-          size="small"
-          type={props.historyOpen ? 'default' : 'text'}
-          onClick={props.onToggleHistory}
-        >
-          历史
         </Button>
       </Space>
     </div>

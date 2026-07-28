@@ -1,7 +1,11 @@
 import type { PracticeRecommendation } from '@interview-agent/contracts';
 import Link from 'next/link';
+import { HomeWelcome } from './HomeWelcome';
+import type { TrainingContinuation } from './training-continuation';
 
 type AgentRecommendationRailProps = {
+  displayName?: string | null | undefined;
+  continuation?: TrainingContinuation | null;
   recommendations: PracticeRecommendation[];
   loading: boolean;
   error: string;
@@ -12,18 +16,11 @@ type AgentRecommendationRailProps = {
 };
 
 export function AgentRecommendationRail(props: AgentRecommendationRailProps) {
-  const { actionError } = props;
+  const { actionError, continuation, displayName } = props;
   return (
     <section className="home-training-plan" aria-labelledby="home-training-plan-heading">
       <header className="home-training-plan-header">
-        <div>
-          <span className="home-training-plan-kicker">
-            <span className="agent-status-dot" aria-hidden="true" />
-            今天的训练计划
-          </span>
-          <h2 id="home-training-plan-heading">为你整理的下一组题</h2>
-          <p>Agent 会结合你的练习反馈、目标方向和档案信息持续更新建议。</p>
-        </div>
+        <HomeWelcome displayName={displayName} continuation={continuation ?? null} />
       </header>
       <RailPrimaryContent {...props} />
       {actionError ? (
