@@ -1,0 +1,62 @@
+[
+  {
+    "id": "report-with-gap",
+    "evaluationScores": [48, 86],
+    "allowedSourceIds": ["chunk-1"],
+    "requiredWeaknesses": ["容量规划"],
+    "output": {
+      "contractVersion": "practice-report-runtime.v1",
+      "overallScore": 67,
+      "summary": "系统边界较清晰，容量规划仍需补强。",
+      "strengths": ["能够说明幂等与重试边界。"],
+      "weaknesses": ["容量规划"],
+      "nextActions": ["补充峰值容量估算案例。"],
+      "reportMarkdown": "# 系统设计练习复盘\n\n综合得分：67/100",
+      "sourceIds": ["chunk-1"],
+      "memoryEvents": [
+        { "tag": "system-design", "observedScore": 67, "evidence": "基于 2 道已验证题目评价。" }
+      ],
+      "fallbackUsed": false
+    }
+  },
+  {
+    "id": "report-deterministic-fallback",
+    "evaluationScores": [66],
+    "allowedSourceIds": [],
+    "requiredWeaknesses": ["告警闭环"],
+    "output": {
+      "contractVersion": "practice-report-runtime.v1",
+      "overallScore": 66,
+      "summary": "本轮专项练习平均得分为 66 分。",
+      "strengths": ["能够识别本轮作答中的关键能力缺口，并完成题目提交。"],
+      "weaknesses": ["告警闭环"],
+      "nextActions": ["针对告警闭环补充一个量化案例。"],
+      "reportMarkdown": "# 可观测性练习复盘\n\n综合得分：66/100",
+      "sourceIds": [],
+      "memoryEvents": [
+        { "tag": "observability", "observedScore": 66, "evidence": "基于 1 道已验证题目评价。" }
+      ],
+      "fallbackUsed": true
+    }
+  },
+  {
+    "id": "report-strong-round",
+    "evaluationScores": [86, 90],
+    "allowedSourceIds": ["chunk-2"],
+    "requiredWeaknesses": [],
+    "output": {
+      "contractVersion": "practice-report-runtime.v1",
+      "overallScore": 88,
+      "summary": "本轮回答稳定覆盖关键工程边界。",
+      "strengths": ["幂等、恢复与验证链路完整。"],
+      "weaknesses": [],
+      "nextActions": ["继续练习跨系统权衡。"],
+      "reportMarkdown": "# 工程质量练习复盘\n\n综合得分：88/100",
+      "sourceIds": ["chunk-2"],
+      "memoryEvents": [
+        { "tag": "engineering", "observedScore": 88, "evidence": "基于 2 道已验证题目评价。" }
+      ],
+      "fallbackUsed": false
+    }
+  }
+]

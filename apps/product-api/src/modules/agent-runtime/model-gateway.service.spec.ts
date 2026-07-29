@@ -50,3 +50,32 @@ describe('ModelGatewayService', () => {
     expect(result).not.toHaveProperty('apiKey');
   });
 });
+
+describe('ModelGatewayService grant scope', () => {
+  it('rejects a grant whose operation does not match the requested output schema', async () => {
+    const { service } = createService();
+    const grant = {
+      grantId: '00000000-0000-4000-8000-000000000001',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      credentialId: 'credential-1',
+      sessionId: 'practice-1',
+      commandId: 'practice-report:practice-1',
+      operation: 'practice_report' as const,
+      traceId: 'trace-0001',
+      expiresAt: '2026-07-17T08:00:30.000Z',
+    };
+
+    await expect(
+      service.invoke(grant, {
+        grant: 'signed-runtime-grant.payload-signature',
+        systemPrompt: 'system',
+        userPrompt: 'user',
+        outputSchemaVersion: 'interview-runtime.v1',
+        traceId: 'trace-0001',
+      }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'MODEL_INVOCATION_GRANT_INVALID' }),
+    });
+  });
+});

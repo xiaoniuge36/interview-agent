@@ -17,6 +17,7 @@ import type {
   InvocationPreparation,
   StartCommandRequest,
 } from './interview.types';
+import { withTraceSpan } from '../../common/telemetry/telemetry';
 
 export type InterviewCommandStream = {
   phase: (phase: AiOperationPhase) => void;
@@ -112,6 +113,21 @@ export class InterviewCommandService {
   }
 
   private async execute(
+    request: ExecuteCommandRequest,
+    stream?: InterviewCommandStream,
+  ): Promise<InterviewStreamCommandResult> {
+    return withTraceSpan(
+      'interview.command',
+      {
+        'interview_agent.trace_id': request.context.traceId,
+        'session.id': request.sessionId,
+        command: request.command,
+      },
+      () => this.executeScoped(request, stream),
+    );
+  }
+
+  private async executeScoped(
     request: ExecuteCommandRequest,
     stream?: InterviewCommandStream,
   ): Promise<InterviewStreamCommandResult> {

@@ -1,6 +1,12 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  Optional,
+} from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import type { PracticeReport } from '@interview-agent/contracts';
+import type { PracticeReport, PracticeReportRuntimeResponse } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { runSerializable } from '../../common/database/serializable-transaction';
 import { createPracticeReportData, mapReport, type SessionRecord } from './practice-mappers';
@@ -9,9 +15,14 @@ import { PracticeEvaluationInfrastructure } from './practice-evaluation-infrastr
 import { MemoryProjectionService } from '../memory/memory-projection.service';
 import { memoryEventsForPractice } from './practice-memory-events';
 import { loadPracticeSession } from './practice-records';
+import { PracticeReportPlannerService } from './practice-report-planner.service';
 
 @Injectable()
 export class PracticeCompletionService {
+  @Inject(PracticeReportPlannerService)
+  @Optional()
+  private readonly reports?: PracticeReportPlannerService;
+
   constructor(
     private readonly infrastructure: PracticeEvaluationInfrastructure,
     private readonly evaluations: PracticeEvaluationCommandService,
@@ -25,9 +36,16 @@ export class PracticeCompletionService {
       context.tenantId,
     );
     this.assertAction(context, session.userId);
+    let reportDraft: PracticeReportRuntimeResponse | undefined;
     if (!session.report) {
       assertOpenAndComplete(session, false);
       await this.evaluatePendingItems(context, session);
+      const evaluated = await loadPracticeSession(
+        this.infrastructure.prisma,
+        sessionId,
+        context.tenantId,
+      );
+      reportDraft = (await this.reports?.plan(context, evaluated)) ?? undefined;
     }
     return runSerializable(this.infrastructure.prisma, async (transaction) => {
       const current = await loadPracticeSession(transaction, sessionId, context.tenantId);
@@ -39,7 +57,7 @@ export class PracticeCompletionService {
         data: { status: 'submitted', submittedAt: new Date() },
       });
       if (claimed.count === 0) return this.completedReport(transaction, context, sessionId);
-      return this.createReport(transaction, context, current);
+      return this.createReport({ transaction, context, session: current, draft: reportDraft });
     });
   }
 
@@ -80,14 +98,16 @@ export class PracticeCompletionService {
     });
   }
 
-  private async createReport(
-    transaction: Prisma.TransactionClient,
-    context: ProductRequestContext,
-    session: SessionRecord,
-  ) {
+  private async createReport(input: {
+    transaction: Prisma.TransactionClient;
+    context: ProductRequestContext;
+    session: SessionRecord;
+    draft: PracticeReportRuntimeResponse | undefined;
+  }) {
+    const { transaction, context, session, draft } = input;
     const evaluations = session.items.map((item) => item.evaluation!);
     const report = await transaction.practiceReport.create({
-      data: createPracticeReportData(session, evaluations),
+      data: createPracticeReportData(session, evaluations, draft),
     });
     await this.memory.apply(
       transaction,

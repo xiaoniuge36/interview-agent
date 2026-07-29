@@ -9,6 +9,19 @@ const VALID_RESPONSE = {
   shouldFinish: false,
 };
 
+const VALID_REPORT_RESPONSE = {
+  contractVersion: 'practice-report-runtime.v1',
+  overallScore: 72,
+  summary: 'The round exposed one repeatable gap.',
+  strengths: ['Explains the main boundary.'],
+  weaknesses: ['Capacity planning'],
+  nextActions: ['Add a quantified capacity example.'],
+  reportMarkdown: '# Practice report',
+  sourceIds: [],
+  memoryEvents: [],
+  fallbackUsed: false,
+};
+
 function createClient(
   overrides: Partial<Environment> = {},
   userModels?: { next: jest.Mock; nextStream?: jest.Mock },
@@ -51,6 +64,30 @@ function requestInput() {
   };
 }
 
+function reportInput() {
+  return {
+    session: {
+      id: 'practice-1',
+      tenantId: 'tenant-a',
+      userId: 'user-a',
+      title: 'System design',
+    },
+    evaluations: [
+      {
+        itemId: 'item-1',
+        questionId: 'question-1',
+        questionTitle: 'Design a rate limiter',
+        questionTags: ['system-design'],
+        score: 72,
+        feedback: 'The boundary is clear.',
+        missingPoints: ['Capacity planning'],
+      },
+    ],
+    commandId: 'practice-report:practice-1',
+    traceId: 'trace-test-0001',
+  };
+}
+
 function requestContext() {
   return {
     requestId: 'request-1',
@@ -90,6 +127,25 @@ describe('AgentRuntimeClient successful responses', () => {
     expect(userModels.next).not.toHaveBeenCalled();
     expect(fetchMock.mock.calls[0]?.[1]?.body).toContain('signed-runtime-grant.payload-signature');
     expect(result.content).toBe(VALID_RESPONSE.content);
+  });
+
+  it('issues a practice-report grant and sends only the bounded report contract', async () => {
+    const grants = { issue: jest.fn().mockResolvedValue('signed-runtime-grant.payload-signature') };
+    const fetchMock = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify(VALID_REPORT_RESPONSE)));
+    const context = requestContext();
+
+    const result = await createClient({}, undefined, grants).report(reportInput(), context);
+
+    expect(grants.issue).toHaveBeenCalledWith(
+      context,
+      expect.objectContaining({ operation: 'practice_report', sessionId: 'practice-1' }),
+    );
+    const body = String(fetchMock.mock.calls[0]?.[1]?.body);
+    expect(body).not.toContain('candidate answer');
+    expect(body).toContain('practice-report-runtime.v1');
+    expect(result.overallScore).toBe(72);
   });
 });
 

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CommonModule } from '../../common/common.module';
+import { AgentRuntimeModule } from '../agent-runtime/agent-runtime.module';
 import { AiUsageModule } from '../ai-usage/ai-usage.module';
 import { ModelCredentialModule } from '../model-credential/model-credential.module';
 import { MemoryModule } from '../memory/memory.module';
@@ -10,6 +11,7 @@ import { PracticeController } from './practice.controller';
 import { PracticeQueryService } from './practice-query.service';
 import { PracticeRecommendationService } from './practice-recommendation.service';
 import { PracticeRagRecommendationService } from './practice-rag-recommendation.service';
+import { PracticeReportPlannerService } from './practice-report-planner.service';
 import { PracticeEvaluationCommandService } from './practice-evaluation-command.service';
 import { PracticeEvaluationInfrastructure } from './practice-evaluation-infrastructure';
 import { PracticeModelEvaluator } from './practice-model-evaluator';
@@ -17,7 +19,14 @@ import { PracticeService } from './practice.service';
 import { PracticeWriteService } from './practice-write.service';
 
 @Module({
-  imports: [CommonModule, AiUsageModule, ModelCredentialModule, MemoryModule, RetrievalModule],
+  imports: [
+    CommonModule,
+    AgentRuntimeModule,
+    AiUsageModule,
+    ModelCredentialModule,
+    MemoryModule,
+    RetrievalModule,
+  ],
   controllers: [PracticeController],
   providers: [
     PracticeService,
@@ -25,6 +34,7 @@ import { PracticeWriteService } from './practice-write.service';
     PracticeQueryService,
     PracticeRecommendationService,
     PracticeRagRecommendationService,
+    PracticeReportPlannerService,
     PracticeModelEvaluator,
     PracticeEvaluationInfrastructure,
     PracticeEvaluationCommandService,

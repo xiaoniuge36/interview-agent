@@ -17,6 +17,7 @@ export const AiInvocationOperationSchema = z.enum([
   'model_connection_test',
   'embedding',
   'practice_evaluation',
+  'practice_report',
   'interview_next',
   'admin_page_agent',
   'user_page_agent',

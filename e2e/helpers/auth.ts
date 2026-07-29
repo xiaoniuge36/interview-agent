@@ -7,7 +7,7 @@ export async function signInUser(page: Page, user: LocalUser): Promise<void> {
   await page.locator('#access-email').fill(user.email);
   await page.locator('#access-password').fill(user.password);
   await page.locator('.access-submit').click();
-  await expect(page).toHaveURL(/\/home/);
+  await expect(page).toHaveURL(/\/home/, { timeout: 15_000 });
 }
 
 export async function signInAdmin(page: Page, user: LocalUser): Promise<void> {

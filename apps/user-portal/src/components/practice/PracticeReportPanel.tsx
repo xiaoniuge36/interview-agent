@@ -1,4 +1,5 @@
 import type { MasteryProfile, PracticeReport } from '@interview-agent/contracts';
+import { ReportEvidence } from './ReportEvidence';
 
 type PracticeReportPanelProps = { report: PracticeReport; mastery: MasteryProfile[] };
 
@@ -17,6 +18,7 @@ export function PracticeReportPanel({ report, mastery }: PracticeReportPanelProp
           </div>
         </div>
         <p className="practice-report-summary">{report.summary}</p>
+        <ReportEvidence evidence={report.evidence} />
         <div className="practice-report-lists">
           <ResultList title="表现亮点" items={report.strengths} tone="positive" />
           <ResultList title="需要加强" items={report.weaknesses} tone="attention" />

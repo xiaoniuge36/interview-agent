@@ -47,6 +47,7 @@ describe('ModelInvocationGrantService', () => {
     const token = await service.issue(context, {
       sessionId: 'session-1',
       commandId: 'command-1',
+      operation: 'interview_next',
       traceId: 'trace-test-0001',
     });
 
@@ -76,6 +77,7 @@ describe('ModelInvocationGrantService verification', () => {
     const token = await service.issue(context, {
       sessionId: 'session-1',
       commandId: 'command-1',
+      operation: 'interview_next',
       traceId: 'trace-test-0001',
     });
 
@@ -91,6 +93,7 @@ describe('ModelInvocationGrantService verification', () => {
     const token = await service.issue(context, {
       sessionId: 'session-1',
       commandId: 'command-1',
+      operation: 'interview_next',
       traceId: 'trace-test-0001',
     });
     jest.setSystemTime(new Date('2026-07-17T08:01:00.000Z'));

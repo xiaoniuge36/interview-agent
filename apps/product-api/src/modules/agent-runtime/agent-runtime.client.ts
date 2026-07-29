@@ -3,10 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import {
   AgentRuntimeNextRequestSchema,
   type AgentRuntimeNextRequest,
+  PracticeReportRuntimeRequestSchema,
+  PracticeReportRuntimeResponseSchema,
+  type PracticeReportRuntimeRequest,
+  type PracticeReportRuntimeResponse,
 } from '@interview-agent/contracts';
 import { performance } from 'node:perf_hooks';
 import type { Environment } from '../../common/config/environment';
 import type { ProductRequestContext } from '../../common/context/request-context';
+import { withTraceSpan } from '../../common/telemetry/telemetry';
 import { invocationError, localFallback, runtimeResult } from './agent-runtime.fallback';
 import { httpFailure, parseRuntimeDecision, unavailableFailure } from './agent-runtime.response';
 import type {
@@ -22,6 +27,11 @@ import { UserModelRuntimeClient } from './user-model-runtime.client';
 const CONTRACT_VERSION = 'interview-runtime.v1' as const;
 const MAX_RETRY_DELAY_MS = 5_000;
 const RETRY_MULTIPLIER = 2;
+
+export type AgentPracticeReportInput = Omit<
+  PracticeReportRuntimeRequest,
+  'contractVersion' | 'modelInvocationGrant'
+>;
 
 export * from './agent-runtime.types';
 
@@ -62,6 +72,7 @@ export class AgentRuntimeClient {
         ? await this.grants.issue(context, {
             sessionId: input.session.id,
             commandId: input.commandId,
+            operation: 'interview_next',
             traceId: input.traceId,
           })
         : undefined;
@@ -88,6 +99,56 @@ export class AgentRuntimeClient {
     });
   }
 
+  async report(
+    input: AgentPracticeReportInput,
+    context: ProductRequestContext,
+  ): Promise<PracticeReportRuntimeResponse> {
+    if (!this.grants) throw reportUnavailable();
+    const modelInvocationGrant = await this.grants.issue(context, {
+      sessionId: input.session.id,
+      commandId: input.commandId,
+      operation: 'practice_report',
+      traceId: input.traceId,
+    });
+    const request = PracticeReportRuntimeRequestSchema.parse({
+      contractVersion: 'practice-report-runtime.v1',
+      ...input,
+      modelInvocationGrant,
+    });
+    return withTraceSpan(
+      'agent_runtime.practice_report',
+      {
+        'interview_agent.trace_id': context.traceId,
+        'session.id': input.session.id,
+        operation: 'practice_report',
+      },
+      () => this.invokePracticeReport(request, context.traceId),
+    );
+  }
+
+  private async invokePracticeReport(
+    request: PracticeReportRuntimeRequest,
+    traceId: string,
+  ): Promise<PracticeReportRuntimeResponse> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const response = await fetch(`${this.baseUrl}/practice/report`, {
+        method: 'POST',
+        headers: this.headers(traceId),
+        body: JSON.stringify(request),
+        signal: controller.signal,
+        redirect: 'error',
+      });
+      if (!response.ok) throw reportUnavailable();
+      return PracticeReportRuntimeResponseSchema.parse(await response.json());
+    } catch {
+      throw reportUnavailable();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   private async invokeWithRetries(
     request: AgentRuntimeNextRequest,
     traceId: string,
@@ -104,6 +165,21 @@ export class AgentRuntimeClient {
   }
 
   private async invoke(
+    request: AgentRuntimeNextRequest,
+    traceId: string,
+  ): Promise<RuntimeInvocationOutcome> {
+    return withTraceSpan(
+      'agent_runtime.interview_next',
+      {
+        'interview_agent.trace_id': traceId,
+        'session.id': request.session.id,
+        operation: 'interview_next',
+      },
+      () => this.invokeRequest(request, traceId),
+    );
+  }
+
+  private async invokeRequest(
     request: AgentRuntimeNextRequest,
     traceId: string,
   ): Promise<RuntimeInvocationOutcome> {
@@ -176,4 +252,8 @@ export class AgentRuntimeClient {
 
 function elapsed(startedAt: number) {
   return Math.max(0, Math.round(performance.now() - startedAt));
+}
+
+function reportUnavailable() {
+  return new Error('PRACTICE_REPORT_RUNTIME_UNAVAILABLE');
 }

@@ -18,6 +18,11 @@ export function runCommand(command, args, options = {}) {
   });
 }
 
+export function playwrightArguments(arguments_) {
+  const forwarded = arguments_[0] === '--' ? arguments_.slice(1) : arguments_;
+  return ['exec', 'playwright', 'test', ...forwarded];
+}
+
 export function startService(service, options = {}) {
   const invocation = commandInvocation(service.command, service.args);
   const child = spawn(

@@ -1,5 +1,6 @@
 import pytest
 from app.schemas.interview import NextInterviewRequest, NextInterviewResponse
+from app.schemas.practice_report import PracticeReportRequest, PracticeReportResponse
 from pydantic import ValidationError
 
 
@@ -56,3 +57,54 @@ def test_rejects_blank_optional_answer() -> None:
 
     with pytest.raises(ValidationError):
         NextInterviewRequest.model_validate(request)
+
+
+def test_practice_report_contract_uses_verified_evaluations_without_answers() -> None:
+    request = PracticeReportRequest.model_validate(valid_practice_report_request())
+    response = PracticeReportResponse.model_validate(
+        {
+            "overallScore": 72,
+            "summary": "The round exposed one repeatable gap.",
+            "strengths": ["Explains the main boundary."],
+            "weaknesses": ["Capacity planning"],
+            "nextActions": ["Add a quantified capacity example."],
+            "reportMarkdown": "# Practice report",
+            "sourceIds": ["chunk-1"],
+            "memoryEvents": [
+                {"tag": "system-design", "observedScore": 72, "evidence": "Evaluation score."}
+            ],
+            "fallbackUsed": False,
+        }
+    )
+
+    assert request.trace_id == "trace-practice-report-0001"
+    assert "answer" not in request.evaluations[0].model_fields_set
+    assert response.source_ids == ["chunk-1"]
+
+
+def valid_practice_report_request() -> dict[str, object]:
+    return {
+        "contractVersion": "practice-report-runtime.v1",
+        "session": {
+            "id": "session-1",
+            "tenantId": "tenant-1",
+            "userId": "user-1",
+            "title": "System design",
+        },
+        "evaluations": [
+            {
+                "itemId": "item-1",
+                "questionId": "question-1",
+                "questionTitle": "Design a rate limiter",
+                "questionTags": ["system-design"],
+                "score": 72,
+                "feedback": "The boundary is clear.",
+                "missingPoints": ["Capacity planning"],
+            }
+        ],
+        "retrievalContext": [
+            {"sourceId": "chunk-1", "entityType": "knowledge", "content": "Reference."}
+        ],
+        "commandId": "practice-report:session-1",
+        "traceId": "trace-practice-report-0001",
+    }

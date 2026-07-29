@@ -7,6 +7,7 @@ import {
 } from '@interview-agent/contracts';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
+import { withTraceSpan } from '../../common/telemetry/telemetry';
 import { EmbeddingClient } from './embedding-client';
 import { mergeRankedHits, type RankedRetrievalHit } from './retrieval-ranking';
 import { RetrievalRepository } from './retrieval-repository';
@@ -57,6 +58,21 @@ export class RetrievalService {
   ) {}
 
   async search(context: ProductRequestContext, query: RetrievalQuery): Promise<RetrievalResponse> {
+    return withTraceSpan(
+      'retrieval.search',
+      {
+        'interview_agent.trace_id': context.traceId,
+        'retrieval.purpose': query.purpose,
+        'retrieval.limit': query.limit,
+      },
+      () => this.searchScoped(context, query),
+    );
+  }
+
+  private async searchScoped(
+    context: ProductRequestContext,
+    query: RetrievalQuery,
+  ): Promise<RetrievalResponse> {
     this.policy.assert(context.actor, ACTION_BY_PURPOSE[query.purpose], {
       tenantId: context.tenantId,
       ownerId: context.actor.id,

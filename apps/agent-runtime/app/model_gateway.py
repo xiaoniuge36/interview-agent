@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app.telemetry import start_span
+
 DEFAULT_GATEWAY_TIMEOUT_SECONDS = 35.0
 HTTP_TOO_MANY_REQUESTS = 429
 HTTP_SERVER_ERROR = 500
@@ -27,6 +29,7 @@ class ModelGatewayRequest:
     system_prompt: str
     user_prompt: str
     trace_id: str
+    output_schema_version: str = "interview-runtime.v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +39,16 @@ class ModelGatewayClient:
     timeout_seconds: float = DEFAULT_GATEWAY_TIMEOUT_SECONDS
 
     async def complete(self, request: ModelGatewayRequest) -> str:
+        with start_span(
+            "model_provider",
+            {
+                "interview_agent.trace_id": request.trace_id,
+                "output.schema_version": request.output_schema_version,
+            },
+        ):
+            return await self._complete(request)
+
+    async def _complete(self, request: ModelGatewayRequest) -> str:
         if self.url is None:
             raise ModelGatewayError("MODEL_GATEWAY_NOT_CONFIGURED", retryable=False)
         try:
@@ -47,7 +60,7 @@ class ModelGatewayClient:
                         "grant": request.grant,
                         "systemPrompt": request.system_prompt,
                         "userPrompt": request.user_prompt,
-                        "outputSchemaVersion": "interview-runtime.v1",
+                        "outputSchemaVersion": request.output_schema_version,
                         "traceId": request.trace_id,
                     },
                 )

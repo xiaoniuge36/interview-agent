@@ -68,8 +68,8 @@ def create_interview_graph(
     ] = StateGraph(InterviewGraphState, context_schema=InterviewGraphContext)
     graph.add_node(
         "prepare_context",
-        prepare_context,
-    )  # type: ignore[call-overload]
+        prepare_context,  # type: ignore[arg-type]
+    )
     graph.add_node(
         "generate_decision",
         generate_decision_node(gateway),

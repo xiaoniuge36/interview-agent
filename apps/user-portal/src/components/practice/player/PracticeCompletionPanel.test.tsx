@@ -22,6 +22,7 @@ const report = {
   weaknesses: ['异常恢复'],
   nextActions: [],
   reportMarkdown: '# 报告',
+  evidence: [{ sourceId: 'chunk-1' }],
   itemEvaluations: [],
   createdAt: '2026-07-21T00:00:00.000Z',
   updatedAt: '2026-07-21T00:00:00.000Z',
@@ -88,6 +89,8 @@ describe('PracticeCompletionPanel', () => {
     expect(markup).toContain('能力画像已更新');
     expect(markup).toContain('用模拟面试检验本轮提升');
     expect(markup).toContain('href="/interview"');
+    expect(markup).toContain('查看本轮参考来源（1）');
+    expect(markup).toContain('报告事实仍以本轮已验证评价为准');
   });
 });
 

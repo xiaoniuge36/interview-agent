@@ -43,6 +43,32 @@ def payload() -> dict[str, object]:
     }
 
 
+def report_payload() -> dict[str, object]:
+    return {
+        "contractVersion": "practice-report-runtime.v1",
+        "session": {
+            "id": "practice-1",
+            "tenantId": "personal",
+            "userId": "demo-user",
+            "title": "System design",
+        },
+        "evaluations": [
+            {
+                "itemId": "item-1",
+                "questionId": "question-1",
+                "questionTitle": "Design a rate limiter",
+                "questionTags": ["system-design"],
+                "score": 72,
+                "feedback": "The boundary is clear.",
+                "missingPoints": ["Capacity planning"],
+            }
+        ],
+        "commandId": "practice-report:practice-1",
+        "traceId": "trace-test-0001",
+        "modelInvocationGrant": "signed-runtime-grant.payload-signature",
+    }
+
+
 def test_rejects_external_request(client: TestClient) -> None:
     response = client.post("/interviews/next", json=payload())
 
@@ -73,6 +99,17 @@ def test_returns_versioned_structured_decision(client: TestClient) -> None:
     assert response.json()["shouldFinish"] is False
     assert "后端开发工程师" in content
     assert "系统边界" in content
+
+
+def test_practice_report_endpoint_returns_deterministic_fallback_without_provider(
+    client: TestClient,
+) -> None:
+    response = client.post("/practice/report", json=report_payload(), headers=AUTH_HEADERS)
+
+    assert response.status_code == 200
+    assert response.json()["contractVersion"] == "practice-report-runtime.v1"
+    assert response.json()["overallScore"] == 72
+    assert response.json()["fallbackUsed"] is True
 
 
 @pytest.mark.parametrize(

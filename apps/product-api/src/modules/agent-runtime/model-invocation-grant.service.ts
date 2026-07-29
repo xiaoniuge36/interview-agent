@@ -9,6 +9,7 @@ import { ModelCredentialResolver } from '../model-credential/model-credential-re
 
 const GRANT_TTL_MS = 30_000;
 const EXPECTED_TOKEN_PARTS = 2;
+const ModelInvocationGrantOperationSchema = z.enum(['interview_next', 'practice_report']);
 
 const ModelInvocationGrantPayloadSchema = z.object({
   grantId: z.string().uuid(),
@@ -17,7 +18,7 @@ const ModelInvocationGrantPayloadSchema = z.object({
   credentialId: z.string().min(1),
   sessionId: z.string().min(1),
   commandId: z.string().min(1),
-  operation: z.literal('interview_next'),
+  operation: ModelInvocationGrantOperationSchema,
   traceId: z.string().min(CONTRACT_LIMITS.traceIdMinLength).max(CONTRACT_LIMITS.traceIdMaxLength),
   expiresAt: z.string().datetime(),
 });
@@ -37,7 +38,12 @@ export class ModelInvocationGrantService {
 
   async issue(
     context: ProductRequestContext,
-    input: { sessionId: string; commandId: string; traceId: string },
+    input: {
+      sessionId: string;
+      commandId: string;
+      operation: z.infer<typeof ModelInvocationGrantOperationSchema>;
+      traceId: string;
+    },
   ): Promise<string> {
     const credential = await this.credentials.resolveDefaultMetadata(context);
     if (!credential) throw connectionRequired();
@@ -48,7 +54,7 @@ export class ModelInvocationGrantService {
       credentialId: credential.id,
       sessionId: input.sessionId,
       commandId: input.commandId,
-      operation: 'interview_next',
+      operation: input.operation,
       traceId: input.traceId,
       expiresAt: new Date(Date.now() + GRANT_TTL_MS).toISOString(),
     });

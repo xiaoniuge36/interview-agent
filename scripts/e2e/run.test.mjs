@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { playwrightArguments } from './child-process.mjs';
 import { createE2eEnvironment } from './environment.mjs';
 import { serviceCommands } from './run.mjs';
 
@@ -40,4 +41,14 @@ test('uses only loopback database and Redis endpoints for E2E services', () => {
   assert.match(isolated.DATABASE_URL, /@127\.0\.0\.1:55432\//);
   assert.match(isolated.REDIS_URL, /^redis:\/\/127\.0\.0\.1:56379$/);
   assert.equal(isolated.REDIS_REQUIRED, 'true');
+});
+
+test('forwards package script arguments to Playwright', () => {
+  assert.deepEqual(playwrightArguments(['--', '--grep', 'practice']), [
+    'exec',
+    'playwright',
+    'test',
+    '--grep',
+    'practice',
+  ]);
 });

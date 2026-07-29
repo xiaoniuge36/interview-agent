@@ -131,6 +131,11 @@ export const PracticeReportSchema = z.object({
   weaknesses: z.array(z.string().max(CONTRACT_LIMITS.mediumText)).max(CONTRACT_LIMITS.list),
   nextActions: z.array(z.string().max(CONTRACT_LIMITS.mediumText)).max(CONTRACT_LIMITS.list),
   reportMarkdown: z.string().min(1).max(CONTRACT_LIMITS.longText),
+  evidence: z
+    .array(z.object({ sourceId: z.string().min(1).max(CONTRACT_LIMITS.shortText) }))
+    .max(6)
+    .optional(),
+  fallbackUsed: z.boolean().optional(),
   itemEvaluations: z.array(PracticeEvaluationSchema).max(MAX_PRACTICE_QUESTIONS),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

@@ -7,6 +7,8 @@ import {
   CreatePracticeSessionSchema,
   CreateLocalAdminInputSchema,
   PlatformDashboardSchema,
+  PracticeReportRuntimeRequestSchema,
+  PracticeReportRuntimeResponseSchema,
   PracticeHistoryListSchema,
   QuestionSchema,
   RoleSchema,
@@ -77,6 +79,45 @@ test('runtime requests carry bounded read-only retrieval context and cited sourc
   assert.equal(parsed.retrievalContext?.[0]?.sourceId, 'retrieval-chunk-1');
   assert.deepEqual(response.sourceIds, ['retrieval-chunk-1']);
 });
+
+test('practice report runtime accepts only verified evaluation facts and bounded sources', () => {
+  const request = PracticeReportRuntimeRequestSchema.parse(validPracticeReportRuntimeRequest);
+  const response = PracticeReportRuntimeResponseSchema.parse({
+    contractVersion: 'practice-report-runtime.v1',
+    overallScore: 72,
+    summary: 'The round exposed one repeatable gap.',
+    strengths: ['Explains the main boundary.'],
+    weaknesses: ['Capacity planning'],
+    nextActions: ['Add a quantified capacity example.'],
+    reportMarkdown: '# Practice report',
+    sourceIds: ['chunk-1'],
+    memoryEvents: [{ tag: 'system-design', observedScore: 72, evidence: 'Evaluation score.' }],
+    fallbackUsed: false,
+  });
+
+  assert.equal(request.traceId, 'trace-practice-report-0001');
+  assert.equal('answer' in request.evaluations[0]!, false);
+  assert.deepEqual(response.sourceIds, ['chunk-1']);
+});
+
+const validPracticeReportRuntimeRequest = {
+  contractVersion: 'practice-report-runtime.v1',
+  session: { id: 'session-1', tenantId: 'tenant-1', userId: 'user-1', title: 'System design' },
+  evaluations: [
+    {
+      itemId: 'item-1',
+      questionId: 'question-1',
+      questionTitle: 'Design a rate limiter',
+      questionTags: ['system-design'],
+      score: 72,
+      feedback: 'The boundary is clear.',
+      missingPoints: ['Capacity planning'],
+    },
+  ],
+  retrievalContext: [{ sourceId: 'chunk-1', entityType: 'knowledge', content: 'Reference.' }],
+  commandId: 'practice-report:session-1',
+  traceId: 'trace-practice-report-0001',
+};
 
 test('answer input trims content and rejects blank answers', () => {
   const parsed = SubmitInterviewAnswerInputSchema.parse({

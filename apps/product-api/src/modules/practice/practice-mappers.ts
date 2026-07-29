@@ -14,6 +14,7 @@ import {
   type CreatePracticeSession,
   type MasteryProfile,
   type PracticeReport,
+  type PracticeReportRuntimeResponse,
   type PracticeHistoryItem,
   type PracticeSession,
 } from '@interview-agent/contracts';
@@ -23,6 +24,7 @@ import { visiblePracticeTags } from './practice-question-categories';
 
 const PERCENT_SCALE = CONTRACT_LIMITS.percentage;
 const MAX_REPORTED_WEAKNESSES = 5;
+const MAX_REPORT_EVIDENCE = 6;
 
 export const SESSION_INCLUDE = {
   items: { orderBy: { sequence: 'asc' }, include: { question: true, evaluation: true } },
@@ -128,12 +130,59 @@ export function mapEvaluation(record: EvaluationRecord) {
 export function createPracticeReportData(
   session: SessionRecord,
   evaluations: EvaluationRecord[],
+  runtime?: PracticeReportRuntimeResponse,
 ): Prisma.PracticeReportCreateInput {
   const overallScore = average(evaluations.map((evaluation) => evaluation.score));
   const weaknesses = unique(evaluations.flatMap((evaluation) => evaluation.missingPoints)).slice(
     0,
     MAX_REPORTED_WEAKNESSES,
   );
+  const generated = runtime ?? deterministicReportFields(session, overallScore, weaknesses);
+  return {
+    tenant: { connect: { id: session.tenantId } },
+    session: {
+      connect: {
+        tenantId_id: { tenantId: session.tenantId, id: session.id },
+      },
+    },
+    overallScore,
+    summary: generated.summary,
+    strengths: generated.strengths,
+    weaknesses: generated.weaknesses,
+    nextActions: generated.nextActions,
+    reportMarkdown: generated.reportMarkdown,
+    structuredData: jsonValue({
+      evaluatorMode: 'user_model',
+      evaluations,
+      runtime: runtime
+        ? { sourceIds: runtime.sourceIds, fallbackUsed: runtime.fallbackUsed }
+        : { sourceIds: [], fallbackUsed: true },
+    }),
+  };
+}
+
+export function mapReport(
+  report: PrismaPracticeReport,
+  items: Array<{ evaluation: EvaluationRecord | null }>,
+): PracticeReport {
+  const runtime = runtimeReportMetadata(report.structuredData);
+  return PracticeReportSchema.parse({
+    ...report,
+    itemEvaluations: items.flatMap((item) =>
+      item.evaluation ? [mapEvaluation(item.evaluation)] : [],
+    ),
+    evidence: runtime.sourceIds.map((sourceId) => ({ sourceId })),
+    fallbackUsed: runtime.fallbackUsed,
+    createdAt: report.createdAt.toISOString(),
+    updatedAt: report.updatedAt.toISOString(),
+  });
+}
+
+function deterministicReportFields(
+  session: SessionRecord,
+  overallScore: number,
+  weaknesses: string[],
+) {
   const strengths = weaknesses.length
     ? ['能够准确识别当前作答中的关键能力缺口，并完成题目提交。']
     : ['回答覆盖了本轮题目的关键能力点，结构与表达较为完整。'];
@@ -143,13 +192,6 @@ export function createPracticeReportData(
       )
     : ['继续使用真实项目案例练习，强化量化结果与岗位相关性。'];
   return {
-    tenant: { connect: { id: session.tenantId } },
-    session: {
-      connect: {
-        tenantId_id: { tenantId: session.tenantId, id: session.id },
-      },
-    },
-    overallScore,
     summary: `本轮专项练习平均得分为 ${overallScore.toFixed(0)} 分。`,
     strengths,
     weaknesses,
@@ -161,22 +203,25 @@ export function createPracticeReportData(
       weaknesses,
       nextActions,
     }),
-    structuredData: jsonValue({ evaluatorMode: 'user_model', evaluations }),
   };
 }
 
-export function mapReport(
-  report: PrismaPracticeReport,
-  items: Array<{ evaluation: EvaluationRecord | null }>,
-): PracticeReport {
-  return PracticeReportSchema.parse({
-    ...report,
-    itemEvaluations: items.flatMap((item) =>
-      item.evaluation ? [mapEvaluation(item.evaluation)] : [],
-    ),
-    createdAt: report.createdAt.toISOString(),
-    updatedAt: report.updatedAt.toISOString(),
-  });
+function runtimeReportMetadata(value: Prisma.JsonValue) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return { sourceIds: [] as string[], fallbackUsed: true };
+  }
+  const runtime = value.runtime;
+  if (typeof runtime !== 'object' || runtime === null || Array.isArray(runtime)) {
+    return { sourceIds: [] as string[], fallbackUsed: true };
+  }
+  return {
+    sourceIds: Array.isArray(runtime.sourceIds)
+      ? runtime.sourceIds
+          .filter((item): item is string => typeof item === 'string')
+          .slice(0, MAX_REPORT_EVIDENCE)
+      : [],
+    fallbackUsed: typeof runtime.fallbackUsed === 'boolean' ? runtime.fallbackUsed : true,
+  };
 }
 
 export function mapMastery(record: PrismaMasteryProfile): MasteryProfile {

@@ -17,12 +17,11 @@ test('keeps an authenticated user in the real practice to report loop', async ({
   await page.goto(`/practice?session=${session.id}`);
   await expect(page.locator('.practice-player-page')).toBeVisible();
 
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.locator('.practice-ai-ready button').click();
+  await requestAiEvaluation(page);
   await expect(page.locator('.practice-evaluation-result')).toContainText('异常处理');
 
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('button', { name: '生成 AI 复盘' }).click();
+  await page.locator('.practice-round-completion-step button:not(.secondary)').click();
+  await confirmAiOperation(page);
   await expect(page.locator('.practice-completion-page')).toBeVisible();
   await expect(page.getByText('逐题回顾', { exact: true })).toBeVisible();
   const evaluations = page.locator('.practice-report-evaluation');
@@ -43,10 +42,10 @@ test('shows a traditional error and keeps saved answers when the model is invali
 
   await signInUser(page, user);
   await page.goto(`/practice?session=${session.id}`);
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.locator('.practice-ai-ready button').click();
+  await requestAiEvaluation(page);
 
   await expect(page.locator('.practice-coach-issue[role=alert]')).toBeVisible();
+  await page.locator('.practice-feedback-header > button').click();
   await expect(page.locator('.practice-answer-editor textarea')).toHaveValue(
     '我会说明背景、决策、结果和复盘。',
   );
@@ -93,4 +92,16 @@ test('keeps a model-backed coach conversation after the user refreshes the page'
 async function openCoach(page: Page) {
   await page.getByRole('button', { name: '打开 AI 刷题教练' }).click();
   await expect(page.getByRole('dialog', { name: 'AI 刷题教练' })).toBeVisible();
+}
+
+async function requestAiEvaluation(page: Page) {
+  await page.locator('.practice-feedback-launcher button').click();
+  await page.locator('.practice-ai-ready button').click();
+  await confirmAiOperation(page);
+}
+
+async function confirmAiOperation(page: Page) {
+  const dialog = page.locator('.practice-ai-confirmation-dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.locator('footer button:not(.secondary)').click();
 }

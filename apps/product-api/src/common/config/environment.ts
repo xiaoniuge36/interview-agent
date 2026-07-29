@@ -103,6 +103,7 @@ const EnvironmentSchema = z
     INTERNAL_AGENT_TOKEN: z.string().min(MIN_INTERNAL_TOKEN_LENGTH),
     CREDENTIAL_ENCRYPTION_KEY: z.string().min(1),
     CREDENTIAL_ENCRYPTION_KEY_VERSION: z.coerce.number().int().min(1).default(1),
+    OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
   })
   .superRefine((environment, context) => {
     validateAuthentication(environment, context);
