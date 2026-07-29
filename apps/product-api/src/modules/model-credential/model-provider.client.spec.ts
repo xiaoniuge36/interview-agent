@@ -51,6 +51,18 @@ describe('ModelProviderClient streaming text', () => {
 
     expect(values).toEqual(['评价']);
   });
+
+  it('applies server-owned output and timeout limits to provider requests', async () => {
+    global.fetch = jest.fn().mockResolvedValue(sseResponse(['data: [DONE]\n\n']));
+
+    await collect(
+      new ModelProviderClient().stream({ ...input, maxOutputTokens: 1_400, timeoutMs: 12_000 }),
+    );
+
+    const request = (global.fetch as jest.Mock).mock.calls[0][1];
+    expect(JSON.parse(String(request.body))).toMatchObject({ max_tokens: 1_400 });
+    expect(request.signal).toBeInstanceOf(AbortSignal);
+  });
 });
 
 describe('ModelProviderClient streaming usage', () => {
@@ -109,6 +121,16 @@ describe('ModelProviderClient streaming errors', () => {
       expect.objectContaining({ code: 'MODEL_PROVIDER_RESPONSE_INVALID' }),
     );
   });
+
+  it('maps a provider timeout to the stable circuit-breaker error code', async () => {
+    const timeout = new Error('request timed out');
+    timeout.name = 'TimeoutError';
+    global.fetch = jest.fn().mockRejectedValue(timeout);
+
+    await expect(collect(new ModelProviderClient().stream(input))).rejects.toEqual(
+      expect.objectContaining({ code: 'MODEL_PROVIDER_TIMEOUT' }),
+    );
+  });
 });
 
 describe('ModelProviderClient compatible invocations', () => {
@@ -153,7 +175,9 @@ describe('ModelProviderClient compatible invocations', () => {
       compatibleInput().requestBody,
     );
   });
+});
 
+describe('ModelProviderClient compatible invocation errors', () => {
   it('rejects malformed compatible responses', async () => {
     global.fetch = jest.fn().mockResolvedValue(Response.json({ result: 'not-a-completion' }));
 
@@ -166,6 +190,14 @@ describe('ModelProviderClient compatible invocations', () => {
         requestBody: { model: 'gpt-test', messages: [], tools: [] },
       }),
     ).rejects.toEqual(expect.objectContaining({ code: 'MODEL_PROVIDER_RESPONSE_INVALID' }));
+  });
+
+  it('maps compatible endpoint network failures to a stable unavailable code', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new TypeError('network failed'));
+
+    await expect(new ModelProviderClient().invokeCompatible(compatibleInput())).rejects.toEqual(
+      expect.objectContaining({ code: 'MODEL_PROVIDER_UNAVAILABLE' }),
+    );
   });
 });
 

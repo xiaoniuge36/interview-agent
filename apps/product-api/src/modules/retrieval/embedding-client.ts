@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AiInvocationService } from '../ai-usage/ai-invocation.service';
+import { modelRequestLimits } from '../ai-usage/ai-budget-policy';
 import { ModelCredentialResolver } from '../model-credential/model-credential-resolver';
 import { ModelProviderClient } from '../model-credential/model-provider.client';
 
@@ -30,8 +31,10 @@ export class EmbeddingClient {
         provider: credential.provider,
         model: credential.model,
         traceId: input.traceId,
+        inputCharacters: input.text.length,
       },
-      () => this.provider.embed(credential, [input.text]),
+      (_onUsage, budget) =>
+        this.provider.embed({ ...credential, ...modelRequestLimits(budget) }, [input.text]),
     );
     return vectors[0] ?? null;
   }

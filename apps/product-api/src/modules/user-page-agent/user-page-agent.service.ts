@@ -1,6 +1,7 @@
 import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { AiInvocationService } from '../ai-usage/ai-invocation.service';
+import { modelRequestLimits } from '../ai-usage/ai-budget-policy';
 import { ModelCredentialService } from '../model-credential/model-credential.service';
 import { ModelProviderClient, ModelProviderError } from '../model-credential/model-provider.client';
 import {
@@ -48,18 +49,20 @@ export class UserPageAgentService {
           provider: credential.provider,
           model: credential.model,
           traceId: context.traceId,
+          inputCharacters: JSON.stringify(request).length,
         },
-        (onUsage) =>
+        (onUsage, budget) =>
           this.provider.invokeCompatible(
             {
               ...credential,
               requestBody: sanitizedUserPageAgentBody(request, credential.model),
+              ...modelRequestLimits(budget),
             },
             onUsage,
           ),
       );
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
+      if (error instanceof BadRequestException || error instanceof BadGatewayException) throw error;
       const code = error instanceof ModelProviderError ? error.code : 'MODEL_PROVIDER_UNAVAILABLE';
       throw new BadGatewayException({
         code,

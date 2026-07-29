@@ -5,6 +5,10 @@ import {
   providerStreamEvents,
   type ModelTokenUsage,
 } from './model-provider-stream';
+import { ModelProviderError, providerFetch, requestSignal } from './model-provider-request';
+import { compatibleUsageFromResponse } from './model-provider-usage';
+
+export { ModelProviderError } from './model-provider-request';
 
 export type ModelConnection = {
   provider: ModelProvider;
@@ -14,16 +18,23 @@ export type ModelConnection = {
   onUsage?: (usage: ModelTokenUsage) => void;
 };
 
-export type ModelCompletionRequest = ModelConnection & {
-  systemPrompt: string;
-  userPrompt: string;
-  signal?: AbortSignal;
-  onUsage?: (usage: ModelTokenUsage) => void;
+export type ModelRequestLimits = {
+  maxOutputTokens?: number;
+  timeoutMs?: number;
 };
 
-export type CompatibleModelInvocationRequest = ModelConnection & {
-  requestBody: Record<string, unknown>;
-};
+export type ModelCompletionRequest = ModelConnection &
+  ModelRequestLimits & {
+    systemPrompt: string;
+    userPrompt: string;
+    signal?: AbortSignal;
+    onUsage?: (usage: ModelTokenUsage) => void;
+  };
+
+export type CompatibleModelInvocationRequest = ModelConnection &
+  ModelRequestLimits & {
+    requestBody: Record<string, unknown>;
+  };
 
 const DEFAULT_BASE_URLS: Record<Exclude<ModelProvider, 'openai_compatible'>, string> = {
   openai: 'https://api.openai.com/v1',
@@ -35,7 +46,7 @@ const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
 const HTTP_TOO_MANY_REQUESTS = 429;
 const HTTP_SERVER_ERROR = 500;
-const MODEL_REQUEST_TIMEOUT_MS = 30_000;
+const DEFAULT_MAX_OUTPUT_TOKENS = 700;
 const BYTES_PER_KILOBYTE = 1024;
 const MAX_COMPATIBLE_RESPONSE_BYTES = 2 * BYTES_PER_KILOBYTE * BYTES_PER_KILOBYTE;
 const EMBEDDING_DIMENSIONS = 1536;
@@ -62,7 +73,7 @@ export class ModelProviderClient {
     }
   }
 
-  async testConnection(input: ModelConnection): Promise<void> {
+  async testConnection(input: ModelConnection & ModelRequestLimits): Promise<void> {
     await this.complete({
       ...input,
       systemPrompt: 'Respond with a compact JSON object only.',
@@ -70,7 +81,7 @@ export class ModelProviderClient {
     });
   }
 
-  async embed(input: ModelConnection, texts: string[]): Promise<number[][]> {
+  async embed(input: ModelConnection & ModelRequestLimits, texts: string[]): Promise<number[][]> {
     if (input.provider === 'anthropic') {
       throw new ModelProviderError('MODEL_PROVIDER_REQUEST_REJECTED');
     }
@@ -87,13 +98,19 @@ export class ModelProviderClient {
     if (input.provider === 'anthropic') {
       throw new ModelProviderError('MODEL_PROVIDER_REQUEST_REJECTED');
     }
-    const response = await fetch(`${baseUrlFor(input).replace(/\/$/, '')}/chat/completions`, {
-      method: 'POST',
-      redirect: 'error',
-      headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(input.requestBody),
-      signal: requestSignal(undefined),
-    });
+    const response = await providerFetch(
+      `${baseUrlFor(input).replace(/\/$/, '')}/chat/completions`,
+      {
+        method: 'POST',
+        redirect: 'error',
+        headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...input.requestBody,
+          ...(input.maxOutputTokens === undefined ? {} : { max_tokens: input.maxOutputTokens }),
+        }),
+        signal: requestSignal(undefined, input.timeoutMs),
+      },
+    );
     const payload = await readJsonResponse(response);
     if (!response.ok) throw new ModelProviderError(errorCode(response.status));
     if (!isRecord(payload) || !Array.isArray(payload.choices)) {
@@ -105,35 +122,29 @@ export class ModelProviderClient {
   }
 }
 
-async function embeddingRequest(input: ModelConnection, texts: string[]) {
+async function embeddingRequest(input: ModelConnection & ModelRequestLimits, texts: string[]) {
   try {
     return await fetch(`${baseUrlFor(input).replace(/\/$/, '')}/embeddings`, {
       method: 'POST',
       redirect: 'error',
       headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: input.model, input: texts }),
-      signal: requestSignal(undefined),
+      signal: requestSignal(undefined, input.timeoutMs),
     });
   } catch (error) {
     if (error instanceof Error && ['AbortError', 'TimeoutError'].includes(error.name)) {
       throw new ModelProviderError('EMBEDDING_TIMEOUT');
     }
-    throw error;
-  }
-}
-
-export class ModelProviderError extends Error {
-  constructor(readonly code: string) {
-    super(code);
-    this.name = ModelProviderError.name;
+    throw new ModelProviderError('MODEL_PROVIDER_UNAVAILABLE');
   }
 }
 
 async function sendProviderRequest(input: ModelCompletionRequest): Promise<Response> {
-  const response = await fetch(endpointFor(input), {
-    ...requestFor(input),
-    signal: requestSignal(input.signal),
-  });
+  const response = await providerFetch(
+    endpointFor(input),
+    { ...requestFor(input), signal: requestSignal(input.signal, input.timeoutMs) },
+    input.signal,
+  );
   if (!response.ok) throw new ModelProviderError(errorCode(response.status));
   return response;
 }
@@ -177,7 +188,7 @@ function compatibleRequest(input: ModelCompletionRequest): RequestInit {
     body: JSON.stringify({
       model: input.model,
       temperature: 0.2,
-      max_tokens: 700,
+      max_tokens: input.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
       stream: true,
       response_format: { type: 'json_object' },
       messages: [
@@ -200,17 +211,12 @@ function anthropicRequest(input: ModelCompletionRequest): RequestInit {
     body: JSON.stringify({
       model: input.model,
       system: input.systemPrompt,
-      max_tokens: 700,
+      max_tokens: input.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
       temperature: 0.2,
       stream: true,
       messages: [{ role: 'user', content: input.userPrompt }],
     }),
   };
-}
-
-function requestSignal(signal: AbortSignal | undefined): AbortSignal {
-  const timeout = AbortSignal.timeout(MODEL_REQUEST_TIMEOUT_MS);
-  return signal ? AbortSignal.any([signal, timeout]) : timeout;
 }
 
 async function readJsonResponse(response: Response): Promise<unknown> {
@@ -223,28 +229,6 @@ async function readJsonResponse(response: Response): Promise<unknown> {
   } catch {
     throw new ModelProviderError('MODEL_PROVIDER_RESPONSE_INVALID');
   }
-}
-
-function compatibleUsageFromResponse(payload: Record<string, unknown>): ModelTokenUsage | null {
-  const usage = payload.usage;
-  if (!isRecord(usage)) return null;
-  const promptTokens = numberValue(usage.prompt_tokens);
-  const outputTokens = numberValue(usage.completion_tokens);
-  const totalTokens = numberValue(usage.total_tokens);
-  const promptDetails = isRecord(usage.prompt_tokens_details) ? usage.prompt_tokens_details : {};
-  const completionDetails = isRecord(usage.completion_tokens_details)
-    ? usage.completion_tokens_details
-    : {};
-  const cacheReadTokens = numberValue(promptDetails.cached_tokens);
-  const reasoningTokens = numberValue(completionDetails.reasoning_tokens);
-  const result: ModelTokenUsage = {
-    ...(promptTokens === undefined ? {} : { inputTokens: promptTokens }),
-    ...(outputTokens === undefined ? {} : { outputTokens }),
-    ...(cacheReadTokens === undefined ? {} : { cacheReadTokens }),
-    ...(reasoningTokens === undefined ? {} : { reasoningTokens }),
-    ...(totalTokens === undefined ? {} : { totalTokens }),
-  };
-  return Object.keys(result).length > 0 ? result : null;
 }
 
 function parseEmbeddingResponse(payload: unknown, expectedCount: number): number[][] {
@@ -283,10 +267,6 @@ function isEmbeddingItem(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function numberValue(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
 }
 
 function errorCode(status: number) {

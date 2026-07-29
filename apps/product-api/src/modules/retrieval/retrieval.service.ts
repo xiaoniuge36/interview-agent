@@ -7,6 +7,7 @@ import {
 } from '@interview-agent/contracts';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
+import { safeTextPreview } from '../../common/security/sensitive-data';
 import { withTraceSpan } from '../../common/telemetry/telemetry';
 import { EmbeddingClient } from './embedding-client';
 import { mergeRankedHits, type RankedRetrievalHit } from './retrieval-ranking';
@@ -64,6 +65,7 @@ export class RetrievalService {
         'interview_agent.trace_id': context.traceId,
         'retrieval.purpose': query.purpose,
         'retrieval.limit': query.limit,
+        'retrieval.query_preview': safeTextPreview(query.query),
       },
       () => this.searchScoped(context, query),
     );

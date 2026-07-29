@@ -13,6 +13,13 @@ describe('platform dashboard requests', () => {
         accounts: { total: 0, created: 0, active: 0, disabled: 0, tenants: 0, admin: 0, users: 0 },
         content: { imports: 0, pendingCandidates: 0, publishedQuestions: 0, failedImports: 0 },
         training: { interviews: 0, reports: 0, practiceSubmissions: 0, practiceReports: 0 },
+        userUsage: { activeUsers: 0, interviews: 0, practiceSubmissions: 0, reports: 0 },
+        agentUsage: [
+          { agent: 'interview', runs: 0, succeeded: 0, successRate: 0 },
+          { agent: 'practice_evaluation', runs: 0, succeeded: 0, successRate: 0 },
+          { agent: 'user_assistant', runs: 0, succeeded: 0, successRate: 0 },
+          { agent: 'admin_assistant', runs: 0, succeeded: 0, successRate: 0 },
+        ],
         runtime: {
           runs: 0,
           successRate: 0,

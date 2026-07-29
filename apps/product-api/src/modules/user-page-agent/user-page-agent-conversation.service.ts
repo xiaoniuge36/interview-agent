@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
+import { redactSensitiveText } from '../../common/security/sensitive-data';
 import type { UserAgentMessageInput } from './user-page-agent.schemas';
 
 const DEFAULT_TITLE = '新对话';
@@ -102,7 +103,7 @@ export class UserPageAgentConversationService {
       await transaction.userAgentMessage.createMany({
         data: messages.map((message) => ({
           ...message,
-          content: maskSensitiveText(message.content),
+          content: redactSensitiveText(message.content),
           tenantId: context.tenantId,
           conversationId,
         })),
@@ -174,13 +175,6 @@ function toConversation(record: ConversationRecord) {
       createdAt: message.createdAt.toISOString(),
     })),
   };
-}
-
-function maskSensitiveText(value: string) {
-  return value
-    .replace(/(api[_ -]?key|secret|password|token)\s*[:=]\s*[^\s,;]+/gi, '$1=[已隐藏]')
-    .replace(/\b(?:sk|rk)-[A-Za-z0-9_-]{8,}\b/g, '[已隐藏]')
-    .replace(/\bBearer\s+[A-Za-z0-9._~-]+/gi, 'Bearer [已隐藏]');
 }
 
 function notFound() {

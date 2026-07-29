@@ -8,7 +8,7 @@ const PercentageSchema = z.number().min(0).max(CONTRACT_LIMITS.percentage);
 const LatencySchema = UsageCountSchema.nullable();
 const MODEL_BREAKDOWN_MAX = 20;
 const RECENT_INVOCATION_MAX = 10;
-const OPERATION_BREAKDOWN_MAX = 4;
+const OPERATION_BREAKDOWN_MAX = 8;
 const FAILURE_BREAKDOWN_MAX = 10;
 const TREND_POINT_MAX = 30;
 
@@ -23,6 +23,12 @@ export const AiInvocationOperationSchema = z.enum([
   'user_page_agent',
 ]);
 export const AiInvocationStatusSchema = z.enum(['succeeded', 'failed', 'cancelled']);
+export const AiGuardrailErrorCodeSchema = z.enum(['AI_BUDGET_EXHAUSTED', 'AI_CIRCUIT_OPEN']);
+export const AiBudgetDecisionSchema = z.discriminatedUnion('allowed', [
+  z.object({ allowed: z.literal(true), code: z.null() }),
+  z.object({ allowed: z.literal(false), code: AiGuardrailErrorCodeSchema }),
+]);
+export const AiCircuitStateSchema = z.enum(['closed', 'open', 'half_open']);
 
 export const AiUsageSummaryQuerySchema = z.object({
   period: AiUsagePeriodSchema,
@@ -105,6 +111,15 @@ export const AiUsageTrendPointSchema = z.object({
   totalTokens: TokenCountSchema,
 });
 
+export const PlatformAiQualitySchema = z.object({
+  deadLetterJobs: UsageCountSchema,
+  embeddingCoverage: PercentageSchema,
+  retrievalLatencyMs: UsageCountSchema,
+  schemaPassRate: PercentageSchema,
+  fallbackRate: PercentageSchema,
+  budgetRejected: UsageCountSchema,
+});
+
 export const PlatformAiAnalyticsSchema = AiUsageSummarySchema.extend({
   filters: z.object({
     provider: ModelProviderSchema.nullable(),
@@ -114,11 +129,21 @@ export const PlatformAiAnalyticsSchema = AiUsageSummarySchema.extend({
   failures: z.array(AiUsageFailureBreakdownSchema).max(FAILURE_BREAKDOWN_MAX),
   recentFailures: z.array(AiInvocationViewSchema).max(RECENT_INVOCATION_MAX),
   trend: z.array(AiUsageTrendPointSchema).min(1).max(TREND_POINT_MAX),
+  guardrails: z.object({
+    budgetRejected: UsageCountSchema,
+    circuitRejected: UsageCountSchema,
+    openCircuits: UsageCountSchema,
+    halfOpenCircuits: UsageCountSchema,
+  }),
+  quality: PlatformAiQualitySchema,
 });
 
 export type AiUsagePeriod = z.infer<typeof AiUsagePeriodSchema>;
 export type AiInvocationOperation = z.infer<typeof AiInvocationOperationSchema>;
 export type AiInvocationStatus = z.infer<typeof AiInvocationStatusSchema>;
+export type AiGuardrailErrorCode = z.infer<typeof AiGuardrailErrorCodeSchema>;
+export type AiBudgetDecision = z.infer<typeof AiBudgetDecisionSchema>;
+export type AiCircuitState = z.infer<typeof AiCircuitStateSchema>;
 export type AiUsageSummaryQuery = z.infer<typeof AiUsageSummaryQuerySchema>;
 export type AiUsageTotals = z.infer<typeof AiUsageTotalsSchema>;
 export type AiUsageModelBreakdown = z.infer<typeof AiUsageModelBreakdownSchema>;
@@ -128,4 +153,5 @@ export type PlatformAiAnalyticsQuery = z.infer<typeof PlatformAiAnalyticsQuerySc
 export type AiUsageOperationBreakdown = z.infer<typeof AiUsageOperationBreakdownSchema>;
 export type AiUsageFailureBreakdown = z.infer<typeof AiUsageFailureBreakdownSchema>;
 export type AiUsageTrendPoint = z.infer<typeof AiUsageTrendPointSchema>;
+export type PlatformAiQuality = z.infer<typeof PlatformAiQualitySchema>;
 export type PlatformAiAnalytics = z.infer<typeof PlatformAiAnalyticsSchema>;

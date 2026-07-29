@@ -4,11 +4,25 @@ import { AiInvocationService } from './ai-invocation.service';
 import { AiUsageController } from './ai-usage.controller';
 import { AiUsageService } from './ai-usage.service';
 import { PlatformAiAnalyticsService } from './platform-ai-analytics.service';
+import { AiBudgetPolicy } from './ai-budget-policy';
+import { AiCircuitBreaker } from './ai-circuit-breaker';
 
 @Module({
   imports: [CommonModule],
   controllers: [AiUsageController],
-  providers: [AiInvocationService, AiUsageService, PlatformAiAnalyticsService],
-  exports: [AiInvocationService, AiUsageService, PlatformAiAnalyticsService],
+  providers: [
+    AiBudgetPolicy,
+    AiCircuitBreaker,
+    AiInvocationService,
+    AiUsageService,
+    PlatformAiAnalyticsService,
+  ],
+  exports: [
+    AiBudgetPolicy,
+    AiCircuitBreaker,
+    AiInvocationService,
+    AiUsageService,
+    PlatformAiAnalyticsService,
+  ],
 })
 export class AiUsageModule {}

@@ -80,6 +80,7 @@ export type AiUsageMetrics = {
   recent: AiInvocationView[];
   recentFailures: AiInvocationView[];
   trend: AiUsageTrendPoint[];
+  guardrailFailures: { budgetRejected: number; circuitRejected: number };
 };
 
 export async function loadAiUsageMetrics(
@@ -106,8 +107,21 @@ export async function loadAiUsageMetrics(
       recent: records.recent.map(toInvocationView),
       recentFailures: records.recentFailures.map(toInvocationView),
       trend: trendMetrics(range, records.trendRows),
+      guardrailFailures: guardrailFailures(groups.failureGroups as GroupRow[]),
     },
   };
+}
+
+function guardrailFailures(rows: GroupRow[]) {
+  return {
+    budgetRejected: failureCount(rows, 'AI_BUDGET_EXHAUSTED'),
+    circuitRejected: failureCount(rows, 'AI_CIRCUIT_OPEN'),
+  };
+}
+
+function failureCount(rows: GroupRow[], code: string) {
+  const row = rows.find((item) => item.errorCode === code);
+  return row?._count._all ?? 0;
 }
 
 async function aggregatedRows(

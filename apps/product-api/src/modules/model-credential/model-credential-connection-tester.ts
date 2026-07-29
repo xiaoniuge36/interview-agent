@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { ModelProvider } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { AiInvocationService } from '../ai-usage/ai-invocation.service';
+import { modelRequestLimits } from '../ai-usage/ai-budget-policy';
 import { ModelProviderClient } from './model-provider.client';
 
 export type ModelCredentialConnection = {
@@ -23,13 +24,14 @@ export class ModelCredentialConnectionTester {
     credential: ModelCredentialConnection,
     apiKey: string,
   ): Promise<void> {
-    return this.invocations.measure(invocationMetadata(context, credential), (onUsage) =>
+    return this.invocations.measure(invocationMetadata(context, credential), (onUsage, budget) =>
       this.provider.testConnection({
         provider: credential.provider as ModelProvider,
         model: credential.model,
         baseUrl: credential.baseUrl,
         apiKey,
         onUsage,
+        ...modelRequestLimits(budget),
       }),
     );
   }
@@ -47,5 +49,6 @@ function invocationMetadata(
     provider: credential.provider as ModelProvider,
     model: credential.model,
     traceId: context.traceId,
+    inputCharacters: 64,
   };
 }

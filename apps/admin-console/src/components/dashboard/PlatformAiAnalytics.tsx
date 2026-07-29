@@ -20,6 +20,9 @@ import React, { useEffect, useState } from 'react';
 import { AdminApiError } from '@/lib/api';
 import { getPlatformAiAnalytics } from '@/lib/platform-api';
 import { SectionFeedback } from './SectionState';
+import { AiGuardrailStatus } from './AiGuardrailStatus';
+import { AiQualityStatus } from './AiQualityStatus';
+import { operationLabel, OPERATION_OPTIONS } from './platform-ai-operations';
 
 const HTTP_FORBIDDEN = 403;
 const PROVIDER_OPTIONS: { label: string; value: ModelProvider | 'all' }[] = [
@@ -29,13 +32,6 @@ const PROVIDER_OPTIONS: { label: string; value: ModelProvider | 'all' }[] = [
   { label: 'DeepSeek', value: 'deepseek' },
   { label: 'Qwen', value: 'qwen' },
   { label: '兼容端点', value: 'openai_compatible' },
-];
-const OPERATION_OPTIONS: { label: string; value: AiInvocationOperation | 'all' }[] = [
-  { label: '全部调用', value: 'all' },
-  { label: '连接测试', value: 'model_connection_test' },
-  { label: '单题评价', value: 'practice_evaluation' },
-  { label: '模拟面试', value: 'interview_next' },
-  { label: '后台 Agent', value: 'admin_page_agent' },
 ];
 const TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -95,13 +91,19 @@ export function PlatformAiAnalytics({
 export function PlatformAiAnalyticsContent({ analytics }: { analytics: PlatformAiAnalyticsData }) {
   if (analytics.totals.invocations === 0) {
     return (
-      <Card className="admin-dense-card platform-ai-empty-card">
-        <Empty description="当前筛选下没有真实模型调用" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-      </Card>
+      <div className="platform-ai-analytics-content">
+        <AiGuardrailStatus guardrails={analytics.guardrails} />
+        <AiQualityStatus quality={analytics.quality} />
+        <Card className="admin-dense-card platform-ai-empty-card">
+          <Empty description="当前筛选下没有真实模型调用" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        </Card>
+      </div>
     );
   }
   return (
     <div className="platform-ai-analytics-content">
+      <AiGuardrailStatus guardrails={analytics.guardrails} />
+      <AiQualityStatus quality={analytics.quality} />
       <div className="platform-ai-overview">
         <Metric label="真实调用" value={analytics.totals.invocations} />
         <Metric label="成功率" suffix="%" value={analytics.totals.successRate} />
@@ -269,13 +271,6 @@ function queryFor(
     ...(provider === 'all' ? {} : { provider }),
     ...(operation === 'all' ? {} : { operation }),
   };
-}
-
-function operationLabel(operation: AiInvocationOperation): string {
-  if (operation === 'model_connection_test') return '连接测试';
-  if (operation === 'practice_evaluation') return '单题评价';
-  if (operation === 'admin_page_agent') return '后台 Agent';
-  return '模拟面试';
 }
 
 function normalizeError(error: unknown): AdminApiError {

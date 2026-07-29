@@ -28,6 +28,20 @@ describe('PlatformAiAnalyticsService', () => {
       filters: { provider: 'deepseek', operation: 'practice_evaluation' },
       totals: { invocations: 1, successRate: 100 },
       failures: [],
+      guardrails: {
+        budgetRejected: 0,
+        circuitRejected: 0,
+        openCircuits: 0,
+        halfOpenCircuits: 0,
+      },
+      quality: {
+        deadLetterJobs: 1,
+        embeddingCoverage: 80,
+        retrievalLatencyMs: 120,
+        schemaPassRate: 90,
+        fallbackRate: 10,
+        budgetRejected: 0,
+      },
     });
     expect(policy.assert).toHaveBeenCalledWith(context.actor, 'analytics:read', { platform: true });
     expect(store.groupBy.mock.calls[0][0].where).toEqual(
@@ -86,10 +100,26 @@ function createService(policyOverride: { assert?: jest.Mock } = {}) {
       .mockResolvedValueOnce([]),
     findMany: jest.fn().mockResolvedValue([]),
   };
-  const prisma = { aiInvocation: store };
+  const prisma = {
+    aiInvocation: store,
+    backgroundJob: { count: jest.fn().mockResolvedValue(1) },
+    retrievalChunk: {
+      count: jest.fn().mockResolvedValueOnce(10).mockResolvedValueOnce(8),
+    },
+    retrievalLog: { aggregate: jest.fn().mockResolvedValue({ _avg: { latencyMs: 120 } }) },
+    agentRun: {
+      count: jest
+        .fn()
+        .mockResolvedValueOnce(10)
+        .mockResolvedValueOnce(9)
+        .mockResolvedValueOnce(10)
+        .mockResolvedValueOnce(1),
+    },
+  };
   const policy = { assert: policyOverride.assert ?? jest.fn() };
+  const circuits = { summary: jest.fn(() => ({ openCircuits: 0, halfOpenCircuits: 0 })) };
   return {
-    service: new PlatformAiAnalyticsService(prisma as never, policy as never),
+    service: new PlatformAiAnalyticsService(prisma as never, policy as never, circuits as never),
     store,
     policy,
   };

@@ -6,6 +6,7 @@ import { ModelCredentialResolver } from '../model-credential/model-credential-re
 import { ModelProviderClient, ModelProviderError } from '../model-credential/model-provider.client';
 import type { ModelGatewayRequest } from './model-gateway.schemas';
 import type { ModelInvocationGrantPayload } from './model-invocation-grant.service';
+import { modelRequestLimits } from '../ai-usage/ai-budget-policy';
 
 @Injectable()
 export class ModelGatewayService {
@@ -35,13 +36,14 @@ export class ModelGatewayService {
     if (!credential) throw invalidGrant();
     try {
       const content = await this.invocations.measure(
-        invocationMetadata(grant, credential),
-        (onUsage) =>
+        invocationMetadata(grant, credential, request),
+        (onUsage, budget) =>
           this.provider.complete({
             ...credential,
             systemPrompt: request.systemPrompt,
             userPrompt: request.userPrompt,
             onUsage,
+            ...modelRequestLimits(budget),
           }),
       );
       return { content };
@@ -66,6 +68,7 @@ function invalidGrant() {
 }
 
 function providerFailure(error: unknown) {
+  if (error instanceof BadGatewayException || error instanceof BadRequestException) return error;
   const code = error instanceof ModelProviderError ? error.code : 'MODEL_PROVIDER_UNAVAILABLE';
   return new BadGatewayException({ code, message: '模型连接暂时不可用，请测试连接或稍后重试。' });
 }
@@ -73,6 +76,7 @@ function providerFailure(error: unknown) {
 function invocationMetadata(
   grant: ModelInvocationGrantPayload,
   credential: { id: string; provider: ModelProvider; model: string },
+  request: ModelGatewayRequest,
 ) {
   return {
     tenantId: grant.tenantId,
@@ -83,5 +87,6 @@ function invocationMetadata(
     provider: credential.provider,
     model: credential.model,
     traceId: grant.traceId,
+    inputCharacters: request.systemPrompt.length + request.userPrompt.length,
   };
 }

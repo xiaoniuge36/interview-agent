@@ -8,12 +8,15 @@ import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
 import { loadAiUsageMetrics } from './ai-usage-metrics';
+import { AiCircuitBreaker } from './ai-circuit-breaker';
+import { loadPlatformAiQuality } from './platform-ai-quality-metrics';
 
 @Injectable()
 export class PlatformAiAnalyticsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly policy: PolicyService,
+    private readonly circuits: AiCircuitBreaker,
   ) {}
 
   async analytics(
@@ -28,6 +31,11 @@ export class PlatformAiAnalyticsService {
         ...(query.operation ? { operation: query.operation } : {}),
       },
     });
+    const quality = await loadPlatformAiQuality(
+      this.prisma,
+      range,
+      metrics.guardrailFailures.budgetRejected,
+    );
     return PlatformAiAnalyticsSchema.parse({
       period: query.period,
       range: { startAt: range.startAt.toISOString(), endAt: range.endAt.toISOString() },
@@ -39,6 +47,8 @@ export class PlatformAiAnalyticsService {
       failures: metrics.failures,
       recentFailures: metrics.recentFailures,
       trend: metrics.trend,
+      guardrails: { ...metrics.guardrailFailures, ...this.circuits.summary() },
+      quality,
     });
   }
 }

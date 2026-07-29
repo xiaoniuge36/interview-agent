@@ -3,6 +3,7 @@ import { AgentRuntimeNextResponseSchema, type ModelProvider } from '@interview-a
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { IncrementalJsonFieldDecoder } from '../../common/streaming/incremental-json-field-decoder';
 import { AiInvocationService } from '../ai-usage/ai-invocation.service';
+import { modelRequestLimits } from '../ai-usage/ai-budget-policy';
 import { ModelCredentialService } from '../model-credential/model-credential.service';
 import { ModelProviderClient, ModelProviderError } from '../model-credential/model-provider.client';
 import type { AgentNextInput, AgentNextResult, AgentRuntimeProgress } from './agent-runtime.types';
@@ -24,12 +25,13 @@ export class UserModelRuntimeClient {
     try {
       return await this.invocations.measure(
         invocationMetadata(context, credential, input),
-        async (onUsage) => {
+        async (onUsage, budget) => {
           const content = await this.provider.complete({
             ...credential,
             systemPrompt: systemPrompt(input),
             userPrompt: userPrompt(input),
             onUsage,
+            ...modelRequestLimits(budget),
           });
           return runtimeResult(parseDecision(content, input), startedAt);
         },
@@ -52,12 +54,13 @@ export class UserModelRuntimeClient {
     try {
       return await this.invocations.measure(
         invocationMetadata(context, credential, input),
-        async (onUsage) => {
+        async (onUsage, budget) => {
           for await (const delta of this.provider.stream({
             ...credential,
             systemPrompt: systemPrompt(input),
             userPrompt: userPrompt(input),
             onUsage,
+            ...modelRequestLimits(budget),
             ...(progress.signal ? { signal: progress.signal } : {}),
           })) {
             content += delta;
@@ -183,5 +186,6 @@ function invocationMetadata(
     provider: credential.provider,
     model: credential.model,
     traceId: input.traceId,
+    inputCharacters: systemPrompt(input).length + userPrompt(input).length,
   };
 }
