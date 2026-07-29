@@ -4,6 +4,8 @@ import type { PrismaService } from '../../common/database/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
 import { CandidateReviewService } from './candidate-review.service';
+import { CandidatePublicationService } from './candidate-publication.service';
+import { CandidateReviewInfrastructure } from './candidate-review-infrastructure';
 
 const context: ProductRequestContext = {
   requestId: 'request-1',
@@ -39,11 +41,7 @@ async function expectBatchPublish() {
   database.transaction.question.findFirst.mockResolvedValue(null);
   database.transaction.question.create.mockResolvedValue(publishedQuestion());
   database.transaction.question.findUnique.mockResolvedValue(publishedQuestion());
-  const service = new CandidateReviewService(
-    database as unknown as PrismaService,
-    new PolicyService(),
-    audit as unknown as AuditService,
-  );
+  const service = candidateService(database, audit as unknown as AuditService);
 
   await expect(
     service.batchPublish(context, {
@@ -65,11 +63,7 @@ async function expectBatchPublishRequiresApproval() {
     candidateRecord({ id: 'candidate-1', status: 'approved' }),
     candidateRecord({ id: 'candidate-2', status: 'pending' }),
   ]);
-  const service = new CandidateReviewService(
-    database as unknown as PrismaService,
-    new PolicyService(),
-    { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
-  );
+  const service = candidateService(database);
 
   await expect(
     service.batchPublish(context, {
@@ -134,4 +128,19 @@ function candidateRecord(overrides: Record<string, unknown> = {}) {
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     ...overrides,
   };
+}
+
+function candidateService(
+  database: ReturnType<typeof candidateDatabase>,
+  audit: AuditService = { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
+) {
+  const infrastructure = new CandidateReviewInfrastructure(
+    database as unknown as PrismaService,
+    new PolicyService(),
+    audit,
+  );
+  return new CandidateReviewService(
+    infrastructure,
+    new CandidatePublicationService(infrastructure),
+  );
 }

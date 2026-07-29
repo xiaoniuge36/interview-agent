@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  AiInvocationOperationSchema,
   AiUsageSummaryQuerySchema,
   AiUsageSummarySchema,
   PlatformAiAnalyticsQuerySchema,
@@ -49,6 +50,10 @@ const summary = {
 test('AI usage query defaults to seven days and rejects unsupported ranges', () => {
   assert.deepEqual(AiUsageSummaryQuerySchema.parse({}), { period: '7d' });
   assert.equal(AiUsageSummaryQuerySchema.safeParse({ period: '90d' }).success, false);
+});
+
+test('AI usage recognizes embedding as a separately observable operation', () => {
+  assert.equal(AiInvocationOperationSchema.parse('embedding'), 'embedding');
 });
 
 test('AI usage summary allows unavailable token usage without exposing prompt content', () => {

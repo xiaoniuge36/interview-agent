@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
@@ -16,6 +17,8 @@ import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
 import { runSerializable } from '../../common/database/serializable-transaction';
+import { BackgroundJobDispatcher } from '../jobs/job-dispatcher';
+import { CandidateReviewInfrastructure } from './candidate-review-infrastructure';
 
 type PublishOperation = {
   context: ProductRequestContext;
@@ -23,12 +26,24 @@ type PublishOperation = {
   visibility: 'public' | 'tenant';
 };
 
+@Injectable()
 export class CandidatePublicationService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly policy: PolicyService,
-    private readonly audit: AuditService,
+    private readonly infrastructure: CandidateReviewInfrastructure,
+    private readonly jobs?: BackgroundJobDispatcher,
   ) {}
+
+  private get prisma(): PrismaService {
+    return this.infrastructure.prisma;
+  }
+
+  private get policy(): PolicyService {
+    return this.infrastructure.policy;
+  }
+
+  private get audit(): AuditService {
+    return this.infrastructure.audit;
+  }
 
   async publish(
     context: ProductRequestContext,
@@ -36,7 +51,7 @@ export class CandidatePublicationService {
     input: PublishCandidateQuestionInput,
   ) {
     this.assertPublishPermission(context);
-    return runSerializable(this.prisma, async (transaction) => {
+    const question = await runSerializable(this.prisma, async (transaction) => {
       const candidate = await this.loadCandidate(transaction, context.tenantId, candidateId);
       if (candidate.status !== 'approved') throw candidateNotApproved();
       if (candidate.publishedQuestionId) {
@@ -51,17 +66,20 @@ export class CandidatePublicationService {
         candidate,
       );
     });
+    await this.queueQuestion(context, question);
+    return question;
   }
 
   async batchPublish(context: ProductRequestContext, input: BatchCandidatePublishInput) {
     this.assertPublishPermission(context);
-    return runSerializable(this.prisma, async (transaction) => {
+    const completed = await runSerializable(this.prisma, async (transaction) => {
       const candidates = await transaction.candidateQuestion.findMany({
         where: { tenantId: context.tenantId, id: { in: input.candidateIds } },
       });
       assertBatchPublishable(candidates, input.candidateIds);
       let publishedCount = 0;
       let alreadyPublishedCount = 0;
+      const questions = [];
 
       for (const candidate of candidates) {
         if (candidate.publishedQuestionId) {
@@ -73,15 +91,23 @@ export class CandidatePublicationService {
           alreadyPublishedCount += 1;
           continue;
         }
-        await this.publishCandidateQuestion(
+        const question = await this.publishCandidateQuestion(
           { context, transaction, visibility: input.visibility },
           candidate,
         );
+        questions.push(question);
         publishedCount += 1;
       }
 
-      return BatchCandidatePublishResultSchema.parse({ publishedCount, alreadyPublishedCount });
+      return {
+        questions,
+        result: BatchCandidatePublishResultSchema.parse({ publishedCount, alreadyPublishedCount }),
+      };
     });
+    await Promise.allSettled(
+      completed.questions.map((question) => this.queueQuestion(context, question)),
+    );
+    return completed.result;
   }
 
   private async publishCandidateQuestion(
@@ -172,6 +198,24 @@ export class CandidatePublicationService {
       });
     }
     this.policy.assert(context.actor, 'question:write', { tenantId: context.tenantId });
+  }
+
+  private async queueQuestion(
+    context: ProductRequestContext,
+    question: { id: string; title: string; stem: string; answer: string },
+  ) {
+    if (!this.jobs) return;
+    await Promise.allSettled([
+      this.jobs.enqueueEmbedding({
+        tenantId: context.tenantId,
+        userId: context.actor.id,
+        traceId: context.traceId,
+        entityType: 'question',
+        entityId: question.id,
+        content: [question.title, question.stem, question.answer].join('\n'),
+        metadata: { source: 'candidate_publish' },
+      }),
+    ]);
   }
 }
 

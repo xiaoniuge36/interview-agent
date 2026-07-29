@@ -38,6 +38,9 @@ model Tenant {
   userAgentMessages  UserAgentMessage[]
   userPageAgentRuns  UserPageAgentRun[]
   auditLogs          AuditLog[]
+  backgroundJobs     BackgroundJob[]
+  retrievalChunks    RetrievalChunk[]
+  retrievalLogs      RetrievalLog[]
 }
 
 model User {

@@ -38,6 +38,7 @@ const HTTP_SERVER_ERROR = 500;
 const MODEL_REQUEST_TIMEOUT_MS = 30_000;
 const BYTES_PER_KILOBYTE = 1024;
 const MAX_COMPATIBLE_RESPONSE_BYTES = 2 * BYTES_PER_KILOBYTE * BYTES_PER_KILOBYTE;
+const EMBEDDING_DIMENSIONS = 1536;
 
 @Injectable()
 export class ModelProviderClient {
@@ -69,6 +70,16 @@ export class ModelProviderClient {
     });
   }
 
+  async embed(input: ModelConnection, texts: string[]): Promise<number[][]> {
+    if (input.provider === 'anthropic') {
+      throw new ModelProviderError('MODEL_PROVIDER_REQUEST_REJECTED');
+    }
+    const response = await embeddingRequest(input, texts);
+    const payload = await readJsonResponse(response);
+    if (!response.ok) throw new ModelProviderError(errorCode(response.status));
+    return parseEmbeddingResponse(payload, texts.length);
+  }
+
   async invokeCompatible(
     input: CompatibleModelInvocationRequest,
     onUsage?: (usage: ModelTokenUsage) => void,
@@ -91,6 +102,23 @@ export class ModelProviderClient {
     const usage = compatibleUsageFromResponse(payload);
     if (usage) onUsage?.(usage);
     return payload;
+  }
+}
+
+async function embeddingRequest(input: ModelConnection, texts: string[]) {
+  try {
+    return await fetch(`${baseUrlFor(input).replace(/\/$/, '')}/embeddings`, {
+      method: 'POST',
+      redirect: 'error',
+      headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: input.model, input: texts }),
+      signal: requestSignal(undefined),
+    });
+  } catch (error) {
+    if (error instanceof Error && ['AbortError', 'TimeoutError'].includes(error.name)) {
+      throw new ModelProviderError('EMBEDDING_TIMEOUT');
+    }
+    throw error;
   }
 }
 
@@ -217,6 +245,40 @@ function compatibleUsageFromResponse(payload: Record<string, unknown>): ModelTok
     ...(totalTokens === undefined ? {} : { totalTokens }),
   };
   return Object.keys(result).length > 0 ? result : null;
+}
+
+function parseEmbeddingResponse(payload: unknown, expectedCount: number): number[][] {
+  if (!isRecord(payload) || !Array.isArray(payload.data)) {
+    throw new ModelProviderError('MODEL_PROVIDER_RESPONSE_INVALID');
+  }
+  const vectors = payload.data.map(parseEmbeddingItem);
+  if (vectors.length !== expectedCount || vectors.some((vector) => vector === null)) {
+    throw new ModelProviderError('MODEL_PROVIDER_RESPONSE_INVALID');
+  }
+  const ordered = vectors.filter(isEmbeddingItem).sort((left, right) => left.index - right.index);
+  if (ordered.some((item, index) => item.index !== index)) {
+    throw new ModelProviderError('MODEL_PROVIDER_RESPONSE_INVALID');
+  }
+  return ordered.map((item) => item.embedding);
+}
+
+function parseEmbeddingItem(value: unknown): { index: number; embedding: number[] } | null {
+  if (!isRecord(value) || !Number.isInteger(value.index) || !Array.isArray(value.embedding))
+    return null;
+  const embedding = value.embedding;
+  if (
+    embedding.length !== EMBEDDING_DIMENSIONS ||
+    embedding.some((item) => typeof item !== 'number' || !Number.isFinite(item))
+  ) {
+    throw new ModelProviderError('EMBEDDING_DIMENSION_INVALID');
+  }
+  return { index: value.index as number, embedding: embedding as number[] };
+}
+
+function isEmbeddingItem(
+  value: { index: number; embedding: number[] } | null,
+): value is { index: number; embedding: number[] } {
+  return value !== null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

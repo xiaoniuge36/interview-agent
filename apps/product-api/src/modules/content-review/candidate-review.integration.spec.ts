@@ -4,6 +4,8 @@ import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
 import { CandidateReviewService } from './candidate-review.service';
+import { CandidatePublicationService } from './candidate-publication.service';
+import { CandidateReviewInfrastructure } from './candidate-review-infrastructure';
 
 const describeDatabase = process.env.RUN_DATABASE_INTEGRATION === 'true' ? describe : describe.skip;
 const suffix = randomUUID();
@@ -12,7 +14,15 @@ const userId = `candidate-admin-${suffix}`;
 const candidateId = `candidate-question-${suffix}`;
 const title = `Concurrent candidate ${suffix}`;
 const prisma = new PrismaService();
-const service = new CandidateReviewService(prisma, new PolicyService(), new AuditService(prisma));
+const infrastructure = new CandidateReviewInfrastructure(
+  prisma,
+  new PolicyService(),
+  new AuditService(prisma),
+);
+const service = new CandidateReviewService(
+  infrastructure,
+  new CandidatePublicationService(infrastructure),
+);
 const context: ProductRequestContext = {
   requestId: `request-${suffix}`,
   traceId: `trace-${suffix}`,

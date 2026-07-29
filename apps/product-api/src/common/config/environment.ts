@@ -17,6 +17,9 @@ const DEFAULT_RUNTIME_RETRY_DELAY_MS = 250;
 const MIN_COMMAND_LEASE_MS = 10_000;
 const MAX_COMMAND_LEASE_MS = 900_000;
 const DEFAULT_COMMAND_LEASE_MS = 360_000;
+const MIN_BACKGROUND_JOB_POLL_INTERVAL_MS = 100;
+const MAX_BACKGROUND_JOB_POLL_INTERVAL_MS = 300_000;
+const DEFAULT_BACKGROUND_JOB_POLL_INTERVAL_MS = 10_000;
 const MIN_INTERNAL_TOKEN_LENGTH = 24;
 const MIN_HS256_SECRET_BYTES = 32;
 const CREDENTIAL_ENCRYPTION_KEY_BYTES = 32;
@@ -81,6 +84,13 @@ const EnvironmentSchema = z
       .max(MAX_RUNTIME_RETRY_DELAY_MS)
       .default(DEFAULT_RUNTIME_RETRY_DELAY_MS),
     AGENT_RUNTIME_FALLBACK_ENABLED: BooleanEnvironmentSchema.default('false'),
+    BACKGROUND_JOB_WORKER_ENABLED: BooleanEnvironmentSchema.default('false'),
+    BACKGROUND_JOB_POLL_INTERVAL_MS: z.coerce
+      .number()
+      .int()
+      .min(MIN_BACKGROUND_JOB_POLL_INTERVAL_MS)
+      .max(MAX_BACKGROUND_JOB_POLL_INTERVAL_MS)
+      .default(DEFAULT_BACKGROUND_JOB_POLL_INTERVAL_MS),
     INTERVIEW_COMMAND_LEASE_MS: z.coerce
       .number()
       .int()
@@ -134,7 +144,10 @@ function validateProduction(environment: Environment, context: z.RefinementCtx) 
   if (environment.API_CORS_ORIGINS.length === 0) {
     addIssue(context, 'API_CORS_ORIGINS', '生产环境必须显式配置 CORS 来源。');
   }
-  if (decodeCredentialKey(environment.CREDENTIAL_ENCRYPTION_KEY).length !== CREDENTIAL_ENCRYPTION_KEY_BYTES) {
+  if (
+    decodeCredentialKey(environment.CREDENTIAL_ENCRYPTION_KEY).length !==
+    CREDENTIAL_ENCRYPTION_KEY_BYTES
+  ) {
     addIssue(context, 'CREDENTIAL_ENCRYPTION_KEY', '凭证加密主密钥必须是 32 字节 base64 值。');
   }
 }

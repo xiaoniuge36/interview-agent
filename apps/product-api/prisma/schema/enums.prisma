@@ -87,6 +87,7 @@ enum AgentRunStatus {
 
 enum AiInvocationOperation {
   model_connection_test
+  embedding
   practice_evaluation
   interview_next
   admin_page_agent
@@ -244,4 +245,22 @@ enum PracticeMode {
   manual
   weakness_review
   interview_review
+}
+
+enum BackgroundJobType {
+  embedding
+}
+
+enum BackgroundJobStatus {
+  pending
+  running
+  retry_wait
+  succeeded
+  dead_letter
+}
+
+enum RetrievalChunkStatus {
+  pending
+  ready
+  failed
 }

@@ -1,0 +1,24 @@
+model BackgroundJob {
+  id             String              @id @default(cuid())
+  tenantId       String
+  type           BackgroundJobType
+  status         BackgroundJobStatus @default(pending)
+  dedupeKey      String
+  payload        Json
+  attempts       Int                 @default(0)
+  maxAttempts    Int                 @default(5)
+  availableAt    DateTime            @default(now())
+  leaseOwner     String?
+  leaseExpiresAt DateTime?
+  errorCode      String?
+  lastError      String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, type, dedupeKey])
+  @@index([status, availableAt])
+  @@index([leaseExpiresAt])
+  @@index([tenantId, createdAt])
+}

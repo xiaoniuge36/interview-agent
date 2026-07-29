@@ -20,6 +20,7 @@ import { JobIntentModule } from './modules/job-intent/job-intent.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { PracticeModule } from './modules/practice/practice.module';
 import { QuestionCatalogModule } from './modules/question-catalog/question-catalog.module';
+import { RetrievalModule } from './modules/retrieval/retrieval.module';
 import { UserPageAgentModule } from './modules/user-page-agent/user-page-agent.module';
 
 const localEnvFiles = localEnvironmentFiles(process.cwd(), process.env.E2E_PRESERVE_ENVIRONMENT);
@@ -53,6 +54,7 @@ const localEnvFiles = localEnvironmentFiles(process.cwd(), process.env.E2E_PRESE
     ImportModule,
     PracticeModule,
     QuestionCatalogModule,
+    RetrievalModule,
     UserPageAgentModule,
     AdminModule,
   ],

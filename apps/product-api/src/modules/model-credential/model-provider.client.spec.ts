@@ -149,7 +149,9 @@ describe('ModelProviderClient compatible invocations', () => {
       reasoningTokens: 2,
       totalTokens: 35,
     });
-    expect(JSON.parse(String((global.fetch as jest.Mock).mock.calls[0][1].body))).toEqual(compatibleInput().requestBody);
+    expect(JSON.parse(String((global.fetch as jest.Mock).mock.calls[0][1].body))).toEqual(
+      compatibleInput().requestBody,
+    );
   });
 
   it('rejects malformed compatible responses', async () => {
@@ -164,6 +166,52 @@ describe('ModelProviderClient compatible invocations', () => {
         requestBody: { model: 'gpt-test', messages: [], tools: [] },
       }),
     ).rejects.toEqual(expect.objectContaining({ code: 'MODEL_PROVIDER_RESPONSE_INVALID' }));
+  });
+});
+
+describe('ModelProviderClient embeddings', () => {
+  it('posts the embedding-specific request and restores response order', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      Response.json({
+        data: [
+          { index: 1, embedding: vector(2) },
+          { index: 0, embedding: vector(1) },
+        ],
+      }),
+    );
+
+    await expect(new ModelProviderClient().embed(input, ['first', 'second'])).resolves.toEqual([
+      vector(1),
+      vector(2),
+    ]);
+
+    expect((global.fetch as jest.Mock).mock.calls[0][0]).toBe(
+      'https://api.openai.com/v1/embeddings',
+    );
+    expect(JSON.parse(String((global.fetch as jest.Mock).mock.calls[0][1].body))).toEqual({
+      model: 'gpt-test',
+      input: ['first', 'second'],
+    });
+  });
+
+  it('rejects embedding vectors with an unsupported dimension', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(Response.json({ data: [{ index: 0, embedding: [0.1, 0.2] }] }));
+
+    await expect(new ModelProviderClient().embed(input, ['first'])).rejects.toEqual(
+      expect.objectContaining({ code: 'EMBEDDING_DIMENSION_INVALID' }),
+    );
+  });
+
+  it('maps provider timeouts to a retryable embedding error', async () => {
+    const timeout = new Error('request timed out');
+    timeout.name = 'TimeoutError';
+    global.fetch = jest.fn().mockRejectedValue(timeout);
+
+    await expect(new ModelProviderClient().embed(input, ['first'])).rejects.toEqual(
+      expect.objectContaining({ code: 'EMBEDDING_TIMEOUT' }),
+    );
   });
 });
 
@@ -207,6 +255,10 @@ function sseResponse(parts: string[]) {
     }),
     { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
   );
+}
+
+function vector(value: number) {
+  return Array.from({ length: 1536 }, () => value);
 }
 
 function restoreEnvironment(key: string, value: string | undefined) {

@@ -1,5 +1,6 @@
 import { ImportTaskListQuerySchema, type ImportTaskListQuery } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
+import { ImportInfrastructure } from './import-infrastructure';
 import { ImportService } from './import.service';
 
 const context: ProductRequestContext = {
@@ -16,6 +17,9 @@ const context: ProductRequestContext = {
 };
 
 describe('ImportService', () => {
+  it('queues retrieval embeddings after persisting import content without waiting for a model', () =>
+    expectEmbeddingDispatch());
+
   it('returns a tenant-scoped filtered page with stable ordering', () => expectFilteredPageQuery());
 
   it('groups each import task candidate review outcomes with published questions first', () =>
@@ -59,6 +63,42 @@ describe('ImportService', () => {
     });
   });
 });
+
+async function expectEmbeddingDispatch() {
+  const transaction = {
+    knowledgeAsset: { create: jest.fn().mockResolvedValue({ id: 'asset-1' }) },
+    importTask: { create: jest.fn().mockResolvedValue(importTaskRecord()) },
+    knowledgeChunk: { createMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    candidateQuestion: { createMany: jest.fn().mockResolvedValue({ count: 1 }) },
+  };
+  const prisma = {
+    $transaction: jest.fn((callback: (client: typeof transaction) => unknown) =>
+      callback(transaction),
+    ),
+  };
+  const dispatcher = { enqueueEmbedding: jest.fn().mockResolvedValue({ id: 'job-1' }) };
+  const service = new ImportService(
+    new ImportInfrastructure(
+      prisma as never,
+      { assert: jest.fn() } as never,
+      { record: jest.fn().mockResolvedValue({}) } as never,
+    ),
+    dispatcher as never,
+  );
+
+  await service.create(context, {
+    title: 'Import source',
+    markdown: '## Question\nWhat is idempotency?',
+  });
+
+  expect(dispatcher.enqueueEmbedding).toHaveBeenCalledWith(
+    expect.objectContaining({
+      tenantId: 'tenant-1',
+      entityType: 'knowledge',
+      entityId: 'asset-1:1',
+    }),
+  );
+}
 
 async function expectFilteredPageQuery() {
   const { service, prisma, policy } = createService();
@@ -179,7 +219,9 @@ function createService() {
   };
   const policy = { assert: jest.fn() };
   const audit = { record: jest.fn().mockResolvedValue({}) };
-  const service = new ImportService(prisma as never, policy as never, audit as never);
+  const service = new ImportService(
+    new ImportInfrastructure(prisma as never, policy as never, audit as never),
+  );
   return { service, prisma, policy, audit };
 }
 

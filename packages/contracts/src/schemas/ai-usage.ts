@@ -15,6 +15,7 @@ const TREND_POINT_MAX = 30;
 export const AiUsagePeriodSchema = z.enum(['today', '7d', '30d']).default('7d');
 export const AiInvocationOperationSchema = z.enum([
   'model_connection_test',
+  'embedding',
   'practice_evaluation',
   'interview_next',
   'admin_page_agent',

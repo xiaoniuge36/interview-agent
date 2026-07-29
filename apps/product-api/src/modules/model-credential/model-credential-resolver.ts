@@ -57,4 +57,27 @@ export class ModelCredentialResolver {
       apiKey: this.crypto.decrypt(current),
     };
   }
+
+  async resolveDefaultForInvocation(input: {
+    tenantId: string;
+    userId: string;
+  }): Promise<ResolvedModelCredential | null> {
+    const current = await this.infrastructure.prisma.userModelCredential.findFirst({
+      where: {
+        tenantId: input.tenantId,
+        userId: input.userId,
+        isDefault: true,
+        status: 'verified',
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+    if (!current) return null;
+    return {
+      id: current.id,
+      provider: current.provider as ModelProvider,
+      model: current.model,
+      baseUrl: current.baseUrl,
+      apiKey: this.crypto.decrypt(current),
+    };
+  }
 }
