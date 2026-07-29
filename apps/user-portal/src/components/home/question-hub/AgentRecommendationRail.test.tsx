@@ -46,7 +46,7 @@ function renderRail(overrides: Partial<React.ComponentProps<typeof AgentRecommen
 }
 
 describe('AgentRecommendationRail', () => {
-  it('在训练计划中呈现陪练欢迎和现有续练入口', () => {
+  it('有未完成训练时只保留续练主操作并暂缓新题单', () => {
     const markup = renderRail({
       displayName: '林夏',
       continuation,
@@ -55,7 +55,8 @@ describe('AgentRecommendationRail', () => {
     expect(markup).toContain('欢迎回来，林夏');
     expect(markup).toContain('陪练已就位');
     expect(markup).toContain('href="/practice?session=practice-1"');
-    expect(markup).toContain('采用这组题开始练习');
+    expect(markup).toContain('练习进度 40%');
+    expect(markup).not.toContain('采用这组题开始练习');
   });
 
   it('将推荐训练计划作为首页主操作，并保留自主组题入口', () => {

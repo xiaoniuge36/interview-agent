@@ -27,3 +27,38 @@ test('returns a completed PageAgent tool call for a PageAgent request', async ()
     await stub.close();
   }
 });
+
+test('returns a low-score practice evaluation for the weakness-review loop', async () => {
+  const stub = await startModelStub({ port: 0 });
+  try {
+    const response = await fetch(`${stub.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer e2e-success', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'return feedback JSON' }] }),
+    });
+    const payload = await response.json();
+    const evaluation = JSON.parse(payload.choices[0].message.content);
+
+    assert.equal(evaluation.score, 48);
+    assert.match(evaluation.feedback, /异常处理/u);
+  } finally {
+    await stub.close();
+  }
+});
+
+test('returns a deterministic 1536-dimension embedding', async () => {
+  const stub = await startModelStub({ port: 0 });
+  try {
+    const response = await fetch(`${stub.baseUrl}/embeddings`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer e2e-success', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'e2e-model', input: ['支付链路异常恢复'] }),
+    });
+    const payload = await response.json();
+
+    assert.equal(payload.data[0].embedding.length, 1536);
+    assert.equal(payload.usage.total_tokens, 4);
+  } finally {
+    await stub.close();
+  }
+});

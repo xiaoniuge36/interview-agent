@@ -19,6 +19,7 @@ export function createE2eEnvironment(source, options = {}) {
     options.databaseName,
     options.databasePort ?? E2E_DATABASE_PORT,
   );
+  const credentialEncryptionKey = randomBytes(32).toString('base64');
   return {
     ...source,
     NODE_ENV: 'test',
@@ -32,8 +33,18 @@ export function createE2eEnvironment(source, options = {}) {
     JWT_ISSUER: 'interview-agent-e2e',
     JWT_AUDIENCE: 'interview-agent-e2e-web',
     INTERNAL_AGENT_TOKEN: secureValue(32),
-    CREDENTIAL_ENCRYPTION_KEY: randomBytes(32).toString('base64'),
+    CREDENTIAL_ENCRYPTION_KEY: undefined,
+    CREDENTIAL_ENCRYPTION_KEY_CURRENT: credentialEncryptionKey,
+    CREDENTIAL_ENCRYPTION_KEY_PREVIOUS: undefined,
     CREDENTIAL_ENCRYPTION_KEY_VERSION: '1',
+    AI_CIRCUIT_FAILURE_THRESHOLD: '3',
+    AI_CIRCUIT_COOLDOWN_MS: '30000',
+    AI_CIRCUIT_HALF_OPEN_MAX_PROBES: '1',
+    BACKGROUND_JOB_WORKER_ENABLED: 'true',
+    BACKGROUND_JOB_POLL_INTERVAL_MS: '100',
+    RAG_TRAINING_ENABLED: 'true',
+    RAG_INTERVIEW_ENABLED: 'true',
+    RAG_REPORT_ENABLED: 'false',
     AGENT_RUNTIME_FALLBACK_ENABLED: 'false',
     API_CORS_ORIGINS: `http://${LOOPBACK_HOST}:${USER_PORT},http://${LOOPBACK_HOST}:${ADMIN_PORT}`,
     AGENT_RUNTIME_URL: `http://${LOOPBACK_HOST}:${RUNTIME_PORT}`,

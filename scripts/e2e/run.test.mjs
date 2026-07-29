@@ -18,6 +18,7 @@ test('starts every E2E service with its isolated endpoint', () => {
     ['MODEL', 'AGENT', 'API', 'USER', 'ADMIN'],
   );
   assert.doesNotMatch(services[1].args.join(' '), /--project/);
+  assert.ok(services[1].args.includes('--no-sync'));
   assert.deepEqual(services[1].args.slice(-2), ['--port', '8100']);
   assert.match(services[1].cwd, /apps[\\/]agent-runtime$/);
   assert.match(services[2].args.join(' '), /src\/main\.ts/);

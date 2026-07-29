@@ -9,7 +9,7 @@ describe('PracticeQueryService history', () => {
   const prisma = {
     practiceSession: { findMany },
   } as unknown as PrismaService;
-  const service = new PracticeQueryService(prisma, policy);
+  const service = new PracticeQueryService(prisma, policy, {} as never);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -49,6 +49,28 @@ describe('PracticeQueryService history', () => {
         take: 200,
       }),
     );
+  });
+});
+
+describe('PracticeQueryService mistake book', () => {
+  it('delegates scoped listing and review creation after authorization', async () => {
+    const mistakes = {
+      list: jest.fn().mockResolvedValue({ items: [] }),
+      startReview: jest.fn().mockResolvedValue({ id: 'review-session-1' }),
+    };
+    const policy = { assert: jest.fn() } as unknown as PolicyService;
+    const service = new PracticeQueryService({} as PrismaService, policy, mistakes as never);
+    const requestContext = context();
+
+    await service.mistakes(requestContext, { page: 1, pageSize: 20 });
+    await service.reviewMistake(requestContext, 'evaluation-1');
+
+    expect(policy.assert).toHaveBeenCalledWith(requestContext.actor, 'practice:read', {
+      tenantId: 'tenant-a',
+      ownerId: 'user-a',
+    });
+    expect(mistakes.list).toHaveBeenCalledWith(requestContext, { page: 1, pageSize: 20 });
+    expect(mistakes.startReview).toHaveBeenCalledWith(requestContext, 'evaluation-1');
   });
 });
 

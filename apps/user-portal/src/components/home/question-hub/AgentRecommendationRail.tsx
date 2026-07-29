@@ -1,6 +1,7 @@
 import type { PracticeRecommendation } from '@interview-agent/contracts';
 import Link from 'next/link';
 import { HomeWelcome } from './HomeWelcome';
+import { TrainingContinuationCard } from './TrainingContinuationCard';
 import type { TrainingContinuation } from './training-continuation';
 
 type AgentRecommendationRailProps = {
@@ -40,7 +41,9 @@ export function AgentRecommendationRail(props: AgentRecommendationRailProps) {
 }
 
 function RailPrimaryContent(props: AgentRecommendationRailProps) {
-  const { recommendations, loading, error, busyRecommendationId, onRetry, onStart } = props;
+  const { continuation, recommendations, loading, error, busyRecommendationId, onRetry, onStart } =
+    props;
+  if (continuation) return <TrainingContinuationCard continuation={continuation} />;
   const recommendation = recommendations[0];
   if (recommendation)
     return (

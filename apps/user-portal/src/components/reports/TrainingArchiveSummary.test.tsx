@@ -2,7 +2,7 @@ import React, { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { NotificationProvider } from '@/components/notifications/NotificationProvider';
-import { ArchiveSummary } from './ReportsPageContent';
+import { TrainingArchiveSummary } from './TrainingArchiveSummary';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -10,13 +10,13 @@ vi.mock('next/navigation', () => ({
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 
-describe('ArchiveSummary', () => {
+describe('TrainingArchiveSummary', () => {
   it('turns persisted training evidence into a weakness review action', () => {
     const markup = renderToStaticMarkup(
       createElement(
         NotificationProvider,
         null,
-        createElement(ArchiveSummary, {
+        createElement(TrainingArchiveSummary, {
           summary: { total: 4, practice: 3, interview: 1, reviewed: 3 },
         }),
       ),
@@ -31,7 +31,7 @@ describe('ArchiveSummary', () => {
       createElement(
         NotificationProvider,
         null,
-        createElement(ArchiveSummary, {
+        createElement(TrainingArchiveSummary, {
           summary: { total: 2, practice: 0, interview: 2, reviewed: 2 },
         }),
       ),

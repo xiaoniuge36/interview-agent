@@ -19,6 +19,8 @@ it('shows a confirmation-first practice action for an actionable report', () => 
   expect(markup).toContain('项目深挖');
   expect(markup).toContain('查看并确认回练');
   expect(markup).toContain('不会复制你的面试回答');
+  expect(markup).toContain('推荐依据');
+  expect(markup).toContain('最多 5 题 · 约 20 分钟');
 });
 
 it('does not render an action when the report has no actionable stage', () => {

@@ -110,6 +110,18 @@
   text-underline-offset: 4px;
 }
 
+.home-training-plan .recent-practice-card > a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--surface);
+  text-align: center;
+}
+
 .agent-rail-note {
   display: grid;
   gap: 3px;
@@ -201,6 +213,10 @@
   .recent-practice-card {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .home-training-plan .recent-practice-card > a {
+    width: 100%;
   }
 
   .question-section-heading,

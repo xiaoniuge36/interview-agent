@@ -38,6 +38,7 @@ export function serviceCommands(environment) {
       cwd: resolve(rootDir, 'apps/agent-runtime'),
       args: [
         'run',
+        '--no-sync',
         '--extra',
         'dev',
         'uvicorn',

@@ -87,11 +87,12 @@ export function hasUnsavedPracticeAnswer(item: PracticeSession['items'][number],
   return draft.trim() !== (item.answer?.trim() ?? '');
 }
 
-export function confirmPracticeNavigation(
-  item: PracticeSession['items'][number],
-  draft: string,
-  confirm: (message: string) => boolean,
-) {
-  if (!hasUnsavedPracticeAnswer(item, draft)) return true;
-  return confirm('当前回答还有未保存修改。切换题目会保留本地草稿，但不会同步到服务端，是否继续？');
+export function confirmPracticeNavigation(item: PracticeSession['items'][number], draft: string) {
+  if (!hasUnsavedPracticeAnswer(item, draft)) return null;
+  return {
+    cancelLabel: '留在本题',
+    confirmLabel: '保留草稿并切换',
+    description: '当前修改只保存在这个标签页，切换后仍可回来继续编辑。',
+    title: '保留这段草稿再切换？',
+  };
 }

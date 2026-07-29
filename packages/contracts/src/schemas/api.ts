@@ -30,6 +30,14 @@ export const ReadinessSchema = z.object({
   ),
 });
 
+export const PaginationMetaSchema = z.object({
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive(),
+  total: z.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+});
+
 export type ApiErrorEnvelope = z.infer<typeof ApiErrorEnvelopeSchema>;
 export type Liveness = z.infer<typeof LivenessSchema>;
 export type Readiness = z.infer<typeof ReadinessSchema>;
+export type PaginationMeta = z.infer<typeof PaginationMetaSchema>;

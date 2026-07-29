@@ -15,6 +15,7 @@ import { PracticeReportPlannerService } from './practice-report-planner.service'
 import { PracticeEvaluationCommandService } from './practice-evaluation-command.service';
 import { PracticeEvaluationInfrastructure } from './practice-evaluation-infrastructure';
 import { PracticeModelEvaluator } from './practice-model-evaluator';
+import { PracticeMistakeBookService } from './practice-mistake-book.service';
 import { PracticeService } from './practice.service';
 import { PracticeWriteService } from './practice-write.service';
 
@@ -36,6 +37,7 @@ import { PracticeWriteService } from './practice-write.service';
     PracticeRagRecommendationService,
     PracticeReportPlannerService,
     PracticeModelEvaluator,
+    PracticeMistakeBookService,
     PracticeEvaluationInfrastructure,
     PracticeEvaluationCommandService,
     PracticeCompletionService,

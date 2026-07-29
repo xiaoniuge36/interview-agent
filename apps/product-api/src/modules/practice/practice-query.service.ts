@@ -4,6 +4,8 @@ import {
   MasteryProfileListSchema,
   PracticeItemSolutionSchema,
   RecentPracticeResponseSchema,
+  type MistakeBook,
+  type MistakeBookQuery,
   type MasteryProfile,
   type PracticeHistoryItem,
   type PracticeReport,
@@ -23,6 +25,7 @@ import {
   mapSession,
 } from './practice-mappers';
 import { loadPracticeSession } from './practice-records';
+import { PracticeMistakeBookService } from './practice-mistake-book.service';
 
 const MASTERY_LIST_LIMIT = 200;
 const PRACTICE_HISTORY_LIST_LIMIT = 200;
@@ -32,6 +35,7 @@ export class PracticeQueryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly policy: PolicyService,
+    private readonly mistakeBook: PracticeMistakeBookService,
   ) {}
 
   async get(context: ProductRequestContext, sessionId: string): Promise<PracticeSession> {
@@ -93,6 +97,16 @@ export class PracticeQueryService {
     return mapHistoryItems(records);
   }
 
+  mistakes(context: ProductRequestContext, query: MistakeBookQuery): Promise<MistakeBook> {
+    this.assertAction(context, 'practice:read', context.actor.id);
+    return this.mistakeBook.list(context, query);
+  }
+
+  reviewMistake(context: ProductRequestContext, mistakeId: string): Promise<PracticeSession> {
+    this.assertAction(context, 'practice:create', context.actor.id);
+    return this.mistakeBook.startReview(context, mistakeId);
+  }
+
   async solution(
     context: ProductRequestContext,
     sessionId: string,
@@ -111,7 +125,7 @@ export class PracticeQueryService {
 
   private assertAction(
     context: ProductRequestContext,
-    action: 'practice:read' | 'mastery:read',
+    action: 'practice:read' | 'practice:create' | 'mastery:read',
     ownerId: string,
   ) {
     this.policy.assert(context.actor, action, { tenantId: context.tenantId, ownerId });

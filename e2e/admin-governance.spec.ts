@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { registerUser, verifyModelConnection } from './helpers/api';
 import { signInAdmin } from './helpers/auth';
@@ -87,11 +87,34 @@ test('imports, batch-approves, publishes, and surfaces governed AI metrics', asy
   await candidateDrawer.getByRole('button', { name: '保存并发布到题库' }).click();
   await page.getByRole('button', { name: '确认发布' }).click();
   await expect(candidateDrawer.getByText('审核已保存并发布到题库：')).toBeVisible();
+  await page.locator('.ant-drawer-close').click();
+  await expect(candidateDrawer).toBeHidden();
 
+  await verifyGovernedAnalytics(page);
+});
+
+async function verifyGovernedAnalytics(page: Page) {
   await page.goto(`${ADMIN_URL}/#analytics`);
   await expect(page.getByRole('heading', { name: '数据看板', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'AI 调用洞察' })).toBeVisible();
   await expect(page.getByText('真实调用')).toBeVisible();
+  await expect(page.getByText('模型链路质量')).toBeVisible();
+  await expect
+    .poll(
+      async () => {
+        await page.getByRole('button', { name: '刷新' }).click();
+        const coverage = page
+          .locator('.platform-ai-quality .ant-statistic')
+          .filter({ hasText: 'Embedding 覆盖率' });
+        await expect(coverage).toBeVisible();
+        return coverage.textContent();
+      },
+      { timeout: 20_000 },
+    )
+    .toContain('100');
+  await expect(
+    page.locator('.platform-ai-quality .ant-statistic').filter({ hasText: '死信任务' }),
+  ).toContainText('0');
   await expect(page.getByText('我会说明背景、决策、结果和复盘。')).toHaveCount(0);
   await expect(page.getByText('e2e-success')).toHaveCount(0);
-});
+}

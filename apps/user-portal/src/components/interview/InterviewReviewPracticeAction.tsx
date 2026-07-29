@@ -22,6 +22,10 @@ export function InterviewReviewPracticeAction(props: Props) {
         <strong>面试专项回练</strong>
         <p>将围绕本次面试中得分较低的阶段组题，不会复制你的面试回答。</p>
       </div>
+      <div className="interview-review-evidence-meta" aria-label="推荐依据">
+        <span>推荐依据 · 本次面试低分阶段</span>
+        <small>最多 5 题 · 约 20 分钟</small>
+      </div>
       <ul>
         {focus.map((item) => (
           <li key={item.stage}>

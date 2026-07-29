@@ -6,7 +6,19 @@ import { useNotifications } from '@/components/notifications/NotificationProvide
 import { createPracticeSession } from '@/lib/practice-api';
 import { createExclusiveWeaknessReviewRunner, startWeaknessReview } from '@/lib/weakness-review';
 
-export function WeaknessReviewAction() {
+const DEFAULT_EVIDENCE = ['最近低分评价', '能力记忆'];
+const DEFAULT_QUESTION_COUNT = 5;
+const DEFAULT_ESTIMATED_MINUTES = 20;
+
+export function WeaknessReviewAction({
+  evidence = DEFAULT_EVIDENCE,
+  questionCount = DEFAULT_QUESTION_COUNT,
+  estimatedMinutes = DEFAULT_ESTIMATED_MINUTES,
+}: {
+  evidence?: string[];
+  questionCount?: number;
+  estimatedMinutes?: number;
+} = {}) {
   const [starting, setStarting] = useState(false);
   const [runExclusive] = useState(createExclusiveWeaknessReviewRunner);
   const notifications = useNotifications();
@@ -29,7 +41,36 @@ export function WeaknessReviewAction() {
         },
       }),
     );
-  return <WeaknessReviewButton starting={starting} onStart={() => void start()} />;
+  return (
+    <div className="weakness-review-action">
+      <WeaknessEvidenceSummary
+        evidence={evidence}
+        questionCount={questionCount}
+        estimatedMinutes={estimatedMinutes}
+      />
+      <WeaknessReviewButton starting={starting} onStart={() => void start()} />
+    </div>
+  );
+}
+
+export function WeaknessEvidenceSummary({
+  evidence,
+  questionCount,
+  estimatedMinutes,
+}: {
+  evidence: string[];
+  questionCount: number;
+  estimatedMinutes: number;
+}) {
+  return (
+    <div className="weakness-review-evidence" aria-label="推荐依据">
+      <span>推荐依据</span>
+      <strong>{evidence.join(' · ')}</strong>
+      <small>
+        {questionCount} 题 · 约 {estimatedMinutes} 分钟
+      </small>
+    </div>
+  );
 }
 
 export function WeaknessReviewButton({

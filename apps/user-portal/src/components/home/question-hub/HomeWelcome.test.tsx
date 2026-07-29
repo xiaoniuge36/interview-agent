@@ -31,15 +31,15 @@ const continuation: TrainingContinuation = {
 };
 
 describe('HomeWelcome', () => {
-  it('以真实续练状态欢迎用户回来并提供继续入口', () => {
+  it('以真实续练状态欢迎用户且不重复渲染继续入口', () => {
     const markup = renderToStaticMarkup(
       createElement(HomeWelcome, { displayName: '林夏', continuation }),
     );
 
     expect(markup).toContain('欢迎回来，林夏');
     expect(markup).toContain('上次的训练还在这里等你');
-    expect(markup).toContain('继续练习');
     expect(markup).toContain('陪练已就位');
+    expect(markup).not.toContain('href="/practice?session=practice-1"');
   });
 
   it('在没有续练时使用低压力的开场', () => {

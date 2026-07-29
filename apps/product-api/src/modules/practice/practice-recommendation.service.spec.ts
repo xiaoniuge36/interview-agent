@@ -203,7 +203,11 @@ describe('PracticeQueryService recent session', () => {
       },
     };
     const policy = { assert: jest.fn() };
-    const service = new PracticeQueryService(prisma as unknown as PrismaService, policy as never);
+    const service = new PracticeQueryService(
+      prisma as unknown as PrismaService,
+      policy as never,
+      {} as never,
+    );
 
     await expect(service.recent(context)).resolves.toMatchObject({
       id: 'session-1',
@@ -238,6 +242,7 @@ describe('PracticeQueryService item solution', () => {
     const service = new PracticeQueryService(
       prisma as unknown as PrismaService,
       { assert: jest.fn() } as never,
+      {} as never,
     );
 
     await expect(service.solution(context, 'session-1', 'item-1')).resolves.toMatchObject({

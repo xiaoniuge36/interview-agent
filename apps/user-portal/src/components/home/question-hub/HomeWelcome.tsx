@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { createHomeWelcome } from './home-welcome-model';
 import type { TrainingContinuation } from './training-continuation';
 
@@ -24,13 +23,8 @@ export function HomeWelcome({ displayName, continuation }: HomeWelcomeProps) {
         <span className="agent-status-dot" aria-hidden="true" />
         <div>
           <strong>陪练已就位</strong>
-          <span>按自己的节奏开始就好</span>
+          <span>{continuation ? '当前训练进度已安全保留' : '按自己的节奏开始就好'}</span>
         </div>
-        {continuation ? (
-          <Link href={continuation.href}>
-            {continuation.actionLabel} <span aria-hidden="true">→</span>
-          </Link>
-        ) : null}
       </aside>
     </div>
   );

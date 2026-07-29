@@ -15,7 +15,8 @@ import {
   type TrainingRecordFilter,
 } from './training-records-model';
 import { TrainingArchiveFilters } from './TrainingArchiveFilters';
-import { WeaknessReviewAction } from './WeaknessReviewAction';
+import { MistakeBook } from './MistakeBook';
+import { TrainingArchiveSummary } from './TrainingArchiveSummary';
 
 type ArchiveState = {
   records: TrainingRecord[];
@@ -41,6 +42,7 @@ export function ReportsPageContent() {
         onChange={setFilter}
         onQueryChange={setQuery}
       />
+      <MistakeBook />
       <ArchiveDelivery
         state={archive}
         records={records}
@@ -130,7 +132,7 @@ function ArchiveDelivery({
   if (!records.length) return <ArchiveEmpty filter={filter} query={query} />;
   return (
     <section className="training-archive-list" aria-label="训练记录列表">
-      <ArchiveSummary summary={summary} />
+      <TrainingArchiveSummary summary={summary} />
       {state.status === 'partial' ? (
         <p className="training-archive-partial" role="status">
           部分记录暂时未能读取，其余历史已为你保留。
@@ -143,37 +145,6 @@ function ArchiveDelivery({
         <ArchiveRecord key={`${record.kind}-${record.id}`} record={record} />
       ))}
     </section>
-  );
-}
-
-export function ArchiveSummary({
-  summary,
-}: {
-  summary: ReturnType<typeof summarizeTrainingRecords>;
-}) {
-  return (
-    <section className="training-archive-summary" aria-label="训练概览">
-      <div>
-        <span>训练证据</span>
-        <strong>{summary.total} 条记录已沉淀</strong>
-        <p>从真实的复盘出发，选择下一轮训练。</p>
-        {summary.practice ? <WeaknessReviewAction /> : null}
-      </div>
-      <dl>
-        <SummaryFact label="刷题" value={summary.practice} />
-        <SummaryFact label="模拟面试" value={summary.interview} />
-        <SummaryFact label="已完成复盘" value={summary.reviewed} />
-      </dl>
-    </section>
-  );
-}
-
-function SummaryFact({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <dt>{label}</dt>
-      <dd>{value}</dd>
-    </div>
   );
 }
 
