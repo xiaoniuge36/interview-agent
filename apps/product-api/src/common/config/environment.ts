@@ -85,6 +85,9 @@ const EnvironmentSchema = z
       .default(DEFAULT_RUNTIME_RETRY_DELAY_MS),
     AGENT_RUNTIME_FALLBACK_ENABLED: BooleanEnvironmentSchema.default('false'),
     BACKGROUND_JOB_WORKER_ENABLED: BooleanEnvironmentSchema.default('false'),
+    RAG_TRAINING_ENABLED: BooleanEnvironmentSchema.default('false'),
+    RAG_INTERVIEW_ENABLED: BooleanEnvironmentSchema.default('false'),
+    RAG_REPORT_ENABLED: BooleanEnvironmentSchema.default('false'),
     BACKGROUND_JOB_POLL_INTERVAL_MS: z.coerce
       .number()
       .int()

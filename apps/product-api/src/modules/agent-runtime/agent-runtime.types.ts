@@ -1,5 +1,9 @@
 ﻿import { BadGatewayException, HttpException, ServiceUnavailableException } from '@nestjs/common';
-import type { AgentRuntimeSessionContext, InterviewStage } from '@interview-agent/contracts';
+import type {
+  AgentRuntimeRetrievalContext,
+  AgentRuntimeSessionContext,
+  InterviewStage,
+} from '@interview-agent/contracts';
 
 export type RuntimeFailureKind = 'rejected' | 'schema' | 'unavailable';
 
@@ -15,6 +19,7 @@ export type AgentNextDecision = {
   content: string;
   shouldFinish: boolean;
   basisSummary?: string[];
+  sourceIds?: string[];
 };
 
 export type AgentNextResult = AgentNextDecision & {
@@ -27,6 +32,7 @@ export type AgentNextResult = AgentNextDecision & {
 export type AgentNextInput = {
   session: AgentRuntimeSessionContext;
   answer?: string;
+  retrievalContext?: AgentRuntimeRetrievalContext[];
   traceId: string;
   commandId: string;
 };

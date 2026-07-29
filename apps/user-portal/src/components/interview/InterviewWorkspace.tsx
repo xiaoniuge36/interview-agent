@@ -11,6 +11,8 @@ type InterviewWorkspaceProps = {
   jobs: JobIntentPayload[];
 };
 
+const MAX_INTERVIEW_SOURCES = 6;
+
 export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
   const controller = useInterviewController(jobs);
   const reviewPractice = useInterviewReviewPractice();
@@ -22,6 +24,7 @@ export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
           events={controller.state.events}
           phase={controller.state.phase}
           basisSummary={controller.state.basisSummary}
+          sourceCount={interviewSourceCount(controller.state.session)}
         />
         <ReportPanel
           report={controller.state.report}
@@ -35,4 +38,14 @@ export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
       </aside>
     </section>
   );
+}
+
+function interviewSourceCount(
+  session: ReturnType<typeof useInterviewController>['state']['session'],
+) {
+  const sourceIds = session?.turns.at(-1)?.structuredPayload?.sourceIds;
+  if (!Array.isArray(sourceIds)) return 0;
+  return sourceIds
+    .filter((sourceId) => typeof sourceId === 'string')
+    .slice(0, MAX_INTERVIEW_SOURCES).length;
 }

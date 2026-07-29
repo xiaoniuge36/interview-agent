@@ -4,6 +4,7 @@ import { CONTRACT_LIMITS } from '../limits';
 const MIN_MODEL_INVOCATION_GRANT_LENGTH = 16;
 const MAX_MODEL_INVOCATION_GRANT_LENGTH = 4096;
 const MAX_BASIS_SUMMARY_ITEMS = 3;
+const MAX_RETRIEVAL_CONTEXT_ITEMS = 6;
 
 export const InterviewStageSchema = z.enum([
   'warmup',
@@ -80,12 +81,22 @@ export const AgentRuntimeSessionContextSchema = z.object({
   recentTurns: z.array(AgentRuntimeTurnContextSchema).max(CONTRACT_LIMITS.runtimeTurns),
 });
 
+export const AgentRuntimeRetrievalContextSchema = z.object({
+  sourceId: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  entityType: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  content: z.string().min(1).max(CONTRACT_LIMITS.mediumText),
+});
+
 export const AgentRuntimeNextRequestSchema = z.object({
   contractVersion: AgentRuntimeContractVersionSchema,
   session: AgentRuntimeSessionContextSchema,
   commandId: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   traceId: z.string().min(CONTRACT_LIMITS.traceIdMinLength).max(CONTRACT_LIMITS.traceIdMaxLength),
   answer: z.string().trim().min(1).max(CONTRACT_LIMITS.longText).optional(),
+  retrievalContext: z
+    .array(AgentRuntimeRetrievalContextSchema)
+    .max(MAX_RETRIEVAL_CONTEXT_ITEMS)
+    .optional(),
   modelInvocationGrant: z
     .string()
     .trim()
@@ -102,6 +113,10 @@ export const AgentRuntimeNextResponseSchema = z.object({
   basisSummary: z
     .array(z.string().trim().min(1).max(CONTRACT_LIMITS.mediumText))
     .max(MAX_BASIS_SUMMARY_ITEMS)
+    .optional(),
+  sourceIds: z
+    .array(z.string().min(1).max(CONTRACT_LIMITS.shortText))
+    .max(MAX_RETRIEVAL_CONTEXT_ITEMS)
     .optional(),
 });
 
@@ -172,6 +187,7 @@ export type InterviewTurnRole = z.infer<typeof InterviewTurnRoleSchema>;
 export type InterviewTurn = z.infer<typeof InterviewTurnSchema>;
 export type InterviewSession = z.infer<typeof InterviewSessionSchema>;
 export type AgentRuntimeSessionContext = z.infer<typeof AgentRuntimeSessionContextSchema>;
+export type AgentRuntimeRetrievalContext = z.infer<typeof AgentRuntimeRetrievalContextSchema>;
 export type AgentRuntimeNextRequest = z.infer<typeof AgentRuntimeNextRequestSchema>;
 export type AgentRuntimeNextResponse = z.infer<typeof AgentRuntimeNextResponseSchema>;
 export type StartInterviewInput = z.infer<typeof StartInterviewInputSchema>;

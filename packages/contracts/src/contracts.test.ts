@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   AgentRuntimeNextRequestSchema,
+  AgentRuntimeNextResponseSchema,
   ActionSchema,
   CreatePracticeSessionSchema,
   CreateLocalAdminInputSchema,
@@ -52,6 +53,29 @@ test('runtime requests preserve an optional signed model invocation grant', () =
   });
 
   assert.equal(parsed.modelInvocationGrant, 'signed-runtime-grant.payload-signature');
+});
+
+test('runtime requests carry bounded read-only retrieval context and cited source ids', () => {
+  const parsed = AgentRuntimeNextRequestSchema.parse({
+    ...validRuntimeRequest,
+    retrievalContext: [
+      {
+        sourceId: 'retrieval-chunk-1',
+        entityType: 'question',
+        content: 'Explain the transaction boundary.',
+      },
+    ],
+  });
+  const response = AgentRuntimeNextResponseSchema.parse({
+    contractVersion: 'interview-runtime.v1',
+    stage: 'jd_core',
+    content: 'How would you make that operation idempotent?',
+    shouldFinish: false,
+    sourceIds: ['retrieval-chunk-1'],
+  });
+
+  assert.equal(parsed.retrievalContext?.[0]?.sourceId, 'retrieval-chunk-1');
+  assert.deepEqual(response.sourceIds, ['retrieval-chunk-1']);
 });
 
 test('answer input trims content and rejects blank answers', () => {

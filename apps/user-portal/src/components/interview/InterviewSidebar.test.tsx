@@ -14,11 +14,14 @@ describe('interview sidebar', () => {
         events: [],
         phase: 'analyzing',
         basisSummary: ['基于你刚才的项目经历继续追问。'],
+        sourceCount: 2,
       }),
     );
 
     expect(markup).toContain('AI 当前处理');
     expect(markup).toContain('本轮关注依据');
+    expect(markup).toContain('本轮参考来源');
+    expect(markup).toContain('已使用 2 条受控知识来源');
   });
 
   it('names the report next actions and retains the empty report guidance', () => {

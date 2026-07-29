@@ -75,7 +75,9 @@ export const PracticeRecommendationEvidenceTypeSchema = z.enum([
   'job',
   'profile',
   'curated',
+  'retrieval',
 ]);
+export const PracticeRecommendationAlgorithmSchema = z.enum(['rules', 'hybrid']);
 export const PracticeRecommendationEvidenceSchema = z.object({
   type: PracticeRecommendationEvidenceTypeSchema,
   sourceId: z.string().min(1).max(CONTRACT_LIMITS.shortText),
@@ -87,6 +89,7 @@ export const PracticeRecommendationSchema = z.object({
   title: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   reason: z.string().min(1).max(CONTRACT_LIMITS.mediumText),
   source: PracticeRecommendationSourceSchema,
+  algorithm: PracticeRecommendationAlgorithmSchema.default('rules'),
   category: QuestionCatalogCategorySchema.nullable(),
   estimatedMinutes: z.number().int().positive(),
   questionIds: z.array(z.string().min(1)).min(1).max(RECOMMENDATION_QUESTION_LIMIT),

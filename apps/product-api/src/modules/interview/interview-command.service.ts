@@ -1,13 +1,12 @@
 ﻿import { HttpException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import type { AiOperationPhase, InterviewCommandResult } from '@interview-agent/contracts';
-import { PolicyService } from '../../common/authz/policy.service';
 import {
-  AgentRuntimeClient,
   AgentRuntimeInvocationError,
   type AgentNextResult,
 } from '../agent-runtime/agent-runtime.client';
 import { buildCompletion } from './interview-command.builder';
-import { InterviewCommandRepository } from './interview-command.repository';
+import { InterviewCommandInfrastructure } from './interview-command-infrastructure';
+import { InterviewRetrievalContextService } from './interview-retrieval-context.service';
 import { toRuntimeContext } from './interview.mapper';
 import { assertRuntimeDecision } from './interview-state-machine';
 import type {
@@ -36,10 +35,21 @@ export class InterviewCommandService {
   private readonly logger = new Logger(InterviewCommandService.name);
 
   constructor(
-    private readonly repository: InterviewCommandRepository,
-    private readonly policy: PolicyService,
-    private readonly agent: AgentRuntimeClient,
+    private readonly infrastructure: InterviewCommandInfrastructure,
+    private readonly retrieval: InterviewRetrievalContextService,
   ) {}
+
+  private get repository() {
+    return this.infrastructure.repository;
+  }
+
+  private get policy() {
+    return this.infrastructure.policy;
+  }
+
+  private get agent() {
+    return this.infrastructure.agent;
+  }
 
   start(request: StartCommandRequest) {
     this.policy.assert(request.context.actor, 'interview:create', {
@@ -115,7 +125,13 @@ export class InterviewCommandService {
       stream?.phase('preparing');
       stream?.phase('analyzing');
       stream?.phase('composing');
-      runtime = await invokeRuntime(this.agent, prepared, stream);
+      const retrievalContext = await this.retrieval.forCommand(prepared);
+      runtime = await invokeRuntime({
+        agent: this.agent,
+        preparation: prepared,
+        retrievalContext,
+        stream,
+      });
       stream?.phase('validating');
       assertRuntimeDecision(prepared.session, prepared.command, runtime);
       const artifacts = buildCompletion({ preparation: prepared, runtime });
@@ -171,19 +187,21 @@ export class InterviewCommandService {
   }
 }
 
-function invokeRuntime(
-  agent: AgentRuntimeClient,
-  preparation: InvocationPreparation,
-  stream: InterviewCommandStream | undefined,
-) {
-  const input = {
-    session: toRuntimeContext(preparation.session),
-    ...(preparation.answer ? { answer: preparation.answer } : {}),
-    traceId: preparation.context.traceId,
-    commandId: preparation.commandId,
+function invokeRuntime(command: {
+  agent: InterviewCommandInfrastructure['agent'];
+  preparation: InvocationPreparation;
+  retrievalContext: Awaited<ReturnType<InterviewRetrievalContextService['forCommand']>>;
+  stream: InterviewCommandStream | undefined;
+}) {
+  const request = {
+    session: toRuntimeContext(command.preparation.session),
+    ...(command.preparation.answer ? { answer: command.preparation.answer } : {}),
+    ...(command.retrievalContext.length ? { retrievalContext: command.retrievalContext } : {}),
+    traceId: command.preparation.context.traceId,
+    commandId: command.preparation.commandId,
   };
-  if (!stream) return agent.next(input, preparation.context);
-  return agent.next(input, preparation.context, streamProgress(stream));
+  if (!command.stream) return command.agent.next(request, command.preparation.context);
+  return command.agent.next(request, command.preparation.context, streamProgress(command.stream));
 }
 
 function streamProgress(stream: InterviewCommandStream) {

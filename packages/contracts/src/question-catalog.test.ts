@@ -140,3 +140,29 @@ test('最近练习摘要与逐题反馈支持恢复学习状态', () => {
   );
   assert.equal(RecentPracticeResponseSchema.parse(null), null);
 });
+
+test('hybrid recommendations identify their algorithm and retrieval sources', () => {
+  const result = PracticeRecommendationListSchema.parse([
+    {
+      id: 'recommendation-rag',
+      title: 'RAG strengthening',
+      reason: 'Retrieved from the tenant question corpus.',
+      source: 'mastery',
+      algorithm: 'hybrid',
+      category: 'ai_agent',
+      estimatedMinutes: 20,
+      questionIds: ['question-1'],
+      evidence: [
+        {
+          type: 'retrieval',
+          sourceId: 'chunk-1',
+          label: 'Question corpus match',
+          detail: 'A tenant-visible question matched the current weakness.',
+        },
+      ],
+    },
+  ]);
+
+  assert.equal(result[0]!.algorithm, 'hybrid');
+  assert.equal(result[0]!.evidence?.[0]?.type, 'retrieval');
+});

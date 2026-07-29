@@ -11,6 +11,7 @@ const recommendation = {
   title: '系统设计薄弱点强化',
   reason: '最近两轮复盘中，异常恢复和容量规划仍需要加强。',
   source: 'mastery',
+  algorithm: 'rules',
   category: null,
   estimatedMinutes: 24,
   questionIds: ['question-1', 'question-2', 'question-3'],

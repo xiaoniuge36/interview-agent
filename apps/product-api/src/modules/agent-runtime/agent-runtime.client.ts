@@ -118,7 +118,8 @@ export class AgentRuntimeClient {
         redirect: 'error',
       });
       if (!response.ok) return httpFailure(response.status);
-      return await parseRuntimeDecision(response);
+      const allowedSources = new Set(request.retrievalContext?.map((source) => source.sourceId));
+      return await parseRuntimeDecision(response, allowedSources);
     } catch {
       const code = controller.signal.aborted
         ? 'AGENT_RUNTIME_TIMEOUT'

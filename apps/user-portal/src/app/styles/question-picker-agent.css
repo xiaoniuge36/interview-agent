@@ -124,6 +124,20 @@ html[data-motion='on'] .question-agent-mark::after {
   list-style: none;
 }
 
+.question-agent-sources {
+  margin-top: 8px;
+}
+
+.question-agent-algorithm {
+  display: inline-flex;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary-strong);
+  font-size: 9px;
+  font-weight: 800;
+}
+
 .question-agent-evidence li {
   display: flex;
   flex-wrap: wrap;

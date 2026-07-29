@@ -15,16 +15,19 @@ import {
   recommendationTitle,
   type RecommendationContext,
 } from './practice-recommendation-context';
+import { PracticeRagRecommendationService } from './practice-rag-recommendation.service';
 
 const QUESTION_COUNT = 5;
 const MINUTES_PER_QUESTION = 4;
 const RECENT_QUESTION_LIMIT = 20;
+const RECOMMENDATION_EVIDENCE_LIMIT = 4;
 
 @Injectable()
 export class PracticeRecommendationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly policy: PolicyService,
+    private readonly rag?: PracticeRagRecommendationService,
   ) {}
 
   async list(context: ProductRequestContext): Promise<PracticeRecommendation[]> {
@@ -42,17 +45,29 @@ export class PracticeRecommendationService {
       recentItems,
     );
     if (!selection) return [];
-    const { recommendation, questions } = selection;
+    const hybrid = this.rag
+      ? await this.rag.enhance(
+          context,
+          selection,
+          recentItems.map((item) => item.questionId),
+        )
+      : null;
+    const { recommendation, questions } = hybrid ?? selection;
+    const evidence = [
+      ...(hybrid?.evidence ?? []),
+      ...recommendationEvidence(recommendation, candidateInput),
+    ].slice(0, RECOMMENDATION_EVIDENCE_LIMIT);
     return PracticeRecommendationListSchema.parse([
       {
         id: `recommendation-${recommendation.category ?? 'curated'}`,
         title: recommendationTitle(recommendation.category, recommendation.weakTag),
         reason: recommendationReason(recommendation),
         source: recommendation.source,
+        algorithm: hybrid?.algorithm ?? 'rules',
         category: recommendation.category,
         estimatedMinutes: questions.length * MINUTES_PER_QUESTION,
         questionIds: questions.map((question) => question.id),
-        evidence: recommendationEvidence(recommendation, candidateInput),
+        evidence,
       },
     ]);
   }

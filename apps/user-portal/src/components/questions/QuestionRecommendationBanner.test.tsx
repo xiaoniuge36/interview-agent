@@ -11,6 +11,7 @@ const recommendation = {
   title: '系统设计薄弱点强化',
   reason: '最近两轮复盘中，异常恢复和容量规划仍需要加强。',
   source: 'mastery',
+  algorithm: 'hybrid',
   category: null,
   estimatedMinutes: 24,
   questionIds: ['question-1', 'question-2', 'question-3'],
@@ -20,6 +21,12 @@ const recommendation = {
       sourceId: 'memory-event-1',
       label: '系统设计掌握度 42 分',
       detail: '来自 2 条训练证据，当前趋势下降。',
+    },
+    {
+      type: 'retrieval',
+      sourceId: 'chunk-1',
+      label: '事务一致性题库',
+      detail: '匹配到近期训练薄弱点的公开题目摘要。',
     },
   ],
 } satisfies PracticeRecommendation;
@@ -36,6 +43,9 @@ describe('QuestionRecommendationBanner', () => {
     expect(markup).toContain('系统设计掌握度 42 分');
     expect(markup).toContain('来自 2 条训练证据，当前趋势下降。');
     expect(markup).toContain('系统设计薄弱点强化');
+    expect(markup).toContain('混合检索推荐');
+    expect(markup).toContain('检索来源 · 事务一致性题库');
+    expect(markup).toContain('匹配到近期训练薄弱点的公开题目摘要。');
   });
 
   it('仅在 Agent 交接进入题库时说明仍需用户确认创建题单', () => {

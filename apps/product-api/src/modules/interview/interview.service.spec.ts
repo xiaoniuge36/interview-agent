@@ -69,9 +69,12 @@ function setup() {
   };
   const agent = { next: jest.fn(async () => runtimeResult()) };
   const service = new InterviewCommandService(
-    repository as unknown as InterviewCommandRepository,
-    new PolicyService(),
-    agent as unknown as AgentRuntimeClient,
+    {
+      repository: repository as unknown as InterviewCommandRepository,
+      policy: new PolicyService(),
+      agent: agent as unknown as AgentRuntimeClient,
+    } as never,
+    { forCommand: jest.fn().mockResolvedValue([]) } as never,
   );
   return { service, repository, agent };
 }
@@ -128,18 +131,21 @@ describe('InterviewCommandService Runtime completion', () => {
       idempotencyKey: 'advance-key-0001',
     });
 
-    expect(agent.next).toHaveBeenCalledWith({
-      session: expect.objectContaining({
-        id: 'interview-1',
-        candidateTurnCount: 0,
-        recentTurns: [],
+    expect(agent.next).toHaveBeenCalledWith(
+      {
+        session: expect.objectContaining({
+          id: 'interview-1',
+          candidateTurnCount: 0,
+          recentTurns: [],
+        }),
+        traceId: 'trace-test-0001',
+        commandId: 'command-1',
+      },
+      expect.objectContaining({
+        tenantId: 'tenant-a',
+        actor: expect.objectContaining({ id: 'user-a' }),
       }),
-      traceId: 'trace-test-0001',
-      commandId: 'command-1',
-    }, expect.objectContaining({
-      tenantId: 'tenant-a',
-      actor: expect.objectContaining({ id: 'user-a' }),
-    }));
+    );
     expect(repository.complete).toHaveBeenCalledTimes(1);
     expect(result.sessionVersion).toBe(1);
     expect(result.session.turns).toHaveLength(1);

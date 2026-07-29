@@ -1,3 +1,4 @@
+import type { AgentRuntimeRetrievalContext } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { InterviewCommandService } from './interview-command.service';
 
@@ -47,19 +48,51 @@ describe('InterviewCommandService streaming', () => {
   });
 });
 
-function createStreamingService() {
+describe('InterviewCommandService retrieval context', () => {
+  it('passes only bounded retrieval context to Runtime without a free search tool', async () => {
+    const retrievalContext = [
+      {
+        sourceId: 'chunk-1',
+        entityType: 'question',
+        content: 'Explain the outbox pattern.',
+      },
+    ];
+    const { service, session, agent } = createStreamingService(retrievalContext);
+
+    const result = await service.advance({
+      context,
+      sessionId: session.id,
+      input: { expectedVersion: 0 },
+      idempotencyKey: 'advance-rag-12345678',
+    });
+
+    const runtimeRequest = agent.next.mock.calls[0][0];
+    expect(runtimeRequest.retrievalContext).toEqual(retrievalContext);
+    expect(runtimeRequest).not.toHaveProperty('searchTool');
+    expect(result.session.turns.at(-1)?.structuredPayload).toEqual({
+      basisSummary: BASIS_SUMMARY,
+      sourceIds: ['chunk-1'],
+    });
+  });
+});
+
+function createStreamingService(retrievalContext: AgentRuntimeRetrievalContext[] = []) {
   const session = sessionRecord();
   const repository = {
     prepare: jest.fn().mockResolvedValue(preparedExecution(session)),
     complete: jest.fn().mockImplementation(async (request) => request.artifacts.result),
     fail: jest.fn().mockResolvedValue(undefined),
   };
+  const agent = streamingAgent(retrievalContext.map((source) => source.sourceId));
   const service = new InterviewCommandService(
-    repository as never,
-    { assert: jest.fn() } as never,
-    streamingAgent() as never,
+    {
+      repository,
+      policy: { assert: jest.fn() },
+      agent,
+    } as never,
+    { forCommand: jest.fn().mockResolvedValue(retrievalContext) } as never,
   );
-  return { service, repository, session };
+  return { service, repository, session, agent };
 }
 
 function preparedExecution(session: ReturnType<typeof sessionRecord>) {
@@ -78,15 +111,16 @@ function preparedExecution(session: ReturnType<typeof sessionRecord>) {
   };
 }
 
-function streamingAgent() {
+function streamingAgent(sourceIds: string[]) {
   return {
     next: jest.fn().mockImplementation(async (_input, _context, progress) => {
-      progress.onContentDelta(VISIBLE_CONTENT);
+      progress?.onContentDelta?.(VISIBLE_CONTENT);
       return {
         stage: 'warmup',
         content: VISIBLE_CONTENT,
         shouldFinish: false,
         basisSummary: BASIS_SUMMARY,
+        ...(sourceIds.length ? { sourceIds } : {}),
         latencyMs: 1,
         attempts: 1,
         fallbackUsed: false,

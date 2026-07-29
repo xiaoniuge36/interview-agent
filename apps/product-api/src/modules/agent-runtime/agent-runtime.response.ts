@@ -8,11 +8,14 @@ import type {
 
 const MAX_RESPONSE_BYTES = 65_536;
 
-export async function parseRuntimeDecision(response: Response): Promise<RuntimeInvocationOutcome> {
+export async function parseRuntimeDecision(
+  response: Response,
+  allowedSourceIds: ReadonlySet<string> = new Set(),
+): Promise<RuntimeInvocationOutcome> {
   if (declaredBodyTooLarge(response)) return schemaFailure();
   const text = await readBoundedBody(response);
   if (text === undefined) return schemaFailure();
-  return parseResponseText(text);
+  return parseResponseText(text, allowedSourceIds);
 }
 
 export function httpFailure(status: number): RuntimeFailure {
@@ -32,25 +35,37 @@ export function unavailableFailure(code: string): RuntimeFailure {
   return { kind: 'unavailable', code, retryable: true, schemaValid: null };
 }
 
-function parseResponseText(text: string): RuntimeInvocationOutcome {
+function parseResponseText(
+  text: string,
+  allowedSourceIds: ReadonlySet<string>,
+): RuntimeInvocationOutcome {
   try {
     const parsed = AgentRuntimeNextResponseSchema.safeParse(JSON.parse(text));
     if (!parsed.success) return schemaFailure();
+    if (!sourcesAllowed(parsed.data.sourceIds, allowedSourceIds)) return schemaFailure();
     return { decision: decisionFrom(parsed.data) };
   } catch {
     return schemaFailure();
   }
 }
 
+function sourcesAllowed(sourceIds: string[] | undefined, allowedSourceIds: ReadonlySet<string>) {
+  return !sourceIds?.some((sourceId) => !allowedSourceIds.has(sourceId));
+}
+
 function decisionFrom(input: {
   stage: AgentNextDecision['stage'];
   content: string;
   shouldFinish: boolean;
+  basisSummary?: string[] | undefined;
+  sourceIds?: string[] | undefined;
 }): AgentNextDecision {
   return {
     stage: input.stage,
     content: input.content,
     shouldFinish: input.shouldFinish,
+    ...(input.basisSummary ? { basisSummary: input.basisSummary } : {}),
+    ...(input.sourceIds ? { sourceIds: input.sourceIds } : {}),
   };
 }
 
