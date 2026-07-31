@@ -1,4 +1,10 @@
-import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { AgentRuntimeNextResponseSchema, type ModelProvider } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { IncrementalJsonFieldDecoder } from '../../common/streaming/incremental-json-field-decoder';
@@ -9,6 +15,7 @@ import { ModelProviderClient, ModelProviderError } from '../model-credential/mod
 import type { AgentNextInput, AgentNextResult, AgentRuntimeProgress } from './agent-runtime.types';
 
 type UserModelNextInput = { context: ProductRequestContext; input: AgentNextInput };
+const CLIENT_CLOSED_REQUEST_STATUS = 499;
 
 @Injectable()
 export class UserModelRuntimeClient {
@@ -37,8 +44,8 @@ export class UserModelRuntimeClient {
         },
       );
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof BadGatewayException) throw error;
-      throw providerFailure(error);
+      if (error instanceof HttpException) throw error;
+      throw runtimeFailure(error);
     }
   }
 
@@ -55,6 +62,7 @@ export class UserModelRuntimeClient {
       return await this.invocations.measure(
         invocationMetadata(context, credential, input),
         async (onUsage, budget) => {
+          if (progress.signal?.aborted) throw streamAbortError(progress.signal);
           for await (const delta of this.provider.stream({
             ...credential,
             systemPrompt: systemPrompt(input),
@@ -65,14 +73,14 @@ export class UserModelRuntimeClient {
           })) {
             content += delta;
             const visible = decoder.push(delta);
-            if (visible) progress.onContentDelta?.(visible);
+            if (visible) await progress.onContentDelta?.(visible);
           }
           return runtimeResult(parseDecision(content, input), startedAt);
         },
       );
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof BadGatewayException) throw error;
-      throw providerFailure(error);
+      if (error instanceof HttpException) throw error;
+      throw runtimeFailure(error);
     }
   }
 }
@@ -166,6 +174,34 @@ function connectionRequired() {
 function providerFailure(error: unknown) {
   const code = error instanceof ModelProviderError ? error.code : 'MODEL_PROVIDER_UNAVAILABLE';
   return new BadGatewayException({ code, message: '模型连接暂时不可用，请测试连接或稍后重试。' });
+}
+
+function runtimeFailure(error: unknown) {
+  if (isAbortError(error)) {
+    return new HttpException(
+      { code: 'AGENT_RUNTIME_CANCELLED', message: '模型调用已取消。' },
+      CLIENT_CLOSED_REQUEST_STATUS,
+    );
+  }
+  if (error instanceof ModelProviderError && error.code === 'MODEL_PROVIDER_TIMEOUT') {
+    return new HttpException(
+      { code: error.code, message: '模型调用超时。' },
+      HttpStatus.REQUEST_TIMEOUT,
+    );
+  }
+  return providerFailure(error);
+}
+
+function streamAbortError(signal: AbortSignal) {
+  const reason = signal.reason;
+  if (reason instanceof Error && isAbortError(reason)) return reason;
+  const error = new Error('Model stream was cancelled.');
+  error.name = 'AbortError';
+  return error;
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof Error && (error.name === 'AbortError' || error.name === 'ABORT_ERR');
 }
 
 function elapsed(startedAt: number) {

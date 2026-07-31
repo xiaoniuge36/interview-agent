@@ -1,5 +1,5 @@
 import pytest
-from app.model_gateway import ModelGatewayRequest
+from app.model_gateway import ModelGatewayError, ModelGatewayRequest
 from app.schemas.practice_report import PracticeReportRequest
 from app.workflows.practice_report_graph import (
     PracticeReportGraphError,
@@ -102,6 +102,16 @@ async def test_graph_uses_deterministic_fallback_after_failed_repair() -> None:
     assert result.overall_score == 72
     assert result.weaknesses == ["Capacity planning"]
     assert result.source_ids == []
+
+
+@pytest.mark.anyio
+async def test_graph_does_not_fallback_after_a_blocked_provider_endpoint() -> None:
+    gateway = FakeGateway([ModelGatewayError("MODEL_PROVIDER_ENDPOINT_BLOCKED", retryable=False)])
+
+    with pytest.raises(PracticeReportGraphError, match="MODEL_PROVIDER_ENDPOINT_BLOCKED"):
+        await run_practice_report_graph(create_practice_report_graph(gateway), valid_request())
+
+    assert len(gateway.requests) == 1
 
 
 @pytest.mark.anyio

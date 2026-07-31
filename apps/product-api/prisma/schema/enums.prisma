@@ -152,6 +152,8 @@ enum QuestionType {
   system_design
   project_deep_dive
   behavioral
+  single_choice
+  multiple_choice
 }
 
 enum QuestionStatus {

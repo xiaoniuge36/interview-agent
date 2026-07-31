@@ -3,13 +3,14 @@ import { CONTRACT_LIMITS } from '../limits';
 
 const RETRIEVAL_QUERY_MAX = 4_000;
 const RETRIEVAL_LIMIT_MAX = 20;
+const RETRIEVAL_LIMIT_DEFAULT = 8;
 
 export const RetrievalPurposeSchema = z.enum(['training', 'interview', 'report']);
 export const RetrievalSourceSchema = z.enum(['keyword', 'vector', 'hybrid']);
 export const RetrievalQuerySchema = z.object({
   query: z.string().trim().min(1).max(RETRIEVAL_QUERY_MAX),
   purpose: RetrievalPurposeSchema,
-  limit: z.coerce.number().int().min(1).max(RETRIEVAL_LIMIT_MAX).default(8),
+  limit: z.coerce.number().int().min(1).max(RETRIEVAL_LIMIT_MAX).default(RETRIEVAL_LIMIT_DEFAULT),
 });
 export const RetrievalHitSchema = z.object({
   id: z.string().min(1).max(CONTRACT_LIMITS.shortText),

@@ -27,12 +27,12 @@ export class InterviewService {
     return this.commands.start(request);
   }
 
-  advance(request: AdvanceCommandRequest) {
-    return this.commands.advance(request);
+  advance(request: AdvanceCommandRequest, signal?: AbortSignal) {
+    return this.commands.advance(request, signal);
   }
 
-  submitAnswer(request: AnswerCommandRequest) {
-    return this.commands.submitAnswer(request);
+  submitAnswer(request: AnswerCommandRequest, signal?: AbortSignal) {
+    return this.commands.submitAnswer(request, signal);
   }
 
   advanceStream(request: AdvanceCommandRequest, stream: InterviewCommandStream) {

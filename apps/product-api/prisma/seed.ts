@@ -36,6 +36,8 @@ function questionRecord(question: Question): Prisma.QuestionUpsertArgs {
     tags: question.tags,
     answer: question.answer,
     rubric: question.rubric as Prisma.InputJsonValue,
+    options: (question.options ?? []) as Prisma.InputJsonValue,
+    correctOptionIds: question.correctOptionIds ?? [],
     sourceRefs: question.sourceRefs,
     status: question.status,
   };

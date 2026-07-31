@@ -164,6 +164,10 @@
 .mistake-book-action button,
 .mistake-book-state button,
 .mistake-book-empty a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 10px;
   padding: 8px 11px;

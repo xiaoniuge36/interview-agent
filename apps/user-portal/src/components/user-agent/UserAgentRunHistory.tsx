@@ -8,7 +8,7 @@ export function UserAgentRunHistory(props: {
   runs: UserAgentRun[];
   onRetry: (prompt: string, retryOfRunId: string) => void;
 }) {
-  if (!props.latestRun || isActive(props.latestRun.status)) return null;
+  if (!props.latestRun) return null;
   return (
     <section aria-label="训练运行恢复" className="user-agent-run-recovery">
       <RunRecoveryCard run={props.latestRun} onRetry={props.onRetry} />
@@ -21,16 +21,21 @@ function RunRecoveryCard(props: {
   run: UserAgentRun;
   onRetry: (prompt: string, retryOfRunId: string) => void;
 }) {
-  if (!isRetryable(props.run.status)) return null;
+  const active = isActive(props.run.status);
+  if (!active && !isRetryable(props.run.status)) return null;
   return (
     <div className="user-agent-run-recovery-card">
       <div>
         <strong>{recoveryTitle(props.run.status)}</strong>
         <p>{props.run.errorSummary ?? props.run.currentStep ?? '本次训练建议未能完整保存。'}</p>
       </div>
-      <button type="button" onClick={() => props.onRetry(props.run.prompt, props.run.id)}>
-        安全重试
-      </button>
+      {active ? (
+        <span role="status">正在同步运行状态，完成或中断后会自动更新。</span>
+      ) : (
+        <button type="button" onClick={() => props.onRetry(props.run.prompt, props.run.id)}>
+          安全重试
+        </button>
+      )}
     </div>
   );
 }

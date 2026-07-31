@@ -11,7 +11,6 @@ import { AuditService, jsonValue } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
-import { BackgroundJobDispatcher } from '../jobs/job-dispatcher';
 import { ImportInfrastructure } from './import-infrastructure';
 import {
   emptyCandidateReviewProgress,
@@ -42,8 +41,6 @@ type CandidatePersistenceInput = {
 };
 
 type CreatedImport = {
-  assetId: string;
-  candidates: ReturnType<MarkdownImportExtractor['extract']>;
   task: ImportTask;
 };
 
@@ -51,10 +48,7 @@ type CreatedImport = {
 export class ImportService {
   private readonly extractor = new MarkdownImportExtractor();
 
-  constructor(
-    private readonly infrastructure: ImportInfrastructure,
-    private readonly jobs?: BackgroundJobDispatcher,
-  ) {}
+  constructor(private readonly infrastructure: ImportInfrastructure) {}
 
   private get prisma(): PrismaService {
     return this.infrastructure.prisma;
@@ -110,12 +104,9 @@ export class ImportService {
         transaction,
       );
       return {
-        assetId: asset.id,
-        candidates,
         task: mapImportTask(task, initialReviewProgress(candidates)),
       };
     });
-    await this.queueEmbeddings(context, created.assetId, created.candidates);
     return created.task;
   }
 
@@ -220,28 +211,6 @@ export class ImportService {
         sourceRefs: [`knowledge://asset/${input.assetId}/chunk/${index + 1}`],
       })),
     });
-  }
-
-  private async queueEmbeddings(
-    context: ProductRequestContext,
-    assetId: string,
-    candidates: ReturnType<MarkdownImportExtractor['extract']>,
-  ) {
-    const jobs = this.jobs;
-    if (!jobs) return;
-    await Promise.allSettled(
-      candidates.map((candidate, index) =>
-        jobs.enqueueEmbedding({
-          tenantId: context.tenantId,
-          userId: context.actor.id,
-          traceId: context.traceId,
-          entityType: 'knowledge',
-          entityId: `${assetId}:${index + 1}`,
-          content: candidate.sourceContent,
-          metadata: { source: 'import', assetId, sequence: index + 1 },
-        }),
-      ),
-    );
   }
 
   private async withCandidateReviewProgress(

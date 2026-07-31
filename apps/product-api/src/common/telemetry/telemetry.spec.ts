@@ -17,10 +17,10 @@ test('sanitizes span attributes before export', () => {
   });
 });
 
-test('redacts sensitive values inside otherwise safe preview attributes', () => {
+test('drops the legacy retrieval query preview attribute entirely', () => {
   expect(
     sanitizeSpanAttributes({
-      'retrieval.query_preview': 'apiKey=sk-secret-value-123456 联系 13812345678',
+      'retrieval.query_preview': 'confidential query text',
     }),
-  ).toEqual({ 'retrieval.query_preview': 'apiKey=[已隐藏] 联系 138****5678' });
+  ).toEqual({});
 });

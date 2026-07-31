@@ -26,6 +26,8 @@ const TYPE_LABELS: Record<Question['type'], string> = {
   system_design: '系统设计',
   project_deep_dive: '项目深挖',
   behavioral: '行为面试',
+  single_choice: '单选题',
+  multiple_choice: '多选题',
 };
 const QUESTION_STATUS_COLORS = {
   draft: 'default',

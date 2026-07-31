@@ -8,12 +8,14 @@ import { ModelCredentialInfrastructure } from './model-credential-infrastructure
 import { ModelCredentialResolver } from './model-credential-resolver';
 import { ModelCredentialService } from './model-credential.service';
 import { ModelProviderClient } from './model-provider.client';
+import { defaultProviderTransport, MODEL_PROVIDER_TRANSPORT } from './model-provider-request';
 
 @Module({
   imports: [CommonModule, AiUsageModule],
   controllers: [ModelCredentialController],
   providers: [
     CredentialCryptoService,
+    { provide: MODEL_PROVIDER_TRANSPORT, useFactory: defaultProviderTransport },
     ModelProviderClient,
     ModelCredentialConnectionTester,
     ModelCredentialInfrastructure,

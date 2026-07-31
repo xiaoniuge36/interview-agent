@@ -24,6 +24,7 @@ const MISTAKE_INCLUDE = {
           type: true,
           difficulty: true,
           tags: true,
+          options: true,
           status: true,
         },
       },
@@ -136,7 +137,7 @@ function mistakeItem(record: MistakeRecord, mapping: MistakeMapping) {
   return {
     id: record.id,
     practiceItemId: record.sessionItemId,
-    questionSnapshot: question,
+    questionSnapshot: { ...question, options: question.options },
     score: record.score,
     feedback: record.feedback,
     missingPoints: record.missingPoints,

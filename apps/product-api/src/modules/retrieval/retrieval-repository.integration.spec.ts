@@ -6,6 +6,7 @@ const describeDatabase = process.env.RUN_DATABASE_INTEGRATION === 'true' ? descr
 const suffix = randomUUID();
 const tenantA = `retrieval-a-${suffix}`;
 const tenantB = `retrieval-b-${suffix}`;
+const assetId = `retrieval-asset-${suffix}`;
 const prisma = new PrismaService();
 const repository = new RetrievalRepository(prisma);
 
@@ -18,6 +19,7 @@ describeDatabase('RetrievalRepository database integration', () => {
   afterAll(async () => {
     await prisma.retrievalLog.deleteMany({ where: { tenantId: { in: [tenantA, tenantB] } } });
     await prisma.retrievalChunk.deleteMany({ where: { tenantId: { in: [tenantA, tenantB] } } });
+    await prisma.knowledgeAsset.deleteMany({ where: { tenantId: { in: [tenantA, tenantB] } } });
     await prisma.tenant.deleteMany({ where: { id: { in: [tenantA, tenantB] } } });
     await prisma.$disconnect();
   });
@@ -50,6 +52,17 @@ async function seedChunks() {
       { id: tenantB, slug: tenantB, name: tenantB },
     ],
   });
+  await prisma.knowledgeAsset.createMany({
+    data: [tenantA, tenantB].map((tenantId) => ({
+      id: assetId,
+      tenantId,
+      sourceType: 'fixture',
+      uri: `fixture://${assetId}`,
+      title: 'Retrieval source',
+      status: 'published',
+      metadata: {},
+    })),
+  });
   await Promise.all(
     [tenantA, tenantB].map((tenantId) =>
       repository.writeEmbedding({
@@ -57,7 +70,7 @@ async function seedChunks() {
         entityType: 'knowledge',
         entityId: 'chunk-a',
         content: 'Event sourcing makes state transitions replayable.',
-        metadata: { fixture: true },
+        metadata: { assetId, fixture: true },
         embeddingVersion: 'v1',
         vector: vector(),
       }),

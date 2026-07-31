@@ -1,4 +1,4 @@
-import type { AgentRuntimeRetrievalContext } from '@interview-agent/contracts';
+import type { AgentRuntimeRetrievalContext, InterviewSession } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { InterviewCommandService } from './interview-command.service';
 
@@ -76,6 +76,36 @@ describe('InterviewCommandService retrieval context', () => {
   });
 });
 
+describe('InterviewCommandService caller cancellation', () => {
+  it.each(['advance', 'answer'] as const)(
+    'passes the non-stream %s signal to AgentRuntimeClient',
+    async (command) => {
+      const { service, agent, session } = createNonStreamingService(command);
+      const controller = new AbortController();
+      const request = {
+        context,
+        sessionId: session.id,
+        input: {
+          expectedVersion: 0,
+          ...(command === 'answer' ? { answer: 'candidate answer' } : {}),
+        },
+        idempotencyKey: `${command}-12345678`,
+      };
+      const execute = service[command === 'advance' ? 'advance' : 'submitAnswer'].bind(
+        service,
+      ) as unknown as (value: typeof request, signal: AbortSignal) => Promise<unknown>;
+
+      await execute(request, controller.signal);
+
+      expect(agent.next).toHaveBeenCalledWith(
+        expect.objectContaining({ commandId: 'command-1' }),
+        context,
+        { signal: controller.signal },
+      );
+    },
+  );
+});
+
 function createStreamingService(retrievalContext: AgentRuntimeRetrievalContext[] = []) {
   const session = sessionRecord();
   const repository = {
@@ -95,15 +125,47 @@ function createStreamingService(retrievalContext: AgentRuntimeRetrievalContext[]
   return { service, repository, session, agent };
 }
 
-function preparedExecution(session: ReturnType<typeof sessionRecord>) {
+function createNonStreamingService(command: 'advance' | 'answer') {
+  const session = {
+    ...sessionRecord(),
+    status: command === 'advance' ? ('created' as const) : ('waiting_user' as const),
+  };
+  const repository = {
+    prepare: jest.fn().mockResolvedValue(preparedExecution(session, command)),
+    complete: jest.fn().mockImplementation(async (request) => request.artifacts.result),
+    fail: jest.fn().mockResolvedValue(undefined),
+  };
+  const agent = {
+    next: jest.fn().mockResolvedValue({
+      stage: 'warmup',
+      content: VISIBLE_CONTENT,
+      shouldFinish: false,
+      latencyMs: 1,
+      attempts: 1,
+      fallbackUsed: false,
+      schemaValid: true,
+    }),
+  };
+  const service = new InterviewCommandService(
+    {
+      repository,
+      policy: { assert: jest.fn() },
+      agent,
+    } as never,
+    { forCommand: jest.fn().mockResolvedValue([]) } as never,
+  );
+  return { service, agent, session };
+}
+
+function preparedExecution(session: InterviewSession, command: 'advance' | 'answer' = 'advance') {
   return {
     kind: 'invoke',
     context,
     sessionId: session.id,
-    command: 'advance',
+    command,
     expectedVersion: 0,
     idempotencyKey: 'advance-12345678',
-    answer: undefined,
+    answer: command === 'answer' ? 'candidate answer' : undefined,
     commandId: 'command-1',
     runId: 'run-1',
     attemptCount: 1,
@@ -130,7 +192,7 @@ function streamingAgent(sourceIds: string[]) {
   };
 }
 
-function sessionRecord() {
+function sessionRecord(): InterviewSession {
   return {
     id: 'session-1',
     tenantId: context.tenantId,

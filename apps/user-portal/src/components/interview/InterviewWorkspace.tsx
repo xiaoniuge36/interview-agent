@@ -3,6 +3,7 @@
 import type { JobIntentPayload } from '@interview-agent/contracts';
 import { useInterviewController } from '@/hooks/useInterviewController';
 import { InterviewConsole } from './InterviewConsole';
+import { InterviewReviewEvidenceNotice } from './InterviewReviewEvidenceNotice';
 import { ReportPanel } from './ReportPanel';
 import { RuntimeEventList } from './RuntimeEventList';
 import { useInterviewReviewPractice } from './useInterviewReviewPractice';
@@ -20,6 +21,9 @@ export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
     <section className="interview section-gap">
       <InterviewConsole jobs={jobs} controller={controller} />
       <aside className="stack" aria-label="训练进度与面试复盘">
+        <InterviewReviewEvidenceNotice
+          interviewSessionId={controller.state.session?.id ?? controller.restoredSessionId}
+        />
         <RuntimeEventList
           events={controller.state.events}
           phase={controller.state.phase}
@@ -30,7 +34,7 @@ export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
           report={controller.state.report}
           sessionStatus={controller.state.session?.status ?? null}
           onRetry={controller.restoredSessionId ? controller.reloadArchivedInterview : undefined}
-          retrying={controller.state.busy}
+          retrying={controller.archivedReloading}
           sessionId={controller.state.session?.id}
           onStartInterviewReview={reviewPractice.start}
           reviewStarting={reviewPractice.starting}

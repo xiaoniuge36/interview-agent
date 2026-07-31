@@ -63,7 +63,19 @@ describe('PlatformAiAnalyticsService', () => {
 });
 
 function createService(policyOverride: { assert?: jest.Mock } = {}) {
-  const store = {
+  const store = createAiInvocationStore();
+  const prisma = createAnalyticsPrisma(store);
+  const policy = { assert: policyOverride.assert ?? jest.fn() };
+  const circuits = { summary: jest.fn(() => ({ openCircuits: 0, halfOpenCircuits: 0 })) };
+  return {
+    service: new PlatformAiAnalyticsService(prisma as never, policy as never, circuits as never),
+    store,
+    policy,
+  };
+}
+
+function createAiInvocationStore() {
+  return {
     aggregate: jest
       .fn()
       .mockResolvedValue({ _avg: { latencyMs: 100 }, _sum: { totalTokens: null } }),
@@ -100,7 +112,10 @@ function createService(policyOverride: { assert?: jest.Mock } = {}) {
       .mockResolvedValueOnce([]),
     findMany: jest.fn().mockResolvedValue([]),
   };
-  const prisma = {
+}
+
+function createAnalyticsPrisma(store: ReturnType<typeof createAiInvocationStore>) {
+  return {
     aiInvocation: store,
     backgroundJob: { count: jest.fn().mockResolvedValue(1) },
     retrievalChunk: {
@@ -115,12 +130,5 @@ function createService(policyOverride: { assert?: jest.Mock } = {}) {
         .mockResolvedValueOnce(10)
         .mockResolvedValueOnce(1),
     },
-  };
-  const policy = { assert: policyOverride.assert ?? jest.fn() };
-  const circuits = { summary: jest.fn(() => ({ openCircuits: 0, halfOpenCircuits: 0 })) };
-  return {
-    service: new PlatformAiAnalyticsService(prisma as never, policy as never, circuits as never),
-    store,
-    policy,
   };
 }

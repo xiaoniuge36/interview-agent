@@ -1,16 +1,28 @@
+import Link from 'next/link';
 import type { ModelCredentialView } from '@interview-agent/contracts';
-import { modelConnectionReadiness } from './model-connection-readiness';
+import {
+  modelConnectionReadiness,
+  type ModelConnectionNextAction,
+} from './model-connection-readiness';
+import type { SettingsReturnTarget } from './settings-return-target';
 
 type ModelReadinessBannerProps = {
   credentials: ModelCredentialView[];
+  returnTarget?: SettingsReturnTarget | null;
   onAdd: () => void;
 };
 
-export function ModelReadinessBanner({ credentials, onAdd }: ModelReadinessBannerProps) {
-  const readiness = modelConnectionReadiness(credentials);
+export function ModelReadinessBanner({
+  credentials,
+  returnTarget = null,
+  onAdd,
+}: ModelReadinessBannerProps) {
+  const readiness = modelConnectionReadiness(credentials, returnTarget);
   if (readiness.kind === 'empty') return <EmptyReadiness onAdd={onAdd} />;
   if (readiness.kind === 'ready')
-    return <ReadyReadiness credential={readiness.defaultCredential!} />;
+    return (
+      <ReadyReadiness credential={readiness.defaultCredential} nextAction={readiness.nextAction} />
+    );
   return <NeedsActionReadiness credential={readiness.defaultCredential} />;
 }
 
@@ -29,7 +41,13 @@ function EmptyReadiness({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-function ReadyReadiness({ credential }: { credential: ModelCredentialView }) {
+function ReadyReadiness({
+  credential,
+  nextAction,
+}: {
+  credential: ModelCredentialView;
+  nextAction: ModelConnectionNextAction;
+}) {
   return (
     <section className="model-readiness-banner" data-state="ready">
       <div>
@@ -37,7 +55,12 @@ function ReadyReadiness({ credential }: { credential: ModelCredentialView }) {
         <strong>默认模型已就绪</strong>
         <p>{credential.model} 可用于 AI 评价和模拟面试。</p>
       </div>
-      <small>上次测试：{formatTestedAt(credential.lastTestedAt)}</small>
+      <div className="model-readiness-actions">
+        <small>上次测试：{formatTestedAt(credential.lastTestedAt)}</small>
+        <Link className="button" href={nextAction.href}>
+          {nextAction.label}
+        </Link>
+      </div>
     </section>
   );
 }

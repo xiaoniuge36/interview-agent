@@ -132,33 +132,21 @@ function useConversationSubmit(options: SubmitOptions) {
   const { agentRef, configMessage, conversationId, isConversationCurrent, persist } = options;
   const { setMessages, taskLifecycle, runLifecycle } = options;
   return useCallback(
-    async (value: string, retryOfRunId?: string) => {
-      const task = value.trim().slice(0, MAX_MESSAGE_LENGTH);
-      if (!task) return;
-      const taskToken = taskLifecycle.begin();
-      const isCurrentTask = () => isConversationCurrent() && taskLifecycle.isCurrent(taskToken);
-      appendMessage(setMessages, 'user', task);
-      const agent = agentRef.current;
-      if (!agent) {
-        appendMessage(setMessages, 'error', configMessage ?? '请先连接一个可用模型。');
-        return;
-      }
-      const persistence = {
-        conversationId,
-        isConversationCurrent,
-        isCurrent: isCurrentTask,
-        persist,
-        setMessages,
-      };
-      const run = await startRunAfterPersistence({
-        task,
-        persistence,
-        runLifecycle,
-        ...(retryOfRunId ? { retryOfRunId } : {}),
-      });
-      if (!run) return;
-      await executeAgentTask(agent, { ...persistence, task, runId: run.id, runLifecycle });
-    },
+    (value: string, retryOfRunId?: string) =>
+      submitConversationTask(
+        {
+          agentRef,
+          configMessage,
+          conversationId,
+          isConversationCurrent,
+          persist,
+          setMessages,
+          taskLifecycle,
+          runLifecycle,
+        },
+        value,
+        retryOfRunId,
+      ),
     [
       agentRef,
       configMessage,
@@ -170,6 +158,42 @@ function useConversationSubmit(options: SubmitOptions) {
       runLifecycle,
     ],
   );
+}
+
+export function submitConversationTask(
+  options: SubmitOptions,
+  value: string,
+  retryOfRunId?: string,
+) {
+  const { agentRef, configMessage, conversationId, isConversationCurrent, persist } = options;
+  const { setMessages, taskLifecycle, runLifecycle } = options;
+  return taskLifecycle.runExclusive(conversationId, async () => {
+    const task = value.trim().slice(0, MAX_MESSAGE_LENGTH);
+    if (!task) return;
+    const taskToken = taskLifecycle.begin();
+    const isCurrentTask = () => isConversationCurrent() && taskLifecycle.isCurrent(taskToken);
+    appendMessage(setMessages, 'user', task);
+    const agent = agentRef.current;
+    if (!agent) {
+      appendMessage(setMessages, 'error', configMessage ?? '请先连接一个可用模型。');
+      return;
+    }
+    const persistence = {
+      conversationId,
+      isConversationCurrent,
+      isCurrent: isCurrentTask,
+      persist,
+      setMessages,
+    };
+    const run = await startRunAfterPersistence({
+      task,
+      persistence,
+      runLifecycle,
+      ...(retryOfRunId ? { retryOfRunId } : {}),
+    });
+    if (!run) return;
+    await executeAgentTask(agent, { ...persistence, task, runId: run.id, runLifecycle });
+  });
 }
 
 async function startRunAfterPersistence(options: RunStartOptions): Promise<UserAgentRun | null> {

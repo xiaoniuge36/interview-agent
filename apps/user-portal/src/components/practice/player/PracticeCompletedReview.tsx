@@ -29,6 +29,7 @@ export function PracticeCompletedReview({ player }: { player: PracticePlayer }) 
         startingNextRecommendation={player.startingNextRecommendation}
         onStartWeaknessReview={() => void player.startWeaknessReview()}
         startingWeaknessReview={player.startingWeaknessReview}
+        returnOrigin={player.returnOrigin}
       />
       {item ? (
         <PracticeItemReviewDialog

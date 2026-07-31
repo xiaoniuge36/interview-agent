@@ -60,10 +60,60 @@ describe('interview sidebar', () => {
   });
 });
 
+describe('interview report status bridge', () => {
+  it('explains report generation and keeps a same-session status check', () => {
+    const markup = renderToStaticMarkup(
+      createElement(ReportPanel, {
+        report: null,
+        sessionStatus: 'generating_report',
+        onRetry: () => undefined,
+      } as never),
+    );
+
+    expect(markup).toContain('AI 正在生成本轮复盘');
+    expect(markup).toContain('刷新后仍会恢复同一轮');
+    expect(markup).toContain('重新检查生成状态');
+    expect(markup).not.toContain('完成一场模拟面试后');
+  });
+
+  it('preserves failed transcript context before offering a restart', () => {
+    const markup = renderToStaticMarkup(
+      createElement(ReportPanel, {
+        report: null,
+        sessionStatus: 'failed',
+        onRetry: () => undefined,
+      } as never),
+    );
+
+    expect(markup).toContain('本轮复盘未完成');
+    expect(markup).toContain('已保存的面试对话不会丢失');
+    expect(markup).toContain('重新检查本轮状态');
+    expect(markup).not.toContain('完成一场模拟面试后');
+  });
+});
+
+it('explains each stage score with persisted diagnosis and evidence', () => {
+  const markup = renderToStaticMarkup(createElement(ReportPanel, { report: report() }));
+
+  expect(markup).toContain('阶段诊断');
+  expect(markup).toContain('为什么是 83 分');
+  expect(markup).toContain('方案完整，但恢复验证还可加强。');
+  expect(markup).toContain('缺少故障演练结果');
+  expect(markup).toContain('id="interview-report"');
+  expect(markup).toContain('tabindex="-1"');
+});
+
 function report() {
   return {
     overall: { score: 83, summary: '回答能说明关键取舍。' },
-    stageScores: [{ stage: 'project_deep_dive', score: 83 }],
+    stageScores: [
+      {
+        stage: 'project_deep_dive',
+        score: 83,
+        summary: '方案完整，但恢复验证还可加强。',
+        evidence: ['缺少故障演练结果'],
+      },
+    ],
     nextActions: ['补充方案验证细节'],
   } as never;
 }

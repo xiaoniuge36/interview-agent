@@ -1,0 +1,37 @@
+import type { AgentStatus } from '@page-agent/core';
+import type { UserAgentConversationSummary } from '@/lib/user-agent-conversation-api';
+import type { UserAgentRun } from '@/lib/user-page-agent-run-api';
+import type { UserPageAgentConfig } from '@/lib/user-page-agent-api';
+import type { UserAgentPageContext } from './user-agent-page-context';
+import type { UserAgentMessage } from './useUserAgentConversation';
+import type { PageAgentExecutionStep } from './user-agent-runtime';
+
+export type UserAgentDrawerProps = {
+  open: boolean;
+  config: UserPageAgentConfig | null;
+  loading: boolean;
+  agentReady: boolean;
+  conversationLoading: boolean;
+  conversationError: string | null;
+  conversations: UserAgentConversationSummary[];
+  activeConversationId: string | null;
+  status: AgentStatus;
+  activity: string;
+  executionSteps: PageAgentExecutionStep[];
+  tokens: number;
+  messages: UserAgentMessage[];
+  latestRun: UserAgentRun | null;
+  pendingQuestion: string | null;
+  pageContext: UserAgentPageContext;
+  onClose: () => void;
+  onCreateConversation: () => void;
+  onSelectConversation: (id: string) => void;
+  onRenameConversation: (id: string, title: string) => Promise<boolean>;
+  onRetry: (prompt: string, retryOfRunId: string) => void;
+  onDeleteConversation: (id: string) => Promise<boolean>;
+  onSetup: () => void;
+  onAnswer: (answer: string) => void;
+  onSend: (value: string) => void;
+  onStop: () => void;
+  runHistory: UserAgentRun[];
+};

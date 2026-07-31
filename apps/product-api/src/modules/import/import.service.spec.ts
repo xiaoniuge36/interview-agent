@@ -17,8 +17,8 @@ const context: ProductRequestContext = {
 };
 
 describe('ImportService', () => {
-  it('queues retrieval embeddings after persisting import content without waiting for a model', () =>
-    expectEmbeddingDispatch());
+  it('keeps newly imported review content out of the embedding queue', () =>
+    expectReviewContentDoesNotDispatch());
 
   it('returns a tenant-scoped filtered page with stable ordering', () => expectFilteredPageQuery());
 
@@ -64,7 +64,7 @@ describe('ImportService', () => {
   });
 });
 
-async function expectEmbeddingDispatch() {
+async function expectReviewContentDoesNotDispatch() {
   const transaction = {
     knowledgeAsset: { create: jest.fn().mockResolvedValue({ id: 'asset-1' }) },
     importTask: { create: jest.fn().mockResolvedValue(importTaskRecord()) },
@@ -76,14 +76,12 @@ async function expectEmbeddingDispatch() {
       callback(transaction),
     ),
   };
-  const dispatcher = { enqueueEmbedding: jest.fn().mockResolvedValue({ id: 'job-1' }) };
   const service = new ImportService(
     new ImportInfrastructure(
       prisma as never,
       { assert: jest.fn() } as never,
       { record: jest.fn().mockResolvedValue({}) } as never,
     ),
-    dispatcher as never,
   );
 
   await service.create(context, {
@@ -91,12 +89,8 @@ async function expectEmbeddingDispatch() {
     markdown: '## Question\nWhat is idempotency?',
   });
 
-  expect(dispatcher.enqueueEmbedding).toHaveBeenCalledWith(
-    expect.objectContaining({
-      tenantId: 'tenant-1',
-      entityType: 'knowledge',
-      entityId: 'asset-1:1',
-    }),
+  expect(transaction.knowledgeAsset.create).toHaveBeenCalledWith(
+    expect.objectContaining({ data: expect.objectContaining({ status: 'review' }) }),
   );
 }
 

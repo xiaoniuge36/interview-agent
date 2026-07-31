@@ -14,6 +14,7 @@ test('uses isolated ports and the e2e database', () => {
   assert.match(environment.DATABASE_URL, /interview_agent_e2e/);
   assert.match(environment.DATABASE_URL, /schema=public/);
   assert.equal(environment.API_PORT, '3101');
+  assert.equal(environment.API_THROTTLE_LIMIT, '10000');
   assert.equal(environment.AGENT_RUNTIME_URL, 'http://127.0.0.1:8100');
   assert.equal(environment.NEXT_PUBLIC_API_BASE_URL, 'http://127.0.0.1:3101/api');
   assert.equal(environment.AUTH_MODE, 'jwt_hs256');

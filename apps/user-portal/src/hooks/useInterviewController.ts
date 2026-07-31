@@ -1,8 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, type Dispatch } from 'react';
-import { useSearchParams } from 'next/navigation';
-import type { AgentStreamEvent, JobIntentPayload } from '@interview-agent/contracts';
+import { useRouter, useSearchParams } from 'next/navigation';
+import type {
+  AgentStreamEvent,
+  InterviewSession,
+  JobIntentPayload,
+} from '@interview-agent/contracts';
 import {
   INITIAL_INTERVIEW_STATE,
   interviewReducer,
@@ -33,46 +37,117 @@ export function useInterviewController(jobs: JobIntentPayload[]) {
   const restoredSessionId = searchParams.get('session');
   const [selectedJobId, setSelectedJobId] = useSelectedJob(jobs, searchParams.get('job'));
   const [connect, disconnect] = useInterviewStream(dispatch, notifications);
-  const archiveOptions = { sessionId: restoredSessionId, dispatch, connect, disconnect };
-  const archivedRestore = useArchivedInterview(archiveOptions);
-  const draftSessionId = state.session?.id ?? restoredSessionId;
-  const { clearDraft, draftRecovered, setDraft } = useInterviewDraft({
-    sessionId: draftSessionId,
-    draft: state.draft,
+  const onSessionStarted = useInterviewSessionNavigation();
+  const archivedRestore = useInterviewRestore({
+    restoredSessionId,
+    session: state.session,
     dispatch,
-    notifications,
+    connect,
+    disconnect,
   });
   const selectedJob = useSelectedInterviewJob(jobs, selectedJobId);
-  const interviewPlan = useMemo(() => interviewPlanForJob(selectedJob), [selectedJob]);
-  const { start, submitAnswer } = useInterviewActions({
-    selectedJobId: selectedJob?.intent.id ?? '',
-    interviewPlan,
-    session: state.session,
-    draft: state.draft,
+  const commands = useInterviewCommands({
+    state,
+    restoredSessionId,
+    selectedJob,
     dispatch,
     connect,
     disconnect,
     notifications,
-    clearDraft,
+    onSessionStarted,
   });
   const turns = state.session?.turns ?? [];
-  const canAnswer = state.session?.status === 'waiting_user' && !state.busy;
   return {
     state,
     restoredSessionId,
     archivedLoadFailed: archivedRestore.loadFailed,
+    archivedReloading: archivedRestore.reloading,
     reloadArchivedInterview: archivedRestore.retry,
     selectedJobId,
     setSelectedJobId,
-    draftRecovered,
-    setDraft,
-    start,
-    submitAnswer,
+    draftRecovered: commands.draftRecovered,
+    setDraft: commands.setDraft,
+    start: commands.start,
+    submitAnswer: commands.submitAnswer,
     turns,
-    canAnswer,
-    interviewPlan,
+    canAnswer: canAnswerInterview(state.session, state.busy),
+    interviewPlan: commands.interviewPlan,
     statusLabel: interviewStatusLabel(state.session),
   };
+}
+
+type InterviewCommandsInput = {
+  state: ReturnType<typeof interviewReducer>;
+  restoredSessionId: string | null;
+  selectedJob: JobIntentPayload | undefined;
+  dispatch: Dispatch<InterviewAction>;
+  connect: (sessionId: string, cursor: number) => void;
+  disconnect: () => void;
+  notifications: NotificationApi;
+  onSessionStarted: (sessionId: string) => void;
+};
+
+function useInterviewCommands(input: InterviewCommandsInput) {
+  const draft = useInterviewDraft({
+    sessionId: sessionIdOr(input.state.session, input.restoredSessionId),
+    draft: input.state.draft,
+    dispatch: input.dispatch,
+    notifications: input.notifications,
+  });
+  const interviewPlan = useMemo(() => interviewPlanForJob(input.selectedJob), [input.selectedJob]);
+  const actions = useInterviewActions({
+    selectedJobId: selectedJobIntentId(input.selectedJob),
+    interviewPlan,
+    session: input.state.session,
+    draft: input.state.draft,
+    dispatch: input.dispatch,
+    connect: input.connect,
+    disconnect: input.disconnect,
+    notifications: input.notifications,
+    clearDraft: draft.clearDraft,
+    onSessionStarted: input.onSessionStarted,
+  });
+  return { ...draft, ...actions, interviewPlan };
+}
+
+function useInterviewSessionNavigation() {
+  const router = useRouter();
+  return useCallback(
+    (sessionId: string) => {
+      router.replace(`/interview?session=${encodeURIComponent(sessionId)}`, { scroll: false });
+    },
+    [router],
+  );
+}
+
+type InterviewRestoreInput = {
+  restoredSessionId: string | null;
+  session: InterviewSession | null;
+  dispatch: Dispatch<InterviewAction>;
+  connect: (sessionId: string, cursor: number) => void;
+  disconnect: () => void;
+};
+
+function useInterviewRestore(input: InterviewRestoreInput) {
+  return useArchivedInterview({
+    sessionId: input.restoredSessionId,
+    currentSessionId: input.session?.id ?? null,
+    dispatch: input.dispatch,
+    connect: input.connect,
+    disconnect: input.disconnect,
+  });
+}
+
+function sessionIdOr(session: InterviewSession | null, fallback: string | null) {
+  return session?.id ?? fallback;
+}
+
+function selectedJobIntentId(job: JobIntentPayload | undefined) {
+  return job?.intent.id ?? '';
+}
+
+function canAnswerInterview(session: InterviewSession | null, busy: boolean) {
+  return session?.status === 'waiting_user' && !busy;
 }
 
 function useInterviewStream(dispatch: Dispatch<InterviewAction>, notifications: NotificationApi) {

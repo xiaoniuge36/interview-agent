@@ -25,6 +25,25 @@ test('enqueues an idempotent embedding job by tenant and dedupe key', async () =
   );
 });
 
+test('only removes dormant knowledge embedding jobs when an asset is withdrawn', async () => {
+  const backgroundJob = { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) };
+  const repository = new BackgroundJobRepository({ backgroundJob } as never);
+
+  await repository.removeKnowledgeEmbeddings('tenant-1', 'asset-1');
+
+  expect(backgroundJob.deleteMany).toHaveBeenCalledWith({
+    where: {
+      tenantId: 'tenant-1',
+      type: 'embedding',
+      status: { in: ['pending', 'retry_wait'] },
+      AND: [
+        { payload: { path: ['entityType'], equals: 'knowledge' } },
+        { payload: { path: ['metadata', 'assetId'], equals: 'asset-1' } },
+      ],
+    },
+  });
+});
+
 test('claims at most one due job through the atomic raw query', async () => {
   const $queryRaw = jest.fn().mockResolvedValue([{ id: 'job-1' }]);
   const repository = new BackgroundJobRepository({ $queryRaw } as never);

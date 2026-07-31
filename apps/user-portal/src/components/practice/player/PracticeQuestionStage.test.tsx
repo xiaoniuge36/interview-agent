@@ -40,22 +40,52 @@ describe('PracticeQuestionStage', () => {
     expect(markup).toContain('进入 AI 评价 →');
     expect(markup).not.toContain('保存并进入 AI 评价 →');
   });
+
+  it('单选题展示 radio 选项并恢复已选答案', () => {
+    const markup = renderStage({
+      draft: 'B',
+      questionType: 'single_choice',
+      options: choiceOptions(),
+    });
+
+    expect(markup).toContain('单选题');
+    expect(markup.match(/type="radio"/g)).toHaveLength(3);
+    expect(markup).toMatch(/checked="" value="B"/);
+    expect(markup).not.toContain('<textarea');
+  });
+
+  it('多选题展示 checkbox 并恢复多个已选答案', () => {
+    const markup = renderStage({
+      draft: 'A,C',
+      questionType: 'multiple_choice',
+      options: choiceOptions(),
+    });
+
+    expect(markup).toContain('多选题');
+    expect(markup.match(/type="checkbox"/g)).toHaveLength(3);
+    expect(markup.match(/checked=""/g)).toHaveLength(2);
+    expect(markup).not.toContain('<textarea');
+  });
 });
 
 function renderStage({
   answer = null,
   currentIndex = 0,
   draft = '',
+  options = undefined,
+  questionType = 'system_design',
   total = 2,
 }: {
   answer?: string | null;
   currentIndex?: number;
   draft?: string;
+  options?: PracticeSession['items'][number]['question']['options'];
+  questionType?: PracticeSession['items'][number]['question']['type'];
   total?: number;
 }) {
   return renderToStaticMarkup(
     createElement(PracticeQuestionStage, {
-      item: item(answer),
+      item: item(answer, questionType, options),
       draft,
       busy: null,
       currentIndex,
@@ -71,7 +101,11 @@ function renderStage({
   );
 }
 
-function item(answer: string | null): PracticeSession['items'][number] {
+function item(
+  answer: string | null,
+  type: PracticeSession['items'][number]['question']['type'],
+  options?: PracticeSession['items'][number]['question']['options'],
+): PracticeSession['items'][number] {
   return {
     id: 'item-1',
     sequence: 1,
@@ -85,11 +119,20 @@ function item(answer: string | null): PracticeSession['items'][number] {
       visibility: 'public',
       title: '如何制定稳定的缓存失效策略？',
       stem: '请说明你的判断、取舍与验证路径。',
-      type: 'system_design',
+      type,
       difficulty: 'medium',
       tags: ['缓存', '系统设计'],
       sourceRefs: [],
       status: 'published',
+      ...(options ? { options } : {}),
     },
   };
+}
+
+function choiceOptions() {
+  return [
+    { id: 'A', text: 'ReAct' },
+    { id: 'B', text: 'Plan-and-Execute' },
+    { id: 'C', text: 'RAG' },
+  ];
 }

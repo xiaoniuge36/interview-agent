@@ -21,7 +21,8 @@ from app.errors import (
 )
 from app.logging_config import configure_logging
 from app.middleware import RequestBodyLimitMiddleware, RequestLoggingMiddleware
-from app.model_gateway import ModelGatewayClient
+from app.model_gateway import MODEL_PROVIDER_ENDPOINT_BLOCKED, ModelGatewayClient
+from app.request_cancellation import RequestCancelledError, cancel_when_disconnected
 from app.schemas.interview import NextInterviewRequest, NextInterviewResponse
 from app.schemas.practice_report import PracticeReportRequest, PracticeReportResponse
 from app.telemetry import configure_telemetry, start_span
@@ -41,6 +42,7 @@ SERVICE_NAME = "agent-runtime"
 EXPECTED_CALLER = "product-api"
 LOGGER = logging.getLogger("agent_runtime.lifecycle")
 CHECKPOINT_CONNECT_TIMEOUT_SECONDS = 5
+CLIENT_CLOSED_REQUEST_STATUS = 499
 
 
 @asynccontextmanager
@@ -141,12 +143,27 @@ async def next_turn(request: Request, payload: NextInterviewRequest) -> NextInte
     ):
         if payload.model_invocation_grant is not None:
             try:
-                return await run_interview_graph(request.app.state.interview_graph, payload)
+                return await cancel_when_disconnected(
+                    request,
+                    run_interview_graph(request.app.state.interview_graph, payload),
+                )
+            except RequestCancelledError as error:
+                LOGGER.info(
+                    "runtime_request_cancelled",
+                    extra={"event": "runtime_request_cancelled", "trace_id": payload.trace_id},
+                )
+                raise RuntimeRequestError(
+                    ApiError(
+                        status_code=CLIENT_CLOSED_REQUEST_STATUS,
+                        code="REQUEST_CANCELLED",
+                        message="Request was cancelled by the caller.",
+                    )
+                ) from error
             except InterviewGraphError as error:
                 raise RuntimeRequestError(
                     ApiError(
-                        status_code=status.HTTP_502_BAD_GATEWAY,
-                        code=str(error),
+                        status_code=model_error_status(error),
+                        code=model_error_code(error),
                         message="模型面试决策暂时无法生成，请稍后重试。",
                     )
                 ) from error
@@ -172,8 +189,8 @@ async def practice_report(
         except PracticeReportGraphError as error:
             raise RuntimeRequestError(
                 ApiError(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    code=str(error),
+                    status_code=model_error_status(error),
+                    code=model_error_code(error),
                     message="训练报告暂时无法生成，请稍后重试。",
                 )
             ) from error
@@ -198,3 +215,15 @@ def checkpoint_connection_url(database_url: str) -> str:
         return database_url
     separator = "&" if "?" in database_url else "?"
     return f"{database_url}{separator}connect_timeout={CHECKPOINT_CONNECT_TIMEOUT_SECONDS}"
+
+
+def model_error_status(error: Exception) -> int:
+    if str(error) == MODEL_PROVIDER_ENDPOINT_BLOCKED:
+        return status.HTTP_400_BAD_REQUEST
+    return status.HTTP_502_BAD_GATEWAY
+
+
+def model_error_code(error: Exception) -> str:
+    if str(error) == MODEL_PROVIDER_ENDPOINT_BLOCKED:
+        return MODEL_PROVIDER_ENDPOINT_BLOCKED
+    return str(error)

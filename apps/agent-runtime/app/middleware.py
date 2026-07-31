@@ -12,6 +12,10 @@ from app.config import DEFAULT_BODY_LIMIT_BYTES, RuntimeSettings
 LOGGER = logging.getLogger("agent_runtime.http")
 SERVER_ERROR_STATUS = 500
 REQUEST_TOO_LARGE_STATUS = 413
+REQUEST_TIMEOUT_STATUS = 408
+CLIENT_CLOSED_REQUEST_STATUS = 499
+SUCCESS_STATUS_MIN = 200
+FAILURE_STATUS_MIN = 400
 TRACE_ID_MIN_LENGTH = 8
 TRACE_ID_MAX_LENGTH = 128
 MILLISECONDS_PER_SECOND = 1_000
@@ -145,9 +149,20 @@ def log_request(context: RequestLogContext) -> None:
             "http_path": context.scope.get("path", ""),
             "http_status": context.status_code,
             "duration_ms": duration_ms,
+            "outcome": request_outcome(context.status_code),
             "trace_id": context.trace_id,
         },
     )
+
+
+def request_outcome(status_code: int) -> str:
+    if SUCCESS_STATUS_MIN <= status_code < FAILURE_STATUS_MIN:
+        return "succeeded"
+    if status_code == REQUEST_TIMEOUT_STATUS:
+        return "timeout"
+    if status_code == CLIENT_CLOSED_REQUEST_STATUS:
+        return "cancelled"
+    return "failed"
 
 
 async def too_large_response(scope: Scope, receive: Receive, send: Send) -> None:

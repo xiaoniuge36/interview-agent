@@ -42,7 +42,13 @@ describe('ProfileMemoryRail', () => {
     expect(markup).toContain('保存档案后，信号会显示在这里。');
     expect(markup).toContain('下一步补齐');
     expect(markup).toContain('下一轮训练会如何变化？');
-    expect(markup).toContain('href="/job"');
+    expect(markup).toContain('训练准备度');
+    expect(markup).toContain('待开始');
+    expect(markup).toContain('最缺一项：目标岗位');
+    expect(markup).toContain('href="#profile-target-role"');
+    expect(markup).not.toContain('0%');
+    expect(markup).not.toContain('href="/job"');
+    expect(markup).not.toContain('role="progressbar"');
   });
 
   it('为完整档案展示已采纳信号与训练影响', () => {
@@ -52,6 +58,14 @@ describe('ProfileMemoryRail', () => {
     expect(markup).toContain('核心技能：数据分析');
     expect(markup).toContain('档案输入已覆盖当前训练重点');
     expect(markup).toContain('Agent 会优先围绕高级产品经理推荐题目');
+    expect(markup).toContain('可进入岗位定制');
+    expect(markup).toContain('href="/job"');
+    expect(markup).toContain('继续设置目标 JD');
+    expect(markup).toContain('role="progressbar"');
+    expect(markup).toContain('aria-valuemin="0"');
+    expect(markup).toContain('aria-valuemax="100"');
+    expect(markup).toContain('aria-valuenow="100"');
+    expect(markup).toContain('aria-valuetext="可进入岗位定制"');
   });
 });
 

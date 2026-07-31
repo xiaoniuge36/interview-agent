@@ -27,6 +27,7 @@ type InterviewActionOptions = {
   disconnect: () => void;
   notifications: NotificationApi;
   clearDraft: (sessionId: string) => void;
+  onSessionStarted: (sessionId: string) => void;
 };
 
 export function useInterviewActions(options: InterviewActionOptions) {
@@ -41,6 +42,7 @@ export function useInterviewActions(options: InterviewActionOptions) {
           connect: options.connect,
           disconnect: options.disconnect,
           notifications: options.notifications,
+          onSessionStarted: options.onSessionStarted,
         }),
       ),
     [
@@ -49,6 +51,7 @@ export function useInterviewActions(options: InterviewActionOptions) {
       options.dispatch,
       options.interviewPlan,
       options.notifications,
+      options.onSessionStarted,
       options.selectedJobId,
       runExclusive,
     ],
@@ -80,7 +83,13 @@ export function useInterviewActions(options: InterviewActionOptions) {
 
 type StartContext = Pick<
   InterviewActionOptions,
-  'selectedJobId' | 'interviewPlan' | 'dispatch' | 'connect' | 'disconnect' | 'notifications'
+  | 'selectedJobId'
+  | 'interviewPlan'
+  | 'dispatch'
+  | 'connect'
+  | 'disconnect'
+  | 'notifications'
+  | 'onSessionStarted'
 >;
 
 async function executeStart(context: StartContext) {
@@ -101,6 +110,7 @@ async function executeStart(context: StartContext) {
       focusTags: context.interviewPlan.focusTags,
     });
     context.dispatch({ type: 'session', session: started.session });
+    context.onSessionStarted(started.session.id);
     const advanced = await advanceInterviewStream(
       started.session.id,
       { expectedVersion: started.session.version },

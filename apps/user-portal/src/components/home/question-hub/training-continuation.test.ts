@@ -19,7 +19,8 @@ describe('首页未完成训练选择', () => {
       kind: 'interview',
       id: 'latest-active',
       href: '/interview?session=latest-active',
-      actionLabel: '继续训练',
+      kicker: '继续上次面试',
+      actionLabel: '继续上次面试',
       statusLabel: '等待你的回答',
     });
   });

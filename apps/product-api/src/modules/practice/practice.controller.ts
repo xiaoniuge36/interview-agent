@@ -81,8 +81,8 @@ export class PracticeController {
     @Param() params: PracticeAnswerParams,
     @Res() response: Response,
   ): Promise<void> {
-    const connection = createAiOperationSse(response, request.context);
     const controller = new AbortController();
+    const connection = createAiOperationSse(response, request.context, controller.signal);
     response.once('close', () => {
       if (!response.writableEnded) controller.abort();
     });
@@ -95,9 +95,9 @@ export class PracticeController {
           signal: controller.signal,
         },
       );
-      connection.sink.result({ operation: 'practice_evaluation', result });
+      await connection.sink.result({ operation: 'practice_evaluation', result });
     } catch (error) {
-      connection.sink.error(streamError(error, request.context));
+      await connection.sink.error(streamError(error, request.context));
     } finally {
       connection.close();
     }

@@ -1,8 +1,21 @@
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
+import { withTraceSpan } from '../../common/telemetry/telemetry';
 import { RetrievalService } from './retrieval.service';
 import { RetrievalRepository } from './retrieval-repository';
 import { EmbeddingClient } from './embedding-client';
+
+jest.mock('../../common/telemetry/telemetry', () => ({
+  withTraceSpan: jest.fn(
+    (
+      _name: string,
+      _attributes: Record<string, unknown>,
+      run: (span: {
+        setAttributes: (attributes: Record<string, unknown>) => void;
+      }) => Promise<unknown>,
+    ) => run({ setAttributes: () => undefined }),
+  ),
+}));
 
 const context: ProductRequestContext = {
   requestId: 'request-1',
@@ -107,6 +120,44 @@ test('authorizes interview retrieval with interview read scope', async () => {
   await expect(
     service.search(interviewContext, { query: 'follow up', purpose: 'interview', limit: 8 }),
   ).resolves.toEqual({ hits: [] });
+});
+
+test('never places a confidential retrieval query in span or retrieval log attributes', async () => {
+  const repository = {
+    searchKeyword: jest.fn().mockResolvedValue([]),
+    searchVector: jest.fn(),
+    recordLog: jest.fn().mockResolvedValue(undefined),
+  };
+  const span = { setAttributes: jest.fn() };
+  const traceSpan = withTraceSpan as jest.MockedFunction<typeof withTraceSpan>;
+  traceSpan.mockImplementation((_name, _attributes, run) => run(span as never));
+  const service = new RetrievalService(
+    repository as never,
+    { embed: jest.fn().mockResolvedValue(null) } as never,
+    new PolicyService(),
+  );
+  const confidentialQuery = 'customer acquisition plan for confidential launch';
+
+  await service.search(context, { query: confidentialQuery, purpose: 'training', limit: 8 });
+
+  const traceAttributes = traceSpan.mock.calls.at(-1)?.[1] ?? {};
+  const observed = JSON.stringify([traceAttributes, span.setAttributes.mock.calls]);
+  expect(traceAttributes).toEqual({
+    'interview_agent.trace_id': 'trace-1',
+    'retrieval.purpose': 'training',
+    'retrieval.query_hash': expect.any(String),
+    'retrieval.query_length': confidentialQuery.length,
+  });
+  expect(observed).not.toContain(confidentialQuery);
+  expect(observed).not.toContain('retrieval.query_preview');
+  expect(observed).toContain('retrieval.hit_count');
+  expect(observed).toContain('retrieval.latency_ms');
+  expect(observed).not.toContain('retrieval.top_k');
+  expect(span.setAttributes).toHaveBeenCalledWith({
+    'retrieval.hit_count': 0,
+    'retrieval.latency_ms': expect.any(Number),
+  });
+  expect(JSON.stringify(repository.recordLog.mock.calls)).not.toContain(confidentialQuery);
 });
 
 function hit(overrides: Record<string, unknown> = {}) {

@@ -40,6 +40,42 @@ test('题库目录只返回用户可浏览的题目摘要', () => {
   assert.equal('rubric' in result.items[0]!, false);
 });
 
+test('题库目录返回客观题选项但不会泄漏正确选项', () => {
+  const result = QuestionCatalogResponseSchema.parse({
+    items: [
+      {
+        ...question,
+        type: 'single_choice',
+        options: [
+          { id: 'A', text: 'ReAct' },
+          { id: 'B', text: 'Plan-and-Execute' },
+        ],
+        correctOptionIds: ['B'],
+      },
+    ],
+    facets: {
+      categories: [{ value: 'ai_agent', label: 'AI Agent', count: 1 }],
+      difficulties: [{ value: 'hard', label: '高阶', count: 1 }],
+      types: [{ value: 'single_choice', label: '单选题', count: 1 }],
+      tags: [{ value: 'Agent 工作流', label: 'Agent 工作流', count: 1 }],
+    },
+    page: 1,
+    pageSize: 20,
+    total: 1,
+    totalPages: 1,
+  });
+
+  const objectiveItem = result.items[0] as unknown as {
+    options?: Array<{ id: string; text: string }>;
+    correctOptionIds?: string[];
+  };
+  assert.deepEqual(objectiveItem.options, [
+    { id: 'A', text: 'ReAct' },
+    { id: 'B', text: 'Plan-and-Execute' },
+  ]);
+  assert.equal('correctOptionIds' in objectiveItem, false);
+});
+
 test('推荐题单最多包含十道题并说明推荐原因', () => {
   const result = PracticeRecommendationListSchema.parse([
     {

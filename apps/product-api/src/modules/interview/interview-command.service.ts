@@ -29,6 +29,10 @@ export type InterviewStreamCommandResult = {
   result: InterviewCommandResult;
   basisSummary: string[];
 };
+type InterviewCommandExecution = {
+  signal?: AbortSignal;
+  stream?: InterviewCommandStream;
+};
 const MAX_BASIS_SUMMARY_ITEMS = 3;
 
 @Injectable()
@@ -60,27 +64,33 @@ export class InterviewCommandService {
     return this.repository.start(request);
   }
 
-  async advance(request: AdvanceCommandRequest) {
-    const execution = await this.execute({
-      context: request.context,
-      sessionId: request.sessionId,
-      command: 'advance',
-      expectedVersion: request.input.expectedVersion,
-      idempotencyKey: request.idempotencyKey,
-      answer: undefined,
-    });
+  async advance(request: AdvanceCommandRequest, signal?: AbortSignal) {
+    const execution = await this.execute(
+      {
+        context: request.context,
+        sessionId: request.sessionId,
+        command: 'advance',
+        expectedVersion: request.input.expectedVersion,
+        idempotencyKey: request.idempotencyKey,
+        answer: undefined,
+      },
+      signal ? { signal } : {},
+    );
     return execution.result;
   }
 
-  async submitAnswer(request: AnswerCommandRequest) {
-    const execution = await this.execute({
-      context: request.context,
-      sessionId: request.sessionId,
-      command: 'answer',
-      expectedVersion: request.input.expectedVersion,
-      idempotencyKey: request.idempotencyKey,
-      answer: request.input.answer,
-    });
+  async submitAnswer(request: AnswerCommandRequest, signal?: AbortSignal) {
+    const execution = await this.execute(
+      {
+        context: request.context,
+        sessionId: request.sessionId,
+        command: 'answer',
+        expectedVersion: request.input.expectedVersion,
+        idempotencyKey: request.idempotencyKey,
+        answer: request.input.answer,
+      },
+      signal ? { signal } : {},
+    );
     return execution.result;
   }
 
@@ -94,7 +104,7 @@ export class InterviewCommandService {
         idempotencyKey: request.idempotencyKey,
         answer: undefined,
       },
-      stream,
+      { stream },
     );
   }
 
@@ -108,13 +118,13 @@ export class InterviewCommandService {
         idempotencyKey: request.idempotencyKey,
         answer: request.input.answer,
       },
-      stream,
+      { stream },
     );
   }
 
   private async execute(
     request: ExecuteCommandRequest,
-    stream?: InterviewCommandStream,
+    execution: InterviewCommandExecution = {},
   ): Promise<InterviewStreamCommandResult> {
     return withTraceSpan(
       'interview.command',
@@ -123,14 +133,15 @@ export class InterviewCommandService {
         'session.id': request.sessionId,
         command: request.command,
       },
-      () => this.executeScoped(request, stream),
+      () => this.executeScoped(request, execution),
     );
   }
 
   private async executeScoped(
     request: ExecuteCommandRequest,
-    stream?: InterviewCommandStream,
+    execution: InterviewCommandExecution,
   ): Promise<InterviewStreamCommandResult> {
+    const { stream } = execution;
     this.assertCommandAccess(request);
     const prepared = await this.repository.prepare(request);
     if (prepared.kind === 'replay') {
@@ -147,6 +158,7 @@ export class InterviewCommandService {
         preparation: prepared,
         retrievalContext,
         stream,
+        signal: execution.signal,
       });
       stream?.phase('validating');
       assertRuntimeDecision(prepared.session, prepared.command, runtime);
@@ -208,6 +220,7 @@ function invokeRuntime(command: {
   preparation: InvocationPreparation;
   retrievalContext: Awaited<ReturnType<InterviewRetrievalContextService['forCommand']>>;
   stream: InterviewCommandStream | undefined;
+  signal: AbortSignal | undefined;
 }) {
   const request = {
     session: toRuntimeContext(command.preparation.session),
@@ -216,7 +229,14 @@ function invokeRuntime(command: {
     traceId: command.preparation.context.traceId,
     commandId: command.preparation.commandId,
   };
-  if (!command.stream) return command.agent.next(request, command.preparation.context);
+  if (!command.stream && !command.signal) {
+    return command.agent.next(request, command.preparation.context);
+  }
+  if (!command.stream) {
+    return command.agent.next(request, command.preparation.context, {
+      signal: command.signal as AbortSignal,
+    });
+  }
   return command.agent.next(request, command.preparation.context, streamProgress(command.stream));
 }
 

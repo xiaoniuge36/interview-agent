@@ -27,6 +27,8 @@ export type EmbeddingProjectionInput = {
   vector: number[];
 };
 
+type ProjectionClient = Pick<PrismaService, 'retrievalChunk' | '$executeRaw'>;
+
 @Injectable()
 export class RetrievalRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -38,6 +40,7 @@ export class RetrievalRepository {
       FROM "RetrievalChunk"
       WHERE "tenantId" = ${scope.tenantId} AND "status" = 'ready'
         AND "entityType" IN (${Prisma.join(scope.entityTypes)})
+        ${publishedKnowledgeAssetScope()}
         AND to_tsvector('simple', "content") @@ plainto_tsquery('simple', ${scope.query})
       ORDER BY "score" DESC, "id" ASC LIMIT ${scope.limit}
     `);
@@ -55,6 +58,7 @@ export class RetrievalRepository {
         FROM "RetrievalChunk"
         WHERE "tenantId" = ${scope.tenantId} AND "status" = 'ready' AND "embedding" IS NOT NULL
           AND "entityType" IN (${Prisma.join(scope.entityTypes)})
+          ${publishedKnowledgeAssetScope()}
         ORDER BY "embedding" <=> ${literal}::vector, "id" ASC LIMIT ${scope.limit}
       `);
       return rows.map(mapRow);
@@ -62,8 +66,24 @@ export class RetrievalRepository {
   }
 
   async writeEmbedding(input: EmbeddingProjectionInput): Promise<void> {
+    const literal = vectorLiteral(input.vector);
+    if (!literal) throw new Error('EMBEDDING_DIMENSION_INVALID');
+    const assetId = knowledgeAssetId(input);
+    if (input.entityType !== 'knowledge') return this.writeProjection(this.prisma, input, literal);
+    if (!assetId) return;
+    await this.prisma.$transaction(async (transaction) => {
+      if (!(await lockPublishedAsset(transaction, input.tenantId, assetId))) return;
+      await this.writeProjection(transaction, input, literal);
+    });
+  }
+
+  private async writeProjection(
+    client: ProjectionClient,
+    input: EmbeddingProjectionInput,
+    literal: string,
+  ) {
     const contentHash = createHash('sha256').update(input.content).digest('hex');
-    const chunk = await this.prisma.retrievalChunk.upsert({
+    const chunk = await client.retrievalChunk.upsert({
       where: {
         tenantId_entityType_entityId_embeddingVersion: {
           tenantId: input.tenantId,
@@ -75,9 +95,7 @@ export class RetrievalRepository {
       create: projectionData(input, contentHash),
       update: { ...projectionData(input, contentHash), status: 'pending' },
     });
-    const literal = vectorLiteral(input.vector);
-    if (!literal) throw new Error('EMBEDDING_DIMENSION_INVALID');
-    await this.prisma.$executeRaw(Prisma.sql`
+    await client.$executeRaw(Prisma.sql`
       UPDATE "RetrievalChunk" SET "embedding" = ${literal}::vector, "status" = 'ready'
       WHERE "id" = ${chunk.id} AND "tenantId" = ${input.tenantId}
     `);
@@ -134,4 +152,37 @@ function vectorLiteral(vector: number[]) {
     return null;
   }
   return `[${vector.join(',')}]`;
+}
+
+function publishedKnowledgeAssetScope() {
+  return Prisma.sql`
+    AND (
+      "entityType" <> 'knowledge'
+      OR EXISTS (
+        SELECT 1 FROM "KnowledgeAsset" AS "asset"
+        WHERE "asset"."id" = ("metadata"->>'assetId')
+          AND "asset"."tenantId" = "RetrievalChunk"."tenantId"
+          AND "asset"."status" = 'published'
+      )
+    )
+  `;
+}
+
+function knowledgeAssetId(input: EmbeddingProjectionInput) {
+  if (input.entityType !== 'knowledge') return null;
+  const assetId = input.metadata.assetId;
+  return typeof assetId === 'string' && assetId.length > 0 ? assetId : null;
+}
+
+async function lockPublishedAsset(
+  transaction: Prisma.TransactionClient,
+  tenantId: string,
+  assetId: string,
+) {
+  const rows = await transaction.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+    SELECT "id" FROM "KnowledgeAsset"
+    WHERE "tenantId" = ${tenantId} AND "id" = ${assetId} AND "status" = 'published'
+    FOR UPDATE
+  `);
+  return rows.length > 0;
 }

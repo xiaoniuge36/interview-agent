@@ -2,7 +2,7 @@ import type { MistakeBook } from '@interview-agent/contracts';
 import React, { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { MistakeBookContent } from './MistakeBook';
+import { MistakeBookContent, mistakeBookReviewHref } from './MistakeBook';
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 
@@ -30,6 +30,27 @@ describe('MistakeBookContent', () => {
     expect(markup).toContain('1 题 · 约 8 分钟');
     expect(markup).toContain('开始这题复练');
   });
+});
+
+it('opens a created mistake review with the only permitted return origin', () => {
+  expect(mistakeBookReviewHref('review-session')).toBe(
+    '/practice?session=review-session&origin=mistake-book',
+  );
+});
+
+it('makes the fixed return anchor focusable and announces the refreshed review state', () => {
+  const markup = renderToStaticMarkup(
+    createElement(MistakeBookContent, {
+      book: book(true),
+      startingId: null,
+      onStart: () => undefined,
+      returnedFromReview: true,
+    } as unknown as React.ComponentProps<typeof MistakeBookContent>),
+  );
+
+  expect(markup).toContain('id="mistake-book-heading" tabindex="-1"');
+  expect(markup).toContain('role="status"');
+  expect(markup).toContain('已回到错题本，已刷新复练状态。');
 });
 
 function render(value: MistakeBook) {

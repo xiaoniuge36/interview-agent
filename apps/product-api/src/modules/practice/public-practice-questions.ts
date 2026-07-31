@@ -1,4 +1,6 @@
 import { buildPublicPracticeQuestions } from './public-practice-question-builders';
+import { PUBLIC_AGENT_CHOICE_QUESTIONS } from './public-agent-choice-questions';
+import { PUBLIC_AGENT_OPEN_QUESTIONS } from './public-agent-open-questions';
 import {
   BUSINESS_DELIVERY_QUESTION_INPUTS,
   GENERIC_QUESTION_INPUTS,
@@ -217,4 +219,6 @@ export const PUBLIC_PRACTICE_QUESTIONS = [
   ]),
   ...buildPublicPracticeQuestions('business_delivery', BUSINESS_DELIVERY_QUESTION_INPUTS),
   ...buildPublicPracticeQuestions('generic', GENERIC_QUESTION_INPUTS),
+  ...PUBLIC_AGENT_CHOICE_QUESTIONS,
+  ...PUBLIC_AGENT_OPEN_QUESTIONS,
 ];

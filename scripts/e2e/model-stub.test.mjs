@@ -46,6 +46,29 @@ test('returns a low-score practice evaluation for the weakness-review loop', asy
   }
 });
 
+test('returns a legal warmup transition for the initial interview turn', async () => {
+  const stub = await startModelStub({ port: 0 });
+  try {
+    const response = await fetch(`${stub.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer e2e-success', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: '你是专业的中文模拟面试官。当前阶段：warmup。' },
+          { role: 'user', content: '这是面试开始，请提出第一题。' },
+        ],
+      }),
+    });
+    const payload = await response.json();
+    const decision = JSON.parse(payload.choices[0].message.content);
+
+    assert.equal(decision.stage, 'warmup');
+    assert.equal(decision.shouldFinish, false);
+  } finally {
+    await stub.close();
+  }
+});
+
 test('returns a deterministic 1536-dimension embedding', async () => {
   const stub = await startModelStub({ port: 0 });
   try {

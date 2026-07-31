@@ -3,7 +3,11 @@ import { useSyncExternalStore } from 'react';
 const COMPACT_QUERY = '(max-width: 720px)';
 
 export function resolveUserAgentDrawerPresentation(isCompact: boolean) {
-  return { ariaModal: isCompact || undefined };
+  return {
+    ariaModal: isCompact || undefined,
+    initialFocus: 'composer' as const,
+    trapFocus: isCompact,
+  };
 }
 
 export function useCompactUserAgentDrawer() {

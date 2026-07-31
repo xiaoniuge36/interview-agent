@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { listInterviews } from '@/lib/interview-api';
+import { getInterviewReport, listInterviews } from '@/lib/interview-api';
 import { listPracticeHistory } from '@/lib/practice-api';
 import {
   buildTrainingRecords,
@@ -17,6 +17,7 @@ import {
 import { TrainingArchiveFilters } from './TrainingArchiveFilters';
 import { MistakeBook } from './MistakeBook';
 import { TrainingArchiveSummary } from './TrainingArchiveSummary';
+import { loadInterviewReportSummaries } from './interview-report-summaries';
 
 type ArchiveState = {
   records: TrainingRecord[];
@@ -62,25 +63,31 @@ function useTrainingArchive() {
   useEffect(() => {
     let active = true;
     setState((current) => ({ ...current, status: 'loading' }));
-    void Promise.allSettled([listPracticeHistory(), listInterviews()]).then(
-      ([practices, interviews]) => {
-        if (!active) return;
-        const practiceItems = practices.status === 'fulfilled' ? practices.value : [];
-        const interviewItems = interviews.status === 'fulfilled' ? interviews.value : [];
-        const successCount =
-          Number(practices.status === 'fulfilled') + Number(interviews.status === 'fulfilled');
-        setState({
-          records: buildTrainingRecords(practiceItems, interviewItems),
-          status: successCount === 2 ? 'ready' : successCount ? 'partial' : 'error',
-        });
-      },
-    );
+    void loadTrainingArchive().then((archive) => {
+      if (active) setState(archive);
+    });
     return () => {
       active = false;
     };
   }, [request]);
 
   return { ...state, reload };
+}
+
+async function loadTrainingArchive(): Promise<ArchiveState> {
+  const [practices, interviews] = await Promise.allSettled([
+    listPracticeHistory(),
+    listInterviews(),
+  ]);
+  const practiceItems = practices.status === 'fulfilled' ? practices.value : [];
+  const interviewItems = interviews.status === 'fulfilled' ? interviews.value : [];
+  const reports = await loadInterviewReportSummaries(interviewItems, getInterviewReport);
+  const successCount =
+    Number(practices.status === 'fulfilled') + Number(interviews.status === 'fulfilled');
+  return {
+    records: buildTrainingRecords(practiceItems, interviewItems, reports.items),
+    status: successCount === 2 && !reports.failed ? 'ready' : successCount ? 'partial' : 'error',
+  };
 }
 
 function ArchiveIntro() {
@@ -174,9 +181,25 @@ function ArchiveRecord({ record }: { record: TrainingRecord }) {
         <small>
           {record.score !== null ? 'AI 复盘得分' : trainingRecordStatusLabel(record.status)}
         </small>
+        {record.trend ? <TrainingScoreTrend trend={record.trend} /> : null}
         <em>查看记录 →</em>
       </span>
     </Link>
+  );
+}
+
+function TrainingScoreTrend({ trend }: { trend: NonNullable<TrainingRecord['trend']> }) {
+  const tone = trend.delta > 0 ? 'up' : trend.delta < 0 ? 'down' : 'steady';
+  const visible =
+    trend.delta > 0 ? `较上一轮 +${trend.delta}` : `较上一轮 ${trend.delta || '持平'}`;
+  return (
+    <span
+      className="training-archive-record-trend"
+      data-tone={tone}
+      aria-label={`上一轮 ${Math.round(trend.previousScore)} 分，${visible}`}
+    >
+      {visible}
+    </span>
   );
 }
 

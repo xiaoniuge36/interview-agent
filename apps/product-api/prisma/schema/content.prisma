@@ -37,20 +37,22 @@ model JobProfile {
 }
 
 model Question {
-  id         String             @id @default(cuid())
-  tenantId   String
-  visibility QuestionVisibility @default(tenant)
-  title      String
-  stem       String
-  type       QuestionType
-  difficulty QuestionDifficulty
-  tags       String[]
-  answer     String
-  rubric     Json
-  sourceRefs String[]
-  status     QuestionStatus     @default(draft)
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
+  id               String             @id @default(cuid())
+  tenantId         String
+  visibility       QuestionVisibility @default(tenant)
+  title            String
+  stem             String
+  type             QuestionType
+  difficulty       QuestionDifficulty
+  tags             String[]
+  answer           String
+  rubric           Json
+  options          Json               @default("[]")
+  correctOptionIds String[]           @default([])
+  sourceRefs       String[]
+  status           QuestionStatus     @default(draft)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   tenant        Tenant                @relation(fields: [tenantId], references: [id])
   practiceItems PracticeSessionItem[]
@@ -93,6 +95,8 @@ model CandidateQuestion {
   difficulty          QuestionDifficulty
   answer              String
   rubric              Json
+  options             Json                  @default("[]")
+  correctOptionIds    String[]              @default([])
   status              CandidateReviewStatus @default(pending)
   revision            Int                   @default(1)
   qualityScore        Float
@@ -113,26 +117,26 @@ model CandidateQuestion {
 }
 
 model PracticeSession {
-  id          String                @id @default(cuid())
-  tenantId    String
-  userId      String
-  jobIntentId String?
+  id                       String                @id @default(cuid())
+  tenantId                 String
+  userId                   String
+  jobIntentId              String?
   sourceInterviewSessionId String?
-  mode        PracticeMode          @default(smart)
-  title       String
-  status      PracticeSessionStatus @default(created)
-  startedAt   DateTime              @default(now())
-  submittedAt DateTime?
-  reportedAt  DateTime?
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  mode                     PracticeMode          @default(smart)
+  title                    String
+  status                   PracticeSessionStatus @default(created)
+  startedAt                DateTime              @default(now())
+  submittedAt              DateTime?
+  reportedAt               DateTime?
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
 
-  tenant    Tenant                @relation(fields: [tenantId], references: [id])
-  user      User                  @relation(fields: [tenantId, userId], references: [tenantId, id])
-  jobIntent JobIntent?            @relation(fields: [tenantId, jobIntentId], references: [tenantId, id])
-  sourceInterviewSession InterviewSession? @relation("InterviewReviewPracticeSessions", fields: [sourceInterviewSessionId], references: [id], onDelete: SetNull)
-  items     PracticeSessionItem[]
-  report    PracticeReport?
+  tenant                 Tenant                @relation(fields: [tenantId], references: [id])
+  user                   User                  @relation(fields: [tenantId, userId], references: [tenantId, id])
+  jobIntent              JobIntent?            @relation(fields: [tenantId, jobIntentId], references: [tenantId, id])
+  sourceInterviewSession InterviewSession?     @relation("InterviewReviewPracticeSessions", fields: [sourceInterviewSessionId], references: [id], onDelete: SetNull)
+  items                  PracticeSessionItem[]
+  report                 PracticeReport?
 
   @@unique([tenantId, id])
   @@index([tenantId, userId, status, updatedAt])
@@ -205,18 +209,18 @@ model PracticeReport {
 }
 
 model MasteryProfile {
-  id                    String   @id @default(cuid())
+  id                    String       @id @default(cuid())
   tenantId              String
   userId                String
   tag                   String
   score                 Float
-  evidenceCount         Int      @default(0)
-  weightedEvidence      Float    @default(0)
+  evidenceCount         Int          @default(0)
+  weightedEvidence      Float        @default(0)
   lastEvidenceEventId   String?
   lastEvidenceSessionId String?
   trend                 MasteryTrend @default(stable)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
   user   User   @relation(fields: [tenantId, userId], references: [tenantId, id])

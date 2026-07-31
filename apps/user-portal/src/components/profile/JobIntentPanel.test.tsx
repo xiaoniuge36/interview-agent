@@ -22,6 +22,15 @@ describe('JobIntentPanel', () => {
     expect(markup).toContain('class="button job-start-button"');
     expect(markup).toContain('id="job-status"');
   });
+
+  it('renders first use without a preselected role or synthetic JD', () => {
+    const markup = render();
+
+    expect(markup).toMatch(/id="job-target-role"[^>]*value=""/);
+    expect(markup).toMatch(/id="job-description"[^>]*><\/textarea>/);
+    expect(markup).not.toContain('role-chip active');
+    expect(markup).toContain('系统不会替你假定岗位');
+  });
 });
 
 function render() {

@@ -6,6 +6,11 @@ import { useRouter } from 'next/navigation';
 import type { MistakeBook as MistakeBookData, MistakeBookItem } from '@interview-agent/contracts';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import { listPracticeMistakes, startMistakeReview } from '@/lib/practice-api';
+import {
+  isMistakeBookReturnHash,
+  mistakeBookReviewPracticeHref,
+  MISTAKE_BOOK_RETURN_ANCHOR_ID,
+} from '@/components/practice/player/practice-return-origin';
 
 const REVIEW_MINUTES_PER_QUESTION = 8;
 const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium' });
@@ -16,6 +21,7 @@ type MistakeState =
 export function MistakeBook() {
   const source = useMistakeBookData();
   const review = useMistakeReview();
+  const returnedFromReview = useMistakeBookReturnFocus(source.state.status);
   if (source.state.status === 'loading')
     return <MistakeBookState copy="正在整理低分评价与训练证据…" />;
   if (source.state.status === 'error') {
@@ -28,6 +34,7 @@ export function MistakeBook() {
       book={source.state.book}
       startingId={review.startingId}
       onStart={(mistakeId) => void review.start(mistakeId)}
+      returnedFromReview={returnedFromReview}
     />
   );
 }
@@ -61,7 +68,7 @@ function useMistakeReview() {
     try {
       const session = await startMistakeReview(mistakeId);
       notifications.success('错题复练已创建', '这道题仍处于可训练状态，即将进入答题页。');
-      router.push(`/practice?session=${session.id}`);
+      router.push(mistakeBookReviewHref(session.id));
     } catch (error) {
       notifications.error(
         '这道错题暂时不能复练',
@@ -75,14 +82,32 @@ function useMistakeReview() {
   return { startingId, start };
 }
 
+function useMistakeBookReturnFocus(status: MistakeState['status']) {
+  const [returnedFromReview, setReturnedFromReview] = useState(false);
+  useEffect(() => setReturnedFromReview(isMistakeBookReturnHash(window.location.hash)), []);
+  useEffect(() => {
+    if (!returnedFromReview || status !== 'ready') return;
+    const heading = document.getElementById(MISTAKE_BOOK_RETURN_ANCHOR_ID);
+    heading?.scrollIntoView({ block: 'start' });
+    heading?.focus({ preventScroll: true });
+  }, [returnedFromReview, status]);
+  return returnedFromReview;
+}
+
+export function mistakeBookReviewHref(sessionId: string) {
+  return mistakeBookReviewPracticeHref(sessionId);
+}
+
 export function MistakeBookContent({
   book,
   startingId,
   onStart,
+  returnedFromReview = false,
 }: {
   book: MistakeBookData;
   startingId: string | null;
   onStart: (mistakeId: string) => void;
+  returnedFromReview?: boolean;
 }) {
   if (!book.items.length) {
     return (
@@ -99,7 +124,10 @@ export function MistakeBookContent({
       <header>
         <div>
           <span>错题证据</span>
-          <h2 id="mistake-book-heading">从低分原因开始复练</h2>
+          <h2 id={MISTAKE_BOOK_RETURN_ANCHOR_ID} tabIndex={-1}>
+            从低分原因开始复练
+          </h2>
+          {returnedFromReview ? <p role="status">已回到错题本，已刷新复练状态。</p> : null}
         </div>
         <p>{book.total} 条低分评价 · 历史下架题仍可回看</p>
       </header>

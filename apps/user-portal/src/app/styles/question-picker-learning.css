@@ -1,0 +1,91 @@
+.learning-question-context,
+.learning-question-state {
+  width: min(1440px, 100%);
+  margin: 18px auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--outline));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+
+.learning-question-context > div:first-child,
+.learning-question-state > div:first-child {
+  min-width: 0;
+}
+
+.learning-question-context span,
+.learning-question-state > span {
+  color: var(--primary-strong);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.learning-question-context h2,
+.learning-question-state h2 {
+  margin: 4px 0;
+  color: var(--ink);
+  font-size: clamp(19px, 2vw, 24px);
+}
+
+.learning-question-context p,
+.learning-question-state p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.learning-question-context-actions,
+.learning-question-state > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.learning-question-context-actions a,
+.learning-question-state a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 13px;
+  border: 1px solid var(--theme-control-border);
+  border-radius: 9px;
+  color: var(--primary-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.learning-question-context-actions a.primary,
+.learning-question-state a.primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--theme-control-text);
+}
+
+.question-self-picker-workspace:focus {
+  outline: 3px solid color-mix(in srgb, var(--primary) 58%, transparent);
+  outline-offset: 6px;
+}
+
+@media (max-width: 600px) {
+  .learning-question-context,
+  .learning-question-state {
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .learning-question-context-actions,
+  .learning-question-state > div {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+}

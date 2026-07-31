@@ -69,9 +69,9 @@ function interviewContinuation(interview: InterviewSession): TrainingContinuatio
     title: interview.title,
     updatedAt: interview.updatedAt,
     href: `/interview?session=${encodeURIComponent(interview.id)}`,
-    kicker: '继续上次模拟',
+    kicker: '继续上次面试',
     detail: `停在${interviewStageLabel(interview.stage)}，已完成 ${answered} 轮回答。`,
-    actionLabel: '继续训练',
+    actionLabel: '继续上次面试',
     progressPercent: null,
     statusLabel: interviewStatusLabel(interview.status),
   };

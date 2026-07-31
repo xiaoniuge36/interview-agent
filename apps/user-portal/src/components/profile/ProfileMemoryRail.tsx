@@ -1,6 +1,6 @@
 import type { ProfilePayload } from '@interview-agent/contracts';
 import Link from 'next/link';
-import { createProfileMemoryModel } from './profile-memory-model';
+import { createProfileMemoryModel, type ProfileMemoryModel } from './profile-memory-model';
 
 export function ProfileMemoryRail({ profile }: { profile: ProfilePayload }) {
   const memory = createProfileMemoryModel(profile);
@@ -15,16 +15,7 @@ export function ProfileMemoryRail({ profile }: { profile: ProfilePayload }) {
           <small>保存后会用于推荐题、追问和复盘</small>
         </div>
       </header>
-      <section className="profile-completion">
-        <div>
-          <span>档案完整度</span>
-          <strong>{memory.completion}%</strong>
-        </div>
-        <div className="profile-completion-track" aria-label={`档案完整度 ${memory.completion}%`}>
-          <span style={{ width: `${memory.completion}%` }} />
-        </div>
-        <p>当前目标：{memory.role}</p>
-      </section>
+      <ProfileReadiness memory={memory} />
       <SignalList
         title="Agent 已采纳的训练信号"
         items={memory.acceptedSignals}
@@ -36,11 +27,36 @@ export function ProfileMemoryRail({ profile }: { profile: ProfilePayload }) {
         <strong>下一轮训练会如何变化？</strong>
         <p>{memory.trainingImpact}</p>
         <SignalList title="下一步补齐" items={memory.nextSteps} />
-        <Link className="button secondary" href="/job">
-          继续完善目标岗位 <span aria-hidden="true">›</span>
+        <Link className="button secondary" href={memory.nextAction.href}>
+          {memory.nextAction.label} <span aria-hidden="true">›</span>
         </Link>
       </section>
     </aside>
+  );
+}
+
+function ProfileReadiness({ memory }: { memory: ProfileMemoryModel }) {
+  return (
+    <section className="profile-completion">
+      <div>
+        <span>训练准备度</span>
+        <strong>{memory.readinessLabel}</strong>
+      </div>
+      {memory.completion === null ? null : (
+        <div
+          className="profile-completion-track"
+          role="progressbar"
+          aria-label="训练画像字段完成度"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={memory.completion}
+          aria-valuetext={memory.readinessLabel}
+        >
+          <span style={{ width: `${memory.completion}%` }} />
+        </div>
+      )}
+      <p>{memory.primaryGap ? `最缺一项：${memory.primaryGap}` : `当前目标：${memory.role}`}</p>
+    </section>
   );
 }
 

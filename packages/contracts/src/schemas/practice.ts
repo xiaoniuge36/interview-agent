@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CONTRACT_LIMITS } from '../limits';
 import { PaginationMetaSchema } from './api';
-import { QuestionSchema, RubricPointSchema } from './training';
+import { CandidateQuestionSchema, RubricPointSchema } from './training';
 
 export const PracticeSessionStatusSchema = z.enum([
   'created',
@@ -87,18 +87,7 @@ export const PracticeItemFeedbackSchema = PracticeItemSolutionSchema.extend({
   evaluation: PracticeEvaluationSchema,
 });
 
-export const PracticeQuestionSchema = QuestionSchema.pick({
-  id: true,
-  tenantId: true,
-  visibility: true,
-  title: true,
-  stem: true,
-  type: true,
-  difficulty: true,
-  tags: true,
-  sourceRefs: true,
-  status: true,
-});
+export const PracticeQuestionSchema = CandidateQuestionSchema;
 
 export const PracticeSessionItemSchema = z.object({
   id: z.string().min(1),
@@ -175,13 +164,14 @@ export const MistakeBookQuerySchema = z.object({
     .default(DEFAULT_MISTAKE_PAGE_SIZE),
 });
 
-export const MistakeQuestionSnapshotSchema = QuestionSchema.pick({
+export const MistakeQuestionSnapshotSchema = CandidateQuestionSchema.pick({
   id: true,
   title: true,
   stem: true,
   type: true,
   difficulty: true,
   tags: true,
+  options: true,
 });
 
 export const MistakeEvidenceSchema = z.object({

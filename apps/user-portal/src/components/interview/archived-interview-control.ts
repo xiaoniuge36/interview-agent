@@ -13,8 +13,10 @@ export function archivedInterviewControl(state: ArchivedInterviewControlState) {
     return { action: 'start' as const, disabled: true, label: '正在恢复本轮…' };
   }
   return {
-    action: 'start' as const,
+    action: state.hasSession ? ('restart' as const) : ('start' as const),
     disabled: state.busy,
     label: state.hasSession ? '重新开始本轮' : '开始模拟面试',
   };
 }
+
+export type ArchivedInterviewControl = ReturnType<typeof archivedInterviewControl>;

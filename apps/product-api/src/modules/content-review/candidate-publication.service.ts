@@ -156,6 +156,8 @@ export class CandidatePublicationService {
         tags: candidate.tags,
         answer: candidate.answer,
         rubric: jsonValue(candidate.rubric),
+        options: jsonValue(candidate.options ?? []),
+        correctOptionIds: candidate.correctOptionIds ?? [],
         sourceRefs: candidate.sourceRefs,
         status: 'published',
       },

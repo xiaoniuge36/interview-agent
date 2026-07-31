@@ -9,7 +9,11 @@ from langgraph.runtime import Runtime
 from pydantic import ValidationError
 from typing_extensions import TypedDict
 
-from app.model_gateway import ModelGatewayError, ModelGatewayRequest
+from app.model_gateway import (
+    MODEL_PROVIDER_ENDPOINT_BLOCKED,
+    ModelGatewayError,
+    ModelGatewayRequest,
+)
 from app.schemas.practice_report import (
     PracticeReportDecision,
     PracticeReportRequest,
@@ -120,6 +124,8 @@ async def run_practice_report_graph(
         {"configurable": {"thread_id": practice_report_thread_id(request)}},
         context=PracticeReportGraphContext(grant=grant),
     )
+    if state.get("failure_code") == MODEL_PROVIDER_ENDPOINT_BLOCKED:
+        raise PracticeReportGraphError(MODEL_PROVIDER_ENDPOINT_BLOCKED)
     decision = state.get("decision")
     if decision is None:
         raise PracticeReportGraphError(state.get("failure_code", "PRACTICE_REPORT_FAILED"))

@@ -49,7 +49,17 @@ test('forwards package script arguments to Playwright', () => {
     'exec',
     'playwright',
     'test',
+    '--workers=1',
     '--grep',
     'practice',
+  ]);
+});
+
+test('keeps an explicit Playwright worker override', () => {
+  assert.deepEqual(playwrightArguments(['--workers=2']), [
+    'exec',
+    'playwright',
+    'test',
+    '--workers=2',
   ]);
 });

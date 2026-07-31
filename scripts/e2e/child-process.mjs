@@ -20,7 +20,12 @@ export function runCommand(command, args, options = {}) {
 
 export function playwrightArguments(arguments_) {
   const forwarded = arguments_[0] === '--' ? arguments_.slice(1) : arguments_;
-  return ['exec', 'playwright', 'test', ...forwarded];
+  const workers = forwarded.some(
+    (argument) => argument === '--workers' || argument.startsWith('--workers='),
+  )
+    ? []
+    : ['--workers=1'];
+  return ['exec', 'playwright', 'test', ...workers, ...forwarded];
 }
 
 export function startService(service, options = {}) {

@@ -43,6 +43,18 @@
   gap: 4px;
 }
 
+.model-readiness-actions {
+  justify-items: end;
+  gap: 8px;
+}
+
+.model-readiness-actions .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+
 .model-readiness-banner span {
   color: var(--primary-strong);
   font-family: var(--font-mono);
@@ -185,6 +197,11 @@
 
   .model-readiness-banner .button {
     width: 100%;
+  }
+
+  .model-readiness-actions {
+    width: 100%;
+    justify-items: stretch;
   }
 
   .credential-editor {

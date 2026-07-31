@@ -46,4 +46,17 @@ describe('interview streaming state', () => {
     expect(result.phase).toBeNull();
     expect(result.basisSummary).toEqual(['基于你刚才的项目描述继续追问']);
   });
+
+  it('preserves a recovered draft when archived restoration effects replay', () => {
+    const restoring = interviewReducer(INITIAL_INTERVIEW_STATE, { type: 'restore_start' });
+    const withRecoveredDraft = interviewReducer(restoring, {
+      type: 'draft',
+      draft: '当前标签页草稿',
+    });
+    const replayedRestore = interviewReducer(withRecoveredDraft, { type: 'restore_start' });
+
+    expect(replayedRestore.draft).toBe('当前标签页草稿');
+    expect(replayedRestore.busy).toBe(true);
+    expect(interviewReducer(withRecoveredDraft, { type: 'reset' }).draft).toBe('');
+  });
 });

@@ -18,6 +18,18 @@ describe('PracticeEvidenceStrip', () => {
     expect(markup).toContain('下一轮推荐');
   });
 
+  it('报告内容暂不可读时不把下一轮推荐呈现为已就绪', () => {
+    const markup = renderToStaticMarkup(
+      createElement(PracticeEvidenceStrip, {
+        session: session('report_ready'),
+        reportAvailable: false,
+      }),
+    );
+
+    expect(markup).toContain('复盘内容正在恢复');
+    expect(markup).not.toContain('能力画像已更新');
+  });
+
   it('说明自主结束时只保留回答', () => {
     const markup = renderToStaticMarkup(
       createElement(PracticeEvidenceStrip, { session: session('submitted'), compact: true }),

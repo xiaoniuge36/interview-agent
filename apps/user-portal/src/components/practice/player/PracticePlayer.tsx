@@ -187,6 +187,7 @@ function PracticeFeedbackStep(props: PracticeSessionContentProps) {
   return (
     <>
       <PracticeCoachPanel
+        sessionId={player.sessionId!}
         item={item}
         draft={props.draft}
         solution={player.solutions[item.id]}

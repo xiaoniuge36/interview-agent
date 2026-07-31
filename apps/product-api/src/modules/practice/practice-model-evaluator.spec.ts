@@ -23,6 +23,7 @@ const credential = {
 const input = {
   title: '如何划分订单系统的模块边界？',
   stem: '说明订单、库存、支付之间的职责边界和失败恢复。',
+  options: [],
   answer: '订单负责交易主流程，库存和支付通过事件协作。',
   referenceAnswer: '明确职责边界，并通过幂等、补偿和重试处理失败。',
   rubric: [{ point: '失败恢复', score: 10, description: '说明幂等、补偿或重试。' }],
@@ -73,7 +74,62 @@ describe('PracticeModelEvaluator', () => {
   });
 });
 
-function createEvaluator(resolved: typeof credential | null = credential) {
+describe('PracticeModelEvaluator objective and streaming behavior', () => {
+  it('includes objective options in the evaluation prompt', async () => {
+    const { evaluator, provider } = createEvaluator();
+
+    await evaluator.evaluate(context, {
+      ...input,
+      answer: 'B',
+      options: [
+        { id: 'A', text: '单体执行' },
+        { id: 'B', text: '状态机编排' },
+      ],
+    });
+
+    expect(provider.complete).toHaveBeenCalledWith(
+      expect.objectContaining({ userPrompt: expect.stringContaining('B. 状态机编排') }),
+    );
+  });
+
+  it('waits for an async feedback sink before pulling another provider chunk', async () => {
+    const iterator = feedbackStream();
+    const next = jest.spyOn(iterator, 'next');
+    const { evaluator } = createEvaluator(credential, () => iterator);
+    let release: () => void = () => undefined;
+    let notifySinkStarted: () => void = () => undefined;
+    const sinkStarted = new Promise<void>((resolve) => {
+      notifySinkStarted = () => resolve();
+    });
+    const onDelta = jest
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            release = () => resolve();
+            notifySinkStarted();
+          }),
+      )
+      .mockResolvedValue(undefined);
+    const result = evaluator.evaluateStream(context, input, {
+      onDelta,
+      onComplete: jest.fn(),
+    });
+
+    await sinkStarted;
+
+    expect(next).toHaveBeenCalledTimes(1);
+    release();
+    await expect(result).resolves.toMatchObject({ feedback: 'First second', score: 82 });
+    expect(next).toHaveBeenCalledTimes(3);
+    expect(onDelta).toHaveBeenCalledTimes(2);
+  });
+});
+
+function createEvaluator(
+  resolved: typeof credential | null = credential,
+  stream: () => AsyncGenerator<string> = feedbackStream,
+) {
   const credentials = { resolveDefault: jest.fn().mockResolvedValue(resolved) };
   const provider = {
     complete: jest.fn().mockResolvedValue(
@@ -85,6 +141,7 @@ function createEvaluator(resolved: typeof credential | null = credential) {
         followUpQuestion: '支付成功但库存扣减失败时如何补偿？',
       }),
     ),
+    stream: jest.fn(stream),
   };
   const invocations = {
     measure: jest.fn((_metadata, run) => run(jest.fn())),
@@ -99,4 +156,9 @@ function createEvaluator(resolved: typeof credential | null = credential) {
     provider,
     invocations,
   };
+}
+
+async function* feedbackStream(): AsyncGenerator<string> {
+  yield '{"feedback":"First';
+  yield ' second","score":82,"missingPoints":[],"rubricScores":[],"followUpQuestion":null}';
 }

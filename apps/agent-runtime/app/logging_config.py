@@ -9,6 +9,7 @@ SAFE_RECORD_FIELDS: Final = (
     "http_path",
     "http_status",
     "duration_ms",
+    "outcome",
     "trace_id",
     "service",
 )

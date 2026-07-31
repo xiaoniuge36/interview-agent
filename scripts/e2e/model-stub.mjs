@@ -16,7 +16,7 @@ const EVALUATION_CONTENT = JSON.stringify({
   followUpQuestion: '请说明一次异常恢复方案如何验证。',
 });
 const INTERVIEW_CONTENT = JSON.stringify({
-  stage: 'jd_core',
+  stage: 'warmup',
   content: '请结合岗位要求说明你的关键技术取舍。',
   shouldFinish: false,
 });

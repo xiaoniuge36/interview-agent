@@ -2,6 +2,7 @@ import type { PracticeItemSolution, PracticeSession } from '@interview-agent/con
 import Link from 'next/link';
 import { useState } from 'react';
 import type { PlayerAiOperation, PlayerBusy, PlayerIssue } from './practice-player-actions';
+import { settingsHrefForPractice } from '@/components/settings/settings-return-target';
 import { PracticeAiConfirmationDialog } from './PracticeAiConfirmationDialog';
 import { PracticeAnswerReview } from './PracticeAnswerReview';
 import { PracticeEvaluationResult } from './PracticeEvaluationResult';
@@ -10,6 +11,7 @@ import { PracticeLearningNotice } from './PracticeLearningNotice';
 export { PracticeLearningNotice } from './PracticeLearningNotice';
 
 type PracticeCoachPanelProps = {
+  sessionId: string;
   item: PracticeSession['items'][number];
   draft: string;
   solution: PracticeItemSolution | undefined;
@@ -143,7 +145,7 @@ function AiEvaluationSection(props: PracticeCoachPanelProps & { answerCurrent: b
           }}
         />
       ) : null}
-      {props.issue ? <CoachIssue issue={props.issue} /> : null}
+      {props.issue ? <CoachIssue issue={props.issue} sessionId={props.sessionId} /> : null}
     </section>
   );
 }
@@ -222,13 +224,15 @@ function PracticeFeedbackActions(props: PracticeCoachPanelProps) {
   );
 }
 
-function CoachIssue({ issue }: { issue: NonNullable<PlayerIssue> }) {
+function CoachIssue({ issue, sessionId }: { issue: NonNullable<PlayerIssue>; sessionId: string }) {
   const needsConnection = issue.code === 'MODEL_CONNECTION_REQUIRED';
   return (
     <div className="practice-coach-issue" role="alert">
       <strong>{needsConnection ? '还没有可用的 AI 连接' : '本次 AI 评价未完成'}</strong>
       <p>{issue.message}</p>
-      {needsConnection ? <Link href="/settings">连接并测试模型 →</Link> : null}
+      {needsConnection ? (
+        <Link href={settingsHrefForPractice(sessionId)}>连接并测试模型 →</Link>
+      ) : null}
     </div>
   );
 }

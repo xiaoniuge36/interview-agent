@@ -38,7 +38,7 @@ export type AgentNextInput = {
 };
 
 export type AgentRuntimeProgress = {
-  onContentDelta?: (content: string) => void;
+  onContentDelta?: (content: string) => void | Promise<void>;
   signal?: AbortSignal;
 };
 

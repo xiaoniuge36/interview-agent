@@ -40,6 +40,50 @@ test('all public question fixtures satisfy the shared contract', () => {
   }
 });
 
+test('objective questions enforce bounded options and correct option ids', () => {
+  const base = {
+    id: 'objective-1',
+    tenantId: 'public',
+    visibility: 'public',
+    title: 'Which Agent pattern plans before execution?',
+    stem: 'Choose the best answer.',
+    difficulty: 'easy',
+    tags: ['Agent'],
+    answer: 'Plan-and-Execute separates planning from execution.',
+    rubric: [{ point: '正确选项', score: 10, description: '选择 Plan-and-Execute。' }],
+    sourceRefs: ['https://github.com/microsoft/ai-agents-for-beginners'],
+    status: 'published',
+    options: [
+      { id: 'A', text: 'ReAct' },
+      { id: 'B', text: 'Plan-and-Execute' },
+      { id: 'C', text: 'RAG' },
+    ],
+  };
+
+  assert.equal(
+    QuestionSchema.parse({ ...base, type: 'single_choice', correctOptionIds: ['B'] }).type,
+    'single_choice',
+  );
+  assert.equal(
+    QuestionSchema.parse({ ...base, type: 'multiple_choice', correctOptionIds: ['A', 'B'] }).type,
+    'multiple_choice',
+  );
+  assert.equal(
+    QuestionSchema.safeParse({ ...base, type: 'single_choice', correctOptionIds: ['A', 'B'] })
+      .success,
+    false,
+  );
+  assert.equal(
+    QuestionSchema.safeParse({ ...base, type: 'multiple_choice', correctOptionIds: ['A', 'Z'] })
+      .success,
+    false,
+  );
+  assert.equal(
+    QuestionSchema.safeParse({ ...base, type: 'short_answer', correctOptionIds: ['B'] }).success,
+    false,
+  );
+});
+
 test('runtime requests reject unsupported contract versions', () => {
   const result = AgentRuntimeNextRequestSchema.safeParse({
     ...validRuntimeRequest,

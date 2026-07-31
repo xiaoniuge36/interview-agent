@@ -1,11 +1,11 @@
-import type { CatalogQuestion } from './useQuestionPicker';
+import type { SelectedQuestion } from './question-selection-storage';
 
 const MINUTES_PER_QUESTION = 4;
 const MAX_QUESTIONS = 10;
 const PERCENTAGE_TOTAL = 100;
 
 type SelectedQuestionTrayProps = {
-  selected: CatalogQuestion[];
+  selected: SelectedQuestion[];
   message: string;
   error: string;
   starting: boolean;
@@ -17,7 +17,17 @@ type SelectedQuestionTrayProps = {
 };
 
 export function SelectedQuestionTray(props: SelectedQuestionTrayProps) {
-  const { selected, message, error, starting, onRemove, onClear, onQuickCompose, quickComposeDisabled, onStart } = props;
+  const {
+    selected,
+    message,
+    error,
+    starting,
+    onRemove,
+    onClear,
+    onQuickCompose,
+    quickComposeDisabled,
+    onStart,
+  } = props;
   return (
     <aside className="selected-question-tray" aria-labelledby="selected-question-heading">
       <TrayAgentNote selectedCount={selected.length} />
@@ -39,10 +49,16 @@ export function SelectedQuestionTray(props: SelectedQuestionTrayProps) {
 function TrayAgentNote({ selectedCount }: { selectedCount: number }) {
   return (
     <div className="selected-agent-note">
-      <span aria-hidden="true"><SparkIcon /></span>
+      <span aria-hidden="true">
+        <SparkIcon />
+      </span>
       <div>
         <strong>训练 Agent</strong>
-        <p>{selectedCount ? `当前已选 ${selectedCount} 题，我会保留你的筛选和题单。` : '从知识解释到方案设计，建议控制在 3–5 题。'}</p>
+        <p>
+          {selectedCount
+            ? `当前已选 ${selectedCount} 题，我会保留你的筛选和题单。`
+            : '从知识解释到方案设计，建议控制在 3–5 题。'}
+        </p>
         <small>档案和岗位只影响推荐，不限制自主刷题</small>
       </div>
     </div>
@@ -77,7 +93,7 @@ function SelectionList({
   selected,
   onRemove,
 }: {
-  selected: CatalogQuestion[];
+  selected: SelectedQuestion[];
   onRemove: (id: string) => void;
 }) {
   if (!selected.length)
@@ -125,9 +141,20 @@ function SelectionFeedback({ message, error }: { message: string; error: string 
   );
 }
 
-function QuickCompose({ disabled, onQuickCompose }: { disabled: boolean; onQuickCompose: () => void }) {
+function QuickCompose({
+  disabled,
+  onQuickCompose,
+}: {
+  disabled: boolean;
+  onQuickCompose: () => void;
+}) {
   return (
-    <button className="selected-question-compose" type="button" disabled={disabled} onClick={onQuickCompose}>
+    <button
+      className="selected-question-compose"
+      type="button"
+      disabled={disabled}
+      onClick={onQuickCompose}
+    >
       <SparkIcon />
       按当前筛选快速组卷
     </button>

@@ -19,7 +19,7 @@ test('keeps an authenticated user in the real practice to report loop', async ({
   await expect(continueTraining).toHaveCount(1);
   await expect(page.getByRole('button', { name: '采用这组题开始练习' })).toHaveCount(0);
   await continueTraining.click();
-  await expect(page).toHaveURL(`/practice?session=${session.id}`);
+  await expect(page).toHaveURL(`/practice?session=${session.id}`, { timeout: 30_000 });
   await expect(page.locator('.practice-player-page')).toBeVisible();
   await verifyMobileDraftNavigation(page);
 

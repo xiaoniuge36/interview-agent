@@ -21,6 +21,8 @@ export function interviewReviewFocus(report: Pick<InterviewReport, 'stageScores'
       stage: item.stage,
       label: interviewStageLabel(item.stage),
       score: item.score,
+      summary: item.summary,
+      evidence: item.evidence,
     }));
 }
 

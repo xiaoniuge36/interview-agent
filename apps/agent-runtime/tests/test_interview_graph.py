@@ -134,6 +134,16 @@ async def test_graph_retries_transient_gateway_failure() -> None:
 
 
 @pytest.mark.anyio
+async def test_graph_does_not_retry_a_blocked_provider_endpoint() -> None:
+    gateway = FakeGateway([ModelGatewayError("MODEL_PROVIDER_ENDPOINT_BLOCKED", retryable=False)])
+
+    with pytest.raises(InterviewGraphError, match="MODEL_PROVIDER_ENDPOINT_BLOCKED"):
+        await run_interview_graph(create_interview_graph(gateway), request_with_grant())
+
+    assert len(gateway.requests) == 1
+
+
+@pytest.mark.anyio
 async def test_graph_stops_after_transient_gateway_retry_limit() -> None:
     graph = create_interview_graph(
         FakeGateway(

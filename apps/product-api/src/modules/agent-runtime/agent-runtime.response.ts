@@ -19,16 +19,43 @@ export async function parseRuntimeDecision(
 }
 
 export function httpFailure(status: number): RuntimeFailure {
+  return failureForStatus(status);
+}
+
+export async function responseFailure(response: Response): Promise<RuntimeFailure> {
+  const endpointBlocked =
+    response.status === HttpStatus.BAD_REQUEST
+      ? await safeEndpointBlockedCode(response)
+      : undefined;
+  return failureForStatus(response.status, endpointBlocked ?? undefined);
+}
+
+function failureForStatus(
+  status: number,
+  rejectedCode = 'AGENT_RUNTIME_REQUEST_REJECTED',
+): RuntimeFailure {
   const retryable =
     status === HttpStatus.REQUEST_TIMEOUT ||
     status === HttpStatus.TOO_MANY_REQUESTS ||
     status >= HttpStatus.INTERNAL_SERVER_ERROR;
   return {
     kind: retryable ? 'unavailable' : 'rejected',
-    code: retryable ? `AGENT_RUNTIME_HTTP_${status}` : 'AGENT_RUNTIME_REQUEST_REJECTED',
+    code: retryable ? `AGENT_RUNTIME_HTTP_${status}` : rejectedCode,
     retryable,
     schemaValid: null,
   };
+}
+
+async function safeEndpointBlockedCode(response: Response): Promise<string | null> {
+  if (declaredBodyTooLarge(response)) return null;
+  const text = await readBoundedBody(response);
+  if (text === undefined) return null;
+  try {
+    const code = errorCodeFromPayload(JSON.parse(text));
+    return code === 'MODEL_PROVIDER_ENDPOINT_BLOCKED' ? code : null;
+  } catch {
+    return null;
+  }
 }
 
 export function unavailableFailure(code: string): RuntimeFailure {
@@ -51,6 +78,15 @@ function parseResponseText(
 
 function sourcesAllowed(sourceIds: string[] | undefined, allowedSourceIds: ReadonlySet<string>) {
   return !sourceIds?.some((sourceId) => !allowedSourceIds.has(sourceId));
+}
+
+function errorCodeFromPayload(payload: unknown): unknown {
+  if (!isRecord(payload)) return undefined;
+  return isRecord(payload.error) ? payload.error.code : payload.code;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function decisionFrom(input: {

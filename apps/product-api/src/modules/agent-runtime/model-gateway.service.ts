@@ -70,6 +70,12 @@ function invalidGrant() {
 function providerFailure(error: unknown) {
   if (error instanceof BadGatewayException || error instanceof BadRequestException) return error;
   const code = error instanceof ModelProviderError ? error.code : 'MODEL_PROVIDER_UNAVAILABLE';
+  if (code === 'MODEL_PROVIDER_ENDPOINT_BLOCKED') {
+    return new BadRequestException({
+      code,
+      message: '模型服务地址不符合安全策略，请更新连接配置后重试。',
+    });
+  }
   return new BadGatewayException({ code, message: '模型连接暂时不可用，请测试连接或稍后重试。' });
 }
 

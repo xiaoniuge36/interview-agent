@@ -33,8 +33,10 @@ export class EmbeddingClient {
         traceId: input.traceId,
         inputCharacters: input.text.length,
       },
-      (_onUsage, budget) =>
-        this.provider.embed({ ...credential, ...modelRequestLimits(budget) }, [input.text]),
+      (onUsage, budget) =>
+        this.provider.embed({ ...credential, ...modelRequestLimits(budget), onUsage }, [
+          input.text,
+        ]),
     );
     return vectors[0] ?? null;
   }

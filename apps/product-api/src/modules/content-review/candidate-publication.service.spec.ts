@@ -31,7 +31,16 @@ async function expectBatchPublish() {
   const database = candidateDatabase();
   const audit = { record: jest.fn().mockResolvedValue({}) };
   database.transaction.candidateQuestion.findMany.mockResolvedValue([
-    candidateRecord({ id: 'candidate-1', status: 'approved' }),
+    candidateRecord({
+      id: 'candidate-1',
+      status: 'approved',
+      type: 'single_choice',
+      options: [
+        { id: 'A', text: 'ReAct' },
+        { id: 'B', text: 'Plan-and-Execute' },
+      ],
+      correctOptionIds: ['B'],
+    }),
     candidateRecord({
       id: 'candidate-2',
       status: 'approved',
@@ -53,6 +62,16 @@ async function expectBatchPublish() {
   expect(database.transaction.candidateQuestion.update).toHaveBeenCalledWith({
     where: { id: 'candidate-1' },
     data: { publishedQuestionId: 'question-1' },
+  });
+  expect(database.transaction.question.create).toHaveBeenCalledWith({
+    data: expect.objectContaining({
+      type: 'single_choice',
+      options: [
+        { id: 'A', text: 'ReAct' },
+        { id: 'B', text: 'Plan-and-Execute' },
+      ],
+      correctOptionIds: ['B'],
+    }),
   });
   expect(audit.record).toHaveBeenCalledTimes(1);
 }

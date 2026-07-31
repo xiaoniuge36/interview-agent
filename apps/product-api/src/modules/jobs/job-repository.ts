@@ -22,16 +22,32 @@ type ClaimedJob = {
   maxAttempts: number;
 };
 
+type JobClient = Pick<PrismaService, 'backgroundJob'> | Prisma.TransactionClient;
+
 @Injectable()
 export class BackgroundJobRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  enqueue(input: EnqueueInput) {
+  enqueue(input: EnqueueInput, client: JobClient = this.prisma) {
     const identity = { tenantId: input.tenantId, type: input.type, dedupeKey: input.dedupeKey };
-    return this.prisma.backgroundJob.upsert({
+    return client.backgroundJob.upsert({
       where: { tenantId_type_dedupeKey: identity },
       create: { ...identity, payload: input.payload },
       update: {},
+    });
+  }
+
+  removeKnowledgeEmbeddings(tenantId: string, assetId: string, client: JobClient = this.prisma) {
+    return client.backgroundJob.deleteMany({
+      where: {
+        tenantId,
+        type: 'embedding',
+        status: { in: ['pending', 'retry_wait'] },
+        AND: [
+          { payload: { path: ['entityType'], equals: 'knowledge' } },
+          { payload: { path: ['metadata', 'assetId'], equals: assetId } },
+        ],
+      },
     });
   }
 

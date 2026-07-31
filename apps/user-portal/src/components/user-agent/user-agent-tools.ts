@@ -9,6 +9,7 @@ import { getPracticeRecommendations, getRecentPractice } from '@/lib/question-ca
 const NAVIGATION_PATHS: Record<NavigationId, string> = {
   home: '/home',
   questions: '/questions',
+  learn: '/learn',
   profile: '/profile',
   practice: '/practice',
   interview: '/interview',
@@ -18,6 +19,7 @@ const NAVIGATION_PATHS: Record<NavigationId, string> = {
 const NAVIGATION_LABELS: Record<NavigationId, string> = {
   home: '首页',
   questions: '自主刷题',
+  learn: '学习中心',
   profile: '我的 Agent',
   practice: '练习空间',
   interview: '面试工作台',

@@ -202,6 +202,26 @@ describe('AgentRuntimeClient runtime responses', () => {
   });
 });
 
+describe('AgentRuntimeClient blocked provider endpoint', () => {
+  it('preserves a blocked provider endpoint as one non-fallback attempt', async () => {
+    const fetchMock = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValue(
+        Response.json({ error: { code: 'MODEL_PROVIDER_ENDPOINT_BLOCKED' } }, { status: 400 }),
+      );
+
+    await expect(
+      createClient({ AGENT_RUNTIME_FALLBACK_ENABLED: true }).next(requestInput()),
+    ).rejects.toMatchObject({
+      telemetry: expect.objectContaining({
+        code: 'MODEL_PROVIDER_ENDPOINT_BLOCKED',
+        attempts: 1,
+      }),
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('AgentRuntimeClient retry and validation failures', () => {
   it('does not retry a rejected 4xx request', async () => {
     const fetchMock = jest

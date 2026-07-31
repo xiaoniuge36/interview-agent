@@ -7,7 +7,6 @@ import {
 } from '@interview-agent/contracts';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
-import { safeTextPreview } from '../../common/security/sensitive-data';
 import { withTraceSpan } from '../../common/telemetry/telemetry';
 import { EmbeddingClient } from './embedding-client';
 import { mergeRankedHits, type RankedRetrievalHit } from './retrieval-ranking';
@@ -59,27 +58,30 @@ export class RetrievalService {
   ) {}
 
   async search(context: ProductRequestContext, query: RetrievalQuery): Promise<RetrievalResponse> {
+    const startedAt = performance.now();
     return withTraceSpan(
       'retrieval.search',
-      {
-        'interview_agent.trace_id': context.traceId,
-        'retrieval.purpose': query.purpose,
-        'retrieval.limit': query.limit,
-        'retrieval.query_preview': safeTextPreview(query.query),
+      retrievalSpanAttributes(context, query),
+      async (span) => {
+        const response = await this.searchScoped(context, query, startedAt);
+        span.setAttributes({
+          'retrieval.hit_count': response.hits.length,
+          'retrieval.latency_ms': elapsed(startedAt),
+        });
+        return response;
       },
-      () => this.searchScoped(context, query),
     );
   }
 
   private async searchScoped(
     context: ProductRequestContext,
     query: RetrievalQuery,
+    startedAt: number,
   ): Promise<RetrievalResponse> {
     this.policy.assert(context.actor, ACTION_BY_PURPOSE[query.purpose], {
       tenantId: context.tenantId,
       ownerId: context.actor.id,
     });
-    const startedAt = performance.now();
     const scope = {
       tenantId: context.tenantId,
       entityTypes: ENTITY_TYPES_BY_PURPOSE[query.purpose],
@@ -140,6 +142,15 @@ function scopeHits(hits: RankedRetrievalHit[], tenantId: string) {
 
 function hashQuery(query: string) {
   return createHash('sha256').update(query).digest('hex');
+}
+
+function retrievalSpanAttributes(context: ProductRequestContext, query: RetrievalQuery) {
+  return {
+    'interview_agent.trace_id': context.traceId,
+    'retrieval.purpose': query.purpose,
+    'retrieval.query_hash': hashQuery(query.query),
+    'retrieval.query_length': query.query.length,
+  };
 }
 
 function elapsed(startedAt: number) {

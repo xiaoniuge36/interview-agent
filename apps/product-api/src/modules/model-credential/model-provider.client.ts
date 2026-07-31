@@ -1,11 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { ModelProvider } from '@interview-agent/contracts';
 import {
   ModelProviderStreamError,
   providerStreamEvents,
   type ModelTokenUsage,
 } from './model-provider-stream';
-import { ModelProviderError, providerFetch, requestSignal } from './model-provider-request';
+import { e2eModelStubUrl } from './model-provider-e2e';
+import {
+  MODEL_PROVIDER_TRANSPORT,
+  ModelProviderError,
+  providerFetch,
+  requestSignal,
+  type ProviderTransport,
+} from './model-provider-request';
 import { compatibleUsageFromResponse } from './model-provider-usage';
 
 export { ModelProviderError } from './model-provider-request';
@@ -50,9 +57,14 @@ const DEFAULT_MAX_OUTPUT_TOKENS = 700;
 const BYTES_PER_KILOBYTE = 1024;
 const MAX_COMPATIBLE_RESPONSE_BYTES = 2 * BYTES_PER_KILOBYTE * BYTES_PER_KILOBYTE;
 const EMBEDDING_DIMENSIONS = 1536;
+const EMBEDDING_OUTPUT_TOKENS = 0;
 
 @Injectable()
 export class ModelProviderClient {
+  constructor(
+    @Optional() @Inject(MODEL_PROVIDER_TRANSPORT) private readonly transport?: ProviderTransport,
+  ) {}
+
   async complete(input: ModelCompletionRequest): Promise<string> {
     let content = '';
     for await (const delta of this.stream(input)) content += delta;
@@ -61,7 +73,7 @@ export class ModelProviderClient {
   }
 
   async *stream(input: ModelCompletionRequest): AsyncGenerator<string> {
-    const response = await sendProviderRequest(input);
+    const response = await sendProviderRequest(input, this.transport);
     try {
       for await (const event of providerStreamEvents(response.body, input.provider)) {
         if (event.type === 'usage') input.onUsage?.(event.value);
@@ -85,10 +97,13 @@ export class ModelProviderClient {
     if (input.provider === 'anthropic') {
       throw new ModelProviderError('MODEL_PROVIDER_REQUEST_REJECTED');
     }
-    const response = await embeddingRequest(input, texts);
+    const response = await embeddingRequest(input, texts, this.transport);
     const payload = await readJsonResponse(response);
     if (!response.ok) throw new ModelProviderError(errorCode(response.status));
-    return parseEmbeddingResponse(payload, texts.length);
+    const vectors = parseEmbeddingResponse(payload, texts.length);
+    const usage = embeddingUsageFromResponse(payload);
+    if (usage) input.onUsage?.(usage);
+    return vectors;
   }
 
   async invokeCompatible(
@@ -98,8 +113,9 @@ export class ModelProviderClient {
     if (input.provider === 'anthropic') {
       throw new ModelProviderError('MODEL_PROVIDER_REQUEST_REJECTED');
     }
+    const endpoint = `${baseUrlFor(input).replace(/\/$/, '')}/chat/completions`;
     const response = await providerFetch(
-      `${baseUrlFor(input).replace(/\/$/, '')}/chat/completions`,
+      endpoint,
       {
         method: 'POST',
         redirect: 'error',
@@ -110,6 +126,7 @@ export class ModelProviderClient {
         }),
         signal: requestSignal(undefined, input.timeoutMs),
       },
+      { transport: this.transport, timeoutMs: input.timeoutMs },
     );
     const payload = await readJsonResponse(response);
     if (!response.ok) throw new ModelProviderError(errorCode(response.status));
@@ -122,16 +139,35 @@ export class ModelProviderClient {
   }
 }
 
-async function embeddingRequest(input: ModelConnection & ModelRequestLimits, texts: string[]) {
+function embeddingUsageFromResponse(payload: unknown): ModelTokenUsage | null {
+  if (!isRecord(payload)) return null;
+  const usage = compatibleUsageFromResponse(payload);
+  return usage ? { ...usage, outputTokens: EMBEDDING_OUTPUT_TOKENS } : null;
+}
+
+async function embeddingRequest(
+  input: ModelConnection & ModelRequestLimits,
+  texts: string[],
+  transport: ProviderTransport | undefined,
+) {
+  const endpoint = `${baseUrlFor(input).replace(/\/$/, '')}/embeddings`;
   try {
-    return await fetch(`${baseUrlFor(input).replace(/\/$/, '')}/embeddings`, {
-      method: 'POST',
-      redirect: 'error',
-      headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: input.model, input: texts }),
-      signal: requestSignal(undefined, input.timeoutMs),
-    });
+    return await providerFetch(
+      endpoint,
+      {
+        method: 'POST',
+        redirect: 'error',
+        headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: input.model, input: texts }),
+        signal: requestSignal(undefined, input.timeoutMs),
+      },
+      { transport, timeoutMs: input.timeoutMs },
+    );
   } catch (error) {
+    if (error instanceof ModelProviderError && error.code === 'MODEL_PROVIDER_TIMEOUT') {
+      throw new ModelProviderError('EMBEDDING_TIMEOUT');
+    }
+    if (error instanceof ModelProviderError) throw error;
     if (error instanceof Error && ['AbortError', 'TimeoutError'].includes(error.name)) {
       throw new ModelProviderError('EMBEDDING_TIMEOUT');
     }
@@ -139,11 +175,15 @@ async function embeddingRequest(input: ModelConnection & ModelRequestLimits, tex
   }
 }
 
-async function sendProviderRequest(input: ModelCompletionRequest): Promise<Response> {
+async function sendProviderRequest(
+  input: ModelCompletionRequest,
+  transport: ProviderTransport | undefined,
+): Promise<Response> {
+  const endpoint = endpointFor(input);
   const response = await providerFetch(
-    endpointFor(input),
+    endpoint,
     { ...requestFor(input), signal: requestSignal(input.signal, input.timeoutMs) },
-    input.signal,
+    { transport, timeoutMs: input.timeoutMs, upstreamSignal: input.signal },
   );
   if (!response.ok) throw new ModelProviderError(errorCode(response.status));
   return response;
@@ -155,25 +195,12 @@ function endpointFor(input: ModelConnection) {
 }
 
 function baseUrlFor(input: ModelConnection) {
-  const e2eStubUrl = testStubUrl();
+  const e2eStubUrl = e2eModelStubUrl();
   if (e2eStubUrl) return e2eStubUrl;
   if (input.baseUrl) return input.baseUrl;
   if (input.provider === 'openai_compatible')
     throw new ModelProviderError('MODEL_BASE_URL_REQUIRED');
   return DEFAULT_BASE_URLS[input.provider];
-}
-
-function testStubUrl(): string | null {
-  if (process.env.NODE_ENV !== 'test') return null;
-  const value = process.env.E2E_MODEL_STUB_URL?.trim();
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    if (!['127.0.0.1', '::1', 'localhost'].includes(url.hostname)) return null;
-    return value;
-  } catch {
-    return null;
-  }
 }
 
 function requestFor(input: ModelCompletionRequest): RequestInit {

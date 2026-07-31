@@ -1,9 +1,9 @@
 import type { Prisma, Question } from '@prisma/client';
-import type {
-  QuestionCatalogCategory,
-  QuestionCatalogQuery,
-} from '@interview-agent/contracts';
-import { practiceCategoryTagFor, visiblePracticeTags } from '../practice/practice-question-categories';
+import type { QuestionCatalogCategory, QuestionCatalogQuery } from '@interview-agent/contracts';
+import {
+  practiceCategoryTagFor,
+  visiblePracticeTags,
+} from '../practice/practice-question-categories';
 
 const CATEGORY_LABELS: Record<QuestionCatalogCategory, string> = {
   engineering: '研发工程',
@@ -27,9 +27,29 @@ const TYPE_LABELS: Record<string, string> = {
   system_design: '系统设计',
   project_deep_dive: '项目深挖',
   behavioral: '行为面试',
+  single_choice: '单选题',
+  multiple_choice: '多选题',
 };
 
 type FacetRecord = Pick<Question, 'tags' | 'type' | 'difficulty'>;
+
+export const QUESTION_CATALOG_ITEM_SELECT = {
+  id: true,
+  tenantId: true,
+  visibility: true,
+  title: true,
+  stem: true,
+  type: true,
+  difficulty: true,
+  tags: true,
+  options: true,
+  sourceRefs: true,
+  status: true,
+} satisfies Prisma.QuestionSelect;
+
+type CatalogItemRecord = Prisma.QuestionGetPayload<{
+  select: typeof QUESTION_CATALOG_ITEM_SELECT;
+}>;
 
 export function catalogWhere(tenantId: string, query: QuestionCatalogQuery) {
   const requiredTags = [
@@ -56,7 +76,7 @@ export function catalogOrderBy(
   return [{ updatedAt: 'desc' }, { id: 'desc' }];
 }
 
-export function mapCatalogItem(record: Question) {
+export function mapCatalogItem(record: CatalogItemRecord) {
   return {
     id: record.id,
     tenantId: record.tenantId,
@@ -66,6 +86,7 @@ export function mapCatalogItem(record: Question) {
     type: record.type,
     difficulty: record.difficulty,
     tags: visiblePracticeTags(record.tags),
+    options: record.options,
     sourceRefs: record.sourceRefs,
     status: record.status,
   };
@@ -77,9 +98,18 @@ export function catalogFacets(records: FacetRecord[]) {
       records.flatMap((record) => categoryValues(record.tags)),
       (value) => CATEGORY_LABELS[value as QuestionCatalogCategory] ?? value,
     ),
-    difficulties: counted(records.map((record) => record.difficulty), labelDifficulty),
-    types: counted(records.map((record) => record.type), labelType),
-    tags: counted(records.flatMap((record) => visiblePracticeTags(record.tags)), (value) => value),
+    difficulties: counted(
+      records.map((record) => record.difficulty),
+      labelDifficulty,
+    ),
+    types: counted(
+      records.map((record) => record.type),
+      labelType,
+    ),
+    tags: counted(
+      records.flatMap((record) => visiblePracticeTags(record.tags)),
+      (value) => value,
+    ),
   };
 }
 

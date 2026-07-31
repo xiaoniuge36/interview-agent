@@ -4,12 +4,17 @@ import { practiceEvidence } from './practice-player-model';
 type PracticeEvidenceStripProps = {
   session: PracticeSession;
   compact?: boolean;
+  reportAvailable?: boolean;
 };
 
 const PROFILE_COPY = {
   updated: {
     label: '能力画像已更新',
     copy: '整轮 AI 复盘已汇总本轮证据，下一轮推荐会优先考虑薄弱项。',
+  },
+  recovering_report: {
+    label: '复盘内容正在恢复',
+    copy: 'AI 评分已完成，但报告内容暂时不可读；恢复后再决定是否开始下一轮训练。',
   },
   awaiting_report: {
     label: '等待整轮复盘',
@@ -21,15 +26,19 @@ const PROFILE_COPY = {
   },
 } as const;
 
-export function PracticeEvidenceStrip({ session, compact = false }: PracticeEvidenceStripProps) {
+export function PracticeEvidenceStrip({
+  session,
+  compact = false,
+  reportAvailable = true,
+}: PracticeEvidenceStripProps) {
   const evidence = practiceEvidence(session);
-  const profile = PROFILE_COPY[evidence.profileState];
+  const profileState =
+    session.status === 'report_ready' && !reportAvailable
+      ? 'recovering_report'
+      : evidence.profileState;
+  const profile = PROFILE_COPY[profileState];
   return (
-    <section
-      className="practice-evidence-strip"
-      data-state={evidence.profileState}
-      aria-label="训练证据"
-    >
+    <section className="practice-evidence-strip" data-state={profileState} aria-label="训练证据">
       <div className="practice-evidence-heading">
         <span>训练证据</span>
         <strong>{profile.label}</strong>

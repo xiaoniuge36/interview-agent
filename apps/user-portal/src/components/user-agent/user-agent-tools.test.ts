@@ -4,6 +4,7 @@ import { userAgentNavigationPath } from './user-agent-tools';
 describe('User Agent 页面导航', () => {
   it('将题库导航标记为 Agent 训练交接，同时保持其他页面原路径', () => {
     expect(userAgentNavigationPath('questions')).toBe('/questions?source=agent');
+    expect(userAgentNavigationPath('learn')).toBe('/learn');
     expect(userAgentNavigationPath('reports')).toBe('/reports');
   });
 });

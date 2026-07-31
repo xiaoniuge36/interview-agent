@@ -21,6 +21,26 @@ it('renders an interrupted run as a safe retry and bounded history entry', () =>
   expect(markup).toContain('心跳超时');
 });
 
+it('keeps a server-side running task visible while the reopened page synchronizes it', () => {
+  const runningRun: UserAgentRun = {
+    ...interruptedRun,
+    status: 'running',
+    currentStep: '正在读取近期练习记录',
+    errorCode: null,
+    errorSummary: null,
+    finishedAt: null,
+  };
+
+  const markup = renderToStaticMarkup(
+    <UserAgentRunHistory latestRun={runningRun} runs={[runningRun]} onRetry={() => undefined} />,
+  );
+
+  expect(markup).toContain('训练建议正在运行');
+  expect(markup).toContain('正在读取近期练习记录');
+  expect(markup).toContain('正在同步运行状态');
+  expect(markup).not.toContain('安全重试');
+});
+
 const interruptedRun: UserAgentRun = {
   id: 'run-1',
   conversationId: 'conversation-1',

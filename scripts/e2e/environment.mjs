@@ -25,6 +25,7 @@ export function createE2eEnvironment(source, options = {}) {
     NODE_ENV: 'test',
     API_HOST: LOOPBACK_HOST,
     API_PORT,
+    API_THROTTLE_LIMIT: '10000',
     DATABASE_URL: databaseUrl,
     REDIS_URL: `redis://${LOOPBACK_HOST}:${REDIS_PORT}`,
     REDIS_REQUIRED: 'true',

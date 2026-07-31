@@ -1,26 +1,40 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { NavigationIcon } from './NavigationIcon';
-import { NAV_ITEMS, navigationLinkClass, navIdFromPathname, type NavigationId } from './navigation';
+import {
+  NAV_ITEMS,
+  navigationClickFromEvent,
+  navigationLinkClass,
+  navigationPendingAnnouncement,
+  navigationPendingReducer,
+  navIdFromPathname,
+  type NavigationPendingAction,
+  type NavigationId,
+} from './navigation';
+import { warmDevelopmentRoute, warmNavigationRoutes } from './navigation-prefetch';
 
 const NAV_PENDING_TIMEOUT_MS = 4000;
 const NAV_PREFETCH_TIMEOUT_MS = 1200;
 const NAV_PREFETCH_FALLBACK_DELAY_MS = 120;
 const SHOULD_WARM_DEVELOPMENT_ROUTES = process.env.NODE_ENV === 'development';
+const SIDEBAR_PENDING_STATUS_ID = 'sidebar-navigation-pending-status';
 
 export function UserSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const active = navIdFromPathname(pathname);
-  const [pending, setPending] = useState<NavigationId | null>(null);
+  const [pending, dispatchPending] = useReducer(navigationPendingReducer, null);
   useNavigationWarmup(pathname, router.prefetch);
-  useEffect(() => setPending(null), [pathname]);
+  useEffect(() => dispatchPending({ type: 'clear' }), [pathname]);
   useEffect(() => {
     if (!pending) return;
-    const timeout = window.setTimeout(() => setPending(null), NAV_PENDING_TIMEOUT_MS);
+    const timeout = window.setTimeout(
+      () => dispatchPending({ type: 'clear' }),
+      NAV_PENDING_TIMEOUT_MS,
+    );
     return () => window.clearTimeout(timeout);
   }, [pending]);
 
@@ -30,7 +44,8 @@ export function UserSidebar() {
       <SidebarNavigation
         active={active}
         pending={pending}
-        onNavigate={setPending}
+        pendingAnnouncement={navigationPendingAnnouncement(pending)}
+        onNavigate={dispatchPending}
         onWarm={router.prefetch}
       />
     </aside>
@@ -40,30 +55,30 @@ export function UserSidebar() {
 function useNavigationWarmup(pathname: string, prefetch: (href: string) => void) {
   const prefetched = useRef(new Set<string>());
   useEffect(() => {
-    const warmRoutes = async () => {
-      for (const item of NAV_ITEMS) {
-        if (item.href === pathname || prefetched.current.has(item.href)) continue;
-        prefetched.current.add(item.href);
-        prefetch(item.href);
-        if (SHOULD_WARM_DEVELOPMENT_ROUTES) await warmDevelopmentRoute(item.href);
-      }
-    };
+    const controller = new AbortController();
+    const warmRoutes = () =>
+      warmNavigationRoutes({
+        pathname,
+        targets: NAV_ITEMS,
+        prefetched: prefetched.current,
+        prefetch,
+        signal: controller.signal,
+        ...(SHOULD_WARM_DEVELOPMENT_ROUTES ? { warmDevelopmentRoute } : {}),
+      });
     const requestIdle = window.requestIdleCallback;
     if (requestIdle) {
       const idleId = requestIdle(() => void warmRoutes(), { timeout: NAV_PREFETCH_TIMEOUT_MS });
-      return () => window.cancelIdleCallback(idleId);
+      return () => {
+        window.cancelIdleCallback(idleId);
+        controller.abort();
+      };
     }
     const timeoutId = window.setTimeout(() => void warmRoutes(), NAV_PREFETCH_FALLBACK_DELAY_MS);
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [pathname, prefetch]);
-}
-
-async function warmDevelopmentRoute(href: string) {
-  try {
-    await fetch(href, { credentials: 'same-origin' });
-  } catch {
-    return;
-  }
 }
 
 function SidebarBrand() {
@@ -86,28 +101,32 @@ function SidebarBrand() {
   );
 }
 
-function SidebarNavigation(props: {
+export function SidebarNavigation(props: {
   active: NavigationId;
   pending: NavigationId | null;
-  onNavigate: (id: NavigationId) => void;
+  pendingAnnouncement: string;
+  onNavigate: (action: NavigationPendingAction) => void;
   onWarm: (href: string) => void;
 }) {
   return (
     <nav className="sidebar-nav" aria-busy={props.pending !== null}>
+      <span id={SIDEBAR_PENDING_STATUS_ID} className="sr-only" role="status">
+        {props.pendingAnnouncement}
+      </span>
       {NAV_ITEMS.map((item) => (
         <Link
           key={item.id}
           className={navigationLinkClass(props.active, props.pending, item.id)}
           href={item.href}
           aria-current={props.active === item.id ? 'page' : undefined}
+          aria-describedby={props.pending === item.id ? SIDEBAR_PENDING_STATUS_ID : undefined}
+          data-navigation-pending={props.pending === item.id ? 'true' : undefined}
           onMouseEnter={() => props.onWarm(item.href)}
           onFocus={() => props.onWarm(item.href)}
           onClick={(event) =>
-            trackNavigation({
-              event,
-              active: props.active,
-              target: item.id,
-              onNavigate: props.onNavigate,
+            props.onNavigate({
+              type: 'navigate',
+              click: navigationClickFromEvent(event, props.active, item.id),
             })
           }
         >
@@ -117,26 +136,6 @@ function SidebarNavigation(props: {
       ))}
     </nav>
   );
-}
-
-function trackNavigation(options: {
-  event: MouseEvent<HTMLAnchorElement>;
-  active: NavigationId;
-  target: NavigationId;
-  onNavigate: (id: NavigationId) => void;
-}) {
-  const { event, active, target, onNavigate } = options;
-  if (
-    event.defaultPrevented ||
-    event.button !== 0 ||
-    event.metaKey ||
-    event.ctrlKey ||
-    event.shiftKey ||
-    event.altKey ||
-    active === target
-  )
-    return;
-  onNavigate(target);
 }
 
 function BrandMark() {
@@ -150,13 +149,7 @@ function BrandMark() {
         strokeLinejoin="round"
         strokeWidth="2.1"
       />
-      <path
-        d="M17.5 18h6"
-        fill="none"
-        stroke="#65E1C2"
-        strokeLinecap="round"
-        strokeWidth="2"
-      />
+      <path d="M17.5 18h6" fill="none" stroke="#65E1C2" strokeLinecap="round" strokeWidth="2" />
     </svg>
   );
 }

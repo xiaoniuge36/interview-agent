@@ -1,0 +1,221 @@
+import {
+  buildAgentChoiceQuestion,
+  type AgentChoiceQuestionInput,
+} from './public-agent-question-builders';
+
+const AGENT_CAMP = 'https://github.com/yibo365/agent-camp';
+const AGENT_STUDY = 'https://github.com/Callous-0923/agent-study';
+const AI_HANDBOOK = 'https://github.com/nageoffer/ai-handbook';
+const MICROSOFT_AGENTS = 'https://github.com/microsoft/ai-agents-for-beginners';
+const OPENAI_COOKBOOK = 'https://github.com/openai/openai-cookbook';
+
+const SINGLE_CHOICE_QUESTIONS: AgentChoiceQuestionInput[] = [
+  {
+    suffix: 'single-context-memory',
+    title: '长上下文与 Agent 长期记忆的关系是什么？',
+    stem: '以下哪项描述最准确？',
+    type: 'single_choice',
+    difficulty: 'easy',
+    options: [
+      '上下文窗口本身会永久保存用户信息',
+      '长期记忆需要独立持久化、检索和写回机制',
+      '上下文越长就越不需要检索',
+      '长期记忆只能通过模型微调实现',
+    ],
+    correctOptionIds: ['B'],
+    answer:
+      'B。上下文窗口只承载当前推理输入，跨会话长期记忆需要独立的持久化、检索、筛选和写回机制。',
+    tags: ['上下文工程', '长期记忆'],
+    sourceRefs: [AGENT_CAMP],
+  },
+  {
+    suffix: 'single-tool-schema',
+    title: '如何优先提升 Function Calling 的参数稳定性？',
+    stem: '面对经常缺字段或字段类型错误的工具调用，首选措施是什么？',
+    type: 'single_choice',
+    difficulty: 'easy',
+    options: [
+      '把全部约束写进工具名称',
+      '使用边界明确的 JSON Schema 并校验参数',
+      '无限增加 Few-shot 示例',
+      '忽略错误字段并直接执行',
+    ],
+    correctOptionIds: ['B'],
+    answer: 'B。应使用类型明确、必填项清晰且范围受限的 Schema，并在执行工具前再次校验。',
+    tags: ['Tool Calling', '结构化输出'],
+    sourceRefs: [AI_HANDBOOK, OPENAI_COOKBOOK],
+  },
+  {
+    suffix: 'single-rag-diagnosis',
+    title: '如何快速判断 RAG 故障来自检索还是生成？',
+    stem: '线上答案不准确时，哪种诊断动作最能隔离变量？',
+    type: 'single_choice',
+    difficulty: 'medium',
+    options: [
+      '立即更换更大的模型',
+      '把 top-k 调到最大',
+      '用黄金文档替换召回结果再比较生成质量',
+      '删除所有元数据过滤',
+    ],
+    correctOptionIds: ['C'],
+    answer: 'C。用已知正确的黄金文档替换检索结果，可以先隔离生成链路，再配合检索消融定位根因。',
+    tags: ['RAG', '故障诊断'],
+    sourceRefs: [AGENT_CAMP],
+  },
+  {
+    suffix: 'single-hybrid-search',
+    title: 'Hybrid Search 的核心互补关系是什么？',
+    stem: '以下哪项最准确？',
+    type: 'single_choice',
+    difficulty: 'easy',
+    options: [
+      '两个向量模型互相投票',
+      '关键词词面匹配与稠密语义召回结合',
+      '只在向量检索后增加缓存',
+      '先生成答案再检索证据',
+    ],
+    correctOptionIds: ['B'],
+    answer: 'B。Hybrid Search 通常结合 BM25 等词面召回与向量语义召回，再通过融合或重排合并结果。',
+    tags: ['RAG', '混合检索'],
+    sourceRefs: [AI_HANDBOOK],
+  },
+  {
+    suffix: 'single-react-loop',
+    title: 'ReAct 模式的核心循环是什么？',
+    stem: '请选择最符合 ReAct 的描述。',
+    type: 'single_choice',
+    difficulty: 'intro',
+    options: [
+      '推理、行动与观察交替推进',
+      '一次生成完整计划后禁止调整',
+      '只做向量检索不调用工具',
+      '多个 Agent 必须并行辩论',
+    ],
+    correctOptionIds: ['A'],
+    answer: 'A。ReAct 通过推理、行动和环境观察交替迭代，根据新观察继续决策。',
+    tags: ['ReAct', 'Agent Loop'],
+    sourceRefs: [AGENT_STUDY, MICROSOFT_AGENTS],
+  },
+  {
+    suffix: 'single-checkpointer',
+    title: 'LangGraph Checkpointer 主要解决什么问题？',
+    stem: '在长流程 Agent 中，Checkpointer 的首要价值是什么？',
+    type: 'single_choice',
+    difficulty: 'medium',
+    options: [
+      '自动选择最便宜的模型',
+      '替代所有业务数据库',
+      '保存图状态以支持恢复、回放和人工介入',
+      '自动生成向量索引',
+    ],
+    correctOptionIds: ['C'],
+    answer:
+      'C。Checkpointer 持久化图执行状态，使失败恢复、暂停继续、时间旅行调试和 Human-in-the-Loop 成为可能。',
+    tags: ['LangGraph', '状态恢复'],
+    sourceRefs: [AGENT_CAMP],
+  },
+  {
+    suffix: 'single-mcp-resource',
+    title: 'MCP Resources 的典型职责是什么？',
+    stem: '以下哪项最符合 Resources 的定位？',
+    type: 'single_choice',
+    difficulty: 'medium',
+    options: [
+      '执行高风险写操作',
+      '向模型暴露可读取的上下文与数据资源',
+      '替代模型的系统提示词',
+      '负责训练基础模型',
+    ],
+    correctOptionIds: ['B'],
+    answer:
+      'B。Resources 用于以标准方式暴露可读取的数据或上下文；具有副作用的动作通常由 Tools 承担。',
+    tags: ['MCP', 'Resources'],
+    sourceRefs: [AI_HANDBOOK],
+  },
+  {
+    suffix: 'single-a2a-agent-card',
+    title: 'A2A 中 Agent Card 的主要作用是什么？',
+    stem: '请选择最准确的描述。',
+    type: 'single_choice',
+    difficulty: 'medium',
+    options: [
+      '保存模型全部思维链',
+      '代替身份认证和授权',
+      '声明 Agent 身份、能力与交互端点以支持发现',
+      '存储向量数据库索引',
+    ],
+    correctOptionIds: ['C'],
+    answer:
+      'C。Agent Card 用于描述 Agent 的身份、能力、技能和连接信息，支持跨 Agent 的能力发现与任务委托。',
+    tags: ['A2A', '多 Agent'],
+    sourceRefs: [AGENT_STUDY],
+  },
+  {
+    suffix: 'single-kv-cache',
+    title: 'KV Cache 为什么能降低自回归推理成本？',
+    stem: '请选择正确原理。',
+    type: 'single_choice',
+    difficulty: 'hard',
+    options: [
+      '把模型权重量化为一位',
+      '复用历史 token 已计算的 Key/Value，避免每步重复计算',
+      '跳过所有 Attention 计算',
+      '把 Prompt 永久写入模型参数',
+    ],
+    correctOptionIds: ['B'],
+    answer: 'B。KV Cache 保存历史 token 的 Key/Value，新 token 解码时无需重复计算全部历史表示。',
+    tags: ['LLM', '推理优化'],
+    sourceRefs: [AGENT_CAMP],
+  },
+  {
+    suffix: 'single-dpo',
+    title: 'DPO 相比经典 RLHF-PPO 的关键特点是什么？',
+    stem: '以下哪项描述更准确？',
+    type: 'single_choice',
+    difficulty: 'hard',
+    options: [
+      '直接利用偏好对优化策略，无需单独训练奖励模型并在线跑 PPO',
+      '只适用于图像模型',
+      '不需要任何偏好数据',
+      '等价于监督微调且目标完全相同',
+    ],
+    correctOptionIds: ['A'],
+    answer: 'A。DPO 将偏好优化转化为直接的分类式目标，省去显式奖励模型和在线 PPO 训练环节。',
+    tags: ['DPO', '模型对齐'],
+    sourceRefs: [AGENT_CAMP],
+  },
+  {
+    suffix: 'single-reranker',
+    title: 'Reranker 通常位于 RAG 在线链路的哪个位置？',
+    stem: '请选择最合理的顺序。',
+    type: 'single_choice',
+    difficulty: 'easy',
+    options: [
+      '文档解析之前',
+      '生成答案之后',
+      '初步召回之后、上下文组装之前',
+      'Embedding 模型训练之前',
+    ],
+    correctOptionIds: ['C'],
+    answer:
+      'C。Reranker 对初步召回的候选文档做更精细的相关性排序，再选取高质量上下文交给生成模型。',
+    tags: ['RAG', 'Reranker'],
+    sourceRefs: [AI_HANDBOOK],
+  },
+  {
+    suffix: 'single-agent-evaluation',
+    title: 'Agent 上线评估最核心的业务指标是什么？',
+    stem: '如果只能优先选择一个结果指标，应选择哪项？',
+    type: 'single_choice',
+    difficulty: 'medium',
+    options: ['平均回答字数', '模型参数量', '工具调用总次数', '代表性任务的端到端完成率'],
+    correctOptionIds: ['D'],
+    answer:
+      'D。Agent 的核心价值是完成任务，应优先用代表性任务集上的端到端完成率衡量，再结合质量、安全和成本指标。',
+    tags: ['Agent 评估', '任务完成率'],
+    sourceRefs: [AGENT_CAMP, MICROSOFT_AGENTS],
+  },
+];
+
+export const PUBLIC_AGENT_SINGLE_CHOICE_QUESTIONS =
+  SINGLE_CHOICE_QUESTIONS.map(buildAgentChoiceQuestion);

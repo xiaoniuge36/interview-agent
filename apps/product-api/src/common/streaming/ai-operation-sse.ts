@@ -8,6 +8,7 @@ import type {
 import { randomUUID } from 'node:crypto';
 import type { Response } from 'express';
 import type { ProductRequestContext } from '../context/request-context';
+import { createSseResponseWriter } from './sse-response-writer';
 
 const HEARTBEAT_INTERVAL_MS = 15_000;
 const HTTP_OK = 200;
@@ -23,9 +24,9 @@ const PHASE_LABELS: Record<AiOperationPhase, string> = {
 
 export type AiOperationStreamSink = {
   phase: (phase: AiOperationPhase) => void;
-  delta: (channel: 'interviewer_content' | 'evaluation_feedback', content: string) => void;
-  result: (event: AiOperationResultInput) => void;
-  error: (error: AiOperationStreamError) => void;
+  delta: (channel: 'interviewer_content' | 'evaluation_feedback', content: string) => Promise<void>;
+  result: (event: AiOperationResultInput) => Promise<void>;
+  error: (error: AiOperationStreamError) => Promise<void>;
 };
 
 type AiOperationMetadata = {
@@ -49,28 +50,34 @@ export type AiOperationResultInput =
     }
   | { operation: 'practice_evaluation'; result: PracticeItemFeedback };
 
-export function createAiOperationSse(response: Response, context: ProductRequestContext) {
+export function createAiOperationSse(
+  response: Response,
+  context: ProductRequestContext,
+  signal?: AbortSignal,
+) {
   const operationId = `operation_${randomUUID()}`;
+  const writer = createSseResponseWriter(response, signal);
   response.status(HTTP_OK);
   response.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
   response.setHeader('Cache-Control', 'no-cache, no-transform');
   response.setHeader('Connection', 'keep-alive');
   response.flushHeaders();
-  const heartbeat = setInterval(() => response.write(': heartbeat\n\n'), HEARTBEAT_INTERVAL_MS);
+  const heartbeat = setInterval(() => writer.heartbeat(': heartbeat\n\n'), HEARTBEAT_INTERVAL_MS);
   heartbeat.unref();
   const sink: AiOperationStreamSink = {
-    phase: (phase) =>
-      write(response, {
+    phase: (phase) => {
+      void write(writer, {
         ...metadata(context, operationId),
         type: 'phase',
         phase,
         label: PHASE_LABELS[phase],
-      }),
+      });
+    },
     delta: (channel, content) =>
-      write(response, { ...metadata(context, operationId), type: 'delta', channel, content }),
-    result: (event) => writeResult(response, metadata(context, operationId), event),
+      write(writer, { ...metadata(context, operationId), type: 'delta', channel, content }),
+    result: (event) => writeResult(writer, metadata(context, operationId), event),
     error: (error) =>
-      write(response, { ...metadata(context, operationId), type: 'error', ...error }),
+      write(writer, { ...metadata(context, operationId), type: 'error', ...error }, 'best-effort'),
   };
   return {
     sink,
@@ -112,19 +119,21 @@ function metadata(context: ProductRequestContext, operationId: string): AiOperat
   return { operationId, occurredAt: new Date().toISOString(), traceId: context.traceId };
 }
 
-function write(response: Response, event: AiOperationStreamEvent): void {
-  if (response.writableEnded || response.destroyed) return;
-  response.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+function write(
+  writer: ReturnType<typeof createSseResponseWriter>,
+  event: AiOperationStreamEvent,
+  mode: 'strict' | 'best-effort' = 'strict',
+) {
+  return writer.send(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`, mode);
 }
 
 function writeResult(
-  response: Response,
+  writer: ReturnType<typeof createSseResponseWriter>,
   eventMetadata: AiOperationMetadata,
   event: AiOperationResultInput,
-): void {
+): Promise<void> {
   if (event.operation === 'interview_next') {
-    write(response, { ...eventMetadata, type: 'result', ...event });
-    return;
+    return write(writer, { ...eventMetadata, type: 'result', ...event });
   }
-  write(response, { ...eventMetadata, type: 'result', ...event });
+  return write(writer, { ...eventMetadata, type: 'result', ...event });
 }

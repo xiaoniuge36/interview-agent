@@ -1,5 +1,6 @@
 import { ModelGatewayService } from './model-gateway.service';
 import { BadGatewayException } from '@nestjs/common';
+import { ModelProviderError } from '../model-credential/model-provider.client';
 
 const CREDENTIAL = {
   provider: 'deepseek' as const,
@@ -82,6 +83,28 @@ describe('ModelGatewayService', () => {
       response: expect.objectContaining({ code: 'AI_CIRCUIT_OPEN' }),
     });
     expect(provider.complete).not.toHaveBeenCalled();
+  });
+});
+
+describe('ModelGatewayService endpoint guard', () => {
+  it('returns an unsafe provider endpoint as a stable non-retryable rejection', async () => {
+    const { service, provider } = createService();
+    provider.complete.mockRejectedValueOnce(
+      new ModelProviderError('MODEL_PROVIDER_ENDPOINT_BLOCKED'),
+    );
+
+    await expect(
+      service.invoke(interviewGrant(), {
+        grant: 'signed-runtime-grant.payload-signature',
+        systemPrompt: 'system',
+        userPrompt: 'user',
+        outputSchemaVersion: 'interview-runtime.v1',
+        traceId: 'trace-0001',
+      }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'MODEL_PROVIDER_ENDPOINT_BLOCKED' }),
+      status: 400,
+    });
   });
 });
 

@@ -27,7 +27,7 @@ export type EmbeddingDispatchInput = Omit<
 export class BackgroundJobDispatcher {
   constructor(private readonly repository: BackgroundJobRepository) {}
 
-  enqueueEmbedding(input: EmbeddingDispatchInput) {
+  enqueueEmbedding(input: EmbeddingDispatchInput, transaction?: Prisma.TransactionClient) {
     const payload: EmbeddingJobPayload = {
       schemaVersion: 1,
       userId: input.userId,
@@ -38,12 +38,23 @@ export class BackgroundJobDispatcher {
       metadata: input.metadata,
       embeddingVersion: EMBEDDING_VERSION,
     };
-    return this.repository.enqueue({
+    const job = {
       tenantId: input.tenantId,
-      type: 'embedding',
+      type: 'embedding' as const,
       dedupeKey: embeddingDedupeKey(payload),
       payload: payload as Prisma.InputJsonValue,
-    });
+    };
+    return transaction ? this.repository.enqueue(job, transaction) : this.repository.enqueue(job);
+  }
+
+  removeKnowledgeEmbeddings(
+    tenantId: string,
+    assetId: string,
+    transaction?: Prisma.TransactionClient,
+  ) {
+    return transaction
+      ? this.repository.removeKnowledgeEmbeddings(tenantId, assetId, transaction)
+      : this.repository.removeKnowledgeEmbeddings(tenantId, assetId);
   }
 }
 

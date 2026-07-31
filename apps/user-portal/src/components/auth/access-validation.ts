@@ -6,6 +6,17 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type AccessFormErrors = Partial<Record<keyof AccessForm, string>>;
 
+const ACCESS_FIELD_IDS: Record<keyof AccessForm, string> = {
+  name: 'access-name',
+  email: 'access-email',
+  password: 'access-password',
+};
+
+const ACCESS_FIELD_ORDER: Record<AccessMode, readonly (keyof AccessForm)[]> = {
+  'sign-in': ['email', 'password'],
+  register: ['name', 'email', 'password'],
+};
+
 export function validateAccessForm(form: AccessForm, mode: AccessMode): AccessFormErrors {
   const nameError = mode === 'register' ? validateName(form.name) : undefined;
   const emailError = validateEmail(form.email);
@@ -20,6 +31,20 @@ export function validateAccessForm(form: AccessForm, mode: AccessMode): AccessFo
 
 export function hasAccessFormErrors(errors: AccessFormErrors) {
   return Object.values(errors).some(Boolean);
+}
+
+export function focusFirstInvalidAccessField(
+  errors: AccessFormErrors,
+  mode: AccessMode,
+  focus: (id: string) => void,
+): string | undefined {
+  for (const field of ACCESS_FIELD_ORDER[mode]) {
+    if (!errors[field]) continue;
+    const id = ACCESS_FIELD_IDS[field];
+    focus(id);
+    return id;
+  }
+  return undefined;
 }
 
 export function clearAccessFormError(errors: AccessFormErrors, field: keyof AccessForm) {
