@@ -14,9 +14,11 @@ class FakeGateway:
     def __init__(self, responses: list[str | Exception]) -> None:
         self.responses = responses
         self.grants: list[str] = []
+        self.requests: list[ModelGatewayRequest] = []
 
     async def complete(self, request: ModelGatewayRequest) -> str:
         self.grants.append(request.grant)
+        self.requests.append(request)
         response = self.responses.pop(0)
         if isinstance(response, Exception):
             raise response
@@ -46,6 +48,18 @@ def request_with_grant(tenant_id: str = "tenant-a") -> NextInterviewRequest:
     )
 
 
+def request_with_retrieval() -> NextInterviewRequest:
+    payload = request_with_grant().model_dump(by_alias=True)
+    payload["retrievalContext"] = [
+        {
+            "sourceId": "chunk-1",
+            "entityType": "question",
+            "content": "Explain the outbox pattern.",
+        }
+    ]
+    return NextInterviewRequest.model_validate(payload)
+
+
 @pytest.mark.anyio
 async def test_graph_uses_gateway_when_grant_is_present() -> None:
     gateway = FakeGateway(
@@ -69,6 +83,38 @@ async def test_graph_rejects_invalid_gateway_json() -> None:
 
 
 @pytest.mark.anyio
+async def test_graph_passes_bounded_retrieval_as_read_only_context() -> None:
+    gateway = FakeGateway(
+        [
+            '{"stage":"jd_core","content":"Compare the trade-offs.",'
+            '"shouldFinish":false,"sourceIds":["chunk-1"]}'
+        ]
+    )
+    graph = create_interview_graph(gateway)
+
+    result = await run_interview_graph(graph, request_with_retrieval())
+
+    assert result.source_ids == ["chunk-1"]
+    assert "read-only" in gateway.requests[0].system_prompt
+    assert "chunk-1" in gateway.requests[0].user_prompt
+
+
+@pytest.mark.anyio
+async def test_graph_rejects_source_id_outside_retrieval_context() -> None:
+    graph = create_interview_graph(
+        FakeGateway(
+            [
+                '{"stage":"jd_core","content":"Compare the trade-offs.",'
+                '"shouldFinish":false,"sourceIds":["unknown"]}'
+            ]
+        )
+    )
+
+    with pytest.raises(InterviewGraphError, match="MODEL_PROVIDER_RESPONSE_INVALID"):
+        await run_interview_graph(graph, request_with_retrieval())
+
+
+@pytest.mark.anyio
 async def test_graph_retries_transient_gateway_failure() -> None:
     gateway = FakeGateway(
         [
@@ -85,6 +131,16 @@ async def test_graph_retries_transient_gateway_failure() -> None:
         "signed-runtime-grant.payload-signature",
         "signed-runtime-grant.payload-signature",
     ]
+
+
+@pytest.mark.anyio
+async def test_graph_does_not_retry_a_blocked_provider_endpoint() -> None:
+    gateway = FakeGateway([ModelGatewayError("MODEL_PROVIDER_ENDPOINT_BLOCKED", retryable=False)])
+
+    with pytest.raises(InterviewGraphError, match="MODEL_PROVIDER_ENDPOINT_BLOCKED"):
+        await run_interview_graph(create_interview_graph(gateway), request_with_grant())
+
+    assert len(gateway.requests) == 1
 
 
 @pytest.mark.anyio

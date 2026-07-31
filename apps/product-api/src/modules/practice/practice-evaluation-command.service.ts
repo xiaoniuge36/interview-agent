@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   EvaluatorRubricSchema,
+  QuestionOptionSchema,
   PracticeItemFeedbackSchema,
   type AiOperationPhase,
   type PracticeItemFeedback,
@@ -146,6 +147,7 @@ function modelInput(command: PracticeEvaluationCommand, prepared: PracticeEvalua
     practiceItemId: prepared.item.id,
     title: prepared.item.question.title,
     stem: prepared.item.question.stem,
+    options: QuestionOptionSchema.array().parse(prepared.item.question.options),
     answer: prepared.item.answer!,
     referenceAnswer: prepared.item.question.answer,
     rubric: prepared.rubric,

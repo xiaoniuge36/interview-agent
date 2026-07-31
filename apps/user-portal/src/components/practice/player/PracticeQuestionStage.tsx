@@ -1,4 +1,5 @@
 import { CONTRACT_LIMITS, type PracticeSession } from '@interview-agent/contracts';
+import { selectedChoiceIds, toggleChoiceAnswer } from './practice-choice-answer';
 import type { PlayerBusy } from './usePracticePlayer';
 
 const MAX_VISIBLE_TAGS = 5;
@@ -69,23 +70,68 @@ function AnswerEditor(
     saving: boolean;
   },
 ) {
+  const choiceQuestion = isChoiceQuestion(props.item.question.type);
   return (
     <>
-      <label className="practice-answer-editor">
-        <span>
-          <strong>我的回答</strong>
-          <small>{props.draft.length.toLocaleString()} 字 · 建议包含背景、判断、行动与结果</small>
-        </span>
-        <textarea
-          value={props.draft}
-          maxLength={CONTRACT_LIMITS.longText}
-          disabled={props.closed}
-          placeholder="写下你的完整回答。保存后即可查看标准解析，也可以选择调用自己的 AI 模型获取评价。"
-          onChange={(event) => props.onDraft(event.target.value)}
-        />
-      </label>
+      {choiceQuestion ? <ChoiceAnswerEditor {...props} /> : <TextAnswerEditor {...props} />}
       <PracticeAnswerActions {...props} />
     </>
+  );
+}
+
+function TextAnswerEditor(props: PracticeQuestionStageProps & { closed: boolean }) {
+  return (
+    <label className="practice-answer-editor">
+      <span>
+        <strong>我的回答</strong>
+        <small>{props.draft.length.toLocaleString()} 字 · 建议包含背景、判断、行动与结果</small>
+      </span>
+      <textarea
+        value={props.draft}
+        maxLength={CONTRACT_LIMITS.longText}
+        disabled={props.closed}
+        placeholder="写下你的完整回答。保存后即可查看标准解析，也可以选择调用自己的 AI 模型获取评价。"
+        onChange={(event) => props.onDraft(event.target.value)}
+      />
+    </label>
+  );
+}
+
+function ChoiceAnswerEditor(props: PracticeQuestionStageProps & { closed: boolean }) {
+  const options = props.item.question.options ?? [];
+  const multiple = props.item.question.type === 'multiple_choice';
+  const selected = selectedChoiceIds(props.draft, options);
+  return (
+    <fieldset className="practice-choice-editor" disabled={props.closed}>
+      <legend>
+        <strong>我的选择</strong>
+        <small>{multiple ? '可选择多个答案' : '请选择一个答案'}</small>
+      </legend>
+      <div>
+        {options.map((option) => (
+          <label key={option.id} data-selected={selected.includes(option.id)}>
+            <input
+              type={multiple ? 'checkbox' : 'radio'}
+              name={`practice-choice-${props.item.id}`}
+              value={option.id}
+              checked={selected.includes(option.id)}
+              onChange={() =>
+                props.onDraft(
+                  toggleChoiceAnswer({
+                    draft: props.draft,
+                    optionId: option.id,
+                    options,
+                    multiple,
+                  }),
+                )
+              }
+            />
+            <strong>{option.id}</strong>
+            <span>{option.text}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 
@@ -194,5 +240,11 @@ function typeLabel(value: PracticeSession['items'][number]['question']['type']) 
     system_design: '系统设计',
     project_deep_dive: '项目深挖',
     behavioral: '行为面试',
+    single_choice: '单选题',
+    multiple_choice: '多选题',
   }[value];
+}
+
+function isChoiceQuestion(value: PracticeSession['items'][number]['question']['type']) {
+  return value === 'single_choice' || value === 'multiple_choice';
 }

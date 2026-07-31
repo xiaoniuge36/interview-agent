@@ -1,5 +1,6 @@
 ﻿import { z } from 'zod';
 import { CONTRACT_LIMITS } from '../limits';
+import { ADMIN_LIMITS } from './admin-limits';
 import {
   CandidateReviewSchema,
   CandidateReviewStatusSchema,
@@ -9,34 +10,23 @@ import {
   QuestionStatusSchema,
 } from './training';
 
-const ADMIN_PAGE_DEFAULT = 1;
-const ADMIN_PAGE_SIZE_DEFAULT = 20;
-const ADMIN_PAGE_SIZE_MAX = 100;
-const ADMIN_KEYWORD_MAX_LENGTH = 120;
-const PLATFORM_TREND_MAX = 30;
-const PLATFORM_ALERT_MAX = 3;
-const PLATFORM_AGENT_USAGE_COUNT = 4;
-const ADMIN_NAME_MAX_LENGTH = 80;
-const EMAIL_MAX_LENGTH = 320;
-const ACCOUNT_AUDIT_LOG_MAX = 20;
-
 export const AdminPaginationQuerySchema = z.object({
-  page: z.coerce.number().int().min(ADMIN_PAGE_DEFAULT).default(ADMIN_PAGE_DEFAULT),
+  page: z.coerce.number().int().min(ADMIN_LIMITS.pageDefault).default(ADMIN_LIMITS.pageDefault),
   pageSize: z.coerce
     .number()
     .int()
-    .min(ADMIN_PAGE_DEFAULT)
-    .max(ADMIN_PAGE_SIZE_MAX)
-    .default(ADMIN_PAGE_SIZE_DEFAULT),
-  keyword: z.string().trim().max(ADMIN_KEYWORD_MAX_LENGTH).optional(),
+    .min(ADMIN_LIMITS.pageDefault)
+    .max(ADMIN_LIMITS.pageSizeMax)
+    .default(ADMIN_LIMITS.pageSizeDefault),
+  keyword: z.string().trim().max(ADMIN_LIMITS.keywordLength).optional(),
 });
 
 export const AdminPageSchema = <ItemSchema extends z.ZodTypeAny>(itemSchema: ItemSchema) =>
   z.object({
-    items: z.array(itemSchema).max(ADMIN_PAGE_SIZE_MAX),
+    items: z.array(itemSchema).max(ADMIN_LIMITS.pageSizeMax),
     total: z.number().int().nonnegative(),
-    page: z.number().int().min(ADMIN_PAGE_DEFAULT),
-    pageSize: z.number().int().min(ADMIN_PAGE_DEFAULT).max(ADMIN_PAGE_SIZE_MAX),
+    page: z.number().int().min(ADMIN_LIMITS.pageDefault),
+    pageSize: z.number().int().min(ADMIN_LIMITS.pageDefault).max(ADMIN_LIMITS.pageSizeMax),
   });
 
 export const ModelProfileSchema = z.object({
@@ -162,7 +152,7 @@ export const PlatformDashboardSchema = z.object({
     practiceSubmissions: z.number().int().nonnegative(),
     reports: z.number().int().nonnegative(),
   }),
-  agentUsage: z.array(PlatformAgentUsageSchema).length(PLATFORM_AGENT_USAGE_COUNT),
+  agentUsage: z.array(PlatformAgentUsageSchema).length(ADMIN_LIMITS.platformAgentUsage),
   runtime: z.object({
     runs: z.number().int().nonnegative(),
     successRate: z.number().min(0).max(CONTRACT_LIMITS.percentage),
@@ -171,9 +161,9 @@ export const PlatformDashboardSchema = z.object({
     fallbacks: z.number().int().nonnegative(),
     recentFailures: z.array(AgentRunViewSchema).max(CONTRACT_LIMITS.recentRuns),
   }),
-  trend: z.array(PlatformTrendPointSchema).min(1).max(PLATFORM_TREND_MAX),
+  trend: z.array(PlatformTrendPointSchema).min(1).max(ADMIN_LIMITS.platformTrend),
   funnel: PlatformFunnelSchema,
-  alerts: z.array(PlatformAlertSchema).max(PLATFORM_ALERT_MAX),
+  alerts: z.array(PlatformAlertSchema).max(ADMIN_LIMITS.platformAlert),
 });
 
 export const AccountStatusSchema = z.enum(['active', 'disabled']);
@@ -198,12 +188,12 @@ export const CreateLocalAdminInputSchema = z
       .string()
       .trim()
       .min(2, '姓名至少需要 2 个字符。')
-      .max(ADMIN_NAME_MAX_LENGTH, '姓名长度不能超过 80 个字符。'),
+      .max(ADMIN_LIMITS.nameLength, '姓名长度不能超过 80 个字符。'),
     email: z
       .string()
       .trim()
       .email('请输入有效的邮箱地址。')
-      .max(EMAIL_MAX_LENGTH, '邮箱地址过长。')
+      .max(ADMIN_LIMITS.emailLength, '邮箱地址过长。')
       .transform((value) => value.toLowerCase()),
     password: z.string().min(1, '请输入初始密码。'),
     role: CreateLocalAdminRoleSchema,
@@ -247,7 +237,7 @@ export const AccountViewSchema = z.object({
 export const AccountDetailSchema = AccountViewSchema.extend({
   disabledAt: z.string().datetime().nullable(),
   disabledByUserId: z.string().nullable(),
-  auditLogs: z.array(AuditLogViewSchema).max(ACCOUNT_AUDIT_LOG_MAX),
+  auditLogs: z.array(AuditLogViewSchema).max(ADMIN_LIMITS.accountAuditLog),
 });
 
 export const UpdateAccountRoleInputSchema = z.object({
@@ -301,7 +291,7 @@ export const AccountListQuerySchema = AdminPaginationQuerySchema.extend({
   role: ManagedAccountRoleSchema.optional(),
   status: AccountStatusSchema.optional(),
   authSource: AccountAuthSourceSchema.optional(),
-  tenantKeyword: z.string().trim().max(ADMIN_KEYWORD_MAX_LENGTH).optional(),
+  tenantKeyword: z.string().trim().max(ADMIN_LIMITS.keywordLength).optional(),
   createdFrom: z.string().datetime().optional(),
   createdTo: z.string().datetime().optional(),
 });

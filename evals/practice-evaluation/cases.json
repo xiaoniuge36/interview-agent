@@ -1,0 +1,47 @@
+[
+  {
+    "id": "weak-system-design",
+    "expectedScoreRange": [35, 60],
+    "requiredMissingPoints": ["容量规划"],
+    "output": {
+      "id": "evaluation-weak-system-design",
+      "sessionItemId": "item-1",
+      "score": 48,
+      "feedback": "说明了组件，但缺少容量假设与故障恢复。",
+      "missingPoints": ["容量规划", "故障恢复"],
+      "rubricScores": [{ "point": "系统边界", "score": 55 }],
+      "followUpQuestion": "请补充峰值容量估算。",
+      "createdAt": "2026-07-28T00:00:00.000Z"
+    }
+  },
+  {
+    "id": "strong-idempotency",
+    "expectedScoreRange": [75, 95],
+    "requiredMissingPoints": [],
+    "output": {
+      "id": "evaluation-strong-idempotency",
+      "sessionItemId": "item-2",
+      "score": 86,
+      "feedback": "覆盖幂等键、状态机与重试边界。",
+      "missingPoints": [],
+      "rubricScores": [{ "point": "工程完整性", "score": 88 }],
+      "followUpQuestion": null,
+      "createdAt": "2026-07-28T00:00:00.000Z"
+    }
+  },
+  {
+    "id": "partial-observability",
+    "expectedScoreRange": [55, 75],
+    "requiredMissingPoints": ["告警闭环"],
+    "output": {
+      "id": "evaluation-partial-observability",
+      "sessionItemId": "item-3",
+      "score": 66,
+      "feedback": "具备指标与日志意识，但告警处置链路不完整。",
+      "missingPoints": ["告警闭环"],
+      "rubricScores": [{ "point": "可观测性", "score": 68 }],
+      "followUpQuestion": "告警触发后由谁处置并如何复盘？",
+      "createdAt": "2026-07-28T00:00:00.000Z"
+    }
+  }
+]

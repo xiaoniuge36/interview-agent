@@ -87,7 +87,9 @@ enum AgentRunStatus {
 
 enum AiInvocationOperation {
   model_connection_test
+  embedding
   practice_evaluation
+  practice_report
   interview_next
   admin_page_agent
   user_page_agent
@@ -150,6 +152,8 @@ enum QuestionType {
   system_design
   project_deep_dive
   behavioral
+  single_choice
+  multiple_choice
 }
 
 enum QuestionStatus {
@@ -185,9 +189,21 @@ enum ModelBudget {
 
 enum MemoryEventType {
   skill_delta
+  skill_observation
   risk_signal
   strength_confirmed
   next_action
+}
+
+enum MemorySourceType {
+  practice
+  interview
+}
+
+enum MasteryTrend {
+  rising
+  stable
+  falling
 }
 
 enum KnowledgeSourceType {
@@ -232,4 +248,22 @@ enum PracticeMode {
   manual
   weakness_review
   interview_review
+}
+
+enum BackgroundJobType {
+  embedding
+}
+
+enum BackgroundJobStatus {
+  pending
+  running
+  retry_wait
+  succeeded
+  dead_letter
+}
+
+enum RetrievalChunkStatus {
+  pending
+  ready
+  failed
 }

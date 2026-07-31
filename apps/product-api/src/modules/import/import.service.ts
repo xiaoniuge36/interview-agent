@@ -2,28 +2,29 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import type { Prisma } from '@prisma/client';
 import {
   ImportReviewContextSchema,
-  ImportTaskSchema,
-  ImportTaskStatusSchema,
   type ImportReviewContext,
   type ImportTask,
   type ImportTaskListQuery,
-  type CandidateReviewProgress,
   type MarkdownImportRequest,
 } from '@interview-agent/contracts';
 import { AuditService, jsonValue } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
+import { ImportInfrastructure } from './import-infrastructure';
+import {
+  emptyCandidateReviewProgress,
+  IMPORT_TASK_ORDER,
+  incrementCandidateReviewProgress,
+  initialReviewProgress,
+  mapImportTask,
+  sourceChunkSequence,
+} from './import-mappers';
 import { MarkdownImportExtractor } from './markdown-import-extractor';
 
 const IMPORT_LIST_LIMIT = 100;
 const IMPORT_EXPORT_LIMIT = 10_000;
 const PAGE_INDEX_OFFSET = 1;
-const IMPORT_TASK_ORDER: Prisma.ImportTaskOrderByWithRelationInput[] = [
-  { updatedAt: 'desc' },
-  { id: 'desc' },
-];
-
 type ImportTaskPage = {
   items: ImportTask[];
   total: number;
@@ -39,21 +40,33 @@ type CandidatePersistenceInput = {
   candidates: ReturnType<MarkdownImportExtractor['extract']>;
 };
 
+type CreatedImport = {
+  task: ImportTask;
+};
+
 @Injectable()
 export class ImportService {
   private readonly extractor = new MarkdownImportExtractor();
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly policy: PolicyService,
-    private readonly audit: AuditService,
-  ) {}
+  constructor(private readonly infrastructure: ImportInfrastructure) {}
+
+  private get prisma(): PrismaService {
+    return this.infrastructure.prisma;
+  }
+
+  private get policy(): PolicyService {
+    return this.infrastructure.policy;
+  }
+
+  private get audit(): AuditService {
+    return this.infrastructure.audit;
+  }
 
   async create(context: ProductRequestContext, input: MarkdownImportRequest): Promise<ImportTask> {
     this.assertPermission(context);
     const candidates = this.extractor.extract(input.markdown);
     if (!candidates.length) throw invalidMarkdown();
-    return this.prisma.$transaction(async (transaction) => {
+    const created = await this.prisma.$transaction(async (transaction): Promise<CreatedImport> => {
       const asset = await transaction.knowledgeAsset.create({
         data: {
           tenantId: context.tenantId,
@@ -90,14 +103,11 @@ export class ImportService {
         },
         transaction,
       );
-      return mapImportTask(task, {
-        pending: candidates.length,
-        needsEdit: 0,
-        approved: 0,
-        rejected: 0,
-        published: 0,
-      });
+      return {
+        task: mapImportTask(task, initialReviewProgress(candidates)),
+      };
     });
+    return created.task;
   }
 
   async list(context: ProductRequestContext): Promise<ImportTask[]> {
@@ -243,47 +253,6 @@ export class ImportService {
   }
 }
 
-function mapImportTask(
-  record: {
-    id: string;
-    tenantId: string;
-    assetId: string;
-    title: string;
-    status: string;
-    candidateCount: number;
-    failureReason: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-  },
-  candidateReviewProgress: CandidateReviewProgress = emptyCandidateReviewProgress(),
-): ImportTask {
-  return ImportTaskSchema.parse({
-    ...record,
-    status: ImportTaskStatusSchema.parse(record.status),
-    candidateReviewProgress,
-    createdAt: record.createdAt.toISOString(),
-    updatedAt: record.updatedAt.toISOString(),
-  });
-}
-
-function emptyCandidateReviewProgress(): CandidateReviewProgress {
-  return { pending: 0, needsEdit: 0, approved: 0, rejected: 0, published: 0 };
-}
-
-function incrementCandidateReviewProgress(
-  progress: CandidateReviewProgress,
-  candidate: { publishedQuestionId: string | null; status: string },
-) {
-  if (candidate.publishedQuestionId) {
-    progress.published += 1;
-    return;
-  }
-  if (candidate.status === 'pending') progress.pending += 1;
-  if (candidate.status === 'needs_edit') progress.needsEdit += 1;
-  if (candidate.status === 'approved') progress.approved += 1;
-  if (candidate.status === 'rejected') progress.rejected += 1;
-}
-
 function invalidMarkdown() {
   return new BadRequestException({
     code: 'IMPORT_MARKDOWN_EMPTY',
@@ -296,12 +265,4 @@ function importTaskNotFound() {
     code: 'IMPORT_TASK_NOT_FOUND',
     message: 'Import task not found.',
   });
-}
-
-function sourceChunkSequence(metadata: Prisma.JsonValue, fallback: number): number {
-  if (!metadata || Array.isArray(metadata) || typeof metadata !== 'object') return fallback;
-  const sequence = (metadata as Record<string, unknown>).sequence;
-  return typeof sequence === 'number' && Number.isInteger(sequence) && sequence > 0
-    ? sequence
-    : fallback;
 }

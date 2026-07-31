@@ -7,7 +7,10 @@ const EMPTY_PROFILE: ProfilePayload = { profile: null, snapshot: null };
 describe('个人档案的 Agent 记忆摘要', () => {
   it('空档案给出明确的补充引导', () => {
     expect(createProfileMemoryModel(EMPTY_PROFILE)).toMatchObject({
-      completion: 0,
+      completion: null,
+      readinessLabel: '待开始',
+      primaryGap: '目标岗位',
+      nextAction: { href: '#profile-target-role', label: '先填写目标岗位' },
       role: '等待完善目标岗位',
       evidence: ['保存档案后，Agent 会在这里归纳你的优势证据。'],
       acceptedSignals: [],
@@ -17,16 +20,24 @@ describe('个人档案的 Agent 记忆摘要', () => {
   });
 
   it('资料不完整时标记下一步需要补齐的训练信号', () => {
-    expect(createProfileMemoryModel(partialProfile()).nextSteps).toEqual([
-      '补充个人概述，让 Agent 理解你的代表能力',
-      '补充代表项目，让 Agent 能围绕细节继续追问',
-    ]);
+    expect(createProfileMemoryModel(partialProfile())).toMatchObject({
+      readinessLabel: '3/6 项已准备',
+      primaryGap: '核心技能 / 工具',
+      nextAction: { href: '#profile-tech-stacks', label: '补充核心技能 / 工具' },
+      nextSteps: [
+        '补充个人概述，让 Agent 理解你的代表能力',
+        '补充代表项目，让 Agent 能围绕细节继续追问',
+      ],
+    });
   });
 
   it('优先展示已分析出的优势和待练习项', () => {
     const payload = populatedProfile();
     expect(createProfileMemoryModel(payload)).toMatchObject({
       completion: 100,
+      readinessLabel: '可进入岗位定制',
+      primaryGap: null,
+      nextAction: { href: '/job', label: '继续设置目标 JD' },
       role: '高级产品经理',
       evidence: ['数据驱动', '跨团队协作'],
       focus: ['复杂场景优先级判断'],
@@ -39,16 +50,16 @@ describe('个人档案的 Agent 记忆摘要', () => {
       nextSteps: ['档案输入已覆盖当前训练重点'],
     });
   });
+});
 
-  it('分析结果暂时为空时回退展示已填写的技能证据', () => {
-    const payload = populatedProfile();
-    const withoutStrengths = {
-      ...payload,
-      snapshot: payload.snapshot ? { ...payload.snapshot, strengths: [] } : null,
-    };
+it('分析结果暂时为空时回退展示已填写的技能证据', () => {
+  const payload = populatedProfile();
+  const withoutStrengths = {
+    ...payload,
+    snapshot: payload.snapshot ? { ...payload.snapshot, strengths: [] } : null,
+  };
 
-    expect(createProfileMemoryModel(withoutStrengths).evidence).toEqual(['数据分析']);
-  });
+  expect(createProfileMemoryModel(withoutStrengths).evidence).toEqual(['数据分析']);
 });
 
 function partialProfile(): ProfilePayload {

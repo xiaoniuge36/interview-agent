@@ -17,10 +17,21 @@ export function createUserAgentDrawerCloseAction(stop: () => void, close: () => 
 
 export function createUserAgentTaskLifecycle() {
   let latest = 0;
+  const pendingSubmissions = new Set<string | null>();
   return {
     begin: () => ++latest,
     cancel: () => ++latest,
     isCurrent: (token: number) => token === latest,
+    runExclusive: async (scope: string | null, action: () => Promise<void>) => {
+      if (pendingSubmissions.has(scope)) return false;
+      pendingSubmissions.add(scope);
+      try {
+        await action();
+        return true;
+      } finally {
+        pendingSubmissions.delete(scope);
+      }
+    },
   };
 }
 

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CONTRACT_LIMITS } from '../limits';
-import { QuestionSchema, RubricPointSchema } from './training';
+import { PaginationMetaSchema } from './api';
+import { CandidateQuestionSchema, RubricPointSchema } from './training';
 
 export const PracticeSessionStatusSchema = z.enum([
   'created',
@@ -18,6 +19,11 @@ export const PracticeModeSchema = z.enum([
 ]);
 
 const MAX_PRACTICE_QUESTIONS = 10;
+const MAX_PRACTICE_REPORT_EVIDENCE = 6;
+const MAX_PRACTICE_HISTORY_ITEMS = 200;
+const DEFAULT_MISTAKE_PAGE = 1;
+const DEFAULT_MISTAKE_PAGE_SIZE = 20;
+const MAX_MISTAKE_PAGE_SIZE = 100;
 
 export const CreatePracticeSessionSchema = z
   .object({
@@ -81,18 +87,7 @@ export const PracticeItemFeedbackSchema = PracticeItemSolutionSchema.extend({
   evaluation: PracticeEvaluationSchema,
 });
 
-export const PracticeQuestionSchema = QuestionSchema.pick({
-  id: true,
-  tenantId: true,
-  visibility: true,
-  title: true,
-  stem: true,
-  type: true,
-  difficulty: true,
-  tags: true,
-  sourceRefs: true,
-  status: true,
-});
+export const PracticeQuestionSchema = CandidateQuestionSchema;
 
 export const PracticeSessionItemSchema = z.object({
   id: z.string().min(1),
@@ -131,6 +126,11 @@ export const PracticeReportSchema = z.object({
   weaknesses: z.array(z.string().max(CONTRACT_LIMITS.mediumText)).max(CONTRACT_LIMITS.list),
   nextActions: z.array(z.string().max(CONTRACT_LIMITS.mediumText)).max(CONTRACT_LIMITS.list),
   reportMarkdown: z.string().min(1).max(CONTRACT_LIMITS.longText),
+  evidence: z
+    .array(z.object({ sourceId: z.string().min(1).max(CONTRACT_LIMITS.shortText) }))
+    .max(MAX_PRACTICE_REPORT_EVIDENCE)
+    .optional(),
+  fallbackUsed: z.boolean().optional(),
   itemEvaluations: z.array(PracticeEvaluationSchema).max(MAX_PRACTICE_QUESTIONS),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -150,7 +150,53 @@ export const PracticeHistoryItemSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export const PracticeHistoryListSchema = z.array(PracticeHistoryItemSchema).max(200);
+export const PracticeHistoryListSchema = z
+  .array(PracticeHistoryItemSchema)
+  .max(MAX_PRACTICE_HISTORY_ITEMS);
+
+export const MistakeBookQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(DEFAULT_MISTAKE_PAGE),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(MAX_MISTAKE_PAGE_SIZE)
+    .default(DEFAULT_MISTAKE_PAGE_SIZE),
+});
+
+export const MistakeQuestionSnapshotSchema = CandidateQuestionSchema.pick({
+  id: true,
+  title: true,
+  stem: true,
+  type: true,
+  difficulty: true,
+  tags: true,
+  options: true,
+});
+
+export const MistakeEvidenceSchema = z.object({
+  tag: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  evidence: z.string().min(1).max(CONTRACT_LIMITS.mediumText),
+  observedScore: z.number().min(0).max(CONTRACT_LIMITS.percentage),
+  createdAt: z.string().datetime(),
+});
+
+export const MistakeBookItemSchema = z.object({
+  id: z.string().min(1),
+  practiceItemId: z.string().min(1),
+  questionSnapshot: MistakeQuestionSnapshotSchema,
+  score: z.number().min(0).max(CONTRACT_LIMITS.percentage),
+  feedback: z.string().min(1).max(CONTRACT_LIMITS.mediumText),
+  missingPoints: z.array(z.string().max(CONTRACT_LIMITS.mediumText)).max(CONTRACT_LIMITS.list),
+  evidence: z.array(MistakeEvidenceSchema).max(CONTRACT_LIMITS.tags),
+  evaluatedAt: z.string().datetime(),
+  reviewedAt: z.string().datetime().nullable(),
+  canStartReview: z.boolean(),
+});
+
+export const MistakeBookSchema = PaginationMetaSchema.extend({
+  items: z.array(MistakeBookItemSchema),
+});
 
 export const MasteryProfileSchema = z.object({
   id: z.string().min(1),
@@ -178,4 +224,9 @@ export type PracticeItemSolution = z.infer<typeof PracticeItemSolutionSchema>;
 export type PracticeItemFeedback = z.infer<typeof PracticeItemFeedbackSchema>;
 export type PracticeReport = z.infer<typeof PracticeReportSchema>;
 export type PracticeHistoryItem = z.infer<typeof PracticeHistoryItemSchema>;
+export type MistakeBookQuery = z.infer<typeof MistakeBookQuerySchema>;
+export type MistakeQuestionSnapshot = z.infer<typeof MistakeQuestionSnapshotSchema>;
+export type MistakeEvidence = z.infer<typeof MistakeEvidenceSchema>;
+export type MistakeBookItem = z.infer<typeof MistakeBookItemSchema>;
+export type MistakeBook = z.infer<typeof MistakeBookSchema>;
 export type MasteryProfile = z.infer<typeof MasteryProfileSchema>;

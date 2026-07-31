@@ -3,9 +3,12 @@ from dataclasses import dataclass
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app.telemetry import start_span
+
 DEFAULT_GATEWAY_TIMEOUT_SECONDS = 35.0
 HTTP_TOO_MANY_REQUESTS = 429
 HTTP_SERVER_ERROR = 500
+MODEL_PROVIDER_ENDPOINT_BLOCKED = "MODEL_PROVIDER_ENDPOINT_BLOCKED"
 
 
 class ModelGatewayResponse(BaseModel):
@@ -27,6 +30,7 @@ class ModelGatewayRequest:
     system_prompt: str
     user_prompt: str
     trace_id: str
+    output_schema_version: str = "interview-runtime.v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +40,16 @@ class ModelGatewayClient:
     timeout_seconds: float = DEFAULT_GATEWAY_TIMEOUT_SECONDS
 
     async def complete(self, request: ModelGatewayRequest) -> str:
+        with start_span(
+            "model_provider",
+            {
+                "interview_agent.trace_id": request.trace_id,
+                "output.schema_version": request.output_schema_version,
+            },
+        ):
+            return await self._complete(request)
+
+    async def _complete(self, request: ModelGatewayRequest) -> str:
         if self.url is None:
             raise ModelGatewayError("MODEL_GATEWAY_NOT_CONFIGURED", retryable=False)
         try:
@@ -47,7 +61,7 @@ class ModelGatewayClient:
                         "grant": request.grant,
                         "systemPrompt": request.system_prompt,
                         "userPrompt": request.user_prompt,
-                        "outputSchemaVersion": "interview-runtime.v1",
+                        "outputSchemaVersion": request.output_schema_version,
                         "traceId": request.trace_id,
                     },
                 )
@@ -56,8 +70,9 @@ class ModelGatewayClient:
         except httpx.HTTPError as error:
             raise ModelGatewayError("MODEL_PROVIDER_UNAVAILABLE", retryable=True) from error
         if not response.is_success:
+            code = response_error_code(response.status_code, response.json())
             raise ModelGatewayError(
-                gateway_error_code(response.status_code),
+                code,
                 retryable=is_retryable_status(response.status_code),
             )
         try:
@@ -77,6 +92,20 @@ class ModelGatewayClient:
 
 def is_retryable_status(status_code: int) -> bool:
     return status_code == HTTP_TOO_MANY_REQUESTS or status_code >= HTTP_SERVER_ERROR
+
+
+def response_error_code(status_code: int, payload: object) -> str:
+    code = endpoint_blocked_code(payload) if status_code < HTTP_SERVER_ERROR else None
+    return code or gateway_error_code(status_code)
+
+
+def endpoint_blocked_code(payload: object) -> str | None:
+    if not isinstance(payload, dict):
+        return None
+    error = payload.get("error")
+    nested = error if isinstance(error, dict) else payload
+    code = nested.get("code")
+    return code if code == MODEL_PROVIDER_ENDPOINT_BLOCKED else None
 
 
 def gateway_error_code(status_code: int) -> str:

@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 import pytest
 from app.model_gateway import (
@@ -42,6 +44,27 @@ class FakeAsyncClient:
         return self.response
 
 
+class BlockingAsyncClient:
+    def __init__(self, **_: object) -> None:
+        self.started = asyncio.Event()
+        self.cancelled = asyncio.Event()
+
+    async def __aenter__(self) -> "BlockingAsyncClient":
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        return None
+
+    async def post(self, *_: object, **__: object) -> FakeResponse:
+        self.started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            self.cancelled.set()
+            raise
+        raise AssertionError("cancelled request resumed")
+
+
 def client() -> ModelGatewayClient:
     return ModelGatewayClient(
         url="http://product-api.test/api/internal/model-invocations",
@@ -83,6 +106,23 @@ async def test_gateway_maps_http_errors(monkeypatch: pytest.MonkeyPatch) -> None
 
 
 @pytest.mark.anyio
+async def test_gateway_preserves_the_allowlisted_blocked_endpoint_code(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    FakeAsyncClient.response = FakeResponse(
+        400, {"error": {"code": "MODEL_PROVIDER_ENDPOINT_BLOCKED"}}
+    )
+    FakeAsyncClient.error = None
+    monkeypatch.setattr(httpx, "AsyncClient", FakeAsyncClient)
+
+    with pytest.raises(ModelGatewayError) as error:
+        await client().complete(request())
+
+    assert error.value.code == "MODEL_PROVIDER_ENDPOINT_BLOCKED"
+    assert error.value.retryable is False
+
+
+@pytest.mark.anyio
 async def test_gateway_maps_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     FakeAsyncClient.response = None
     FakeAsyncClient.error = httpx.TimeoutException("timeout")
@@ -90,6 +130,21 @@ async def test_gateway_maps_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with pytest.raises(ModelGatewayError, match="MODEL_PROVIDER_TIMEOUT"):
         await client().complete(request())
+
+
+@pytest.mark.anyio
+async def test_gateway_cancels_the_in_flight_http_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    blocking_client = BlockingAsyncClient()
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_: blocking_client)
+    operation = asyncio.create_task(client().complete(request()))
+
+    await blocking_client.started.wait()
+    operation.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await operation
+
+    assert blocking_client.cancelled.is_set()
 
 
 @pytest.mark.anyio

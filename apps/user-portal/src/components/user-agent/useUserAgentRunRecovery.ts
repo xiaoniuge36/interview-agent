@@ -9,9 +9,11 @@ import {
   type UserAgentRun,
 } from '@/lib/user-page-agent-run-api';
 import {
+  loadCurrentUserAgentRunHistory,
   mergeUserAgentRunProgress,
   shouldRefreshUserAgentRun,
 } from './user-agent-run-recovery-model';
+import { loadConversationRuns } from './user-agent-run-history';
 
 const HEARTBEAT_INTERVAL_MS = 15_000;
 const REMOTE_RUN_POLL_INTERVAL_MS = 15_000;
@@ -105,7 +107,12 @@ function useRunTransport(state: RecoveryState) {
     const conversationId = recovery.conversationIdRef.current;
     if (!conversationId) return;
     try {
-      const runs = await getUserAgentRunHistory(conversationId);
+      const runs = await loadCurrentUserAgentRunHistory(
+        conversationId,
+        getUserAgentRunHistory,
+        (sourceConversationId) => recovery.conversationIdRef.current === sourceConversationId,
+      );
+      if (!runs) return;
       recovery.setRunHistory(runs);
       recovery.setLatestRun(runs[0] ?? null);
       recovery.setError(null);
@@ -244,31 +251,6 @@ function updateRunState(state: RecoveryState, run: UserAgentRun) {
   state.setRunHistory((current) =>
     [run, ...current.filter((item) => item.id !== run.id)].slice(0, RUN_HISTORY_LIMIT),
   );
-}
-
-function loadConversationRuns({
-  conversationId,
-  setLatestRun,
-  setRunHistory,
-  setError,
-}: {
-  conversationId: string | null;
-  setLatestRun: (run: UserAgentRun | null) => void;
-  setRunHistory: (runs: UserAgentRun[]) => void;
-  setError: (message: string | null) => void;
-}) {
-  if (!conversationId) return;
-  const controller = new AbortController();
-  void getUserAgentRunHistory(conversationId, controller.signal)
-    .then((runs) => {
-      setRunHistory(runs);
-      setLatestRun(runs[0] ?? null);
-    })
-    .catch((reason) => {
-      if (!(reason instanceof Error && reason.name === 'AbortError'))
-        setError(errorMessage(reason, '无法读取上次训练运行状态。'));
-    });
-  return () => controller.abort();
 }
 
 async function cancelUnstartedRun(runId: string) {

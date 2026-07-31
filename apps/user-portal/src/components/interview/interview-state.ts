@@ -21,6 +21,7 @@ export type InterviewViewState = {
 
 export type InterviewAction =
   | { type: 'reset' }
+  | { type: 'restore_start' }
   | { type: 'session'; session: InterviewSession }
   | { type: 'draft'; draft: string }
   | { type: 'token'; content: string }
@@ -60,13 +61,19 @@ export function interviewReducer(
   if (action.type === 'reset') {
     return { ...INITIAL_INTERVIEW_STATE, busy: true };
   }
+  if (action.type === 'restore_start') {
+    return { ...INITIAL_INTERVIEW_STATE, draft: state.draft, busy: true };
+  }
   if (action.type === 'failure') {
     return { ...state, busy: false, notice: action.message };
   }
   return reduceUpdate(state, action);
 }
 
-type InterviewUpdateAction = Exclude<InterviewAction, { type: 'reset' } | { type: 'failure' }>;
+type InterviewUpdateAction = Exclude<
+  InterviewAction,
+  { type: 'reset' } | { type: 'restore_start' } | { type: 'failure' }
+>;
 
 function reduceUpdate(
   state: InterviewViewState,

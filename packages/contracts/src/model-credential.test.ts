@@ -8,10 +8,10 @@ import { test } from 'node:test';
 
 test('用户模型凭证要求一次性提交 API Key，读取视图不包含明文', () => {
   assert.equal(
-      CreateModelCredentialInputSchema.safeParse({
-        provider: 'openai',
-        model: 'gpt-4.1',
-      }).success,
+    CreateModelCredentialInputSchema.safeParse({
+      provider: 'openai',
+      model: 'gpt-4.1',
+    }).success,
     false,
   );
 
@@ -46,9 +46,25 @@ test('自定义兼容端点拒绝不安全的 HTTP 地址', () => {
 test('自定义兼容端点拒绝本机、私网和内嵌凭证地址', () => {
   for (const baseUrl of [
     'https://localhost/v1',
+    'https://[::1]/v1',
+    'https://[::7f00:1]/v1',
+    'https://[2001:db8::1]/v1',
+    'https://[::ffff:127.0.0.1]/v1',
+    'https://[fe80::1]/v1',
+    'https://[fd00::1]/v1',
+    'https://[ff02::1]/v1',
     'https://127.0.0.1/v1',
+    'https://10.0.0.1/v1',
+    'https://169.254.169.254/latest/meta-data',
     'https://192.168.1.10/v1',
+    'https://192.0.2.10/v1',
+    'https://192.0.0.10/v1',
+    'https://192.88.99.10/v1',
+    'https://198.51.100.10/v1',
+    'https://203.0.113.10/v1',
     'https://user:password@example.com/v1',
+    '//model.example.test/v1',
+    'https://model.example.test:0/v1',
   ]) {
     assert.equal(
       CreateModelCredentialInputSchema.safeParse({
@@ -60,6 +76,18 @@ test('自定义兼容端点拒绝本机、私网和内嵌凭证地址', () => {
       false,
     );
   }
+});
+
+test('自定义兼容端点允许普通公网 HTTPS 地址', () => {
+  assert.equal(
+    CreateModelCredentialInputSchema.safeParse({
+      provider: 'openai_compatible',
+      model: 'public-model',
+      apiKey: 'sk-one-time-secret',
+      baseUrl: 'https://model.example.test:8443/v1',
+    }).success,
+    true,
+  );
 });
 
 test('编辑模型连接时支持服务商切换且兼容端点必须同时更新 Base URL', () => {
@@ -75,9 +103,7 @@ test('编辑模型连接时支持服务商切换且兼容端点必须同时更�
   assert.equal(missingBaseUrl.success, false);
   assert.equal(providerUpdate.success, true);
   assert.equal(
-    providerUpdate.success
-      ? (providerUpdate.data as { provider?: string }).provider
-      : undefined,
+    providerUpdate.success ? (providerUpdate.data as { provider?: string }).provider : undefined,
     'qwen',
   );
 });

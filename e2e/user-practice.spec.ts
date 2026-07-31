@@ -8,27 +8,46 @@ import {
 import { signInUser } from './helpers/auth';
 
 test('keeps an authenticated user in the real practice to report loop', async ({ page }) => {
+  test.setTimeout(90_000);
   const user = await registerUser('practice-success');
   await verifyModelConnection(user, 'e2e-success');
   const session = await createPracticeFixture(user);
   await savePracticeAnswers(user, session);
 
   await signInUser(page, user);
-  await page.goto(`/practice?session=${session.id}`);
+  const continueTraining = page.getByRole('link', { name: '继续训练', exact: true });
+  await expect(continueTraining).toHaveCount(1);
+  await expect(page.getByRole('button', { name: '采用这组题开始练习' })).toHaveCount(0);
+  await continueTraining.click();
+  await expect(page).toHaveURL(`/practice?session=${session.id}`, { timeout: 30_000 });
   await expect(page.locator('.practice-player-page')).toBeVisible();
+  await verifyMobileDraftNavigation(page);
 
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.locator('.practice-ai-ready button').click();
+  await requestAiEvaluation(page);
   await expect(page.locator('.practice-evaluation-result')).toContainText('异常处理');
 
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('button', { name: '生成 AI 复盘' }).click();
+  await page.locator('.practice-round-completion-step button:not(.secondary)').click();
+  await confirmAiOperation(page);
   await expect(page.locator('.practice-completion-page')).toBeVisible();
   await expect(page.getByText('逐题回顾', { exact: true })).toBeVisible();
   const evaluations = page.locator('.practice-report-evaluation');
   await expect(evaluations).toHaveCount(session.items.length);
   await expect(evaluations.first()).toContainText('异常恢复');
-  await page.getByRole('button', { name: '按最新推荐开始下一轮' }).click();
+  await expect(page.getByLabel('本轮训练证据')).toBeVisible();
+  await expect(page.getByRole('button', { name: '复练薄弱项' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '用模拟面试检验本轮提升' })).toBeVisible();
+
+  await page.goto('/questions');
+  await expect(page.getByLabel('推荐依据').first()).toBeVisible();
+  await page.getByRole('button', { name: '采用并开始训练' }).click();
+  await expect(page).toHaveURL(/\/practice\?session=/);
+  await expect(page.locator('.practice-player-page')).toBeVisible();
+
+  await page.goto('/reports');
+  const mistake = page.locator('.mistake-book-row').first();
+  await expect(mistake).toBeVisible();
+  await expect(mistake.getByLabel('推荐依据')).toBeVisible();
+  await mistake.getByRole('button', { name: '开始这题复练' }).click();
   await expect(page).toHaveURL(/\/practice\?session=/);
   await expect(page.locator('.practice-player-page')).toBeVisible();
 });
@@ -43,10 +62,10 @@ test('shows a traditional error and keeps saved answers when the model is invali
 
   await signInUser(page, user);
   await page.goto(`/practice?session=${session.id}`);
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.locator('.practice-ai-ready button').click();
+  await requestAiEvaluation(page);
 
   await expect(page.locator('.practice-coach-issue[role=alert]')).toBeVisible();
+  await page.locator('.practice-feedback-header > button').click();
   await expect(page.locator('.practice-answer-editor textarea')).toHaveValue(
     '我会说明背景、决策、结果和复盘。',
   );
@@ -93,4 +112,59 @@ test('keeps a model-backed coach conversation after the user refreshes the page'
 async function openCoach(page: Page) {
   await page.getByRole('button', { name: '打开 AI 刷题教练' }).click();
   await expect(page.getByRole('dialog', { name: 'AI 刷题教练' })).toBeVisible();
+}
+
+async function verifyMobileDraftNavigation(page: Page) {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const answer = page.locator('.practice-answer-editor textarea');
+  const savedAnswer = await answer.inputValue();
+  const localDraft = `${savedAnswer} 这是未保存的移动端补充。`;
+  await answer.fill(localDraft);
+  await page.getByRole('button', { name: '2 已保存' }).click();
+
+  const dialog = page.getByRole('dialog', { name: '保留这段草稿再切换？' });
+  const stay = dialog.getByRole('button', { name: '留在本题' });
+  const continueWithDraft = dialog.getByRole('button', { name: '保留草稿并切换' });
+  await expect(stay).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(continueWithDraft).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(answer).toHaveValue(localDraft);
+
+  await page.getByRole('button', { name: '2 已保存' }).click();
+  await expect(dialog).toBeVisible();
+  await stay.click();
+  await expect(dialog).toBeHidden();
+  await expect(answer).toHaveValue(localDraft);
+
+  await page.getByRole('button', { name: '2 已保存' }).click();
+  await expect(dialog).toBeVisible();
+  await continueWithDraft.click();
+  await expect(dialog).toBeHidden();
+  await page.getByRole('button', { name: '1 已保存' }).click();
+  await expect(answer).toHaveValue(localDraft);
+  await page.reload();
+  await expect(page.locator('.practice-player-page')).toBeVisible();
+  await expect(answer).toHaveValue(localDraft);
+  await answer.fill(savedAnswer);
+
+  const pageWidth = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(pageWidth).toEqual({ clientWidth: 375, scrollWidth: 375 });
+  await page.setViewportSize({ width: 1280, height: 720 });
+}
+
+async function requestAiEvaluation(page: Page) {
+  await page.locator('.practice-feedback-launcher button').click();
+  await page.locator('.practice-ai-ready button').click();
+  await confirmAiOperation(page);
+}
+
+async function confirmAiOperation(page: Page) {
+  const dialog = page.locator('.practice-ai-confirmation-dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.locator('footer button:not(.secondary)').click();
 }

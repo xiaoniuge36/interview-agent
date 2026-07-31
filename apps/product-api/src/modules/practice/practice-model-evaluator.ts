@@ -2,11 +2,13 @@ import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/co
 import {
   PracticeEvaluationSchema,
   type ModelProvider,
+  type QuestionOption,
   type RubricPoint,
 } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { IncrementalJsonFieldDecoder } from '../../common/streaming/incremental-json-field-decoder';
 import { AiInvocationService } from '../ai-usage/ai-invocation.service';
+import { modelRequestLimits } from '../ai-usage/ai-budget-policy';
 import { ModelCredentialService } from '../model-credential/model-credential.service';
 import { ModelProviderClient, ModelProviderError } from '../model-credential/model-provider.client';
 
@@ -21,6 +23,7 @@ const EvaluationDraftSchema = PracticeEvaluationSchema.pick({
 export type PracticeModelEvaluationInput = {
   title: string;
   stem: string;
+  options: QuestionOption[];
   answer: string;
   referenceAnswer: string;
   rubric: RubricPoint[];
@@ -31,7 +34,7 @@ export type PracticeModelEvaluationInput = {
 };
 
 export type PracticeEvaluationStreamCallbacks = {
-  onDelta: (content: string) => void;
+  onDelta: (content: string) => void | Promise<void>;
   onComplete: () => void;
   signal?: AbortSignal;
 };
@@ -50,12 +53,13 @@ export class PracticeModelEvaluator {
     try {
       return await this.invocations.measure(
         invocationMetadata(context, credential, input),
-        async (onUsage) => {
+        async (onUsage, budget) => {
           const content = await this.provider.complete({
             ...credential,
             systemPrompt: systemPrompt(),
             userPrompt: userPrompt(input),
             onUsage,
+            ...modelRequestLimits(budget),
           });
           return parseEvaluation(content);
         },
@@ -78,17 +82,18 @@ export class PracticeModelEvaluator {
     try {
       return await this.invocations.measure(
         invocationMetadata(context, credential, input),
-        async (onUsage) => {
+        async (onUsage, budget) => {
           for await (const delta of this.provider.stream({
             ...credential,
             systemPrompt: systemPrompt(),
             userPrompt: userPrompt(input),
             onUsage,
+            ...modelRequestLimits(budget),
             ...(callbacks.signal ? { signal: callbacks.signal } : {}),
           })) {
             content += delta;
             const visible = decoder.push(delta);
-            if (visible) callbacks.onDelta(visible);
+            if (visible) await callbacks.onDelta(visible);
           }
           callbacks.onComplete();
           return parseEvaluation(content);
@@ -117,11 +122,16 @@ function userPrompt(input: PracticeModelEvaluationInput) {
     `目标岗位：${input.targetRole ?? '通用面试能力'}`,
     `题目：${input.title}`,
     `题干：${input.stem}`,
+    ...(input.options.length ? [`选项：\n${formatOptions(input.options)}`] : []),
     `能力标签：${input.tags.join('、') || '无'}`,
     `评分标准：${JSON.stringify(input.rubric)}`,
     `参考答案：${input.referenceAnswer}`,
     `用户回答：${input.answer}`,
   ].join('\n\n');
+}
+
+function formatOptions(options: QuestionOption[]) {
+  return options.map((option) => `${option.id}. ${option.text}`).join('\n');
 }
 
 function parseEvaluation(value: string) {
@@ -172,5 +182,6 @@ function invocationMetadata(
     provider: credential.provider,
     model: credential.model,
     traceId: context.traceId,
+    inputCharacters: systemPrompt().length + userPrompt(input).length,
   };
 }

@@ -1,6 +1,8 @@
 ﻿import {
   CreatePracticeSessionSchema,
   MasteryProfileListSchema,
+  MistakeBookQuerySchema,
+  MistakeBookSchema,
   PracticeReportSchema,
   PracticeItemFeedbackSchema,
   PracticeItemSolutionSchema,
@@ -10,6 +12,8 @@
   type CreatePracticeSession,
   type AiOperationStreamEvent,
   type MasteryProfile,
+  type MistakeBook,
+  type MistakeBookQuery,
   type PracticeReport,
   type PracticeItemFeedback,
   type PracticeItemSolution,
@@ -35,6 +39,23 @@ export function getPracticeSession(sessionId: string): Promise<PracticeSession> 
 
 export function listPracticeHistory(): Promise<PracticeHistoryItem[]> {
   return apiRequest({ path: '/practices/history', schema: PracticeHistoryListSchema });
+}
+
+export function listPracticeMistakes(query: Partial<MistakeBookQuery> = {}): Promise<MistakeBook> {
+  const parsed = MistakeBookQuerySchema.parse(query);
+  const params = new URLSearchParams({
+    page: String(parsed.page),
+    pageSize: String(parsed.pageSize),
+  });
+  return apiRequest({ path: `/practice-mistakes?${params}`, schema: MistakeBookSchema });
+}
+
+export function startMistakeReview(mistakeId: string): Promise<PracticeSession> {
+  return apiRequest({
+    path: `/practice-mistakes/${encodeURIComponent(mistakeId)}/review`,
+    schema: PracticeSessionSchema,
+    init: { method: 'POST', body: '{}' },
+  });
 }
 
 export function submitPracticeAnswer(

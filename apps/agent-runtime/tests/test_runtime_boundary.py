@@ -1,8 +1,18 @@
+import asyncio
+import logging
 from collections.abc import Iterator
+from types import SimpleNamespace
+from typing import cast
 
 import pytest
 from app.config import DEFAULT_BODY_LIMIT_BYTES, get_settings
-from app.main import app
+from app.errors import RuntimeRequestError
+from app.main import app, next_turn
+from app.model_gateway import ModelGatewayError, ModelGatewayRequest
+from app.schemas.interview import NextInterviewRequest
+from app.workflows.interview_graph import create_interview_graph
+from app.workflows.practice_report_graph import create_practice_report_graph
+from fastapi import Request
 from fastapi.testclient import TestClient
 
 INTERNAL_TOKEN = "runtime-test-token-with-at-least-32-characters"
@@ -43,11 +53,108 @@ def payload() -> dict[str, object]:
     }
 
 
+def report_payload() -> dict[str, object]:
+    return {
+        "contractVersion": "practice-report-runtime.v1",
+        "session": {
+            "id": "practice-1",
+            "tenantId": "personal",
+            "userId": "demo-user",
+            "title": "System design",
+        },
+        "evaluations": [
+            {
+                "itemId": "item-1",
+                "questionId": "question-1",
+                "questionTitle": "Design a rate limiter",
+                "questionTags": ["system-design"],
+                "score": 72,
+                "feedback": "The boundary is clear.",
+                "missingPoints": ["Capacity planning"],
+            }
+        ],
+        "commandId": "practice-report:practice-1",
+        "traceId": "trace-test-0001",
+        "modelInvocationGrant": "signed-runtime-grant.payload-signature",
+    }
+
+
+class BlockingGateway:
+    def __init__(self) -> None:
+        self.started = asyncio.Event()
+        self.release = asyncio.Event()
+        self.cancelled = asyncio.Event()
+        self.calls = 0
+        self.completed = 0
+
+    async def complete(self, _request: ModelGatewayRequest) -> str:
+        self.calls += 1
+        self.started.set()
+        try:
+            await self.release.wait()
+        except asyncio.CancelledError:
+            self.cancelled.set()
+            raise
+        self.completed += 1
+        return '{"stage":"jd_core","content":"请继续说明关键取舍。","shouldFinish":false}'
+
+
+class DisconnectingRequest:
+    def __init__(self, graph: object) -> None:
+        self.app = SimpleNamespace(state=SimpleNamespace(interview_graph=graph))
+        self.disconnected = asyncio.Event()
+
+    async def receive(self) -> dict[str, str]:
+        await self.disconnected.wait()
+        return {"type": "http.disconnect"}
+
+
+class BlockedEndpointGateway:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def complete(self, _request: ModelGatewayRequest) -> str:
+        self.calls += 1
+        raise ModelGatewayError("MODEL_PROVIDER_ENDPOINT_BLOCKED", retryable=False)
+
+
+def payload_with_grant() -> NextInterviewRequest:
+    request = payload()
+    request["modelInvocationGrant"] = "signed-runtime-grant.payload-signature"
+    return NextInterviewRequest.model_validate(request)
+
+
 def test_rejects_external_request(client: TestClient) -> None:
     response = client.post("/interviews/next", json=payload())
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "INVALID_SERVICE_IDENTITY"
+
+
+@pytest.mark.anyio
+async def test_cancels_provider_work_when_runtime_client_disconnects(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO, logger="agent_runtime.lifecycle")
+    gateway = BlockingGateway()
+    request = DisconnectingRequest(create_interview_graph(gateway))
+    operation = asyncio.create_task(next_turn(cast(Request, request), payload_with_grant()))
+
+    await gateway.started.wait()
+    request.disconnected.set()
+    await asyncio.wait_for(gateway.cancelled.wait(), timeout=1)
+    gateway.release.set()
+
+    with pytest.raises(RuntimeRequestError) as error:
+        await operation
+
+    assert error.value.error.status_code == 499
+    assert error.value.error.code == "REQUEST_CANCELLED"
+    assert gateway.calls == 1
+    assert gateway.completed == 0
+    log_output = " ".join(record.getMessage() for record in caplog.records)
+    assert "runtime_request_cancelled" in log_output
+    assert "signed-runtime-grant" not in log_output
 
 
 def test_rejects_contract_version_drift(client: TestClient) -> None:
@@ -73,6 +180,47 @@ def test_returns_versioned_structured_decision(client: TestClient) -> None:
     assert response.json()["shouldFinish"] is False
     assert "后端开发工程师" in content
     assert "系统边界" in content
+
+
+def test_practice_report_endpoint_returns_deterministic_fallback_without_provider(
+    client: TestClient,
+) -> None:
+    response = client.post("/practice/report", json=report_payload(), headers=AUTH_HEADERS)
+
+    assert response.status_code == 200
+    assert response.json()["contractVersion"] == "practice-report-runtime.v1"
+    assert response.json()["overallScore"] == 72
+    assert response.json()["fallbackUsed"] is True
+
+
+def test_returns_blocked_provider_endpoint_as_a_non_retryable_interview_error(
+    client: TestClient,
+) -> None:
+    gateway = BlockedEndpointGateway()
+    app.state.interview_graph = create_interview_graph(gateway)
+
+    response = client.post(
+        "/interviews/next",
+        json=payload_with_grant().model_dump(by_alias=True),
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "MODEL_PROVIDER_ENDPOINT_BLOCKED"
+    assert gateway.calls == 1
+
+
+def test_returns_blocked_provider_endpoint_as_a_non_retryable_report_error(
+    client: TestClient,
+) -> None:
+    gateway = BlockedEndpointGateway()
+    app.state.practice_report_graph = create_practice_report_graph(gateway)
+
+    response = client.post("/practice/report", json=report_payload(), headers=AUTH_HEADERS)
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "MODEL_PROVIDER_ENDPOINT_BLOCKED"
+    assert gateway.calls == 1
 
 
 @pytest.mark.parametrize(

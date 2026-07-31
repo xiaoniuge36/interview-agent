@@ -243,8 +243,10 @@
 }
 .practice-completion-page > header a,
 .practice-completion-page > header button {
+  box-sizing: border-box;
   border: 1px solid #ccd8e8;
   border-radius: 9px;
+  min-height: 44px;
   padding: 10px 13px;
   background: #fff;
   color: #245bbd;
@@ -252,6 +254,11 @@
   font-weight: 800;
 }
 .practice-completion-page > header button {
+  border-color: #1d5de1;
+  background: #1d5de1;
+  color: #fff;
+}
+.practice-completion-page > header a.practice-completion-return {
   border-color: #1d5de1;
   background: #1d5de1;
   color: #fff;
@@ -265,21 +272,10 @@
   margin: 0 auto;
 }
 .practice-report-retry {
-  display: grid;
-  justify-items: center;
-  gap: 9px;
-  margin: 20px auto;
-  text-align: center;
-}
-.practice-report-retry p {
-  margin: 0;
-  color: #6f7e92;
-  font-size: 12px;
-}
-.practice-report-retry button {
   border: 1px solid #ccd8e8;
-  border-radius: 8px;
-  padding: 9px 12px;
+  border-radius: 9px;
+  min-height: 44px;
+  padding: 10px 13px;
   background: #fff;
   color: #245bbd;
   font-size: 11px;

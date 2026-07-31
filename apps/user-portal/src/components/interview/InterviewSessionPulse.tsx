@@ -23,6 +23,11 @@ export function InterviewSessionPulse({ session, phase, statusLabel }: Interview
       <span>已回答 {progress.answered} 题</span>
       <strong>{progress.stage ? interviewStageLabel(progress.stage) : '准备开始'}</strong>
       <small>{phase ? PHASE_LABELS[phase] : statusLabel}</small>
+      {session?.status === 'report_ready' ? (
+        <a className="interview-session-report-link" href="#interview-report">
+          直接查看本轮复盘
+        </a>
+      ) : null}
     </section>
   );
 }

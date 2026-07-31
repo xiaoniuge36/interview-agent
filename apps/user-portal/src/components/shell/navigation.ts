@@ -1,7 +1,8 @@
 export type NavigationId =
-  'home' | 'questions' | 'profile' | 'practice' | 'interview' | 'reports' | 'settings';
+  'home' | 'questions' | 'learn' | 'profile' | 'practice' | 'interview' | 'reports' | 'settings';
 
-export type IconName = 'grid' | 'user' | 'target' | 'book' | 'mic' | 'chart' | 'settings';
+export type IconName =
+  'grid' | 'user' | 'target' | 'book' | 'library' | 'mic' | 'chart' | 'settings';
 
 export type NavigationItem = {
   id: NavigationId;
@@ -30,6 +31,14 @@ export const NAV_ITEMS: NavigationItem[] = [
     title: '独立选题',
     helper: '筛选并组合 1–10 道题',
     icon: 'book',
+  },
+  {
+    id: 'learn',
+    href: '/learn',
+    label: '学习',
+    title: '学习中心',
+    helper: '阅读参考资料并建立知识地图',
+    icon: 'library',
   },
   {
     id: 'profile',
@@ -96,4 +105,54 @@ export function navigationLinkClass(
 ): string {
   if (pending) return pending === item ? 'active pending' : '';
   return active === item ? 'active' : '';
+}
+
+export type NavigationClick = {
+  active: NavigationId;
+  target: NavigationId;
+  defaultPrevented: boolean;
+  button: number;
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+};
+
+export type NavigationPendingAction =
+  { type: 'clear' } | { type: 'navigate'; click: NavigationClick };
+
+export function shouldStartNavigationPending(click: NavigationClick) {
+  return isUnmodifiedPrimaryClick(click) && click.active !== click.target;
+}
+
+export function navigationPendingReducer(
+  pending: NavigationId | null,
+  action: NavigationPendingAction,
+) {
+  if (action.type === 'clear') return null;
+  if (!isUnmodifiedPrimaryClick(action.click)) return pending;
+  return action.click.active === action.click.target ? null : action.click.target;
+}
+
+export function navigationPendingAnnouncement(pending: NavigationId | null) {
+  return pending ? `正在打开${navItemById(pending).label}…` : '';
+}
+
+export function navigationClickFromEvent(
+  event: Omit<NavigationClick, 'active' | 'target'>,
+  active: NavigationId,
+  target: NavigationId,
+): NavigationClick {
+  return { ...event, active, target };
+}
+
+function isUnmodifiedPrimaryClick(click: NavigationClick) {
+  return (
+    !click.defaultPrevented &&
+    click.button === 0 &&
+    !click.altKey &&
+    !click.ctrlKey &&
+    !click.metaKey &&
+    !click.shiftKey
+  );
 }

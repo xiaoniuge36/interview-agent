@@ -6,14 +6,31 @@ describe('interview review practice model', () => {
     expect(
       interviewReviewFocus({
         stageScores: [
-          { stage: 'jd_core', score: 58 },
-          { stage: 'project_deep_dive', score: 42 },
-          { stage: 'hr', score: 76 },
+          { stage: 'jd_core', score: 58, summary: '核心知识不完整。', evidence: ['缺少边界'] },
+          {
+            stage: 'project_deep_dive',
+            score: 42,
+            summary: '项目证据链不足。',
+            evidence: ['没有量化结果'],
+          },
+          { stage: 'hr', score: 76, summary: '表达清晰。', evidence: ['职责明确'] },
         ],
       } as never),
     ).toEqual([
-      { stage: 'project_deep_dive', label: '项目深挖', score: 42 },
-      { stage: 'jd_core', label: '岗位核心能力', score: 58 },
+      {
+        stage: 'project_deep_dive',
+        label: '项目深挖',
+        score: 42,
+        summary: '项目证据链不足。',
+        evidence: ['没有量化结果'],
+      },
+      {
+        stage: 'jd_core',
+        label: '岗位核心能力',
+        score: 58,
+        summary: '核心知识不完整。',
+        evidence: ['缺少边界'],
+      },
     ]);
   });
 

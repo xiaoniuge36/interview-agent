@@ -42,5 +42,5 @@ it('已有 session 时保留重新开始动作与 busy 状态', () => {
       busy: true,
       loadFailed: false,
     }),
-  ).toEqual({ action: 'start', disabled: true, label: '重新开始本轮' });
+  ).toEqual({ action: 'restart', disabled: true, label: '重新开始本轮' });
 });

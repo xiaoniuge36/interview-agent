@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   InterviewReportSchema,
   type InterviewReport,
@@ -90,15 +89,22 @@ function turnFeedback(turns: InterviewTurn[], guidance: RoleReportGuidance) {
 }
 
 function memoryEvent(input: ReportFactoryInput, guidance: RoleReportGuidance) {
+  const score = calculateScore(input.session.turns.filter((turn) => turn.role === 'candidate'));
   return {
-    id: `memory_${randomUUID()}`,
+    id: `memory_${input.session.id}_${guidance.memoryTag}`,
     tenantId: input.session.tenantId,
     userId: input.session.userId,
-    eventType: 'skill_delta' as const,
+    schemaVersion: 1 as const,
+    dedupeKey: `interview:${input.session.id}:${guidance.memoryTag}`,
+    sourceType: 'interview' as const,
+    eventType: 'skill_observation' as const,
     sourceId: input.session.id,
+    tag: guidance.memoryTag,
+    observedScore: score,
     evidence: guidance.memoryEvidence,
     delta: { tag: guidance.memoryTag, scoreDelta: SCORE_PER_ANSWER, traceId: input.traceId },
     confidence: MEMORY_CONFIDENCE,
+    traceId: input.traceId,
     createdAt: input.createdAt,
   };
 }

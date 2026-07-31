@@ -1,5 +1,7 @@
 ﻿import { z } from 'zod';
 
+import { decodeCanonicalBase64 } from '../security/base64-key';
+
 const MAX_NETWORK_PORT = 65_535;
 const DEFAULT_API_PORT = 3_001;
 const MIN_THROTTLE_TTL_MS = 1_000;
@@ -17,11 +19,21 @@ const DEFAULT_RUNTIME_RETRY_DELAY_MS = 250;
 const MIN_COMMAND_LEASE_MS = 10_000;
 const MAX_COMMAND_LEASE_MS = 900_000;
 const DEFAULT_COMMAND_LEASE_MS = 360_000;
+const MIN_BACKGROUND_JOB_POLL_INTERVAL_MS = 100;
+const MAX_BACKGROUND_JOB_POLL_INTERVAL_MS = 300_000;
+const DEFAULT_BACKGROUND_JOB_POLL_INTERVAL_MS = 10_000;
 const MIN_INTERNAL_TOKEN_LENGTH = 24;
 const MIN_HS256_SECRET_BYTES = 32;
 const CREDENTIAL_ENCRYPTION_KEY_BYTES = 32;
+const DEFAULT_CIRCUIT_FAILURE_THRESHOLD = 3;
+const DEFAULT_CIRCUIT_COOLDOWN_MS = 30_000;
+const DEFAULT_HALF_OPEN_PROBES = 1;
 
 const BooleanEnvironmentSchema = z.enum(['true', 'false']).transform((value) => value === 'true');
+const OptionalNonEmptyEnvironmentSchema = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.string().min(1).optional(),
+);
 
 const CsvEnvironmentSchema = z
   .string()
@@ -81,6 +93,16 @@ const EnvironmentSchema = z
       .max(MAX_RUNTIME_RETRY_DELAY_MS)
       .default(DEFAULT_RUNTIME_RETRY_DELAY_MS),
     AGENT_RUNTIME_FALLBACK_ENABLED: BooleanEnvironmentSchema.default('false'),
+    BACKGROUND_JOB_WORKER_ENABLED: BooleanEnvironmentSchema.default('false'),
+    RAG_TRAINING_ENABLED: BooleanEnvironmentSchema.default('false'),
+    RAG_INTERVIEW_ENABLED: BooleanEnvironmentSchema.default('false'),
+    RAG_REPORT_ENABLED: BooleanEnvironmentSchema.default('false'),
+    BACKGROUND_JOB_POLL_INTERVAL_MS: z.coerce
+      .number()
+      .int()
+      .min(MIN_BACKGROUND_JOB_POLL_INTERVAL_MS)
+      .max(MAX_BACKGROUND_JOB_POLL_INTERVAL_MS)
+      .default(DEFAULT_BACKGROUND_JOB_POLL_INTERVAL_MS),
     INTERVIEW_COMMAND_LEASE_MS: z.coerce
       .number()
       .int()
@@ -88,11 +110,29 @@ const EnvironmentSchema = z
       .max(MAX_COMMAND_LEASE_MS)
       .default(DEFAULT_COMMAND_LEASE_MS),
     INTERNAL_AGENT_TOKEN: z.string().min(MIN_INTERNAL_TOKEN_LENGTH),
-    CREDENTIAL_ENCRYPTION_KEY: z.string().min(1),
+    CREDENTIAL_ENCRYPTION_KEY: z.string().min(1).optional(),
+    CREDENTIAL_ENCRYPTION_KEY_CURRENT: z.string().min(1).optional(),
+    CREDENTIAL_ENCRYPTION_KEY_PREVIOUS: OptionalNonEmptyEnvironmentSchema,
     CREDENTIAL_ENCRYPTION_KEY_VERSION: z.coerce.number().int().min(1).default(1),
+    OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
+    OTEL_EXPORTER_OTLP_HEADERS: z.string().optional(),
+    NEXT_PUBLIC_OIDC_CLIENT_ID: z.string().min(1).optional(),
+    NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID: z.string().min(1).optional(),
+    AI_CIRCUIT_FAILURE_THRESHOLD: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(DEFAULT_CIRCUIT_FAILURE_THRESHOLD),
+    AI_CIRCUIT_COOLDOWN_MS: z.coerce.number().int().min(1).default(DEFAULT_CIRCUIT_COOLDOWN_MS),
+    AI_CIRCUIT_HALF_OPEN_MAX_PROBES: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(DEFAULT_HALF_OPEN_PROBES),
   })
   .superRefine((environment, context) => {
     validateAuthentication(environment, context);
+    validateCredentialKeys(environment, context);
     validateProduction(environment, context);
   });
 
@@ -134,17 +174,76 @@ function validateProduction(environment: Environment, context: z.RefinementCtx) 
   if (environment.API_CORS_ORIGINS.length === 0) {
     addIssue(context, 'API_CORS_ORIGINS', '生产环境必须显式配置 CORS 来源。');
   }
-  if (decodeCredentialKey(environment.CREDENTIAL_ENCRYPTION_KEY).length !== CREDENTIAL_ENCRYPTION_KEY_BYTES) {
-    addIssue(context, 'CREDENTIAL_ENCRYPTION_KEY', '凭证加密主密钥必须是 32 字节 base64 值。');
+  if (environment.API_CORS_ORIGINS.some(isExampleUrl)) {
+    addIssue(context, 'API_CORS_ORIGINS', '生产环境 CORS 不得使用示例域名。');
+  }
+  if (!environment.CREDENTIAL_ENCRYPTION_KEY_CURRENT) {
+    addIssue(context, 'CREDENTIAL_ENCRYPTION_KEY_CURRENT', '生产环境必须配置当前凭证加密密钥。');
+  }
+  if (environment.OTEL_EXPORTER_OTLP_ENDPOINT && !environment.OTEL_EXPORTER_OTLP_HEADERS?.trim()) {
+    addIssue(context, 'OTEL_EXPORTER_OTLP_HEADERS', '生产环境 OTLP 导出必须配置认证头。');
+  }
+  validateProductionOidcClients(environment, context);
+}
+
+function validateProductionOidcClients(environment: Environment, context: z.RefinementCtx) {
+  if (environment.AUTH_MODE !== 'oidc') return;
+  if (!environment.NEXT_PUBLIC_OIDC_CLIENT_ID) {
+    addIssue(context, 'NEXT_PUBLIC_OIDC_CLIENT_ID', '生产环境 OIDC 必须配置用户端 client id。');
+  }
+  if (!environment.NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID) {
+    addIssue(
+      context,
+      'NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID',
+      '生产环境 OIDC 必须配置管理端 client id。',
+    );
+  }
+  if (
+    environment.NEXT_PUBLIC_OIDC_CLIENT_ID &&
+    environment.NEXT_PUBLIC_OIDC_CLIENT_ID === environment.NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID
+  ) {
+    addIssue(
+      context,
+      'NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID',
+      '用户端与管理端不得共用 OIDC client id。',
+    );
   }
 }
 
-function decodeCredentialKey(value: string) {
-  try {
-    return Buffer.from(value, 'base64');
-  } catch {
-    return Buffer.alloc(0);
+function validateCredentialKeys(environment: Environment, context: z.RefinementCtx) {
+  const current =
+    environment.CREDENTIAL_ENCRYPTION_KEY_CURRENT ?? environment.CREDENTIAL_ENCRYPTION_KEY;
+  if (!isCredentialKey(current)) {
+    addIssue(
+      context,
+      'CREDENTIAL_ENCRYPTION_KEY_CURRENT',
+      '凭证加密主密钥必须是 32 字节 base64 值。',
+    );
   }
+  if (
+    environment.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS &&
+    !isCredentialKey(environment.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS)
+  ) {
+    addIssue(
+      context,
+      'CREDENTIAL_ENCRYPTION_KEY_PREVIOUS',
+      '上一版本凭证加密密钥必须是 32 字节 base64 值。',
+    );
+  }
+}
+
+function isExampleUrl(value: string) {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname === 'example.com' || hostname.endsWith('.example.com');
+  } catch {
+    return true;
+  }
+}
+
+function isCredentialKey(value: string | undefined) {
+  const decoded = value ? decodeCanonicalBase64(value) : undefined;
+  return decoded?.length === CREDENTIAL_ENCRYPTION_KEY_BYTES;
 }
 
 export function validateEnvironment(configuration: Record<string, unknown>): Environment {

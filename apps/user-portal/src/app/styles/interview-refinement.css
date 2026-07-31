@@ -19,6 +19,65 @@
   line-height: 1.55;
 }
 
+.interview-toolbar .button {
+  min-height: 44px;
+}
+
+.interview-restart-backdrop {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: color-mix(in srgb, var(--sidebar-bg) 58%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.interview-restart-dialog {
+  width: min(480px, 100%);
+  display: grid;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--outline));
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+}
+
+.interview-restart-dialog > span {
+  color: var(--primary-strong);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.interview-restart-dialog h2,
+.interview-restart-dialog p {
+  margin: 0;
+}
+
+.interview-restart-dialog h2 {
+  color: var(--ink);
+  font-size: 22px;
+}
+
+.interview-restart-dialog p {
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.interview-restart-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.interview-restart-dialog .button {
+  min-height: 44px;
+}
+
 .toolbar:focus-within {
   border-color: color-mix(in srgb, var(--primary) 48%, var(--outline));
   box-shadow: var(--shadow-focus);
@@ -53,6 +112,20 @@
   grid-column: 1 / -1;
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.interview-session-report-link {
+  min-height: 44px;
+  display: inline-flex;
+  grid-column: 1 / -1;
+  justify-self: start;
+  align-items: center;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: var(--primary);
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .interview-context {
@@ -191,6 +264,20 @@
   line-height: 1.5;
 }
 
+.interview-source-summary {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--primary) 16%, var(--outline));
+  padding-top: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.interview-source-summary strong {
+  color: var(--ink);
+}
+
 .report-card {
   background: linear-gradient(
     135deg,
@@ -239,6 +326,81 @@
   padding-top: 13px;
 }
 
+.interview-report-status {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--outline);
+  border-left: 3px solid var(--primary);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--surface-subtle);
+}
+
+.interview-report-status[data-state='failed'] {
+  border-left-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+}
+
+.interview-report-status strong,
+.interview-report-status p {
+  margin: 0;
+}
+
+.interview-report-status strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.interview-report-status p {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.interview-report-status .button {
+  min-height: 44px;
+  justify-self: start;
+}
+
+.interview-review-return-evidence {
+  display: grid;
+  gap: 9px;
+  border-left: 3px solid var(--success);
+  scroll-margin-top: 96px;
+}
+
+.interview-review-return-evidence > span {
+  color: var(--success-strong, var(--primary-strong));
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.interview-review-return-evidence > strong,
+.interview-review-return-evidence > p,
+.interview-review-return-evidence > ul {
+  margin: 0;
+}
+
+.interview-review-return-evidence > p,
+.interview-review-return-evidence li {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.interview-review-return-evidence > ul {
+  display: grid;
+  gap: 5px;
+  padding-left: 18px;
+}
+
+.interview-review-return-evidence .button {
+  min-height: 44px;
+  justify-self: start;
+}
+
 @media (max-width: 1080px) {
   .interview {
     grid-template-columns: 1fr;
@@ -262,6 +424,11 @@
     gap: 5px;
   }
 
+  .interview-session-report-link {
+    width: 100%;
+    justify-content: center;
+  }
+
   .interview-session-pulse small {
     grid-column: auto;
   }
@@ -283,6 +450,23 @@
   .interview-answer-composer .row-between {
     display: grid;
     gap: 9px;
+  }
+
+  .interview-restart-dialog footer {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .interview-restart-dialog .button {
+    width: 100%;
+  }
+
+  .interview-report-status .button {
+    width: 100%;
+  }
+
+  .interview-review-return-evidence .button {
+    width: 100%;
   }
 }
 

@@ -84,6 +84,9 @@ async function request<T>(
     },
     ...(input.body ? { body: JSON.stringify(input.body) } : {}),
   });
-  if (!response.ok) throw new Error(`E2E API ${path} failed with ${response.status}.`);
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 500);
+    throw new Error(`E2E API ${path} failed with ${response.status}: ${detail}`);
+  }
   return response.json() as Promise<T>;
 }

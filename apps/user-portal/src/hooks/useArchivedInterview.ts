@@ -12,6 +12,7 @@ type ArchivedInterviewOptions = {
   dispatch: Dispatch<InterviewAction>;
   connect: (sessionId: string, cursor: number) => void;
   disconnect: () => void;
+  currentSessionId: string | null;
 };
 type RestoredInterviewTarget = Pick<ArchivedInterviewOptions, 'connect' | 'dispatch'>;
 
@@ -19,45 +20,70 @@ export function useArchivedInterview(options: ArchivedInterviewOptions) {
   const loadedKey = useRef<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
   const [failedSessionId, setFailedSessionId] = useState<string | null>(null);
-  const { connect, disconnect, dispatch, sessionId } = options;
+  const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
+  const { connect, currentSessionId, disconnect, dispatch, sessionId } = options;
   const retry = useCallback(() => {
     setFailedSessionId(null);
     dispatch({ type: 'busy', busy: true });
     setRetryNonce((value) => value + 1);
   }, [dispatch]);
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || (sessionId === currentSessionId && retryNonce === 0)) return;
     const requestKey = `${sessionId}:${retryNonce}`;
     if (loadedKey.current === requestKey) return;
     let active = true;
     loadedKey.current = requestKey;
     setFailedSessionId(null);
+    setLoadingSessionId(sessionId);
     disconnect();
-    dispatch({ type: 'reset' });
-    void loadInterviewSnapshot({
-      loadSession: () => getInterview(sessionId),
-      loadReport: () => getInterviewReport(sessionId),
-    }).then((result) => {
+    dispatch({ type: 'restore_start' });
+    void loadArchivedInterview(sessionId).then((result) => {
       if (!active) return;
-      if (result.status === 'error') {
-        setFailedSessionId(sessionId);
-        dispatch({ type: 'failure', message: interviewErrorMessage(result.error) });
-        return;
-      }
-      applyRestoredInterview({ connect, dispatch }, result.session, result.report);
-      if (result.status === 'partial') {
-        dispatch({
-          type: 'notice',
-          notice: '本轮复盘已生成，报告内容暂时无法读取，请重新加载本轮复盘。',
-        });
-      }
+      setLoadingSessionId(null);
+      handleArchivedResult({
+        result,
+        sessionId,
+        target: { connect, dispatch },
+        setFailedSessionId,
+      });
     });
     return () => {
       active = false;
       if (loadedKey.current === requestKey) loadedKey.current = null;
     };
-  }, [connect, disconnect, dispatch, retryNonce, sessionId]);
-  return { loadFailed: failedSessionId === sessionId, retry };
+  }, [connect, currentSessionId, disconnect, dispatch, retryNonce, sessionId]);
+  return {
+    loadFailed: failedSessionId === sessionId,
+    reloading: loadingSessionId === sessionId,
+    retry,
+  };
+}
+
+function loadArchivedInterview(sessionId: string) {
+  return loadInterviewSnapshot({
+    loadSession: () => getInterview(sessionId),
+    loadReport: () => getInterviewReport(sessionId),
+  });
+}
+
+function handleArchivedResult(input: {
+  result: Awaited<ReturnType<typeof loadInterviewSnapshot>>;
+  sessionId: string;
+  target: RestoredInterviewTarget;
+  setFailedSessionId: (sessionId: string) => void;
+}) {
+  if (input.result.status === 'error') {
+    input.setFailedSessionId(input.sessionId);
+    input.target.dispatch({ type: 'failure', message: interviewErrorMessage(input.result.error) });
+    return;
+  }
+  applyRestoredInterview(input.target, input.result.session, input.result.report);
+  if (input.result.status === 'partial') {
+    input.target.dispatch({
+      type: 'notice',
+      notice: '本轮复盘已生成，报告内容暂时无法读取，请重新加载本轮复盘。',
+    });
+  }
 }
 
 function applyRestoredInterview(

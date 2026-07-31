@@ -17,8 +17,8 @@ export function JobIntentPanel(props: JobIntentPanelProps) {
         <div className="eyebrow">给 Agent 的面试任务书</div>
         <h2 className="h2">目标 JD 与训练重点</h2>
         <p className="muted-text">
-          选择接近的岗位模板或粘贴真实
-          JD。保存后，下一场模拟会围绕这里的能力要求与业务场景展开追问。
+          系统不会替你假定岗位。选择接近的岗位模板或粘贴真实
+          JD；保存后，下一场模拟会围绕这里的能力要求与业务场景展开追问。
         </p>
       </div>
       <JobIntentFields

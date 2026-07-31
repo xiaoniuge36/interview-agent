@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type MutableRefObject, type PointerEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type MutableRefObject,
+  type PointerEvent,
+} from 'react';
 
 export type UserAgentFloatPosition = { right: number; bottom: number };
 const POSITION_KEY = 'user-portal.page-agent.position';
@@ -21,6 +28,7 @@ type DragState = {
 type DragContext = {
   dragRef: MutableRefObject<DragState | null>;
   positionRef: MutableRefObject<UserAgentFloatPosition>;
+  suppressPointerClickRef: MutableRefObject<boolean>;
   setPosition: (next: UserAgentFloatPosition) => void;
   onOpen: () => void;
 };
@@ -29,6 +37,7 @@ export function useUserAgentDrag(onOpen: () => void) {
   const [position, setPosition] = useState<UserAgentFloatPosition>(DEFAULT_POSITION);
   const dragRef = useRef<DragState | null>(null);
   const positionRef = useRef<UserAgentFloatPosition>(DEFAULT_POSITION);
+  const suppressPointerClickRef = useRef(false);
   useEffect(() => {
     const next = clampPosition(readPosition());
     positionRef.current = next;
@@ -43,9 +52,16 @@ export function useUserAgentDrag(onOpen: () => void) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  const context: DragContext = { dragRef, positionRef, setPosition, onOpen };
+  const context: DragContext = {
+    dragRef,
+    positionRef,
+    suppressPointerClickRef,
+    setPosition,
+    onOpen,
+  };
   return {
     position,
+    onClick: (event: MouseEvent<HTMLButtonElement>) => activateFromClick(event, context),
     onPointerDown: (event: PointerEvent<HTMLButtonElement>) => startDrag(event, context),
     onPointerMove: (event: PointerEvent<HTMLButtonElement>) => moveDrag(event, context),
     onPointerUp: (event: PointerEvent<HTMLButtonElement>) => finishDrag(event, context),
@@ -55,6 +71,7 @@ export function useUserAgentDrag(onOpen: () => void) {
 
 function startDrag(event: PointerEvent<HTMLButtonElement>, context: DragContext) {
   if (event.pointerType === 'mouse' && event.button !== 0) return;
+  context.suppressPointerClickRef.current = false;
   const rect = event.currentTarget.getBoundingClientRect();
   const startPosition = clampPosition(
     { right: window.innerWidth - rect.right, bottom: window.innerHeight - rect.bottom },
@@ -82,6 +99,7 @@ function moveDrag(event: PointerEvent<HTMLButtonElement>, context: DragContext) 
   event.preventDefault();
   drag.moved = drag.moved || movedEnough(event, drag);
   if (!drag.moved) return;
+  context.suppressPointerClickRef.current = true;
   const next = clampPosition(
     {
       right: drag.startRight - (event.clientX - drag.startX),
@@ -101,6 +119,15 @@ function finishDrag(event: PointerEvent<HTMLButtonElement>, context: DragContext
   context.dragRef.current = null;
   releasePointerCapture(event);
   if (drag.moved) return persistPosition(drag.latestPosition);
+}
+
+function activateFromClick(event: MouseEvent<HTMLButtonElement>, context: DragContext) {
+  const suppressed = context.suppressPointerClickRef.current && event.detail > 0;
+  context.suppressPointerClickRef.current = false;
+  if (suppressed) {
+    event.preventDefault();
+    return;
+  }
   context.onOpen();
 }
 

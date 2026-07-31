@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { playwrightArguments } from './child-process.mjs';
 import { createE2eEnvironment } from './environment.mjs';
 import { serviceCommands } from './run.mjs';
 
@@ -17,6 +18,7 @@ test('starts every E2E service with its isolated endpoint', () => {
     ['MODEL', 'AGENT', 'API', 'USER', 'ADMIN'],
   );
   assert.doesNotMatch(services[1].args.join(' '), /--project/);
+  assert.ok(services[1].args.includes('--no-sync'));
   assert.deepEqual(services[1].args.slice(-2), ['--port', '8100']);
   assert.match(services[1].cwd, /apps[\\/]agent-runtime$/);
   assert.match(services[2].args.join(' '), /src\/main\.ts/);
@@ -40,4 +42,24 @@ test('uses only loopback database and Redis endpoints for E2E services', () => {
   assert.match(isolated.DATABASE_URL, /@127\.0\.0\.1:55432\//);
   assert.match(isolated.REDIS_URL, /^redis:\/\/127\.0\.0\.1:56379$/);
   assert.equal(isolated.REDIS_REQUIRED, 'true');
+});
+
+test('forwards package script arguments to Playwright', () => {
+  assert.deepEqual(playwrightArguments(['--', '--grep', 'practice']), [
+    'exec',
+    'playwright',
+    'test',
+    '--workers=1',
+    '--grep',
+    'practice',
+  ]);
+});
+
+test('keeps an explicit Playwright worker override', () => {
+  assert.deepEqual(playwrightArguments(['--workers=2']), [
+    'exec',
+    'playwright',
+    'test',
+    '--workers=2',
+  ]);
 });

@@ -194,6 +194,10 @@
   line-height: 1.55;
 }
 .practice-coach-issue a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 2px;
   color: #1d5dc9;
   font-size: 9px;
   font-weight: 800;

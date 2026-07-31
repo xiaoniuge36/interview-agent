@@ -1,5 +1,6 @@
 import type { PracticeRecommendation } from '@interview-agent/contracts';
 import Link from 'next/link';
+import { RecommendationSources } from './RecommendationSources';
 
 type QuestionRecommendationBannerProps = {
   agentHandoff: boolean;
@@ -79,6 +80,10 @@ function RecommendationContent({
           <strong>本轮推荐依据</strong>
           <p>{recommendation.reason}</p>
         </div>
+        <RecommendationSources
+          algorithm={recommendation.algorithm}
+          evidence={recommendation.evidence}
+        />
         <div className="question-agent-meta">
           <span>{recommendation.questionIds.length} 道题</span>
           <span>约 {recommendation.estimatedMinutes} 分钟</span>

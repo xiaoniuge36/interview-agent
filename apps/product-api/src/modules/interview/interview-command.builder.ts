@@ -74,11 +74,17 @@ function createTurns(input: {
     role: 'interviewer',
     stage: input.runtime.stage,
     content: input.runtime.content,
-    ...(input.runtime.basisSummary?.length
-      ? { structuredPayload: { basisSummary: input.runtime.basisSummary } }
-      : {}),
+    ...structuredPayload(input.runtime),
   });
   return [...candidate, interviewer];
+}
+
+function structuredPayload(runtime: AgentNextResult) {
+  const payload = {
+    ...(runtime.basisSummary?.length ? { basisSummary: runtime.basisSummary } : {}),
+    ...(runtime.sourceIds?.length ? { sourceIds: runtime.sourceIds } : {}),
+  };
+  return Object.keys(payload).length ? { structuredPayload: payload } : {};
 }
 
 function nextSession(input: {

@@ -8,6 +8,7 @@ import { createExclusiveAccessActionRunner } from './access-action-single-flight
 import { INITIAL_ACCESS_FORM, type AccessForm, type AccessMode } from './access-types';
 import {
   clearAccessFormError,
+  focusFirstInvalidAccessField,
   hasAccessFormErrors,
   validateAccessForm,
   type AccessFormErrors,
@@ -54,7 +55,10 @@ function useLocalAccess() {
     event.preventDefault();
     const errors = validateAccessForm(form, mode);
     setFormErrors(errors);
-    if (hasAccessFormErrors(errors)) return;
+    if (hasAccessFormErrors(errors)) {
+      focusFirstInvalidAccessField(errors, mode, focusAccessField);
+      return;
+    }
 
     await runAccessAction(() => authenticateLocalAccess(auth, form, isRegistering));
   }
@@ -79,6 +83,11 @@ function authenticateLocalAccess(
 ): Promise<void> {
   if (isRegistering) return auth.register({ ...form, name: form.name.trim() });
   return auth.signInWithPassword({ email: form.email, password: form.password });
+}
+
+function focusAccessField(id: string): void {
+  if (typeof document === 'undefined') return;
+  document.getElementById(id)?.focus();
 }
 
 function AccessHeading({ isRegistering }: { isRegistering: boolean }) {

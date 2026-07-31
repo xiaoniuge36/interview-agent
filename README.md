@@ -16,7 +16,22 @@ Web / Admin ──HTTP/SSE──> Product API ──内部 HTTP──> Agent Run
 - **Web 与 Admin 只访问 Product API**：不得直连数据库、Redis、Agent Runtime 或模型服务。
 - **SSE 只承担事件读取、订阅与重放**：读取事件不会推进面试状态。
 - 模型调用统一经过 Product API 的受控 Provider 网关；管理员或用户可配置 OpenAI、Anthropic、DeepSeek、通义千问与 OpenAI 兼容端点。API Key 仅用于后端加密保存、测试与调用，界面和审计记录只保留掩码与非敏感元数据。
-- 当前尚未交付 RAG/向量检索、评测集与 LLM Judge、生产级云基础设施及集中式可观测性后端。
+- 仓库已交付 feature-flag 控制的 RAG/向量检索、确定性 Golden 评测与可选 LLM Judge 接口；真实 Provider 验证、外部 Judge 服务、生产级云基础设施及集中式可观测性后端仍需部署环境提供。
+
+## 能力矩阵与自动化证据
+
+| 能力                                                         | 状态                                  | 自动化证据                                                            |
+| ------------------------------------------------------------ | ------------------------------------- | --------------------------------------------------------------------- |
+| MemoryEvent、Mastery 与可解释推荐                            | 已交付                                | Product API memory/practice tests、`e2e/user-practice.spec.ts`        |
+| Background Job、Embedding 与 Hybrid Retrieval                | 已交付                                | jobs/retrieval/embedding tests、12-case Retrieval Golden、Admin E2E   |
+| 训练题单、面试追问与报告 RAG                                 | 已交付（独立 feature flag，默认关闭） | practice/interview/report fallback tests、Runtime contract tests      |
+| practice_report Graph、repair 与确定性 fallback              | 已交付                                | Agent Runtime Pytest、`evals/run-agent-evals.ts`                      |
+| Schema/Golden 指标与可选 LLM Judge                           | 已交付 runner                         | `evals/practice-evaluation`、`evals/report`；Judge 仅在显式配置时调用 |
+| 错题本、弱项复练与训练连续性                                 | 已交付                                | Product API mistake-book tests、Portal component tests、用户 E2E      |
+| 模型预算、熔断、双密钥与发布配置门禁                         | 已交付                                | guardrail/environment tests、security audit、Compose 校验             |
+| 真实 Provider CI、外部 OIDC 租户、Secret Manager、生产云部署 | 未交付                                | 需要部署目标、真实凭证与外部服务                                      |
+
+完整计划状态与提交证据见 [`docs/superpowers/DELIVERED.md`](docs/superpowers/DELIVERED.md)。
 
 ## 目录结构
 
@@ -210,7 +225,7 @@ CI 还执行数据库迁移与集成测试、隔离 E2E 验收、生产依赖审
 ## 发布前检查
 
 - 使用生产 OIDC Client、TLS 与明确的 CORS 白名单；禁止 `development` 认证和示例回调地址。
-- 在 Secret Manager 中配置并轮换 `CREDENTIAL_ENCRYPTION_KEY`、内部服务令牌和 Provider Key；轮换后在后台重新测试模型连接。
+- 在 Secret Manager 中配置并轮换 `CREDENTIAL_ENCRYPTION_KEY_CURRENT`、可选上一版本密钥、内部服务令牌和 Provider Key；轮换后在后台重新测试模型连接。
 - 确认 PostgreSQL、Redis、Product API 与 Agent Runtime 的 ready 探针均通过，并由变更负责人完成迁移、备份和恢复演练。
 - 明确灰度范围、监控阈值、回滚开关、回滚负责人和通知渠道；发布后复核审核队列、AI 调用失败率与训练报告链路。
 
@@ -224,4 +239,4 @@ CI 还执行数据库迁移与集成测试、隔离 E2E 验收、生产依赖审
 
 ## 当前范围说明
 
-仓库已经具备可验证的业务边界、持久化 Repository、数据库事务、事件重放、前后端认证适配、本地集成基础设施和受控 Provider 调用能力。RAG/向量检索、评测集、LLM Judge、生产级云基础设施、集中式 Secret Manager、外部 OIDC 租户配置与正式可观测性后端仍属于部署环境或后续产品能力，不应在本地示例中伪装为已完成。
+仓库已经具备可验证的业务边界、持久化 Repository、数据库事务、事件重放、前后端认证适配、本地集成基础设施、受控 Provider 调用、Memory/RAG、确定性评测与失败回放能力。真实 Provider CI、托管 LLM Judge、生产级云基础设施、集中式 Secret Manager、外部 OIDC 租户配置与正式可观测性后端仍属于部署环境能力，不应在本地示例中伪装为已完成。

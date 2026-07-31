@@ -87,6 +87,8 @@ describe('PracticeRecommendationService', () => {
     );
   });
 
+  it('returns source-backed evidence for a low-mastery recommendation', verifyEvidence);
+
   it('falls back to curated questions when profile context is empty', async () => {
     const { service, prisma } = createRecommendationService();
     prisma.jobIntent.findFirst.mockResolvedValue(null);
@@ -115,6 +117,77 @@ describe('PracticeRecommendationService', () => {
   });
 });
 
+describe('PracticeRecommendationService hybrid retrieval', () => {
+  it('uses a source-backed hybrid selection when training RAG returns visible questions', async () => {
+    const rag = {
+      enhance: jest.fn().mockResolvedValue({
+        algorithm: 'hybrid',
+        recommendation: {
+          role: undefined,
+          weakTag: undefined,
+          focusTag: undefined,
+          category: null,
+          source: 'curated',
+        },
+        questions: [{ id: 'rag-1', title: 'Hybrid retrieval' }],
+        evidence: [
+          {
+            type: 'retrieval',
+            sourceId: 'chunk-1',
+            label: 'Hybrid retrieval',
+            detail: 'Retrieved from the visible question corpus.',
+          },
+        ],
+      }),
+    };
+    const { service, prisma } = createRecommendationService(rag);
+    prisma.jobIntent.findFirst.mockResolvedValue(null);
+    prisma.userProfile.findUnique.mockResolvedValue(null);
+    prisma.masteryProfile.findMany.mockResolvedValue([]);
+    prisma.practiceSessionItem.findMany.mockResolvedValue([]);
+    prisma.question.findMany.mockResolvedValue(questionRecords());
+
+    await expect(service.list(context)).resolves.toEqual([
+      expect.objectContaining({
+        algorithm: 'hybrid',
+        questionIds: ['rag-1'],
+        evidence: expect.arrayContaining([
+          expect.objectContaining({ type: 'retrieval', sourceId: 'chunk-1' }),
+        ]),
+      }),
+    ]);
+  });
+});
+
+async function verifyEvidence() {
+  const { service, prisma } = createRecommendationService();
+  prisma.jobIntent.findFirst.mockResolvedValue(null);
+  prisma.userProfile.findUnique.mockResolvedValue(null);
+  prisma.masteryProfile.findMany.mockResolvedValue([lowMasteryRecord()]);
+  prisma.practiceSessionItem.findMany.mockResolvedValue([]);
+  prisma.question.findMany.mockResolvedValue(questionRecords());
+
+  const result = await service.list(context);
+
+  expect(result[0]?.evidence).toContainEqual({
+    type: 'mastery',
+    sourceId: 'memory-event-1',
+    label: 'observability 掌握度 44 分',
+    detail: '来自 2 条训练证据，当前趋势下降。',
+  });
+}
+
+function lowMasteryRecord() {
+  return {
+    tag: 'observability',
+    score: 44,
+    evidenceCount: 2,
+    lastEvidenceEventId: 'memory-event-1',
+    lastEvidenceSessionId: 'session-1',
+    trend: 'falling',
+  };
+}
+
 describe('PracticeQueryService recent session', () => {
   it('returns the latest unfinished practice summary', async () => {
     const prisma = {
@@ -130,7 +203,11 @@ describe('PracticeQueryService recent session', () => {
       },
     };
     const policy = { assert: jest.fn() };
-    const service = new PracticeQueryService(prisma as unknown as PrismaService, policy as never);
+    const service = new PracticeQueryService(
+      prisma as unknown as PrismaService,
+      policy as never,
+      {} as never,
+    );
 
     await expect(service.recent(context)).resolves.toMatchObject({
       id: 'session-1',
@@ -165,6 +242,7 @@ describe('PracticeQueryService item solution', () => {
     const service = new PracticeQueryService(
       prisma as unknown as PrismaService,
       { assert: jest.fn() } as never,
+      {} as never,
     );
 
     await expect(service.solution(context, 'session-1', 'item-1')).resolves.toMatchObject({
@@ -173,7 +251,7 @@ describe('PracticeQueryService item solution', () => {
   });
 });
 
-function createRecommendationService() {
+function createRecommendationService(rag?: { enhance: jest.Mock }) {
   const prisma = {
     jobIntent: { findFirst: jest.fn() },
     userProfile: { findUnique: jest.fn() },
@@ -183,7 +261,11 @@ function createRecommendationService() {
   };
   const policy = { assert: jest.fn() };
   return {
-    service: new PracticeRecommendationService(prisma as unknown as PrismaService, policy as never),
+    service: new PracticeRecommendationService(
+      prisma as unknown as PrismaService,
+      policy as never,
+      rag as never,
+    ),
     prisma,
   };
 }

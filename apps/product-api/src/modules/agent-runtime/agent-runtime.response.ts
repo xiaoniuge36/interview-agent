@@ -8,49 +8,100 @@ import type {
 
 const MAX_RESPONSE_BYTES = 65_536;
 
-export async function parseRuntimeDecision(response: Response): Promise<RuntimeInvocationOutcome> {
+export async function parseRuntimeDecision(
+  response: Response,
+  allowedSourceIds: ReadonlySet<string> = new Set(),
+): Promise<RuntimeInvocationOutcome> {
   if (declaredBodyTooLarge(response)) return schemaFailure();
   const text = await readBoundedBody(response);
   if (text === undefined) return schemaFailure();
-  return parseResponseText(text);
+  return parseResponseText(text, allowedSourceIds);
 }
 
 export function httpFailure(status: number): RuntimeFailure {
+  return failureForStatus(status);
+}
+
+export async function responseFailure(response: Response): Promise<RuntimeFailure> {
+  const endpointBlocked =
+    response.status === HttpStatus.BAD_REQUEST
+      ? await safeEndpointBlockedCode(response)
+      : undefined;
+  return failureForStatus(response.status, endpointBlocked ?? undefined);
+}
+
+function failureForStatus(
+  status: number,
+  rejectedCode = 'AGENT_RUNTIME_REQUEST_REJECTED',
+): RuntimeFailure {
   const retryable =
     status === HttpStatus.REQUEST_TIMEOUT ||
     status === HttpStatus.TOO_MANY_REQUESTS ||
     status >= HttpStatus.INTERNAL_SERVER_ERROR;
   return {
     kind: retryable ? 'unavailable' : 'rejected',
-    code: retryable ? `AGENT_RUNTIME_HTTP_${status}` : 'AGENT_RUNTIME_REQUEST_REJECTED',
+    code: retryable ? `AGENT_RUNTIME_HTTP_${status}` : rejectedCode,
     retryable,
     schemaValid: null,
   };
+}
+
+async function safeEndpointBlockedCode(response: Response): Promise<string | null> {
+  if (declaredBodyTooLarge(response)) return null;
+  const text = await readBoundedBody(response);
+  if (text === undefined) return null;
+  try {
+    const code = errorCodeFromPayload(JSON.parse(text));
+    return code === 'MODEL_PROVIDER_ENDPOINT_BLOCKED' ? code : null;
+  } catch {
+    return null;
+  }
 }
 
 export function unavailableFailure(code: string): RuntimeFailure {
   return { kind: 'unavailable', code, retryable: true, schemaValid: null };
 }
 
-function parseResponseText(text: string): RuntimeInvocationOutcome {
+function parseResponseText(
+  text: string,
+  allowedSourceIds: ReadonlySet<string>,
+): RuntimeInvocationOutcome {
   try {
     const parsed = AgentRuntimeNextResponseSchema.safeParse(JSON.parse(text));
     if (!parsed.success) return schemaFailure();
+    if (!sourcesAllowed(parsed.data.sourceIds, allowedSourceIds)) return schemaFailure();
     return { decision: decisionFrom(parsed.data) };
   } catch {
     return schemaFailure();
   }
 }
 
+function sourcesAllowed(sourceIds: string[] | undefined, allowedSourceIds: ReadonlySet<string>) {
+  return !sourceIds?.some((sourceId) => !allowedSourceIds.has(sourceId));
+}
+
+function errorCodeFromPayload(payload: unknown): unknown {
+  if (!isRecord(payload)) return undefined;
+  return isRecord(payload.error) ? payload.error.code : payload.code;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function decisionFrom(input: {
   stage: AgentNextDecision['stage'];
   content: string;
   shouldFinish: boolean;
+  basisSummary?: string[] | undefined;
+  sourceIds?: string[] | undefined;
 }): AgentNextDecision {
   return {
     stage: input.stage,
     content: input.content,
     shouldFinish: input.shouldFinish,
+    ...(input.basisSummary ? { basisSummary: input.basisSummary } : {}),
+    ...(input.sourceIds ? { sourceIds: input.sourceIds } : {}),
   };
 }
 

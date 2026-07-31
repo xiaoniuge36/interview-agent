@@ -1,7 +1,9 @@
-import { HttpException, Injectable, Logger } from '@nestjs/common';
+import { BadGatewayException, HttpException, Injectable, Logger } from '@nestjs/common';
 import type { AiInvocationOperation, ModelProvider } from '@interview-agent/contracts';
 import { PrismaService } from '../../common/database/prisma.service';
 import type { ModelTokenUsage } from '../model-credential/model-provider-stream';
+import { AiBudgetPolicy, type AiOperationBudget } from './ai-budget-policy';
+import { AiCircuitBreaker } from './ai-circuit-breaker';
 
 const HOURS_PER_DAY = 24;
 const MINUTES_PER_HOUR = 60;
@@ -21,10 +23,12 @@ export type AiInvocationMetadata = {
   provider: ModelProvider;
   model: string;
   traceId: string;
+  inputCharacters?: number;
 };
 
 type InvocationStatus = 'succeeded' | 'failed' | 'cancelled';
 type UsageHandler = (usage: ModelTokenUsage) => void;
+type InvocationRunner<T> = (onUsage: UsageHandler, budget?: AiOperationBudget) => Promise<T>;
 
 type InvocationData = AiInvocationMetadata &
   ModelTokenUsage & {
@@ -52,31 +56,54 @@ export class AiInvocationService {
   private readonly logger = new Logger(AiInvocationService.name);
   private lastCleanupAt: Date | undefined;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly budgets: AiBudgetPolicy,
+    private readonly circuits: AiCircuitBreaker,
+  ) {}
 
-  async measure<T>(
-    metadata: AiInvocationMetadata,
-    run: (onUsage: UsageHandler) => Promise<T>,
-  ): Promise<T> {
+  async measure<T>(metadata: AiInvocationMetadata, run: InvocationRunner<T>): Promise<T> {
     const attempt: InvocationAttempt = {
       metadata,
       usage: {},
       startedAt: new Date(),
       startedAtMs: performance.now(),
     };
+    const decision = this.budgets.check({
+      operation: metadata.operation,
+      ...(metadata.inputCharacters === undefined
+        ? {}
+        : { inputCharacters: metadata.inputCharacters }),
+    });
+    if (!decision.allowed) return this.reject(attempt, decision.code);
+    const circuitKey = [metadata.provider, metadata.model, metadata.operation].join(':');
+    if (!this.circuits.allow(circuitKey)) return this.reject(attempt, 'AI_CIRCUIT_OPEN');
     try {
       const result = await run((next) => {
         attempt.usage = mergeUsage(attempt.usage, next);
-      });
+      }, decision.budget);
+      this.circuits.recordSuccess(circuitKey);
       await this.recordSafely(outcomeData({ attempt, status: 'succeeded', errorCode: null }));
       return result;
     } catch (error) {
+      if (isCircuitFailure(error)) this.circuits.recordFailure(circuitKey);
+      else if (this.circuits.state(circuitKey) === 'half_open') {
+        this.circuits.recordSuccess(circuitKey);
+      }
       const status: InvocationStatus = isAbort(error) ? 'cancelled' : 'failed';
       await this.recordSafely(
         outcomeData({ attempt, status, errorCode: errorCode(error, status) }),
       );
       throw error;
     }
+  }
+
+  private async reject(
+    attempt: InvocationAttempt,
+    code: 'AI_BUDGET_EXHAUSTED' | 'AI_CIRCUIT_OPEN',
+  ): Promise<never> {
+    await this.recordSafely(outcomeData({ attempt, status: 'failed', errorCode: code }));
+    throw new BadGatewayException({ code, message: guardrailMessage(code) });
   }
 
   private async recordSafely(data: InvocationData): Promise<void> {
@@ -117,8 +144,10 @@ function outcomeData(input: {
 }
 
 function storageData(data: InvocationData): Record<string, unknown> {
+  const stored: Record<string, unknown> = { ...data };
+  delete stored.inputCharacters;
   return {
-    ...data,
+    ...stored,
     credentialId: data.credentialId ?? null,
     sessionId: data.sessionId ?? null,
     practiceSessionId: data.practiceSessionId ?? null,
@@ -158,7 +187,7 @@ function responseCode(error: HttpException): string | undefined {
   const response = error.getResponse();
   if (typeof response !== 'object' || response === null) return undefined;
   const code = (response as Record<string, unknown>).code;
-  return typeof code === 'string' && code.startsWith('MODEL_') ? code : undefined;
+  return typeof code === 'string' && /^(MODEL|AI)_/u.test(code) ? code : undefined;
 }
 
 function hasModelCode(error: unknown): error is { code: string } {
@@ -166,7 +195,7 @@ function hasModelCode(error: unknown): error is { code: string } {
     typeof error === 'object' &&
     error !== null &&
     typeof (error as { code?: unknown }).code === 'string' &&
-    (error as { code: string }).code.startsWith('MODEL_')
+    /^(MODEL_|EMBEDDING_)/u.test((error as { code: string }).code)
   );
 }
 
@@ -180,4 +209,24 @@ function expiry(now: Date): Date {
 
 function elapsed(startedAtMs: number): number {
   return Math.max(0, Math.round(performance.now() - startedAtMs));
+}
+
+function isCircuitFailure(error: unknown) {
+  const code = hasModelCode(error) ? error.code : responseCodeFor(error);
+  return [
+    'MODEL_PROVIDER_RATE_LIMITED',
+    'MODEL_PROVIDER_TIMEOUT',
+    'MODEL_PROVIDER_UNAVAILABLE',
+    'EMBEDDING_TIMEOUT',
+  ].includes(code ?? '');
+}
+
+function responseCodeFor(error: unknown) {
+  return error instanceof HttpException ? responseCode(error) : undefined;
+}
+
+function guardrailMessage(code: 'AI_BUDGET_EXHAUSTED' | 'AI_CIRCUIT_OPEN') {
+  return code === 'AI_BUDGET_EXHAUSTED'
+    ? '本次模型任务超过服务端预算上限，请缩短输入后重试。'
+    : '模型服务暂时进入保护状态，请稍后重试。';
 }

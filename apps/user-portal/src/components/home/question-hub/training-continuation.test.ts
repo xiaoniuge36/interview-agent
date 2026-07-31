@@ -19,6 +19,8 @@ describe('首页未完成训练选择', () => {
       kind: 'interview',
       id: 'latest-active',
       href: '/interview?session=latest-active',
+      kicker: '继续上次面试',
+      actionLabel: '继续上次面试',
       statusLabel: '等待你的回答',
     });
   });
@@ -31,6 +33,7 @@ describe('首页未完成训练选择', () => {
     expect(result).toMatchObject({
       kind: 'practice',
       href: '/practice?session=practice-1',
+      actionLabel: '继续训练',
       progressPercent: 40,
     });
   });

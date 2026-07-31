@@ -1,10 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { ModelProvider } from '@interview-agent/contracts';
 import {
   ModelProviderStreamError,
   providerStreamEvents,
   type ModelTokenUsage,
 } from './model-provider-stream';
+import { e2eModelStubUrl } from './model-provider-e2e';
+import {
+  MODEL_PROVIDER_TRANSPORT,
+  ModelProviderError,
+  providerFetch,
+  requestSignal,
+  type ProviderTransport,
+} from './model-provider-request';
+import { compatibleUsageFromResponse } from './model-provider-usage';
+
+export { ModelProviderError } from './model-provider-request';
 
 export type ModelConnection = {
   provider: ModelProvider;
@@ -14,16 +25,23 @@ export type ModelConnection = {
   onUsage?: (usage: ModelTokenUsage) => void;
 };
 
-export type ModelCompletionRequest = ModelConnection & {
-  systemPrompt: string;
-  userPrompt: string;
-  signal?: AbortSignal;
-  onUsage?: (usage: ModelTokenUsage) => void;
+export type ModelRequestLimits = {
+  maxOutputTokens?: number;
+  timeoutMs?: number;
 };
 
-export type CompatibleModelInvocationRequest = ModelConnection & {
-  requestBody: Record<string, unknown>;
-};
+export type ModelCompletionRequest = ModelConnection &
+  ModelRequestLimits & {
+    systemPrompt: string;
+    userPrompt: string;
+    signal?: AbortSignal;
+    onUsage?: (usage: ModelTokenUsage) => void;
+  };
+
+export type CompatibleModelInvocationRequest = ModelConnection &
+  ModelRequestLimits & {
+    requestBody: Record<string, unknown>;
+  };
 
 const DEFAULT_BASE_URLS: Record<Exclude<ModelProvider, 'openai_compatible'>, string> = {
   openai: 'https://api.openai.com/v1',
@@ -35,12 +53,18 @@ const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
 const HTTP_TOO_MANY_REQUESTS = 429;
 const HTTP_SERVER_ERROR = 500;
-const MODEL_REQUEST_TIMEOUT_MS = 30_000;
+const DEFAULT_MAX_OUTPUT_TOKENS = 700;
 const BYTES_PER_KILOBYTE = 1024;
 const MAX_COMPATIBLE_RESPONSE_BYTES = 2 * BYTES_PER_KILOBYTE * BYTES_PER_KILOBYTE;
+const EMBEDDING_DIMENSIONS = 1536;
+const EMBEDDING_OUTPUT_TOKENS = 0;
 
 @Injectable()
 export class ModelProviderClient {
+  constructor(
+    @Optional() @Inject(MODEL_PROVIDER_TRANSPORT) private readonly transport?: ProviderTransport,
+  ) {}
+
   async complete(input: ModelCompletionRequest): Promise<string> {
     let content = '';
     for await (const delta of this.stream(input)) content += delta;
@@ -49,7 +73,7 @@ export class ModelProviderClient {
   }
 
   async *stream(input: ModelCompletionRequest): AsyncGenerator<string> {
-    const response = await sendProviderRequest(input);
+    const response = await sendProviderRequest(input, this.transport);
     try {
       for await (const event of providerStreamEvents(response.body, input.provider)) {
         if (event.type === 'usage') input.onUsage?.(event.value);
@@ -61,12 +85,25 @@ export class ModelProviderClient {
     }
   }
 
-  async testConnection(input: ModelConnection): Promise<void> {
+  async testConnection(input: ModelConnection & ModelRequestLimits): Promise<void> {
     await this.complete({
       ...input,
       systemPrompt: 'Respond with a compact JSON object only.',
       userPrompt: 'Return {"ok":true}.',
     });
+  }
+
+  async embed(input: ModelConnection & ModelRequestLimits, texts: string[]): Promise<number[][]> {
+    if (input.provider === 'anthropic') {
+      throw new ModelProviderError('MODEL_PROVIDER_REQUEST_REJECTED');
+    }
+    const response = await embeddingRequest(input, texts, this.transport);
+    const payload = await readJsonResponse(response);
+    if (!response.ok) throw new ModelProviderError(errorCode(response.status));
+    const vectors = parseEmbeddingResponse(payload, texts.length);
+    const usage = embeddingUsageFromResponse(payload);
+    if (usage) input.onUsage?.(usage);
+    return vectors;
   }
 
   async invokeCompatible(
@@ -76,13 +113,21 @@ export class ModelProviderClient {
     if (input.provider === 'anthropic') {
       throw new ModelProviderError('MODEL_PROVIDER_REQUEST_REJECTED');
     }
-    const response = await fetch(`${baseUrlFor(input).replace(/\/$/, '')}/chat/completions`, {
-      method: 'POST',
-      redirect: 'error',
-      headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(input.requestBody),
-      signal: requestSignal(undefined),
-    });
+    const endpoint = `${baseUrlFor(input).replace(/\/$/, '')}/chat/completions`;
+    const response = await providerFetch(
+      endpoint,
+      {
+        method: 'POST',
+        redirect: 'error',
+        headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...input.requestBody,
+          ...(input.maxOutputTokens === undefined ? {} : { max_tokens: input.maxOutputTokens }),
+        }),
+        signal: requestSignal(undefined, input.timeoutMs),
+      },
+      { transport: this.transport, timeoutMs: input.timeoutMs },
+    );
     const payload = await readJsonResponse(response);
     if (!response.ok) throw new ModelProviderError(errorCode(response.status));
     if (!isRecord(payload) || !Array.isArray(payload.choices)) {
@@ -94,18 +139,52 @@ export class ModelProviderClient {
   }
 }
 
-export class ModelProviderError extends Error {
-  constructor(readonly code: string) {
-    super(code);
-    this.name = ModelProviderError.name;
+function embeddingUsageFromResponse(payload: unknown): ModelTokenUsage | null {
+  if (!isRecord(payload)) return null;
+  const usage = compatibleUsageFromResponse(payload);
+  return usage ? { ...usage, outputTokens: EMBEDDING_OUTPUT_TOKENS } : null;
+}
+
+async function embeddingRequest(
+  input: ModelConnection & ModelRequestLimits,
+  texts: string[],
+  transport: ProviderTransport | undefined,
+) {
+  const endpoint = `${baseUrlFor(input).replace(/\/$/, '')}/embeddings`;
+  try {
+    return await providerFetch(
+      endpoint,
+      {
+        method: 'POST',
+        redirect: 'error',
+        headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: input.model, input: texts }),
+        signal: requestSignal(undefined, input.timeoutMs),
+      },
+      { transport, timeoutMs: input.timeoutMs },
+    );
+  } catch (error) {
+    if (error instanceof ModelProviderError && error.code === 'MODEL_PROVIDER_TIMEOUT') {
+      throw new ModelProviderError('EMBEDDING_TIMEOUT');
+    }
+    if (error instanceof ModelProviderError) throw error;
+    if (error instanceof Error && ['AbortError', 'TimeoutError'].includes(error.name)) {
+      throw new ModelProviderError('EMBEDDING_TIMEOUT');
+    }
+    throw new ModelProviderError('MODEL_PROVIDER_UNAVAILABLE');
   }
 }
 
-async function sendProviderRequest(input: ModelCompletionRequest): Promise<Response> {
-  const response = await fetch(endpointFor(input), {
-    ...requestFor(input),
-    signal: requestSignal(input.signal),
-  });
+async function sendProviderRequest(
+  input: ModelCompletionRequest,
+  transport: ProviderTransport | undefined,
+): Promise<Response> {
+  const endpoint = endpointFor(input);
+  const response = await providerFetch(
+    endpoint,
+    { ...requestFor(input), signal: requestSignal(input.signal, input.timeoutMs) },
+    { transport, timeoutMs: input.timeoutMs, upstreamSignal: input.signal },
+  );
   if (!response.ok) throw new ModelProviderError(errorCode(response.status));
   return response;
 }
@@ -116,25 +195,12 @@ function endpointFor(input: ModelConnection) {
 }
 
 function baseUrlFor(input: ModelConnection) {
-  const e2eStubUrl = testStubUrl();
+  const e2eStubUrl = e2eModelStubUrl();
   if (e2eStubUrl) return e2eStubUrl;
   if (input.baseUrl) return input.baseUrl;
   if (input.provider === 'openai_compatible')
     throw new ModelProviderError('MODEL_BASE_URL_REQUIRED');
   return DEFAULT_BASE_URLS[input.provider];
-}
-
-function testStubUrl(): string | null {
-  if (process.env.NODE_ENV !== 'test') return null;
-  const value = process.env.E2E_MODEL_STUB_URL?.trim();
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    if (!['127.0.0.1', '::1', 'localhost'].includes(url.hostname)) return null;
-    return value;
-  } catch {
-    return null;
-  }
 }
 
 function requestFor(input: ModelCompletionRequest): RequestInit {
@@ -149,7 +215,7 @@ function compatibleRequest(input: ModelCompletionRequest): RequestInit {
     body: JSON.stringify({
       model: input.model,
       temperature: 0.2,
-      max_tokens: 700,
+      max_tokens: input.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
       stream: true,
       response_format: { type: 'json_object' },
       messages: [
@@ -172,17 +238,12 @@ function anthropicRequest(input: ModelCompletionRequest): RequestInit {
     body: JSON.stringify({
       model: input.model,
       system: input.systemPrompt,
-      max_tokens: 700,
+      max_tokens: input.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
       temperature: 0.2,
       stream: true,
       messages: [{ role: 'user', content: input.userPrompt }],
     }),
   };
-}
-
-function requestSignal(signal: AbortSignal | undefined): AbortSignal {
-  const timeout = AbortSignal.timeout(MODEL_REQUEST_TIMEOUT_MS);
-  return signal ? AbortSignal.any([signal, timeout]) : timeout;
 }
 
 async function readJsonResponse(response: Response): Promise<unknown> {
@@ -197,34 +258,42 @@ async function readJsonResponse(response: Response): Promise<unknown> {
   }
 }
 
-function compatibleUsageFromResponse(payload: Record<string, unknown>): ModelTokenUsage | null {
-  const usage = payload.usage;
-  if (!isRecord(usage)) return null;
-  const promptTokens = numberValue(usage.prompt_tokens);
-  const outputTokens = numberValue(usage.completion_tokens);
-  const totalTokens = numberValue(usage.total_tokens);
-  const promptDetails = isRecord(usage.prompt_tokens_details) ? usage.prompt_tokens_details : {};
-  const completionDetails = isRecord(usage.completion_tokens_details)
-    ? usage.completion_tokens_details
-    : {};
-  const cacheReadTokens = numberValue(promptDetails.cached_tokens);
-  const reasoningTokens = numberValue(completionDetails.reasoning_tokens);
-  const result: ModelTokenUsage = {
-    ...(promptTokens === undefined ? {} : { inputTokens: promptTokens }),
-    ...(outputTokens === undefined ? {} : { outputTokens }),
-    ...(cacheReadTokens === undefined ? {} : { cacheReadTokens }),
-    ...(reasoningTokens === undefined ? {} : { reasoningTokens }),
-    ...(totalTokens === undefined ? {} : { totalTokens }),
-  };
-  return Object.keys(result).length > 0 ? result : null;
+function parseEmbeddingResponse(payload: unknown, expectedCount: number): number[][] {
+  if (!isRecord(payload) || !Array.isArray(payload.data)) {
+    throw new ModelProviderError('MODEL_PROVIDER_RESPONSE_INVALID');
+  }
+  const vectors = payload.data.map(parseEmbeddingItem);
+  if (vectors.length !== expectedCount || vectors.some((vector) => vector === null)) {
+    throw new ModelProviderError('MODEL_PROVIDER_RESPONSE_INVALID');
+  }
+  const ordered = vectors.filter(isEmbeddingItem).sort((left, right) => left.index - right.index);
+  if (ordered.some((item, index) => item.index !== index)) {
+    throw new ModelProviderError('MODEL_PROVIDER_RESPONSE_INVALID');
+  }
+  return ordered.map((item) => item.embedding);
+}
+
+function parseEmbeddingItem(value: unknown): { index: number; embedding: number[] } | null {
+  if (!isRecord(value) || !Number.isInteger(value.index) || !Array.isArray(value.embedding))
+    return null;
+  const embedding = value.embedding;
+  if (
+    embedding.length !== EMBEDDING_DIMENSIONS ||
+    embedding.some((item) => typeof item !== 'number' || !Number.isFinite(item))
+  ) {
+    throw new ModelProviderError('EMBEDDING_DIMENSION_INVALID');
+  }
+  return { index: value.index as number, embedding: embedding as number[] };
+}
+
+function isEmbeddingItem(
+  value: { index: number; embedding: number[] } | null,
+): value is { index: number; embedding: number[] } {
+  return value !== null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function numberValue(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
 }
 
 function errorCode(status: number) {

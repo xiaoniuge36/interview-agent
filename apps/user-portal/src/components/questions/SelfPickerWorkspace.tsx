@@ -9,11 +9,16 @@ type SelfPickerWorkspaceProps = {
 
 export function SelfPickerWorkspace({ picker }: SelfPickerWorkspaceProps) {
   return (
-    <section className="question-self-picker-workspace" id="self-picker-workspace">
+    <section
+      className="question-self-picker-workspace"
+      id="self-picker-workspace"
+      aria-labelledby="self-picker-workspace-heading"
+      tabIndex={-1}
+    >
       <header>
         <div>
           <span>自主组卷</span>
-          <h2>自己组合一轮练习</h2>
+          <h2 id="self-picker-workspace-heading">自己组合一轮练习</h2>
           <p>筛选、选题和开始练习始终由你掌控，Agent 推荐不会限制你的选择。</p>
         </div>
       </header>

@@ -40,6 +40,42 @@ test('题库目录只返回用户可浏览的题目摘要', () => {
   assert.equal('rubric' in result.items[0]!, false);
 });
 
+test('题库目录返回客观题选项但不会泄漏正确选项', () => {
+  const result = QuestionCatalogResponseSchema.parse({
+    items: [
+      {
+        ...question,
+        type: 'single_choice',
+        options: [
+          { id: 'A', text: 'ReAct' },
+          { id: 'B', text: 'Plan-and-Execute' },
+        ],
+        correctOptionIds: ['B'],
+      },
+    ],
+    facets: {
+      categories: [{ value: 'ai_agent', label: 'AI Agent', count: 1 }],
+      difficulties: [{ value: 'hard', label: '高阶', count: 1 }],
+      types: [{ value: 'single_choice', label: '单选题', count: 1 }],
+      tags: [{ value: 'Agent 工作流', label: 'Agent 工作流', count: 1 }],
+    },
+    page: 1,
+    pageSize: 20,
+    total: 1,
+    totalPages: 1,
+  });
+
+  const objectiveItem = result.items[0] as unknown as {
+    options?: Array<{ id: string; text: string }>;
+    correctOptionIds?: string[];
+  };
+  assert.deepEqual(objectiveItem.options, [
+    { id: 'A', text: 'ReAct' },
+    { id: 'B', text: 'Plan-and-Execute' },
+  ]);
+  assert.equal('correctOptionIds' in objectiveItem, false);
+});
+
 test('推荐题单最多包含十道题并说明推荐原因', () => {
   const result = PracticeRecommendationListSchema.parse([
     {
@@ -57,6 +93,48 @@ test('推荐题单最多包含十道题并说明推荐原因', () => {
   assert.equal(
     PracticeRecommendationListSchema.safeParse([
       { ...result[0], questionIds: Array.from({ length: 11 }, (_, index) => `q-${index}`) },
+    ]).success,
+    false,
+  );
+});
+
+test('推荐题单携带最多四条可追溯依据', () => {
+  const result = PracticeRecommendationListSchema.parse([
+    {
+      id: 'recommendation-system-design',
+      title: '系统设计强化题单',
+      reason: '系统设计的近期掌握度偏低。',
+      source: 'mastery',
+      category: 'engineering',
+      estimatedMinutes: 20,
+      questionIds: ['question-1'],
+      evidence: [
+        {
+          type: 'mastery',
+          sourceId: 'memory-event-1',
+          label: '系统设计掌握度 42 分',
+          detail: '来自 2 条训练证据。',
+        },
+      ],
+    },
+  ]);
+
+  const recommendation = result[0] as unknown as { evidence?: Array<{ type: string }> };
+  assert.deepEqual(
+    recommendation.evidence?.map((item) => item.type),
+    ['mastery'],
+  );
+  assert.equal(
+    PracticeRecommendationListSchema.safeParse([
+      {
+        ...result[0],
+        evidence: Array.from({ length: 5 }, (_, index) => ({
+          type: 'mastery',
+          sourceId: `memory-event-${index}`,
+          label: '掌握度证据',
+          detail: '来自训练。',
+        })),
+      },
     ]).success,
     false,
   );
@@ -97,4 +175,30 @@ test('最近练习摘要与逐题反馈支持恢复学习状态', () => {
     1,
   );
   assert.equal(RecentPracticeResponseSchema.parse(null), null);
+});
+
+test('hybrid recommendations identify their algorithm and retrieval sources', () => {
+  const result = PracticeRecommendationListSchema.parse([
+    {
+      id: 'recommendation-rag',
+      title: 'RAG strengthening',
+      reason: 'Retrieved from the tenant question corpus.',
+      source: 'mastery',
+      algorithm: 'hybrid',
+      category: 'ai_agent',
+      estimatedMinutes: 20,
+      questionIds: ['question-1'],
+      evidence: [
+        {
+          type: 'retrieval',
+          sourceId: 'chunk-1',
+          label: 'Question corpus match',
+          detail: 'A tenant-visible question matched the current weakness.',
+        },
+      ],
+    },
+  ]);
+
+  assert.equal(result[0]!.algorithm, 'hybrid');
+  assert.equal(result[0]!.evidence?.[0]?.type, 'retrieval');
 });

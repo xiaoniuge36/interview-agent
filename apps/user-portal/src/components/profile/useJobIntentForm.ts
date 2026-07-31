@@ -6,11 +6,15 @@ import {
   type CreateJobIntentInput,
   type JobIntentPayload,
 } from '@interview-agent/contracts';
-import { roleInputFor } from '@/lib/interview-roles';
 import { createJobIntent } from '@/lib/workspace-api';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import { handoffSavedJob, jobSubmitAction, type JobSubmitAction } from '@/lib/job-handoff';
-import { DEFAULT_JOB_FORM } from './job-form';
+import {
+  DEFAULT_JOB_FORM,
+  focusFirstInvalidJobField,
+  jobFormFromRole,
+  updateJobForm,
+} from './job-form';
 import { createExclusiveJobSubmissionRunner } from './job-submission-single-flight';
 
 type JobIntentCallbacks = {
@@ -20,14 +24,16 @@ type JobIntentCallbacks = {
 
 export function useJobIntentForm(callbacks: JobIntentCallbacks) {
   const [form, setForm] = useState<CreateJobIntentInput>(DEFAULT_JOB_FORM);
-  const [message, setMessage] = useState('选择岗位模板预填内容，也可以直接粘贴真实 JD。');
+  const [message, setMessage] = useState(
+    '系统不会替你假定岗位；先选择岗位模板预填，或粘贴真实 JD。',
+  );
   const update = <Key extends keyof CreateJobIntentInput>(
     key: Key,
     value: CreateJobIntentInput[Key],
-  ) => setForm((current) => ({ ...current, [key]: value }));
+  ) => setForm((current) => updateJobForm(current, key, value));
 
   function applyRoleTemplate(title: string) {
-    setForm(roleInputFor(title));
+    setForm(jobFormFromRole(title));
     setMessage('已载入「' + title + '」岗位模型，可继续替换为你的真实 JD。');
   }
 
@@ -57,6 +63,7 @@ function useJobSubmission({
     if (!parsed.success) {
       const issue = parsed.error.issues[0]?.message ?? '请补全岗位信息后再保存。';
       setMessage(issue);
+      focusFirstInvalidJobField(parsed.error.issues, focusJobField);
       notifications.error('目标岗位未保存', new Error(issue), issue);
       return;
     }
@@ -84,6 +91,10 @@ function useJobSubmission({
   }
 
   return { activeAction, busy, submit };
+}
+
+function focusJobField(id: string): void {
+  document.getElementById(id)?.focus();
 }
 
 function errorMessage(error: unknown): string {

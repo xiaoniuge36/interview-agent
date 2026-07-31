@@ -1,14 +1,22 @@
 import type { JobIntentPayload } from '@interview-agent/contracts';
 import Link from 'next/link';
 import type { InterviewController } from '@/hooks/useInterviewController';
+import { settingsHrefForInterview } from '@/components/settings/settings-return-target';
 import { archivedInterviewControl } from './archived-interview-control';
+import { InterviewStartControl } from './InterviewStartControl';
 
 type InterviewToolbarProps = {
   jobs: JobIntentPayload[];
   controller: InterviewController;
+  reportRecoveryRequired: boolean;
 };
 
-export function InterviewToolbar({ jobs, controller }: InterviewToolbarProps) {
+export function InterviewToolbar({
+  jobs,
+  controller,
+  reportRecoveryRequired,
+}: InterviewToolbarProps) {
+  const sessionId = controller.state.session?.id ?? controller.restoredSessionId;
   const control = archivedInterviewControl({
     hasArchivedTarget: Boolean(controller.restoredSessionId),
     hasSession: Boolean(controller.state.session),
@@ -34,19 +42,18 @@ export function InterviewToolbar({ jobs, controller }: InterviewToolbarProps) {
             </option>
           ))}
         </select>
-        <button
-          className="button"
-          type="button"
-          disabled={control.disabled}
-          onClick={() => {
-            if (control.action === 'retry') controller.reloadArchivedInterview();
-            else void controller.start();
-          }}
-        >
-          {control.label}
-        </button>
+        {reportRecoveryRequired ? null : (
+          <InterviewStartControl
+            control={control}
+            onRetry={controller.reloadArchivedInterview}
+            onStart={() => void controller.start()}
+          />
+        )}
       </div>
-      <Link className="button secondary" href="/settings">
+      <Link
+        className="button secondary"
+        href={sessionId ? settingsHrefForInterview(sessionId) : '/settings'}
+      >
         AI 模型设置
       </Link>
       <p>启动后，AI 会基于已选岗位与当前回答继续追问。</p>

@@ -52,12 +52,18 @@ export class InterviewController {
 
   @Post(':id/advance')
   advance(@Req() request: ProductRequest, @Param('id') sessionId: string, @Body() body: unknown) {
-    return this.service.advance({
-      context: request.context,
-      sessionId,
-      input: AdvanceInterviewInputSchema.parse(body),
-      idempotencyKey: idempotencyKey(request),
-    });
+    const cancellation = responseCancellation(request.res);
+    return this.service
+      .advance(
+        {
+          context: request.context,
+          sessionId,
+          input: AdvanceInterviewInputSchema.parse(body),
+          idempotencyKey: idempotencyKey(request),
+        },
+        cancellation.signal,
+      )
+      .finally(cancellation.dispose);
   }
 
   @Post(':id/advance/stream')
@@ -68,8 +74,8 @@ export class InterviewController {
   ): Promise<void> {
     const input = AdvanceInterviewInputSchema.parse(request.body);
     const key = idempotencyKey(request);
-    const connection = createAiOperationSse(response, request.context);
     const controller = streamAbortController(response);
+    const connection = createAiOperationSse(response, request.context, controller.signal);
     try {
       const execution = await this.service.advanceStream(
         {
@@ -80,9 +86,9 @@ export class InterviewController {
         },
         interviewStream(connection.sink, controller.signal),
       );
-      connection.sink.result({ operation: 'interview_next', ...execution });
+      await connection.sink.result({ operation: 'interview_next', ...execution });
     } catch (error) {
-      connection.sink.error(streamError(error, request.context));
+      await connection.sink.error(streamError(error, request.context));
     } finally {
       connection.close();
     }
@@ -90,12 +96,18 @@ export class InterviewController {
 
   @Post(':id/answer')
   answer(@Req() request: ProductRequest, @Param('id') sessionId: string, @Body() body: unknown) {
-    return this.service.submitAnswer({
-      context: request.context,
-      sessionId,
-      input: SubmitInterviewAnswerInputSchema.parse(body),
-      idempotencyKey: idempotencyKey(request),
-    });
+    const cancellation = responseCancellation(request.res);
+    return this.service
+      .submitAnswer(
+        {
+          context: request.context,
+          sessionId,
+          input: SubmitInterviewAnswerInputSchema.parse(body),
+          idempotencyKey: idempotencyKey(request),
+        },
+        cancellation.signal,
+      )
+      .finally(cancellation.dispose);
   }
 
   @Post(':id/answer/stream')
@@ -106,8 +118,8 @@ export class InterviewController {
   ): Promise<void> {
     const input = SubmitInterviewAnswerInputSchema.parse(request.body);
     const key = idempotencyKey(request);
-    const connection = createAiOperationSse(response, request.context);
     const controller = streamAbortController(response);
+    const connection = createAiOperationSse(response, request.context, controller.signal);
     try {
       const execution = await this.service.submitAnswerStream(
         {
@@ -118,9 +130,9 @@ export class InterviewController {
         },
         interviewStream(connection.sink, controller.signal),
       );
-      connection.sink.result({ operation: 'interview_next', ...execution });
+      await connection.sink.result({ operation: 'interview_next', ...execution });
     } catch (error) {
-      connection.sink.error(streamError(error, request.context));
+      await connection.sink.error(streamError(error, request.context));
     } finally {
       connection.close();
     }
@@ -169,6 +181,19 @@ function streamAbortController(response: Response): AbortController {
     if (!response.writableEnded) controller.abort();
   });
   return controller;
+}
+
+function responseCancellation(response: Response | undefined) {
+  const controller = new AbortController();
+  if (!response) return { signal: controller.signal, dispose: () => undefined };
+  const abortIfClientDisconnected = () => {
+    if (!response.writableEnded) controller.abort();
+  };
+  response.once('close', abortIfClientDisconnected);
+  return {
+    signal: controller.signal,
+    dispose: () => response.off('close', abortIfClientDisconnected),
+  };
 }
 
 function interviewStream(

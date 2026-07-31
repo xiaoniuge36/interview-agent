@@ -5,16 +5,18 @@ import { fileURLToPath } from 'node:url';
 
 const LOOPBACK_HOST = '127.0.0.1';
 const COMPLETIONS_PATH = '/v1/chat/completions';
+const EMBEDDINGS_PATH = '/v1/embeddings';
+const EMBEDDING_DIMENSIONS = 1536;
 const TOKEN_USAGE = { prompt_tokens: 11, completion_tokens: 12, total_tokens: 23 };
 const EVALUATION_CONTENT = JSON.stringify({
   feedback: '回答已经覆盖核心背景、关键决策和结果，建议补充异常处理细节。',
-  score: 88,
+  score: 48,
   missingPoints: ['异常恢复'],
-  rubricScores: [{ point: '系统设计', score: 88 }],
+  rubricScores: [{ point: '系统设计', score: 48 }],
   followUpQuestion: '请说明一次异常恢复方案如何验证。',
 });
 const INTERVIEW_CONTENT = JSON.stringify({
-  stage: 'jd_core',
+  stage: 'warmup',
   content: '请结合岗位要求说明你的关键技术取舍。',
   shouldFinish: false,
 });
@@ -50,7 +52,16 @@ async function launch() {
 }
 
 async function handleRequest(request, response) {
-  if (request.method !== 'POST' || request.url !== COMPLETIONS_PATH) {
+  if (request.method !== 'POST') {
+    writeJson(response, 404, { error: { message: 'not found' } });
+    return;
+  }
+  if (request.url === EMBEDDINGS_PATH) {
+    await requestBody(request);
+    writeJson(response, 200, embeddingResponse());
+    return;
+  }
+  if (request.url !== COMPLETIONS_PATH) {
     writeJson(response, 404, { error: { message: 'not found' } });
     return;
   }
@@ -67,6 +78,18 @@ async function handleRequest(request, response) {
   const content = mode === 'e2e-invalid-json' ? '{invalid' : contentFor(payload);
   if (payload.stream === true) writeStream(response, content);
   else writeJson(response, 200, completionResponse(content));
+}
+
+function embeddingResponse() {
+  const embedding = Array.from({ length: EMBEDDING_DIMENSIONS }, (_, index) =>
+    index === 0 ? 1 : 0,
+  );
+  return {
+    object: 'list',
+    data: [{ object: 'embedding', index: 0, embedding }],
+    model: 'e2e-model',
+    usage: { prompt_tokens: 4, total_tokens: 4 },
+  };
 }
 
 function contentFor(payload) {

@@ -49,6 +49,12 @@ class RuntimeTurnContext(ContractModel):
     content: str = Field(min_length=1, max_length=4000)
 
 
+class RuntimeRetrievalContext(ContractModel):
+    source_id: str = Field(min_length=1, max_length=200)
+    entity_type: str = Field(min_length=1, max_length=200)
+    content: str = Field(min_length=1, max_length=2000)
+
+
 class RuntimeSessionContext(ContractModel):
     id: str = Field(min_length=1)
     tenant_id: str = Field(min_length=1)
@@ -67,6 +73,7 @@ class NextInterviewRequest(ContractModel):
     command_id: str = Field(min_length=1, max_length=200)
     trace_id: str = Field(min_length=8, max_length=128)
     answer: str | None = Field(default=None, min_length=1, max_length=20000)
+    retrieval_context: list[RuntimeRetrievalContext] | None = Field(default=None, max_length=6)
     model_invocation_grant: str | None = Field(default=None, min_length=16, max_length=4096)
 
 
@@ -76,3 +83,4 @@ class NextInterviewResponse(ContractModel):
     content: str = Field(min_length=1, max_length=20000)
     should_finish: bool
     basis_summary: list[str] | None = Field(default=None, max_length=3)
+    source_ids: list[str] | None = Field(default=None, max_length=6)

@@ -17,40 +17,90 @@ const context: ProductRequestContext = {
 };
 
 describe('QuestionCatalogService', () => {
-  it('scopes public and tenant questions and applies user filters', async () => {
-    const { service, prisma, policy } = createService();
-    prisma.question.count.mockResolvedValue(1);
-    prisma.question.findMany
-      .mockResolvedValueOnce([questionRecord()])
-      .mockResolvedValueOnce([facetRecord()]);
-    const query = QuestionCatalogQuerySchema.parse({
-      query: 'Agent',
-      category: 'ai_agent',
-      tags: '状态管理',
-      type: 'system_design',
-      difficulty: 'hard',
-      page: 2,
-      pageSize: 10,
-    });
-
-    const result = await service.list(context, query);
-
-    expect(policy.assert).toHaveBeenCalledWith(context.actor, 'practice:read', {
-      tenantId: context.tenantId,
-      ownerId: context.actor.id,
-    });
-    expect(prisma.question.count).toHaveBeenCalledWith({ where: expectedWhere() });
-    expect(prisma.question.findMany).toHaveBeenNthCalledWith(1, {
-      where: expectedWhere(),
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-      skip: 10,
-      take: 10,
-    });
-    expect(result.items[0]?.tags).toEqual(['Agent 工作流', '状态管理']);
-    expect(result.facets.categories).toContainEqual({ value: 'ai_agent', label: 'AI Agent', count: 1 });
-    expect(result.totalPages).toBe(1);
-  });
+  it('scopes public and tenant questions and applies user filters', expectScopedCatalog);
+  it('returns objective options without exposing correct option ids', expectSafeOptions);
 });
+
+async function expectScopedCatalog() {
+  const { service, prisma, policy } = createService();
+  prisma.question.count.mockResolvedValue(1);
+  prisma.question.findMany
+    .mockResolvedValueOnce([questionRecord()])
+    .mockResolvedValueOnce([facetRecord()]);
+  const result = await service.list(context, filteredQuery());
+
+  expect(policy.assert).toHaveBeenCalledWith(context.actor, 'practice:read', {
+    tenantId: context.tenantId,
+    ownerId: context.actor.id,
+  });
+  expect(prisma.question.count).toHaveBeenCalledWith({ where: expectedWhere() });
+  expect(prisma.question.findMany).toHaveBeenNthCalledWith(1, {
+    where: expectedWhere(),
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    skip: 10,
+    take: 10,
+    select: {
+      id: true,
+      tenantId: true,
+      visibility: true,
+      title: true,
+      stem: true,
+      type: true,
+      difficulty: true,
+      tags: true,
+      options: true,
+      sourceRefs: true,
+      status: true,
+    },
+  });
+  expect(result.items[0]?.tags).toEqual(['Agent 工作流', '状态管理']);
+  expect(result.facets.categories).toContainEqual({
+    value: 'ai_agent',
+    label: 'AI Agent',
+    count: 1,
+  });
+  expect(result.totalPages).toBe(1);
+}
+
+async function expectSafeOptions() {
+  const { service, prisma } = createService();
+  prisma.question.count.mockResolvedValue(1);
+  prisma.question.findMany
+    .mockResolvedValueOnce([questionRecord(objectiveFields())])
+    .mockResolvedValueOnce([{ ...facetRecord(), type: 'single_choice' }]);
+  const result = await service.list(context, QuestionCatalogQuerySchema.parse({}));
+
+  expect(result.items[0]?.options).toEqual(objectiveFields().options);
+  expect(result.items[0]).not.toHaveProperty('correctOptionIds');
+  expect(result.facets.types).toContainEqual({
+    value: 'single_choice',
+    label: '单选题',
+    count: 1,
+  });
+}
+
+function filteredQuery() {
+  return QuestionCatalogQuerySchema.parse({
+    query: 'Agent',
+    category: 'ai_agent',
+    tags: '状态管理',
+    type: 'system_design',
+    difficulty: 'hard',
+    page: 2,
+    pageSize: 10,
+  });
+}
+
+function objectiveFields() {
+  return {
+    type: 'single_choice',
+    options: [
+      { id: 'A', text: 'ReAct' },
+      { id: 'B', text: 'Plan-and-Execute' },
+    ],
+    correctOptionIds: ['B'],
+  };
+}
 
 function createService() {
   const prisma = { question: { count: jest.fn(), findMany: jest.fn() } };
@@ -81,7 +131,7 @@ function expectedWhere() {
   };
 }
 
-function questionRecord() {
+function questionRecord(overrides: Record<string, unknown> = {}) {
   return {
     id: 'question-1',
     tenantId: 'public',
@@ -95,6 +145,7 @@ function questionRecord() {
     rubric: [],
     sourceRefs: [],
     status: 'published',
+    ...overrides,
   };
 }
 

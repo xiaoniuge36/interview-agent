@@ -1,0 +1,47 @@
+export const validPlatformDashboard = {
+  period: '7d',
+  range: { startAt: '2026-07-09T00:00:00.000Z', endAt: '2026-07-16T00:00:00.000Z' },
+  accounts: {
+    total: 8,
+    created: 3,
+    active: 2,
+    disabled: 1,
+    tenants: 5,
+    admin: 2,
+    users: 6,
+  },
+  content: { imports: 4, pendingCandidates: 3, publishedQuestions: 7, failedImports: 1 },
+  training: { interviews: 6, reports: 4, practiceSubmissions: 5, practiceReports: 3 },
+  userUsage: { activeUsers: 2, interviews: 6, practiceSubmissions: 5, reports: 7 },
+  agentUsage: [
+    { agent: 'interview', runs: 8, succeeded: 7, successRate: 87.5 },
+    { agent: 'practice_evaluation', runs: 4, succeeded: 4, successRate: 100 },
+    { agent: 'user_assistant', runs: 3, succeeded: 2, successRate: 66.7 },
+    { agent: 'admin_assistant', runs: 2, succeeded: 2, successRate: 100 },
+  ],
+  runtime: {
+    runs: 10,
+    successRate: 90,
+    schemaPassRate: 80,
+    averageLatencyMs: 342,
+    fallbacks: 1,
+    recentFailures: [],
+  },
+  trend: [
+    {
+      date: '2026-07-16',
+      accountsCreated: 2,
+      questionsPublished: 3,
+      trainingCompleted: 4,
+      agentRuns: 5,
+    },
+  ],
+  funnel: {
+    imports: 4,
+    pendingCandidates: 3,
+    publishedQuestions: 7,
+    practiceSubmissions: 5,
+    practiceReports: 3,
+  },
+  alerts: [{ code: 'review_backlog', severity: 'warning', count: 3 }],
+};

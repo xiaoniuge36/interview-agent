@@ -10,6 +10,8 @@ export const QuestionTypeSchema = z.enum([
   'system_design',
   'project_deep_dive',
   'behavioral',
+  'single_choice',
+  'multiple_choice',
 ]);
 export const QuestionVisibilitySchema = z.enum(['public', 'tenant']);
 export const QuestionStatusSchema = z.enum(['draft', 'published', 'disabled', 'archived']);
@@ -20,7 +22,16 @@ export const RubricPointSchema = z.object({
   description: z.string().min(1).max(CONTRACT_LIMITS.mediumText),
 });
 
-export const QuestionSchema = z.object({
+const MIN_QUESTION_OPTIONS = 2;
+const MAX_QUESTION_OPTIONS = 8;
+const OBJECTIVE_QUESTION_TYPES = new Set(['single_choice', 'multiple_choice']);
+
+export const QuestionOptionSchema = z.object({
+  id: z.string().trim().min(1).max(CONTRACT_LIMITS.shortText),
+  text: z.string().trim().min(1).max(CONTRACT_LIMITS.mediumText),
+});
+
+export const QuestionRecordSchema = z.object({
   id: z.string().min(1),
   tenantId: z.string().min(1),
   visibility: QuestionVisibilitySchema,
@@ -31,11 +42,71 @@ export const QuestionSchema = z.object({
   tags: z.array(z.string().max(CONTRACT_LIMITS.shortText)).max(CONTRACT_LIMITS.tags),
   answer: z.string().min(1).max(CONTRACT_LIMITS.longText),
   rubric: z.array(RubricPointSchema).max(CONTRACT_LIMITS.list),
+  options: z.array(QuestionOptionSchema).max(MAX_QUESTION_OPTIONS).optional(),
+  correctOptionIds: z.array(z.string().min(1).max(CONTRACT_LIMITS.shortText)).optional(),
   sourceRefs: z.array(z.string().max(CONTRACT_LIMITS.mediumText)).max(CONTRACT_LIMITS.list),
   status: QuestionStatusSchema,
 });
 
-export const CandidateQuestionSchema = QuestionSchema.omit({ answer: true, rubric: true });
+export const QuestionSchema = QuestionRecordSchema.superRefine(validateObjectiveQuestion);
+
+export const CandidateQuestionSchema = QuestionRecordSchema.omit({
+  answer: true,
+  rubric: true,
+  correctOptionIds: true,
+});
+
+function validateObjectiveQuestion(
+  question: z.infer<typeof QuestionRecordSchema>,
+  context: z.RefinementCtx,
+) {
+  const options = question.options ?? [];
+  const correctIds = question.correctOptionIds ?? [];
+  if (!OBJECTIVE_QUESTION_TYPES.has(question.type)) {
+    validateOpenQuestion(options, correctIds, context);
+    return;
+  }
+  const optionIds = options.map((option) => option.id);
+  validateOptionIds(optionIds, correctIds, context);
+  validateCorrectCount(question.type, correctIds, context);
+}
+
+function validateOpenQuestion(
+  options: z.infer<typeof QuestionOptionSchema>[],
+  correctIds: string[],
+  context: z.RefinementCtx,
+) {
+  if (options.length || correctIds.length)
+    addQuestionIssue(context, 'OBJECTIVE_FIELDS_NOT_ALLOWED');
+}
+
+function validateOptionIds(optionIds: string[], correctIds: string[], context: z.RefinementCtx) {
+  if (optionIds.length < MIN_QUESTION_OPTIONS)
+    addQuestionIssue(context, 'QUESTION_OPTIONS_REQUIRED');
+  if (new Set(optionIds).size !== optionIds.length)
+    addQuestionIssue(context, 'QUESTION_OPTION_IDS_DUPLICATED');
+  if (new Set(correctIds).size !== correctIds.length)
+    addQuestionIssue(context, 'CORRECT_OPTION_IDS_DUPLICATED');
+  if (correctIds.some((id) => !optionIds.includes(id)))
+    addQuestionIssue(context, 'CORRECT_OPTION_ID_UNKNOWN');
+}
+
+function validateCorrectCount(
+  type: z.infer<typeof QuestionTypeSchema>,
+  correctIds: string[],
+  context: z.RefinementCtx,
+) {
+  if (type === 'single_choice' && correctIds.length !== 1) {
+    addQuestionIssue(context, 'SINGLE_CHOICE_REQUIRES_ONE_ANSWER');
+  }
+  if (type === 'multiple_choice' && correctIds.length < MIN_QUESTION_OPTIONS) {
+    addQuestionIssue(context, 'MULTIPLE_CHOICE_REQUIRES_MULTIPLE_ANSWERS');
+  }
+}
+
+function addQuestionIssue(context: z.RefinementCtx, message: string) {
+  context.addIssue({ code: z.ZodIssueCode.custom, path: ['options'], message });
+}
 
 export const CandidateReviewStatusSchema = z.enum([
   'pending',
@@ -112,6 +183,7 @@ export const TrainingPlanSchema = z.object({
 });
 
 export type RubricPoint = z.infer<typeof RubricPointSchema>;
+export type QuestionOption = z.infer<typeof QuestionOptionSchema>;
 export type Question = z.infer<typeof QuestionSchema>;
 export type CandidateQuestion = z.infer<typeof CandidateQuestionSchema>;
 export type CandidateReview = z.infer<typeof CandidateReviewSchema>;

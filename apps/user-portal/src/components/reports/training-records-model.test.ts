@@ -79,3 +79,64 @@ describe('training records model', () => {
     });
   });
 });
+
+it('adds persisted interview scores, weakest stages, and the previous-score trend', () => {
+  const interviewHistory = [
+    {
+      id: 'interview-latest',
+      title: 'Payment platform follow-up',
+      status: 'report_ready',
+      updatedAt: '2026-07-23T10:00:00.000Z',
+    },
+    interviews[0],
+  ] as InterviewSession[];
+  const reports = [
+    interviewReport('interview-latest', 54, 42),
+    interviewReport('interview-older', 35, 30),
+  ];
+
+  const records = buildTrainingRecords([], interviewHistory, reports as never);
+
+  expect(records[0]).toMatchObject({
+    id: 'interview-latest',
+    score: 54,
+    signals: ['项目深挖 42 分'],
+    trend: { delta: 19, previousScore: 35 },
+  });
+  expect(records[1]?.trend).toBeNull();
+});
+
+it('does not invent a previous-round trend across a missing adjacent score', () => {
+  const interviewHistory = [
+    interviewSession('interview-latest', '2026-07-23T10:00:00.000Z'),
+    interviewSession('interview-missing', '2026-07-22T10:00:00.000Z'),
+    interviewSession('interview-oldest', '2026-07-21T10:00:00.000Z'),
+  ];
+  const reports = [
+    interviewReport('interview-latest', 54, 42),
+    interviewReport('interview-oldest', 35, 30),
+  ];
+
+  const records = buildTrainingRecords([], interviewHistory, reports as never);
+
+  expect(records[0]?.trend).toBeNull();
+});
+
+function interviewSession(id: string, updatedAt: string) {
+  return { id, title: id, status: 'report_ready', updatedAt } as InterviewSession;
+}
+
+function interviewReport(sessionId: string, overallScore: number, stageScore: number) {
+  return {
+    sessionId,
+    overall: { score: overallScore },
+    stageScores: [
+      {
+        stage: 'project_deep_dive',
+        score: stageScore,
+        summary: '项目证据链不足。',
+        evidence: ['缺少量化结果'],
+      },
+    ],
+  };
+}

@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import type { Environment } from './common/config/environment';
 import { HttpExceptionFilter } from './common/errors/http-exception.filter';
+import { startTelemetry } from './common/telemetry/telemetry';
 
 const DEVELOPMENT_ORIGINS = ['http://localhost:3000', 'http://localhost:3002'];
 
@@ -15,6 +16,7 @@ async function bootstrap() {
     bodyParser: false,
   });
   const config = app.get(ConfigService<Environment, true>);
+  const telemetry = startTelemetry(config.get('OTEL_EXPORTER_OTLP_ENDPOINT', { infer: true }));
   const bodyLimit = config.get('API_BODY_LIMIT', { infer: true });
   app.use(helmet());
   app.useBodyParser('json', { limit: bodyLimit });
@@ -33,6 +35,9 @@ async function bootstrap() {
     config.get('API_PORT', { infer: true }),
     config.get('API_HOST', { infer: true }),
   );
+  if (telemetry) {
+    app.getHttpServer().once('close', () => void telemetry.shutdown());
+  }
 }
 
 function corsOptions(config: ConfigService<Environment, true>) {

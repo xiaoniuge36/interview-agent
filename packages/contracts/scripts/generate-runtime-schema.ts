@@ -6,6 +6,7 @@ import {
   AgentRuntimeContractVersionSchema,
   AgentRuntimeNextRequestSchema,
   AgentRuntimeNextResponseSchema,
+  AgentRuntimeRetrievalContextSchema,
   AgentRuntimeSessionContextSchema,
   AgentRuntimeTurnContextSchema,
   InterviewSessionStatusSchema,
@@ -46,6 +47,12 @@ class RuntimeTurnContext(ContractModel):
     content: str = {{TURN_CONTENT}}
 
 
+class RuntimeRetrievalContext(ContractModel):
+    source_id: str = {{RETRIEVAL_SOURCE_ID}}
+    entity_type: str = {{RETRIEVAL_ENTITY_TYPE}}
+    content: str = {{RETRIEVAL_CONTENT}}
+
+
 class RuntimeSessionContext(ContractModel):
     id: str = Field(min_length=1)
     tenant_id: str = Field(min_length=1)
@@ -64,6 +71,7 @@ class NextInterviewRequest(ContractModel):
     command_id: str = {{COMMAND_ID}}
     trace_id: str = {{TRACE_ID}}
     answer: str | None = {{ANSWER}}
+    retrieval_context: list[RuntimeRetrievalContext] | None = Field(default=None, max_length={{RETRIEVAL_CONTEXT_MAXIMUM}})
     model_invocation_grant: str | None = {{MODEL_INVOCATION_GRANT}}
 
 
@@ -73,6 +81,7 @@ class NextInterviewResponse(ContractModel):
     content: str = {{RESPONSE_CONTENT}}
     should_finish: bool
     basis_summary: list[str] | None = Field(default=None, max_length={{BASIS_SUMMARY_MAXIMUM}})
+    source_ids: list[str] | None = Field(default=None, max_length={{SOURCE_IDS_MAXIMUM}})
 `;
 
 type Bounds = { min?: number; max?: number };
@@ -150,12 +159,18 @@ function validateShapes(): void {
     'candidateTurnCount',
     'recentTurns',
   ]);
+  assertShape('retrieval', Object.keys(AgentRuntimeRetrievalContextSchema.shape), [
+    'sourceId',
+    'entityType',
+    'content',
+  ]);
   assertShape('request', Object.keys(AgentRuntimeNextRequestSchema.shape), [
     'contractVersion',
     'session',
     'commandId',
     'traceId',
     'answer',
+    'retrievalContext',
     'modelInvocationGrant',
   ]);
   assertShape('response', Object.keys(AgentRuntimeNextResponseSchema.shape), [
@@ -164,12 +179,14 @@ function validateShapes(): void {
     'content',
     'shouldFinish',
     'basisSummary',
+    'sourceIds',
   ]);
 }
 
 function runtimeMetadata(): RuntimeMetadata {
   const turnShape = AgentRuntimeTurnContextSchema.shape;
   const sessionShape = AgentRuntimeSessionContextSchema.shape;
+  const retrievalShape = AgentRuntimeRetrievalContextSchema.shape;
   const requestShape = AgentRuntimeNextRequestSchema.shape;
   const responseShape = AgentRuntimeNextResponseSchema.shape;
   const version = JSON.stringify(AgentRuntimeContractVersionSchema.value);
@@ -185,9 +202,14 @@ function runtimeMetadata(): RuntimeMetadata {
     COMMAND_ID: fieldOptions(stringBounds(requestShape.commandId)),
     TRACE_ID: fieldOptions(stringBounds(requestShape.traceId)),
     ANSWER: optionalField(stringBounds(requestShape.answer)),
+    RETRIEVAL_SOURCE_ID: fieldOptions(stringBounds(retrievalShape.sourceId)),
+    RETRIEVAL_ENTITY_TYPE: fieldOptions(stringBounds(retrievalShape.entityType)),
+    RETRIEVAL_CONTENT: fieldOptions(stringBounds(retrievalShape.content)),
+    RETRIEVAL_CONTEXT_MAXIMUM: String(arrayMaximum(requestShape.retrievalContext)),
     MODEL_INVOCATION_GRANT: optionalField(stringBounds(requestShape.modelInvocationGrant)),
     RESPONSE_CONTENT: fieldOptions(stringBounds(responseShape.content)),
     BASIS_SUMMARY_MAXIMUM: String(arrayMaximum(responseShape.basisSummary)),
+    SOURCE_IDS_MAXIMUM: String(arrayMaximum(responseShape.sourceIds)),
   };
 }
 

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "event-sourcing",
+    "expectedIds": ["knowledge-event-sourcing"],
+    "keywordIds": ["knowledge-event-sourcing"],
+    "vectorIds": ["knowledge-event-sourcing", "question-idempotency"]
+  },
+  {
+    "id": "idempotency",
+    "expectedIds": ["question-idempotency"],
+    "keywordIds": ["question-idempotency"],
+    "vectorIds": ["question-idempotency", "knowledge-event-sourcing"]
+  },
+  {
+    "id": "transaction-isolation",
+    "expectedIds": ["question-isolation"],
+    "keywordIds": ["question-isolation"],
+    "vectorIds": ["question-isolation"]
+  },
+  {
+    "id": "retry-backoff",
+    "expectedIds": ["knowledge-retry"],
+    "keywordIds": ["knowledge-retry"],
+    "vectorIds": ["knowledge-retry", "question-idempotency"]
+  },
+  {
+    "id": "distributed-lock",
+    "expectedIds": ["knowledge-locking"],
+    "keywordIds": ["knowledge-locking"],
+    "vectorIds": ["knowledge-locking"]
+  },
+  {
+    "id": "cache-invalidation",
+    "expectedIds": ["question-cache"],
+    "keywordIds": ["question-cache"],
+    "vectorIds": ["question-cache", "knowledge-event-sourcing"]
+  },
+  {
+    "id": "index-tuning",
+    "expectedIds": ["knowledge-index"],
+    "keywordIds": ["knowledge-index"],
+    "vectorIds": ["knowledge-index"]
+  },
+  {
+    "id": "api-pagination",
+    "expectedIds": ["question-pagination"],
+    "keywordIds": ["question-pagination"],
+    "vectorIds": ["question-pagination"]
+  },
+  {
+    "id": "rate-limiting",
+    "expectedIds": ["knowledge-rate-limit"],
+    "keywordIds": ["knowledge-rate-limit"],
+    "vectorIds": ["knowledge-rate-limit"]
+  },
+  {
+    "id": "schema-validation",
+    "expectedIds": ["question-schema"],
+    "keywordIds": ["question-schema"],
+    "vectorIds": ["question-schema"]
+  },
+  {
+    "id": "tenant-isolation",
+    "expectedIds": ["knowledge-tenant"],
+    "keywordIds": ["knowledge-tenant"],
+    "vectorIds": ["knowledge-tenant"]
+  },
+  {
+    "id": "observability-traces",
+    "expectedIds": ["question-tracing"],
+    "keywordIds": ["question-tracing"],
+    "vectorIds": ["question-tracing", "knowledge-rate-limit"]
+  }
+]

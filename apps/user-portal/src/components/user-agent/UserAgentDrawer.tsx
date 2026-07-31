@@ -1,61 +1,26 @@
-import { useEffect } from 'react';
-import type { AgentStatus } from '@page-agent/core';
-import type { UserAgentConversationSummary } from '@/lib/user-agent-conversation-api';
-import type { UserAgentRun } from '@/lib/user-page-agent-run-api';
 import type { UserPageAgentConfig } from '@/lib/user-page-agent-api';
 import { UserAgentComposer } from './UserAgentComposer';
 import { UserAgentConversationSidebar } from './UserAgentConversationSidebar';
 import { UserAgentRunHistory } from './UserAgentRunHistory';
+import type { UserAgentDrawerProps } from './user-agent-drawer-types';
 import type { UserAgentPageContext } from './user-agent-page-context';
 import {
   resolveUserAgentDrawerPresentation,
   useCompactUserAgentDrawer,
 } from './user-agent-drawer-presentation';
+import { useUserAgentDrawerFocus } from './useUserAgentDrawerFocus';
 import type { UserAgentMessage } from './useUserAgentConversation';
 import type { PageAgentExecutionStep } from './user-agent-runtime';
 
-type Props = {
-  open: boolean;
-  config: UserPageAgentConfig | null;
-  loading: boolean;
-  agentReady: boolean;
-  conversationLoading: boolean;
-  conversationError: string | null;
-  conversations: UserAgentConversationSummary[];
-  activeConversationId: string | null;
-  status: AgentStatus;
-  activity: string;
-  executionSteps: PageAgentExecutionStep[];
-  tokens: number;
-  messages: UserAgentMessage[];
-  latestRun: UserAgentRun | null;
-  pendingQuestion: string | null;
-  pageContext: UserAgentPageContext;
-  onClose: () => void;
-  onCreateConversation: () => void;
-  onSelectConversation: (id: string) => void;
-  onRenameConversation: (id: string, title: string) => Promise<boolean>;
-  onRetry: (prompt: string, retryOfRunId: string) => void;
-  onDeleteConversation: (id: string) => Promise<boolean>;
-  onSetup: () => void;
-  onAnswer: (answer: string) => void;
-  onSend: (value: string) => void;
-  onStop: () => void;
-  runHistory: UserAgentRun[];
-};
-
-export function UserAgentDrawer(props: Props) {
+export function UserAgentDrawer(props: UserAgentDrawerProps) {
   const presentation = resolveUserAgentDrawerPresentation(useCompactUserAgentDrawer());
-  const { onClose, open } = props;
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose, open]);
-  if (!open) return null;
+  const dialogRef = useUserAgentDrawerFocus({
+    initialFocus: presentation.initialFocus,
+    onClose: props.onClose,
+    open: props.open,
+    trapFocus: presentation.trapFocus,
+  });
+  if (!props.open) return null;
   return (
     <div className="user-agent-layer" data-page-agent-not-interactive="true">
       <button
@@ -68,7 +33,9 @@ export function UserAgentDrawer(props: Props) {
         aria-label="AI 刷题教练"
         aria-modal={presentation.ariaModal}
         className="user-agent-drawer"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <DrawerHeader config={props.config} onClose={props.onClose} onSetup={props.onSetup} />
         <div className="user-agent-drawer-body">
@@ -113,7 +80,7 @@ function DrawerHeader(props: {
   );
 }
 
-function ChatPane(props: Props) {
+function ChatPane(props: UserAgentDrawerProps) {
   return (
     <main className="user-agent-chat-pane">
       <div className={`user-agent-status${props.status === 'running' ? ' is-running' : ''}`}>
@@ -129,7 +96,7 @@ function ChatPane(props: Props) {
   );
 }
 
-function ChatNotices(props: Props) {
+function ChatNotices(props: UserAgentDrawerProps) {
   return (
     <>
       {props.pendingQuestion ? (
@@ -147,7 +114,7 @@ function ChatNotices(props: Props) {
   );
 }
 
-function ChatContent(props: Props) {
+function ChatContent(props: UserAgentDrawerProps) {
   if (props.loading) return <div className="user-agent-loading">正在连接刷题教练…</div>;
   if (!props.config?.enabled)
     return <SetupState message={props.config?.message} onSetup={props.onSetup} />;

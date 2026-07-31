@@ -30,6 +30,8 @@ import {
   createExclusivePracticeContinuationRunner,
   startNextRecommendedPractice,
 } from './practice-continuation';
+import { practiceReturnOriginFromValues } from './practice-return-origin';
+import { useLearningPracticeEvidence } from './useLearningPracticeEvidence';
 import { createLatestPracticeSessionRequest } from './practice-session-request';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import {
@@ -60,8 +62,15 @@ const INITIAL_STATE: PlayerState = {
 export function usePracticePlayer() {
   const notifications = useNotifications();
   const router = useRouter();
-  const sessionId = useSearchParams().get('session');
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get('session');
+  const returnOrigin = practiceReturnOriginFromValues(
+    searchParams.getAll('origin'),
+    searchParams.getAll('course'),
+    searchParams.getAll('topic'),
+  );
   const loader = usePracticeSessionLoader(sessionId);
+  useLearningPracticeEvidence(returnOrigin, loader.state.session, loader.state.report);
   const context = { sessionId, state: loader.state, setState: loader.setState, notifications };
   const itemActions = usePracticeItemActions(context);
   const completionActions = usePracticeCompletionActions(context, router);
@@ -85,6 +94,7 @@ export function usePracticePlayer() {
   );
   return {
     sessionId,
+    returnOrigin,
     ...loader.state,
     reload: loader.reload,
     setCurrentIndex,

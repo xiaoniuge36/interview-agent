@@ -42,24 +42,39 @@ describe('PracticeCoachPanel', () => {
     expect(markup).toContain('Agent 追问');
     expect(markup).toContain('进入下一题');
   });
+
+  it('模型未连接时把本轮 session 作为安全返回目标带入设置', () => {
+    const markup = renderCoach({
+      issue: {
+        code: 'MODEL_CONNECTION_REQUIRED',
+        message: '请先连接并测试模型。',
+      },
+    });
+
+    expect(markup).toContain('href="/settings?returnTo=%2Fpractice%3Fsession%3Dsession-123"');
+    expect(markup).toContain('连接并测试模型');
+  });
 });
 
 function renderCoach({
   confirmAiOnOpen = false,
   evaluated = false,
   hasNextQuestion = false,
+  issue = null,
 }: {
   confirmAiOnOpen?: boolean;
   evaluated?: boolean;
   hasNextQuestion?: boolean;
+  issue?: { code: string; message: string } | null;
 } = {}) {
   return renderToStaticMarkup(
     createElement(PracticeCoachPanel, {
       item: item(evaluated),
+      sessionId: 'session-123',
       draft: '这是已保存的回答。',
       solution: undefined,
       busy: null,
-      issue: null,
+      issue,
       aiOperation: null,
       confirmAiOnOpen,
       onRevealSolution: () => undefined,

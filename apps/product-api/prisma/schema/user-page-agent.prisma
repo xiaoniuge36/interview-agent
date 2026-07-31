@@ -16,22 +16,22 @@ model UserAgentConversation {
 }
 
 model UserAgentMessage {
-  id             String                 @id @default(cuid())
+  id             String               @id @default(cuid())
   tenantId       String
   conversationId String
   role           UserAgentMessageRole
   content        String
   tokenCount     Int?
-  createdAt      DateTime               @default(now())
+  createdAt      DateTime             @default(now())
 
-  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   conversation UserAgentConversation @relation(fields: [tenantId, conversationId], references: [tenantId, id], onDelete: Cascade)
 
   @@index([tenantId, conversationId, createdAt])
 }
 
 model UserPageAgentRun {
-  id              String                  @id @default(cuid())
+  id              String                 @id @default(cuid())
   tenantId        String
   userId          String
   conversationId  String
@@ -40,20 +40,20 @@ model UserPageAgentRun {
   prompt          String
   status          UserPageAgentRunStatus @default(running)
   currentStep     String?
-  tokenCount      Int                     @default(0)
+  tokenCount      Int                    @default(0)
   traceId         String
   errorCode       String?
   errorSummary    String?
-  startedAt       DateTime                @default(now())
+  startedAt       DateTime               @default(now())
   finishedAt      DateTime?
-  heartbeatAt     DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
+  heartbeatAt     DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 
-  tenant       Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user         User                   @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade)
-  conversation UserAgentConversation  @relation(fields: [tenantId, conversationId], references: [tenantId, id], onDelete: Cascade)
-  retryOf      UserPageAgentRun?      @relation("UserPageAgentRunRetries", fields: [retryOfRunId], references: [id], onDelete: SetNull)
-  retries      UserPageAgentRun[]     @relation("UserPageAgentRunRetries")
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User                  @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade)
+  conversation UserAgentConversation @relation(fields: [tenantId, conversationId], references: [tenantId, id], onDelete: Cascade)
+  retryOf      UserPageAgentRun?     @relation("UserPageAgentRunRetries", fields: [retryOfRunId], references: [id], onDelete: SetNull)
+  retries      UserPageAgentRun[]    @relation("UserPageAgentRunRetries")
 
   @@unique([tenantId, id])
   @@unique([tenantId, userId, clientRequestId])

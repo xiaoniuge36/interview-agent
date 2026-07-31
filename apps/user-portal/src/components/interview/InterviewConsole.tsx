@@ -12,6 +12,8 @@ type InterviewConsoleProps = {
 
 export function InterviewConsole({ jobs, controller }: InterviewConsoleProps) {
   const { focusTags, roleTitle } = controller.interviewPlan;
+  const reportRecoveryRequired =
+    controller.state.session?.status === 'report_ready' && controller.state.report === null;
   return (
     <div className="panel stack">
       <header className="row-between">
@@ -42,7 +44,11 @@ export function InterviewConsole({ jobs, controller }: InterviewConsoleProps) {
         phase={controller.state.phase}
         statusLabel={controller.statusLabel}
       />
-      <InterviewToolbar jobs={jobs} controller={controller} />
+      <InterviewToolbar
+        jobs={jobs}
+        controller={controller}
+        reportRecoveryRequired={reportRecoveryRequired}
+      />
       <Transcript turns={controller.turns} streamingText={controller.state.streamingText} />
       <AnswerComposer controller={controller} />
     </div>

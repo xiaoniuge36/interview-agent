@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   AgentRuntimeNextRequestSchema,
+  AgentRuntimeNextResponseSchema,
   ActionSchema,
   CreatePracticeSessionSchema,
   CreateLocalAdminInputSchema,
   PlatformDashboardSchema,
+  PracticeReportRuntimeRequestSchema,
+  PracticeReportRuntimeResponseSchema,
   PracticeHistoryListSchema,
   QuestionSchema,
   RoleSchema,
@@ -37,6 +40,50 @@ test('all public question fixtures satisfy the shared contract', () => {
   }
 });
 
+test('objective questions enforce bounded options and correct option ids', () => {
+  const base = {
+    id: 'objective-1',
+    tenantId: 'public',
+    visibility: 'public',
+    title: 'Which Agent pattern plans before execution?',
+    stem: 'Choose the best answer.',
+    difficulty: 'easy',
+    tags: ['Agent'],
+    answer: 'Plan-and-Execute separates planning from execution.',
+    rubric: [{ point: '正确选项', score: 10, description: '选择 Plan-and-Execute。' }],
+    sourceRefs: ['https://github.com/microsoft/ai-agents-for-beginners'],
+    status: 'published',
+    options: [
+      { id: 'A', text: 'ReAct' },
+      { id: 'B', text: 'Plan-and-Execute' },
+      { id: 'C', text: 'RAG' },
+    ],
+  };
+
+  assert.equal(
+    QuestionSchema.parse({ ...base, type: 'single_choice', correctOptionIds: ['B'] }).type,
+    'single_choice',
+  );
+  assert.equal(
+    QuestionSchema.parse({ ...base, type: 'multiple_choice', correctOptionIds: ['A', 'B'] }).type,
+    'multiple_choice',
+  );
+  assert.equal(
+    QuestionSchema.safeParse({ ...base, type: 'single_choice', correctOptionIds: ['A', 'B'] })
+      .success,
+    false,
+  );
+  assert.equal(
+    QuestionSchema.safeParse({ ...base, type: 'multiple_choice', correctOptionIds: ['A', 'Z'] })
+      .success,
+    false,
+  );
+  assert.equal(
+    QuestionSchema.safeParse({ ...base, type: 'short_answer', correctOptionIds: ['B'] }).success,
+    false,
+  );
+});
+
 test('runtime requests reject unsupported contract versions', () => {
   const result = AgentRuntimeNextRequestSchema.safeParse({
     ...validRuntimeRequest,
@@ -53,6 +100,68 @@ test('runtime requests preserve an optional signed model invocation grant', () =
 
   assert.equal(parsed.modelInvocationGrant, 'signed-runtime-grant.payload-signature');
 });
+
+test('runtime requests carry bounded read-only retrieval context and cited source ids', () => {
+  const parsed = AgentRuntimeNextRequestSchema.parse({
+    ...validRuntimeRequest,
+    retrievalContext: [
+      {
+        sourceId: 'retrieval-chunk-1',
+        entityType: 'question',
+        content: 'Explain the transaction boundary.',
+      },
+    ],
+  });
+  const response = AgentRuntimeNextResponseSchema.parse({
+    contractVersion: 'interview-runtime.v1',
+    stage: 'jd_core',
+    content: 'How would you make that operation idempotent?',
+    shouldFinish: false,
+    sourceIds: ['retrieval-chunk-1'],
+  });
+
+  assert.equal(parsed.retrievalContext?.[0]?.sourceId, 'retrieval-chunk-1');
+  assert.deepEqual(response.sourceIds, ['retrieval-chunk-1']);
+});
+
+test('practice report runtime accepts only verified evaluation facts and bounded sources', () => {
+  const request = PracticeReportRuntimeRequestSchema.parse(validPracticeReportRuntimeRequest);
+  const response = PracticeReportRuntimeResponseSchema.parse({
+    contractVersion: 'practice-report-runtime.v1',
+    overallScore: 72,
+    summary: 'The round exposed one repeatable gap.',
+    strengths: ['Explains the main boundary.'],
+    weaknesses: ['Capacity planning'],
+    nextActions: ['Add a quantified capacity example.'],
+    reportMarkdown: '# Practice report',
+    sourceIds: ['chunk-1'],
+    memoryEvents: [{ tag: 'system-design', observedScore: 72, evidence: 'Evaluation score.' }],
+    fallbackUsed: false,
+  });
+
+  assert.equal(request.traceId, 'trace-practice-report-0001');
+  assert.equal('answer' in request.evaluations[0]!, false);
+  assert.deepEqual(response.sourceIds, ['chunk-1']);
+});
+
+const validPracticeReportRuntimeRequest = {
+  contractVersion: 'practice-report-runtime.v1',
+  session: { id: 'session-1', tenantId: 'tenant-1', userId: 'user-1', title: 'System design' },
+  evaluations: [
+    {
+      itemId: 'item-1',
+      questionId: 'question-1',
+      questionTitle: 'Design a rate limiter',
+      questionTags: ['system-design'],
+      score: 72,
+      feedback: 'The boundary is clear.',
+      missingPoints: ['Capacity planning'],
+    },
+  ],
+  retrievalContext: [{ sourceId: 'chunk-1', entityType: 'knowledge', content: 'Reference.' }],
+  commandId: 'practice-report:session-1',
+  traceId: 'trace-practice-report-0001',
+};
 
 test('answer input trims content and rejects blank answers', () => {
   const parsed = SubmitInterviewAnswerInputSchema.parse({

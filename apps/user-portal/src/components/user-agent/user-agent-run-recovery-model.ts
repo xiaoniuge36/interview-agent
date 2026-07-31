@@ -2,6 +2,20 @@ import type { UserAgentHeartbeatRunInput, UserAgentRun } from '@/lib/user-page-a
 
 const ACTIVE_RUN_STATUSES = ['running', 'waiting_confirmation'] as const;
 
+export async function loadCurrentUserAgentRunHistory(
+  conversationId: string,
+  load: (conversationId: string) => Promise<UserAgentRun[]>,
+  isCurrent: (conversationId: string) => boolean,
+) {
+  try {
+    const runs = await load(conversationId);
+    return isCurrent(conversationId) ? runs : null;
+  } catch (error) {
+    if (!isCurrent(conversationId)) return null;
+    throw error;
+  }
+}
+
 export function shouldPollUserAgentRun(run: UserAgentRun | null, localRunId: string | null) {
   return Boolean(
     run &&

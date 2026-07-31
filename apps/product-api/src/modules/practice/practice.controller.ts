@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import {
   CreatePracticeSessionSchema,
+  MistakeBookQuerySchema,
   SubmitPracticeAnswerSchema,
 } from '@interview-agent/contracts';
 import { Roles } from '../../common/authz/roles.decorator';
@@ -29,6 +30,16 @@ export class PracticeController {
   @Get('practices/history')
   history(@Req() request: ProductRequest) {
     return this.service.history(request.context);
+  }
+
+  @Get('practice-mistakes')
+  mistakes(@Req() request: ProductRequest, @Query() query: unknown) {
+    return this.service.mistakes(request.context, MistakeBookQuerySchema.parse(query));
+  }
+
+  @Post('practice-mistakes/:id/review')
+  reviewMistake(@Req() request: ProductRequest, @Param('id') mistakeId: string) {
+    return this.service.reviewMistake(request.context, mistakeId);
   }
 
   @Get('practice-recommendations')
@@ -70,8 +81,8 @@ export class PracticeController {
     @Param() params: PracticeAnswerParams,
     @Res() response: Response,
   ): Promise<void> {
-    const connection = createAiOperationSse(response, request.context);
     const controller = new AbortController();
+    const connection = createAiOperationSse(response, request.context, controller.signal);
     response.once('close', () => {
       if (!response.writableEnded) controller.abort();
     });
@@ -84,9 +95,9 @@ export class PracticeController {
           signal: controller.signal,
         },
       );
-      connection.sink.result({ operation: 'practice_evaluation', result });
+      await connection.sink.result({ operation: 'practice_evaluation', result });
     } catch (error) {
-      connection.sink.error(streamError(error, request.context));
+      await connection.sink.error(streamError(error, request.context));
     } finally {
       connection.close();
     }

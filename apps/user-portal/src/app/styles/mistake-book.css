@@ -1,0 +1,253 @@
+.mistake-book {
+  display: grid;
+  gap: 14px;
+  border: 1px solid color-mix(in srgb, var(--warning) 22%, var(--outline));
+  border-radius: 19px;
+  padding: clamp(17px, 3vw, 24px);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--warning-soft) 70%, transparent),
+      transparent 22%
+    ),
+    var(--surface);
+}
+
+.mistake-book > header,
+.mistake-book-row,
+.mistake-book-action,
+.weakness-review-action,
+.weakness-review-evidence,
+.interview-review-evidence-meta {
+  display: flex;
+  align-items: center;
+}
+
+.mistake-book > header {
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.mistake-book > header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.mistake-book > header span,
+.mistake-book-empty > span,
+.mistake-evidence > span,
+.weakness-review-evidence > span {
+  color: var(--warning);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mistake-book h2,
+.mistake-book h3,
+.mistake-book p {
+  margin: 0;
+}
+
+.mistake-book h2 {
+  color: var(--ink);
+  font-size: clamp(19px, 2vw, 25px);
+  letter-spacing: -0.035em;
+}
+
+.mistake-book > header > p {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.mistake-book-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mistake-book-row {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 15px;
+  border: 1px solid color-mix(in srgb, var(--warning) 14%, var(--outline));
+  border-radius: 16px;
+  padding: 15px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--warning-soft));
+}
+
+.mistake-book-row[data-reviewable='false'] {
+  background: color-mix(in srgb, var(--surface) 92%, var(--surface-subtle));
+}
+
+.mistake-book-score {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  align-content: center;
+  border-radius: 16px;
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.mistake-book-score strong {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.mistake-book-score span {
+  font-size: 9px;
+}
+
+.mistake-book-main {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.mistake-book-main > small,
+.mistake-book-action > span,
+.mistake-book-action > small {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.mistake-book-main h3 {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.mistake-book-main > p {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.mistake-evidence {
+  display: grid;
+  gap: 5px;
+  margin-top: 4px;
+  border-left: 3px solid color-mix(in srgb, var(--warning) 62%, var(--outline));
+  padding-left: 10px;
+}
+
+.mistake-evidence > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.mistake-evidence i {
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.mistake-evidence > p {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.mistake-book-action {
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 7px;
+  text-align: right;
+}
+
+.mistake-book-action button,
+.mistake-book-state button,
+.mistake-book-empty a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 11px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.mistake-book-action button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.mistake-book-action em {
+  max-width: 150px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-style: normal;
+}
+
+.mistake-book-empty,
+.mistake-book-state {
+  justify-items: start;
+}
+
+.mistake-book-empty p,
+.mistake-book-state p {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.weakness-review-action {
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.weakness-review-evidence {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.weakness-review-evidence strong,
+.weakness-review-evidence small {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.interview-review-evidence-meta {
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .mistake-book > header,
+  .mistake-book-row {
+    align-items: start;
+  }
+
+  .mistake-book > header {
+    flex-direction: column;
+  }
+
+  .mistake-book-row {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .mistake-book-score {
+    width: 48px;
+    height: 48px;
+  }
+
+  .mistake-book-action {
+    align-items: flex-start;
+    grid-column: 2;
+    text-align: left;
+  }
+}

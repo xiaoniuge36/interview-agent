@@ -7,7 +7,10 @@ const EMPTY_EVIDENCE = '保存档案后，Agent 会在这里归纳你的优势�
 const EMPTY_FOCUS = '完成档案后，Agent 会标记下一轮需要重点练习的内容。';
 
 export type ProfileMemoryModel = {
-  completion: number;
+  completion: number | null;
+  readinessLabel: string;
+  primaryGap: string | null;
+  nextAction: { href: string; label: string };
   role: string;
   evidence: string[];
   focus: string[];
@@ -20,32 +23,73 @@ export function createProfileMemoryModel(payload: ProfilePayload): ProfileMemory
   const profile = payload.profile;
   if (!profile)
     return {
-      completion: 0,
+      completion: null,
+      readinessLabel: '待开始',
+      primaryGap: '目标岗位',
+      nextAction: { href: '#profile-target-role', label: '先填写目标岗位' },
       role: '等待完善目标岗位',
       evidence: [EMPTY_EVIDENCE],
       focus: [EMPTY_FOCUS],
       ...trainingSignals(profile),
     };
 
-  const completedFields = [
-    profile.targetRole,
-    true,
-    profile.techStacks.length,
-    profile.resumeSummary,
-    profile.projectExperiences.length,
-    profile.currentLevel,
-  ].filter(Boolean).length;
   const analyzedEvidence = payload.snapshot?.strengths.slice(0, MEMORY_ITEM_LIMIT);
   const evidence = analyzedEvidence?.length
     ? analyzedEvidence
     : profile.techStacks.slice(0, MEMORY_ITEM_LIMIT);
   const focus = payload.snapshot?.weaknesses.slice(0, MEMORY_ITEM_LIMIT) ?? [EMPTY_FOCUS];
   return {
-    completion: Math.round((completedFields / PROFILE_FIELD_COUNT) * PERCENTAGE_MAX),
+    ...createProfileReadiness(profile),
     role: profile.targetRole,
     evidence: evidence.length ? evidence : [EMPTY_EVIDENCE],
     focus: focus.length ? focus : [EMPTY_FOCUS],
     ...trainingSignals(profile),
+  };
+}
+
+function createProfileReadiness(profile: NonNullable<ProfilePayload['profile']>) {
+  const fields = [
+    { ready: Boolean(profile.targetRole.trim()), label: '目标岗位', href: '#profile-target-role' },
+    {
+      ready: Number.isFinite(profile.yearsOfExperience),
+      label: '工作年限',
+      href: '#profile-years',
+    },
+    {
+      ready: profile.techStacks.length > 0,
+      label: '核心技能 / 工具',
+      href: '#profile-tech-stacks',
+    },
+    {
+      ready: Boolean(profile.resumeSummary.trim()),
+      label: '个人概述 / 代表能力',
+      href: '#profile-resume-summary',
+    },
+    {
+      ready: profile.projectExperiences.length > 0,
+      label: '项目 / 代表经历',
+      href: '#profile-projects',
+    },
+    {
+      ready: Boolean(profile.currentLevel.trim()),
+      label: '当前能力水平',
+      href: '#profile-current-level',
+    },
+  ];
+  const completedFields = fields.filter((field) => field.ready).length;
+  const primaryGap = fields.find((field) => !field.ready);
+  if (!primaryGap)
+    return {
+      completion: PERCENTAGE_MAX,
+      readinessLabel: '可进入岗位定制',
+      primaryGap: null,
+      nextAction: { href: '/job', label: '继续设置目标 JD' },
+    };
+  return {
+    completion: Math.round((completedFields / PROFILE_FIELD_COUNT) * PERCENTAGE_MAX),
+    readinessLabel: `${completedFields}/${PROFILE_FIELD_COUNT} 项已准备`,
+    primaryGap: primaryGap.label,
+    nextAction: { href: primaryGap.href, label: `补充${primaryGap.label}` },
   };
 }
 

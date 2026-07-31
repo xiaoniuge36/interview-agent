@@ -55,7 +55,7 @@ function practiceContinuation(practice: RecentPracticeSummary): TrainingContinua
     href: `/practice?session=${encodeURIComponent(practice.id)}`,
     kicker: '继续上次练习',
     detail: `已回答 ${practice.answeredCount}/${practice.questionCount} 题，进度已保留。`,
-    actionLabel: '继续练习',
+    actionLabel: '继续训练',
     progressPercent: Math.min(PERCENTAGE_TOTAL, Math.max(0, progress)),
     statusLabel: null,
   };
@@ -69,9 +69,9 @@ function interviewContinuation(interview: InterviewSession): TrainingContinuatio
     title: interview.title,
     updatedAt: interview.updatedAt,
     href: `/interview?session=${encodeURIComponent(interview.id)}`,
-    kicker: '继续上次模拟',
+    kicker: '继续上次面试',
     detail: `停在${interviewStageLabel(interview.stage)}，已完成 ${answered} 轮回答。`,
-    actionLabel: '继续模拟',
+    actionLabel: '继续上次面试',
     progressPercent: null,
     statusLabel: interviewStatusLabel(interview.status),
   };

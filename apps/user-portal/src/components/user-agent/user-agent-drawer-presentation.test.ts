@@ -3,10 +3,18 @@ import { resolveUserAgentDrawerPresentation } from './user-agent-drawer-presenta
 
 describe('resolveUserAgentDrawerPresentation', () => {
   it('marks the desktop assistant as non-modal while the page remains interactive', () => {
-    expect(resolveUserAgentDrawerPresentation(false)).toEqual({ ariaModal: undefined });
+    expect(resolveUserAgentDrawerPresentation(false)).toEqual({
+      ariaModal: undefined,
+      initialFocus: 'composer',
+      trapFocus: false,
+    });
   });
 
   it('marks the compact assistant as modal while its backdrop is active', () => {
-    expect(resolveUserAgentDrawerPresentation(true)).toEqual({ ariaModal: true });
+    expect(resolveUserAgentDrawerPresentation(true)).toEqual({
+      ariaModal: true,
+      initialFocus: 'composer',
+      trapFocus: true,
+    });
   });
 });

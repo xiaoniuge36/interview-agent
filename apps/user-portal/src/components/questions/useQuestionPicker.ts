@@ -1,41 +1,47 @@
 'use client';
 
 import {
-  QuestionCatalogQuerySchema,
   type PracticeRecommendation,
-  type QuestionCatalogQuery,
   type QuestionCatalogResponse,
 } from '@interview-agent/contracts';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { getPracticeRecommendations, getQuestionCatalog } from '@/lib/question-catalog-api';
+import { getPracticeRecommendations } from '@/lib/question-catalog-api';
 import { createPracticeSession } from '@/lib/practice-api';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import {
   composeQuestionSelectionWithFeedback,
   toggleQuestionSelection,
 } from './question-picker-model';
-import { createLatestQuestionRequestRunner } from './latest-question-request';
 import {
   createExclusivePracticeStartRunner,
   startQuestionPractice,
   type PracticeStartInput,
 } from './practice-start-single-flight';
 import { createLatestQuestionRecommendationRequest } from './question-recommendation-request';
+import {
+  readQuestionSelection,
+  writeQuestionSelection,
+  type SelectedQuestion,
+  type QuestionSelectionStorage,
+} from './question-selection-storage';
+import { catalogQueryFromString, useQuestionCatalog } from './question-catalog-state';
+import {
+  learningPracticeHref,
+  type LearningVerification,
+} from '@/lib/learning/learning-verification';
 
 const QUICK_COMPOSE_TARGET_COUNT = 5;
 
 export type CatalogQuestion = QuestionCatalogResponse['items'][number];
 
-export function useQuestionPicker() {
+export function useQuestionPicker(learningVerification: LearningVerification) {
   const searchParams = useSearchParams();
-  const queryKey = searchParams.toString();
-  const query = catalogQueryFromString(queryKey);
-  const catalogState = useCatalog(queryKey);
+  const { queryKey, query, catalogState } = usePickerCatalog(searchParams, learningVerification);
   const selection = useQuestionSelection();
   const recommendations = useRecommendations();
   const navigation = useQuestionNavigation(queryKey);
-  const { run, error: startError, busyKey } = usePracticeStarter();
+  const { run, error: startError, busyKey } = usePracticeStarter(learningVerification);
   const { selected, compose } = selection;
 
   const start = useCallback(() => {
@@ -79,6 +85,22 @@ export function useQuestionPicker() {
   };
 }
 
+function usePickerCatalog(
+  searchParams: ReturnType<typeof useSearchParams>,
+  learningVerification: LearningVerification,
+) {
+  const queryKey = searchParams.toString();
+  const learningQuery = learningVerification.status === 'ready' ? learningVerification.query : null;
+  const query = useMemo(
+    () => catalogQueryFromString(queryKey, learningQuery),
+    [learningQuery, queryKey],
+  );
+  const enabled =
+    learningVerification.status === 'inactive' || learningVerification.status === 'ready';
+  const catalogState = useQuestionCatalog(query, enabled);
+  return { queryKey, query, catalogState };
+}
+
 function useQuestionNavigation(queryKey: string) {
   const router = useRouter();
   const pathname = usePathname();
@@ -103,68 +125,95 @@ function useQuestionNavigation(queryKey: string) {
   return { updateFilter, changePage };
 }
 
-function useCatalog(queryKey: string) {
-  const [catalog, setCatalog] = useState<QuestionCatalogResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [requestRunner] = useState(createLatestQuestionRequestRunner);
-  const load = useCallback(() => {
-    setLoading(true);
-    setError('');
-    return requestRunner.run({
-      load: () => getQuestionCatalog(catalogQueryFromString(queryKey)),
-      onError: () => setError('当前筛选结果没有加载成功，请保留题单后重试。'),
-      onSettled: () => setLoading(false),
-      onSuccess: setCatalog,
-    });
-  }, [queryKey, requestRunner]);
+function useQuestionSelection() {
+  const [selected, setSelected] = useState<SelectedQuestion[]>([]);
+  const [selectionMessage, setSelectionMessage] = useState('');
   useEffect(() => {
-    void load();
-    return requestRunner.invalidate;
-  }, [load, requestRunner]);
-  return { catalog, loading, error, reload: load };
+    const storage = questionSelectionStorage();
+    if (storage) setSelected(readQuestionSelection(storage));
+  }, []);
+  const updateSelected = useCallback(
+    (update: (current: SelectedQuestion[]) => SelectedQuestion[]) =>
+      setSelected((current) => persistQuestionSelection(update(current))),
+    [],
+  );
+  const toggle = useCallback(
+    (question: CatalogQuestion) =>
+      updateSelected((current) => toggleSelectedQuestion(current, question, setSelectionMessage)),
+    [updateSelected],
+  );
+  const remove = useCallback(
+    (id: string) => {
+      updateSelected((current) => current.filter((item) => item.id !== id));
+      setSelectionMessage('');
+    },
+    [updateSelected],
+  );
+  const compose = useCallback(
+    (candidates: CatalogQuestion[]) =>
+      updateSelected((current) =>
+        composeSelectedQuestions(current, candidates, setSelectionMessage),
+      ),
+    [updateSelected],
+  );
+  const clear = useCallback(() => {
+    updateSelected(() => []);
+    setSelectionMessage('');
+  }, [updateSelected]);
+  return { selected, selectionMessage, toggle, remove, compose, clear };
 }
 
-function useQuestionSelection() {
-  const [selected, setSelected] = useState<CatalogQuestion[]>([]);
-  const [selectionMessage, setSelectionMessage] = useState('');
-  const toggle = useCallback((question: CatalogQuestion) => {
-    setSelected((current) => {
-      const result = toggleQuestionSelection(
-        current.map((item) => item.id),
-        question.id,
-      );
-      setSelectionMessage(result.limitReached ? '每轮最多选择 10 题，请先移除一道题。' : '');
-      if (result.limitReached) return current;
-      return current.some((item) => item.id === question.id)
-        ? current.filter((item) => item.id !== question.id)
-        : [...current, question];
-    });
-  }, []);
-  const remove = useCallback((id: string) => {
-    setSelected((current) => current.filter((item) => item.id !== id));
-    setSelectionMessage('');
-  }, []);
-  const compose = useCallback((candidates: CatalogQuestion[]) => {
-    setSelected((current) => {
-      const result = composeQuestionSelectionWithFeedback(
-        current.map((item) => item.id),
-        candidates.map((item) => item.id),
-        QUICK_COMPOSE_TARGET_COUNT,
-      );
-      const questions = new Map([...current, ...candidates].map((item) => [item.id, item]));
-      setSelectionMessage(result.message);
-      return result.ids.flatMap((id) => {
-        const question = questions.get(id);
-        return question ? [question] : [];
-      });
-    });
-  }, []);
-  const clear = useCallback(() => {
-    setSelected([]);
-    setSelectionMessage('');
-  }, []);
-  return { selected, selectionMessage, toggle, remove, compose, clear };
+function toggleSelectedQuestion(
+  current: SelectedQuestion[],
+  question: CatalogQuestion,
+  setMessage: (message: string) => void,
+) {
+  const result = toggleQuestionSelection(
+    current.map((item) => item.id),
+    question.id,
+  );
+  setMessage(result.limitReached ? '每轮最多选择 10 题，请先移除一道题。' : '');
+  if (result.limitReached) return current;
+  return current.some((item) => item.id === question.id)
+    ? current.filter((item) => item.id !== question.id)
+    : [...current, selectedQuestion(question)];
+}
+
+function composeSelectedQuestions(
+  current: SelectedQuestion[],
+  candidates: CatalogQuestion[],
+  setMessage: (message: string) => void,
+) {
+  const result = composeQuestionSelectionWithFeedback(
+    current.map((item) => item.id),
+    candidates.map((item) => item.id),
+    QUICK_COMPOSE_TARGET_COUNT,
+  );
+  const questions = new Map([...current, ...candidates].map((item) => [item.id, item]));
+  setMessage(result.message);
+  return result.ids.flatMap((id) => {
+    const question = questions.get(id);
+    return question ? [selectedQuestion(question)] : [];
+  });
+}
+
+function persistQuestionSelection(selected: SelectedQuestion[]) {
+  const storage = questionSelectionStorage();
+  if (storage) writeQuestionSelection(storage, selected);
+  return selected;
+}
+
+function selectedQuestion(question: SelectedQuestion): SelectedQuestion {
+  return { id: question.id, title: question.title };
+}
+
+function questionSelectionStorage(): QuestionSelectionStorage | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
 }
 
 function useRecommendations() {
@@ -191,7 +240,7 @@ function useRecommendations() {
   return { recommendation, recommendationLoading, recommendationError, reloadRecommendation };
 }
 
-function usePracticeStarter() {
+function usePracticeStarter(learningVerification: LearningVerification) {
   const router = useRouter();
   const notifications = useNotifications();
   const [error, setError] = useState('');
@@ -207,7 +256,7 @@ function usePracticeStarter() {
           setBusyKey,
           onSuccess: (sessionId) => {
             notifications.success('练习题单已创建', '服务端已保存本轮题目，即将进入练习空间。');
-            router.push(`/practice?session=${sessionId}`);
+            router.push(learningPracticeHref(sessionId, learningVerification));
           },
           onError: (error) => {
             setError(input.failureMessage);
@@ -215,23 +264,9 @@ function usePracticeStarter() {
           },
         });
       }),
-    [notifications, router, runExclusive],
+    [learningVerification, notifications, router, runExclusive],
   );
   return { error, busyKey, run };
-}
-
-function catalogQueryFromString(value: string): QuestionCatalogQuery {
-  const params = new URLSearchParams(value);
-  const parsed = QuestionCatalogQuerySchema.safeParse({
-    query: params.get('query') || undefined,
-    category: params.get('category') || undefined,
-    tags: params.get('tags') || undefined,
-    type: params.get('type') || undefined,
-    difficulty: params.get('difficulty') || undefined,
-    sort: params.get('sort') || undefined,
-    page: params.get('page') || undefined,
-  });
-  return parsed.success ? parsed.data : QuestionCatalogQuerySchema.parse({});
 }
 
 function withQuery(pathname: string, params: URLSearchParams) {

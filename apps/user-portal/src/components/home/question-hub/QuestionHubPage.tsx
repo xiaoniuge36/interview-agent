@@ -5,7 +5,6 @@ import { useAuth } from '@interview-agent/auth-client';
 import { AgentRecommendationRail } from './AgentRecommendationRail';
 import { QuestionSearchBar } from './QuestionSearchBar';
 import { QuestionTopicGrid } from './QuestionTopicGrid';
-import { TrainingContinuationCard } from './TrainingContinuationCard';
 import { useQuestionHubData } from './useQuestionHubData';
 
 const DISCOVERY_TAG_LIMIT = 8;
@@ -27,7 +26,6 @@ export function QuestionHubPage() {
         onStart={(recommendation) => void data.startRecommendation(recommendation)}
       />
       <div className="question-hub-supporting-content">
-        {data.continuation ? <TrainingContinuationCard continuation={data.continuation} /> : null}
         <QuestionSearchBar total={data.catalog?.total} compact />
         {data.catalogError ? (
           <CatalogError message={data.catalogError} onRetry={data.reloadCatalog} />

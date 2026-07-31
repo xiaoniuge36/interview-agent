@@ -3,6 +3,8 @@ import type { PrismaService } from '../../common/database/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
 import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { CandidatePublicationService } from './candidate-publication.service';
+import { CandidateReviewInfrastructure } from './candidate-review-infrastructure';
 import { CandidateReviewService } from './candidate-review.service';
 
 const context: ProductRequestContext = {
@@ -28,11 +30,7 @@ describe('CandidateReviewService', () => {
       publishedQuestionId: 'question-1',
     });
     database.transaction.question.findUnique.mockResolvedValue(publishedQuestion());
-    const service = new CandidateReviewService(
-      database as unknown as PrismaService,
-      new PolicyService(),
-      { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
-    );
+    const service = candidateService(database);
 
     await expect(
       service.publish(context, 'candidate-1', { visibility: 'tenant' }),
@@ -46,11 +44,7 @@ describe('CandidateReviewService', () => {
 
   it('rejects publish calls from a non-admin reviewer', async () => {
     const database = candidateDatabase();
-    const service = new CandidateReviewService(
-      database as unknown as PrismaService,
-      new PolicyService(),
-      { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
-    );
+    const service = candidateService(database);
     const reviewerContext: ProductRequestContext = {
       ...context,
       actor: { ...context.actor, role: 'question_reviewer' },
@@ -83,11 +77,7 @@ describe('CandidateReviewService platform access', () => {
     );
     database.transaction.question.findFirst.mockResolvedValue(null);
     database.transaction.question.create.mockResolvedValue(publishedQuestion());
-    const service = new CandidateReviewService(
-      database as unknown as PrismaService,
-      new PolicyService(),
-      { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
-    );
+    const service = candidateService(database);
     const platformContext: ProductRequestContext = {
       ...context,
       actor: { ...context.actor, role: 'platform_admin' },
@@ -115,11 +105,7 @@ function candidateDatabase() {
 async function expectPendingPublishPrompt() {
   const database = candidateDatabase();
   database.transaction.candidateQuestion.findFirst.mockResolvedValue(candidateRecord());
-  const service = new CandidateReviewService(
-    database as unknown as PrismaService,
-    new PolicyService(),
-    { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
-  );
+  const service = candidateService(database);
   const error = await service.publish(context, 'candidate-1', { visibility: 'tenant' }).then(
     () => null,
     (reason: unknown) => reason,
@@ -139,11 +125,7 @@ async function expectPersistedRevisionAudit() {
   database.transaction.candidateQuestion.update.mockResolvedValue(
     candidateRecord({ status: 'approved', revision: 2 }),
   );
-  const service = new CandidateReviewService(
-    database as unknown as PrismaService,
-    new PolicyService(),
-    audit as unknown as AuditService,
-  );
+  const service = candidateService(database, audit as unknown as AuditService);
 
   await service.update(context, 'candidate-1', { status: 'approved' });
 
@@ -177,9 +159,8 @@ async function expectBatchReview() {
   database.transaction.candidateQuestion.update
     .mockResolvedValueOnce(candidateRecord({ id: 'candidate-1', status: 'approved', revision: 2 }))
     .mockResolvedValueOnce(candidateRecord({ id: 'candidate-2', status: 'approved', revision: 4 }));
-  const service = new CandidateReviewService(
-    database as unknown as PrismaService,
-    new PolicyService(),
+  const service = candidateService(
+    database,
     audit as unknown as AuditService,
   ) as unknown as BatchReviewService;
 
@@ -204,11 +185,7 @@ async function expectMixedSourceBatchRejected() {
     candidateRecord({ id: 'candidate-1', importTaskId: 'import-1' }),
     candidateRecord({ id: 'candidate-2', importTaskId: 'import-2' }),
   ]);
-  const service = new CandidateReviewService(
-    database as unknown as PrismaService,
-    new PolicyService(),
-    { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
-  ) as unknown as BatchReviewService;
+  const service = candidateService(database) as unknown as BatchReviewService;
 
   await expect(
     service.batchReview(context, {
@@ -229,11 +206,7 @@ async function expectPublishedBatchRejected() {
       publishedQuestionId: 'question-1',
     }),
   ]);
-  const service = new CandidateReviewService(
-    database as unknown as PrismaService,
-    new PolicyService(),
-    { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
-  ) as unknown as BatchReviewService;
+  const service = candidateService(database) as unknown as BatchReviewService;
 
   const error = await service
     .batchReview(context, {
@@ -293,4 +266,19 @@ function candidateRecord(overrides: Record<string, unknown> = {}) {
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     ...overrides,
   };
+}
+
+function candidateService(
+  database: ReturnType<typeof candidateDatabase>,
+  audit: AuditService = { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
+) {
+  const infrastructure = new CandidateReviewInfrastructure(
+    database as unknown as PrismaService,
+    new PolicyService(),
+    audit,
+  );
+  return new CandidateReviewService(
+    infrastructure,
+    new CandidatePublicationService(infrastructure),
+  );
 }

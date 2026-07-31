@@ -28,7 +28,7 @@ describe('TrainingContinuationCard', () => {
       ...baseContinuation,
       kind: 'interview',
       href: '/interview?session=interview-1',
-      actionLabel: '继续模拟',
+      actionLabel: '继续上次面试',
       progressPercent: null,
       statusLabel: '等待你的回答',
     });
@@ -36,6 +36,7 @@ describe('TrainingContinuationCard', () => {
     expect(markup).toContain('面试现场状态：等待你的回答');
     expect(markup).toContain('recent-training-status');
     expect(markup).toContain('href="/interview?session=interview-1"');
+    expect(markup).toContain('继续上次面试');
   });
 });
 

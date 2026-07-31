@@ -100,8 +100,13 @@
 }
 
 @media (max-width: 520px) {
+  .access-story {
+    display: none;
+  }
+
   .access-panel {
     width: min(100% - 28px, 480px);
+    margin: 16px auto 24px;
     padding: 28px 22px;
   }
 

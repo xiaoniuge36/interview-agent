@@ -7,13 +7,30 @@ import { ModelConnectionEditor } from './ModelConnectionEditor';
 import { ModelCredentialCard } from './ModelCredentialCard';
 import { ModelReadinessBanner } from './ModelReadinessBanner';
 import { emptyModelConnection, type ModelConnectionDraft } from './model-connection-form';
+import { modelConnectionReadiness } from './model-connection-readiness';
 import { createLatestCredentialListRequest } from './model-credential-list-request';
+import {
+  settingsReturnTargetFromSearch,
+  type SettingsReturnTarget,
+} from './settings-return-target';
 
 type EditorState = { credential: ModelCredentialView | null; draft: ModelConnectionDraft };
 
 export function ModelConnectionsPanel({ createRequest = 0 }: { createRequest?: number }) {
-  const controller = usePanelController(createRequest);
+  const [returnTarget, setReturnTarget] = useState<SettingsReturnTarget | null>(null);
+  useEffect(() => setReturnTarget(settingsReturnTargetFromSearch(window.location.search)), []);
+  const controller = usePanelController(createRequest, returnTarget);
 
+  return <ModelConnectionsView controller={controller} returnTarget={returnTarget} />;
+}
+
+function ModelConnectionsView({
+  controller,
+  returnTarget,
+}: {
+  controller: ReturnType<typeof usePanelController>;
+  returnTarget: SettingsReturnTarget | null;
+}) {
   return (
     <section className="model-connections-panel" aria-labelledby="model-settings-heading">
       <ModelConnectionsHeader />
@@ -25,6 +42,7 @@ export function ModelConnectionsPanel({ createRequest = 0 }: { createRequest?: n
       {!controller.loading && !controller.error ? (
         <ModelReadinessBanner
           credentials={controller.credentials}
+          returnTarget={returnTarget}
           onAdd={() => controller.setEditor(newEditor())}
         />
       ) : null}
@@ -36,20 +54,7 @@ export function ModelConnectionsPanel({ createRequest = 0 }: { createRequest?: n
           onSaved={controller.onSaved}
         />
       ) : null}
-      <div className="credential-list" aria-live="polite">
-        {controller.credentials.map((credential) => (
-          <ModelCredentialCard
-            key={credential.id}
-            credential={credential}
-            {...controller.credentialActions}
-            onEdit={() => controller.setEditor(editEditor(credential))}
-          />
-        ))}
-        {controller.credentials.length === 0 && !controller.error ? (
-          <EmptyConnections onAdd={() => controller.setEditor(newEditor())} />
-        ) : null}
-        {controller.error ? <p className="settings-error">{controller.error}</p> : null}
-      </div>
+      <ModelCredentialList controller={controller} />
       <p className="security-note">
         <span aria-hidden="true">♢</span>密钥已加密保存，只会用于你的 Agent
         任务。你可以随时更新或删除连接。
@@ -60,6 +65,29 @@ export function ModelConnectionsPanel({ createRequest = 0 }: { createRequest?: n
         </p>
       ) : null}
     </section>
+  );
+}
+
+function ModelCredentialList({
+  controller,
+}: {
+  controller: ReturnType<typeof usePanelController>;
+}) {
+  return (
+    <div className="credential-list" aria-live="polite">
+      {controller.credentials.map((credential) => (
+        <ModelCredentialCard
+          key={credential.id}
+          credential={credential}
+          {...controller.credentialActions}
+          onEdit={() => controller.setEditor(editEditor(credential))}
+        />
+      ))}
+      {controller.credentials.length === 0 && !controller.error ? (
+        <EmptyConnections onAdd={() => controller.setEditor(newEditor())} />
+      ) : null}
+      {controller.error ? <p className="settings-error">{controller.error}</p> : null}
+    </div>
   );
 }
 
@@ -76,7 +104,7 @@ function ModelConnectionsHeader() {
   );
 }
 
-function usePanelController(createRequest: number) {
+function usePanelController(createRequest: number, returnTarget: SettingsReturnTarget | null) {
   const { credentials, error, loading, refresh, setCredentials } = useConnections();
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [notice, setNotice] = useState('');
@@ -99,8 +127,10 @@ function usePanelController(createRequest: number) {
       setCredentials((items) =>
         items.map((credential) => (credential.id === updated.id ? updated : credential)),
       );
+      const readiness = modelConnectionReadiness([updated], returnTarget);
+      setNotice(readiness.kind === 'ready' ? readiness.nextAction.notice : '');
     },
-    [setCredentials],
+    [returnTarget, setCredentials],
   );
   const onRemoved = useCallback(
     (credentialId: string) => {

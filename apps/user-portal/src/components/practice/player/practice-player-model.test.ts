@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { PracticeSession } from '@interview-agent/contracts';
 import {
   canCompleteSelfStudy,
@@ -54,11 +54,13 @@ describe('单题播放器状态', () => {
     expect(hasUnsavedPracticeAnswer(item, 'answer-2 补充内容')).toBe(true);
   });
 
-  it('存在未保存修改时切题需要确认', () => {
-    const confirm = vi.fn().mockReturnValue(false);
-
-    expect(confirmPracticeNavigation(session().items[1]!, '新草稿', confirm)).toBe(false);
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('未保存'));
+  it('存在未保存修改时返回可解释的页面内切题确认', () => {
+    expect(confirmPracticeNavigation(session().items[1]!, '新草稿')).toEqual({
+      cancelLabel: '留在本题',
+      confirmLabel: '保留草稿并切换',
+      description: '当前修改只保存在这个标签页，切换后仍可回来继续编辑。',
+      title: '保留这段草稿再切换？',
+    });
   });
 });
 

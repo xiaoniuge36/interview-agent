@@ -92,6 +92,29 @@
   color: var(--text-muted);
   line-height: 1.6;
 }
+
+.practice-report-evidence {
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.practice-report-evidence summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.practice-report-evidence ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
+.practice-report-evidence p {
+  margin: 8px 0 0;
+}
 .practice-starter .label {
   min-width: 0;
 }

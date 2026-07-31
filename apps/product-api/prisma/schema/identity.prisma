@@ -5,69 +5,72 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users              User[]
-  profiles           UserProfile[]
-  profileSnapshots   ProfileSnapshot[]
-  jobIntents         JobIntent[]
-  jobProfiles        JobProfile[]
-  interviews         InterviewSession[]
-  interviewTurns     InterviewTurn[]
-  interviewReports   InterviewReport[]
-  interviewCommands  InterviewCommand[]
-  interviewEvents    InterviewEvent[]
-  memoryEvents       MemoryEvent[]
-  agentRuns          AgentRun[]
-  questions          Question[]
-  candidateQuestions CandidateQuestion[]
-  modelProfiles      ModelProfile[]
-  knowledgeAssets    KnowledgeAsset[]
-  knowledgeChunks    KnowledgeChunk[]
-  importTasks        ImportTask[]
-  practiceSessions   PracticeSession[]
-  practiceItems      PracticeSessionItem[]
-  evaluationResults  EvaluationResult[]
-  practiceReports    PracticeReport[]
-  masteryProfiles    MasteryProfile[]
-  localCredentials   LocalCredential[]
-  modelCredentials   UserModelCredential[]
-  aiInvocations      AiInvocation[]
+  users                  User[]
+  profiles               UserProfile[]
+  profileSnapshots       ProfileSnapshot[]
+  jobIntents             JobIntent[]
+  jobProfiles            JobProfile[]
+  interviews             InterviewSession[]
+  interviewTurns         InterviewTurn[]
+  interviewReports       InterviewReport[]
+  interviewCommands      InterviewCommand[]
+  interviewEvents        InterviewEvent[]
+  memoryEvents           MemoryEvent[]
+  agentRuns              AgentRun[]
+  questions              Question[]
+  candidateQuestions     CandidateQuestion[]
+  modelProfiles          ModelProfile[]
+  knowledgeAssets        KnowledgeAsset[]
+  knowledgeChunks        KnowledgeChunk[]
+  importTasks            ImportTask[]
+  practiceSessions       PracticeSession[]
+  practiceItems          PracticeSessionItem[]
+  evaluationResults      EvaluationResult[]
+  practiceReports        PracticeReport[]
+  masteryProfiles        MasteryProfile[]
+  localCredentials       LocalCredential[]
+  modelCredentials       UserModelCredential[]
+  aiInvocations          AiInvocation[]
   pageAgentConversations AdminPageAgentConversation[]
-  pageAgentMessages  AdminPageAgentMessage[]
-  pageAgentRuns      AdminPageAgentRun[]
+  pageAgentMessages      AdminPageAgentMessage[]
+  pageAgentRuns          AdminPageAgentRun[]
   userAgentConversations UserAgentConversation[]
-  userAgentMessages  UserAgentMessage[]
-  userPageAgentRuns  UserPageAgentRun[]
-  auditLogs          AuditLog[]
+  userAgentMessages      UserAgentMessage[]
+  userPageAgentRuns      UserPageAgentRun[]
+  auditLogs              AuditLog[]
+  backgroundJobs         BackgroundJob[]
+  retrievalChunks        RetrievalChunk[]
+  retrievalLogs          RetrievalLog[]
 }
 
 model User {
-  id        String    @id @default(cuid())
-  tenantId  String
-  subject   String
-  role      ActorRole @default(user)
-  status    AccountStatus @default(active)
-  email     String?
-  name      String?
-  disabledAt DateTime?
+  id               String        @id @default(cuid())
+  tenantId         String
+  subject          String
+  role             ActorRole     @default(user)
+  status           AccountStatus @default(active)
+  email            String?
+  name             String?
+  disabledAt       DateTime?
   disabledByUserId String?
-  lastSignedInAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  lastSignedInAt   DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  tenant     Tenant             @relation(fields: [tenantId], references: [id])
-  profile    UserProfile?
-  jobIntents JobIntent[]
-  interviews InterviewSession[]
-  memory     MemoryEvent[]
-  practices  PracticeSession[]
-  mastery    MasteryProfile[]
-  credential LocalCredential?
-  modelCredentials UserModelCredential[]
-  aiInvocations AiInvocation[]
+  tenant                 Tenant                       @relation(fields: [tenantId], references: [id])
+  profile                UserProfile?
+  jobIntents             JobIntent[]
+  interviews             InterviewSession[]
+  memory                 MemoryEvent[]
+  practices              PracticeSession[]
+  mastery                MasteryProfile[]
+  credential             LocalCredential?
+  modelCredentials       UserModelCredential[]
+  aiInvocations          AiInvocation[]
   pageAgentConversations AdminPageAgentConversation[]
-  pageAgentRuns AdminPageAgentRun[]
+  pageAgentRuns          AdminPageAgentRun[]
   userAgentConversations UserAgentConversation[]
-  userPageAgentRuns UserPageAgentRun[]
+  userPageAgentRuns      UserPageAgentRun[]
 
   @@unique([tenantId, id])
   @@unique([tenantId, subject])
@@ -136,7 +139,7 @@ model AuditLog {
 }
 
 model UserModelCredential {
-  id            String   @id @default(cuid())
+  id            String           @id @default(cuid())
   tenantId      String
   userId        String
   provider      String
@@ -148,14 +151,14 @@ model UserModelCredential {
   keyVersion    Int
   keyHint       String
   status        CredentialStatus @default(unverified)
-  isDefault     Boolean  @default(false)
+  isDefault     Boolean          @default(false)
   lastTestedAt  DateTime?
   lastErrorCode String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
-  user   User   @relation(fields: [tenantId, userId], references: [tenantId, id])
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  user          User           @relation(fields: [tenantId, userId], references: [tenantId, id])
   aiInvocations AiInvocation[]
 
   @@unique([tenantId, id])

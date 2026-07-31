@@ -51,6 +51,18 @@ describe('ModelProviderClient streaming text', () => {
 
     expect(values).toEqual(['评价']);
   });
+
+  it('applies server-owned output and timeout limits to provider requests', async () => {
+    global.fetch = jest.fn().mockResolvedValue(sseResponse(['data: [DONE]\n\n']));
+
+    await collect(
+      new ModelProviderClient().stream({ ...input, maxOutputTokens: 1_400, timeoutMs: 12_000 }),
+    );
+
+    const request = (global.fetch as jest.Mock).mock.calls[0][1];
+    expect(JSON.parse(String(request.body))).toMatchObject({ max_tokens: 1_400 });
+    expect(request.signal).toBeInstanceOf(AbortSignal);
+  });
 });
 
 describe('ModelProviderClient streaming usage', () => {
@@ -109,6 +121,16 @@ describe('ModelProviderClient streaming errors', () => {
       expect.objectContaining({ code: 'MODEL_PROVIDER_RESPONSE_INVALID' }),
     );
   });
+
+  it('maps a provider timeout to the stable circuit-breaker error code', async () => {
+    const timeout = new Error('request timed out');
+    timeout.name = 'TimeoutError';
+    global.fetch = jest.fn().mockRejectedValue(timeout);
+
+    await expect(collect(new ModelProviderClient().stream(input))).rejects.toEqual(
+      expect.objectContaining({ code: 'MODEL_PROVIDER_TIMEOUT' }),
+    );
+  });
 });
 
 describe('ModelProviderClient compatible invocations', () => {
@@ -149,9 +171,13 @@ describe('ModelProviderClient compatible invocations', () => {
       reasoningTokens: 2,
       totalTokens: 35,
     });
-    expect(JSON.parse(String((global.fetch as jest.Mock).mock.calls[0][1].body))).toEqual(compatibleInput().requestBody);
+    expect(JSON.parse(String((global.fetch as jest.Mock).mock.calls[0][1].body))).toEqual(
+      compatibleInput().requestBody,
+    );
   });
+});
 
+describe('ModelProviderClient compatible invocation errors', () => {
   it('rejects malformed compatible responses', async () => {
     global.fetch = jest.fn().mockResolvedValue(Response.json({ result: 'not-a-completion' }));
 
@@ -164,6 +190,60 @@ describe('ModelProviderClient compatible invocations', () => {
         requestBody: { model: 'gpt-test', messages: [], tools: [] },
       }),
     ).rejects.toEqual(expect.objectContaining({ code: 'MODEL_PROVIDER_RESPONSE_INVALID' }));
+  });
+
+  it('maps compatible endpoint network failures to a stable unavailable code', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new TypeError('network failed'));
+
+    await expect(new ModelProviderClient().invokeCompatible(compatibleInput())).rejects.toEqual(
+      expect.objectContaining({ code: 'MODEL_PROVIDER_UNAVAILABLE' }),
+    );
+  });
+});
+
+describe('ModelProviderClient embeddings', () => {
+  it('posts the embedding-specific request and restores response order', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      Response.json({
+        data: [
+          { index: 1, embedding: vector(2) },
+          { index: 0, embedding: vector(1) },
+        ],
+      }),
+    );
+
+    await expect(new ModelProviderClient().embed(input, ['first', 'second'])).resolves.toEqual([
+      vector(1),
+      vector(2),
+    ]);
+
+    expect((global.fetch as jest.Mock).mock.calls[0][0]).toBe(
+      'https://api.openai.com/v1/embeddings',
+    );
+    expect(JSON.parse(String((global.fetch as jest.Mock).mock.calls[0][1].body))).toEqual({
+      model: 'gpt-test',
+      input: ['first', 'second'],
+    });
+  });
+
+  it('rejects embedding vectors with an unsupported dimension', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(Response.json({ data: [{ index: 0, embedding: [0.1, 0.2] }] }));
+
+    await expect(new ModelProviderClient().embed(input, ['first'])).rejects.toEqual(
+      expect.objectContaining({ code: 'EMBEDDING_DIMENSION_INVALID' }),
+    );
+  });
+
+  it('maps provider timeouts to a retryable embedding error', async () => {
+    const timeout = new Error('request timed out');
+    timeout.name = 'TimeoutError';
+    global.fetch = jest.fn().mockRejectedValue(timeout);
+
+    await expect(new ModelProviderClient().embed(input, ['first'])).rejects.toEqual(
+      expect.objectContaining({ code: 'EMBEDDING_TIMEOUT' }),
+    );
   });
 });
 
@@ -207,6 +287,10 @@ function sseResponse(parts: string[]) {
     }),
     { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
   );
+}
+
+function vector(value: number) {
+  return Array.from({ length: 1536 }, () => value);
 }
 
 function restoreEnvironment(key: string, value: string | undefined) {

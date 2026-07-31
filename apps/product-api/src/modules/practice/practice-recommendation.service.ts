@@ -10,20 +10,24 @@ import { classifyRole } from '../../common/role-category';
 import { practiceCategoryTagFor } from './practice-question-categories';
 import {
   recommendationCandidates,
+  recommendationEvidence,
   recommendationReason,
   recommendationTitle,
   type RecommendationContext,
 } from './practice-recommendation-context';
+import { PracticeRagRecommendationService } from './practice-rag-recommendation.service';
 
 const QUESTION_COUNT = 5;
 const MINUTES_PER_QUESTION = 4;
 const RECENT_QUESTION_LIMIT = 20;
+const RECOMMENDATION_EVIDENCE_LIMIT = 4;
 
 @Injectable()
 export class PracticeRecommendationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly policy: PolicyService,
+    private readonly rag?: PracticeRagRecommendationService,
   ) {}
 
   async list(context: ProductRequestContext): Promise<PracticeRecommendation[]> {
@@ -34,22 +38,36 @@ export class PracticeRecommendationService {
       this.lowMastery(context),
       this.recentQuestions(context),
     ]);
+    const candidateInput = { job, profile, mastery, recentItems };
     const selection = await this.selectQuestions(
       context,
-      recommendationCandidates({ job, profile, mastery, recentItems }),
+      recommendationCandidates(candidateInput),
       recentItems,
     );
     if (!selection) return [];
-    const { recommendation, questions } = selection;
+    const hybrid = this.rag
+      ? await this.rag.enhance(
+          context,
+          selection,
+          recentItems.map((item) => item.questionId),
+        )
+      : null;
+    const { recommendation, questions } = hybrid ?? selection;
+    const evidence = [
+      ...(hybrid?.evidence ?? []),
+      ...recommendationEvidence(recommendation, candidateInput),
+    ].slice(0, RECOMMENDATION_EVIDENCE_LIMIT);
     return PracticeRecommendationListSchema.parse([
       {
         id: `recommendation-${recommendation.category ?? 'curated'}`,
         title: recommendationTitle(recommendation.category, recommendation.weakTag),
         reason: recommendationReason(recommendation),
         source: recommendation.source,
+        algorithm: hybrid?.algorithm ?? 'rules',
         category: recommendation.category,
         estimatedMinutes: questions.length * MINUTES_PER_QUESTION,
         questionIds: questions.map((question) => question.id),
+        evidence,
       },
     ]);
   }
@@ -87,7 +105,14 @@ export class PracticeRecommendationService {
       where: { tenantId: context.tenantId, userId: context.actor.id },
       orderBy: { score: 'asc' },
       take: 3,
-      select: { tag: true, score: true },
+      select: {
+        tag: true,
+        score: true,
+        evidenceCount: true,
+        lastEvidenceEventId: true,
+        lastEvidenceSessionId: true,
+        trend: true,
+      },
     });
   }
 
@@ -98,6 +123,7 @@ export class PracticeRecommendationService {
       take: RECENT_QUESTION_LIMIT,
       select: {
         questionId: true,
+        sessionId: true,
         evaluation: { select: { score: true } },
         question: { select: { tags: true } },
       },

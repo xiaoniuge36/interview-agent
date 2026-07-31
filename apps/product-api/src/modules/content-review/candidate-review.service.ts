@@ -20,17 +20,25 @@ import type { ProductRequestContext } from '../../common/context/request-context
 import { PrismaService } from '../../common/database/prisma.service';
 import { runSerializable } from '../../common/database/serializable-transaction';
 import { CandidatePublicationService } from './candidate-publication.service';
+import { CandidateReviewInfrastructure } from './candidate-review-infrastructure';
 
 @Injectable()
 export class CandidateReviewService {
-  private readonly publication: CandidatePublicationService;
-
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly policy: PolicyService,
-    private readonly audit: AuditService,
-  ) {
-    this.publication = new CandidatePublicationService(prisma, policy, audit);
+    private readonly infrastructure: CandidateReviewInfrastructure,
+    private readonly publication: CandidatePublicationService,
+  ) {}
+
+  private get prisma(): PrismaService {
+    return this.infrastructure.prisma;
+  }
+
+  private get policy(): PolicyService {
+    return this.infrastructure.policy;
+  }
+
+  private get audit(): AuditService {
+    return this.infrastructure.audit;
   }
 
   async detail(

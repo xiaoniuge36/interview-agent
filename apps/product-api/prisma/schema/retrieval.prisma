@@ -1,0 +1,38 @@
+model RetrievalChunk {
+  id               String                       @id @default(cuid())
+  tenantId         String
+  entityType       String
+  entityId         String
+  content          String
+  contentHash      String
+  embeddingVersion String
+  status           RetrievalChunkStatus         @default(pending)
+  embedding        Unsupported("vector(1536)")?
+  metadata         Json
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, entityType, entityId, embeddingVersion])
+  @@index([tenantId, entityType, status])
+  @@index([tenantId, entityId])
+}
+
+model RetrievalLog {
+  id            String   @id @default(cuid())
+  tenantId      String
+  userId        String?
+  purpose       String
+  queryHash     String
+  hitIds        Json
+  policyVersion String
+  latencyMs     Int
+  traceId       String
+  createdAt     DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, purpose, createdAt])
+  @@index([traceId])
+}

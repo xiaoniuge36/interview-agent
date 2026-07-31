@@ -9,6 +9,7 @@ import type { ProductRequestContext } from '../../common/context/request-context
 import { PrismaService } from '../../common/database/prisma.service';
 import {
   catalogFacets,
+  QUESTION_CATALOG_ITEM_SELECT,
   catalogOrderBy,
   catalogWhere,
   mapCatalogItem,
@@ -37,6 +38,7 @@ export class QuestionCatalogService {
         orderBy: catalogOrderBy(query.sort),
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
+        select: QUESTION_CATALOG_ITEM_SELECT,
       }),
       this.prisma.question.findMany({
         where,

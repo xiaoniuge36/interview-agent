@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  playwrightArguments,
   runCommand,
   startService,
   stopService,
@@ -23,7 +24,6 @@ const HEALTH_TIMEOUT_MS = 120_000;
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const E2E_POSTGRES_CONTAINER = 'interview-agent-e2e-postgres';
 const E2E_POSTGRES_IMAGE = 'pgvector/pgvector:0.8.1-pg16';
-
 export function serviceCommands(environment) {
   const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
   return [
@@ -38,6 +38,7 @@ export function serviceCommands(environment) {
       cwd: resolve(rootDir, 'apps/agent-runtime'),
       args: [
         'run',
+        '--no-sync',
         '--extra',
         'dev',
         'uvicorn',
@@ -124,7 +125,7 @@ async function runE2e() {
       services.push({ child: startService(service, { cwd: service.cwd }), label: service.label });
     }
     await waitForServices(services);
-    await runCommand(pnpmCommand(), ['exec', 'playwright', 'test'], {
+    await runCommand(pnpmCommand(), playwrightArguments(process.argv.slice(2)), {
       cwd: rootDir,
       env: environment,
       label: 'Playwright E2E',

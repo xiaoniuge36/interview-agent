@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  AiInvocationOperationSchema,
   AiUsageSummaryQuerySchema,
   AiUsageSummarySchema,
   PlatformAiAnalyticsQuerySchema,
@@ -46,9 +47,55 @@ const summary = {
   ],
 };
 
+const platformAnalyticsInput = {
+  ...summary,
+  filters: { provider: null, operation: null },
+  byOperation: [
+    {
+      operation: 'practice_evaluation',
+      invocations: 12,
+      succeeded: 10,
+      failed: 2,
+      cancelled: 0,
+      averageLatencyMs: 432,
+      totalTokens: null,
+    },
+  ],
+  failures: [{ errorCode: 'MODEL_PROVIDER_RATE_LIMITED', count: 2 }],
+  recentFailures: summary.recent,
+  trend: [
+    {
+      date: '2026-07-17',
+      invocations: 12,
+      succeeded: 10,
+      failed: 2,
+      cancelled: 0,
+      totalTokens: null,
+    },
+  ],
+  guardrails: {
+    budgetRejected: 1,
+    circuitRejected: 0,
+    openCircuits: 0,
+    halfOpenCircuits: 0,
+  },
+  quality: {
+    deadLetterJobs: 1,
+    embeddingCoverage: 80,
+    retrievalLatencyMs: 120,
+    schemaPassRate: 90,
+    fallbackRate: 10,
+    budgetRejected: 1,
+  },
+};
+
 test('AI usage query defaults to seven days and rejects unsupported ranges', () => {
   assert.deepEqual(AiUsageSummaryQuerySchema.parse({}), { period: '7d' });
   assert.equal(AiUsageSummaryQuerySchema.safeParse({ period: '90d' }).success, false);
+});
+
+test('AI usage recognizes embedding as a separately observable operation', () => {
+  assert.equal(AiInvocationOperationSchema.parse('embedding'), 'embedding');
 });
 
 test('AI usage summary allows unavailable token usage without exposing prompt content', () => {
@@ -68,39 +115,14 @@ test('platform AI analytics validates filters and safe aggregate records', () =>
     PlatformAiAnalyticsQuerySchema.safeParse({ operation: 'unknown_operation' }).success,
     false,
   );
-  assert.deepEqual(
-    PlatformAiAnalyticsSchema.parse({
-      ...summary,
-      filters: { provider: null, operation: null },
-      byOperation: [
-        {
-          operation: 'practice_evaluation',
-          invocations: 12,
-          succeeded: 10,
-          failed: 2,
-          cancelled: 0,
-          averageLatencyMs: 432,
-          totalTokens: null,
-        },
-      ],
-      failures: [
-        {
-          errorCode: 'MODEL_PROVIDER_RATE_LIMITED',
-          count: 2,
-        },
-      ],
-      recentFailures: summary.recent,
-      trend: [
-        {
-          date: '2026-07-17',
-          invocations: 12,
-          succeeded: 10,
-          failed: 2,
-          cancelled: 0,
-          totalTokens: null,
-        },
-      ],
-    }).recentFailures,
-    summary.recent,
-  );
+  const analytics = PlatformAiAnalyticsSchema.parse(platformAnalyticsInput);
+  assert.deepEqual(analytics.recentFailures, summary.recent);
+  assert.deepEqual(analytics.quality, {
+    deadLetterJobs: 1,
+    embeddingCoverage: 80,
+    retrievalLatencyMs: 120,
+    schemaPassRate: 90,
+    fallbackRate: 10,
+    budgetRejected: 1,
+  });
 });

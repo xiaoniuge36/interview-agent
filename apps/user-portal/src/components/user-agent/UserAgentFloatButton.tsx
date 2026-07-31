@@ -1,10 +1,11 @@
-import type { PointerEvent } from 'react';
+import type { MouseEvent, PointerEvent } from 'react';
 import type { AgentStatus } from '@page-agent/core';
 import type { UserAgentFloatPosition } from './useUserAgentDrag';
 
 export function UserAgentFloatButton(props: {
   position: UserAgentFloatPosition;
   status: AgentStatus;
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   onPointerDown: (event: PointerEvent<HTMLButtonElement>) => void;
   onPointerMove: (event: PointerEvent<HTMLButtonElement>) => void;
   onPointerUp: (event: PointerEvent<HTMLButtonElement>) => void;
@@ -15,6 +16,7 @@ export function UserAgentFloatButton(props: {
       aria-label="打开 AI 刷题教练"
       className="user-agent-float"
       data-page-agent-not-interactive="true"
+      onClick={props.onClick}
       onPointerDown={props.onPointerDown}
       onPointerMove={props.onPointerMove}
       onPointerUp={props.onPointerUp}

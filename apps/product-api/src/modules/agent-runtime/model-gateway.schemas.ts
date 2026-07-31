@@ -8,7 +8,7 @@ export const ModelGatewayRequestSchema = z.object({
   grant: z.string().trim().min(MIN_GRANT_LENGTH).max(MAX_GRANT_LENGTH),
   systemPrompt: z.string().min(1).max(CONTRACT_LIMITS.longText),
   userPrompt: z.string().min(1).max(CONTRACT_LIMITS.longText),
-  outputSchemaVersion: z.literal('interview-runtime.v1'),
+  outputSchemaVersion: z.enum(['interview-runtime.v1', 'practice-report-runtime.v1']),
   traceId: z.string().min(CONTRACT_LIMITS.traceIdMinLength).max(CONTRACT_LIMITS.traceIdMaxLength),
 });
 

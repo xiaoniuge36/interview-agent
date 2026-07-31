@@ -22,7 +22,7 @@ export function ReportPanel({
   reviewStarting = false,
 }: ReportPanelProps) {
   return (
-    <section className="panel report-card stack compact">
+    <section id="interview-report" className="panel report-card stack compact" tabIndex={-1}>
       <div className="eyebrow">本轮复盘</div>
       {report ? (
         <ReportContent
@@ -51,14 +51,7 @@ function ReportContent(props: {
         {report.overall.score}
       </div>
       <p className="muted-text">{report.overall.summary}</p>
-      <div className="score-list">
-        {report.stageScores.map((item) => (
-          <div className="score-row" key={item.stage}>
-            <span>{interviewStageLabel(item.stage)}</span>
-            <strong>{item.score}</strong>
-          </div>
-        ))}
-      </div>
+      <StageDiagnostics stages={report.stageScores} />
       {report.nextActions.length ? (
         <section className="report-next-actions" aria-labelledby="report-next-actions-heading">
           <h3 id="report-next-actions-heading">下一步建议</h3>
@@ -83,6 +76,40 @@ function ReportContent(props: {
   );
 }
 
+function StageDiagnostics({ stages }: { stages: InterviewReport['stageScores'] }) {
+  const rankedStages = [...stages].sort((left, right) => left.score - right.score);
+  return (
+    <section className="report-stage-diagnostics" aria-labelledby="report-stage-heading">
+      <div className="report-stage-heading">
+        <h3 id="report-stage-heading">阶段诊断</h3>
+        <small>先看最低分，理解评分依据</small>
+      </div>
+      <div className="report-stage-list">
+        {rankedStages.map((item, index) => (
+          <details key={item.stage} open={index === 0} data-priority={index === 0}>
+            <summary>
+              <span>
+                <strong>{interviewStageLabel(item.stage)}</strong>
+                <small>{index === 0 ? '首要复练' : '阶段反馈'}</small>
+              </span>
+              <b>{item.score}</b>
+            </summary>
+            <p>{item.summary}</p>
+            {item.evidence.length ? (
+              <ul aria-label={`${interviewStageLabel(item.stage)}评分依据`}>
+                {item.evidence.map((evidence) => (
+                  <li key={evidence}>{evidence}</li>
+                ))}
+              </ul>
+            ) : null}
+            <small>为什么是 {item.score} 分</small>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ReportPlaceholder({
   status,
   onRetry,
@@ -92,15 +119,15 @@ function ReportPlaceholder({
   onRetry?: (() => void) | undefined;
   retrying: boolean;
 }) {
-  if (status === 'report_ready') {
+  const state = reportPlaceholderState(status, Boolean(onRetry));
+  if (state) {
     return (
-      <div className="stack compact" role="status">
-        <p className="muted-text">
-          AI 复盘已生成，报告内容暂时无法读取。{onRetry ? '可在此重新加载。' : '刷新页面可重试。'}
-        </p>
-        {onRetry ? (
+      <div className="interview-report-status" data-state={state.kind} role="status">
+        <strong>{state.title}</strong>
+        <p>{state.detail}</p>
+        {onRetry && state.actionLabel ? (
           <button className="button secondary" type="button" disabled={retrying} onClick={onRetry}>
-            {retrying ? '正在重新加载复盘…' : '重新加载本轮复盘'}
+            {retrying ? state.retryingLabel : state.actionLabel}
           </button>
         ) : null}
       </div>
@@ -109,4 +136,46 @@ function ReportPlaceholder({
   return (
     <p className="muted-text">完成一场模拟面试后，这里会给出得分、薄弱环节和下一步练习建议。</p>
   );
+}
+
+type ReportPlaceholderState = {
+  kind: 'processing' | 'failed' | 'partial';
+  title: string;
+  detail: string;
+  actionLabel: string | null;
+  retryingLabel: string;
+};
+
+function reportPlaceholderState(
+  status: InterviewSessionStatus | null,
+  canRetry: boolean,
+): ReportPlaceholderState | null {
+  if (status === 'generating_report') {
+    return {
+      kind: 'processing',
+      title: 'AI 正在生成本轮复盘',
+      detail: '阶段和面试对话已保存。页面会自动接收结果，刷新后仍会恢复同一轮。',
+      actionLabel: canRetry ? '重新检查生成状态' : null,
+      retryingLabel: '正在检查生成状态…',
+    };
+  }
+  if (status === 'failed') {
+    return {
+      kind: 'failed',
+      title: '本轮复盘未完成',
+      detail: '已保存的面试对话不会丢失。先重新检查本轮状态；若仍失败，再确认后重新开始。',
+      actionLabel: canRetry ? '重新检查本轮状态' : null,
+      retryingLabel: '正在检查本轮状态…',
+    };
+  }
+  if (status === 'report_ready') {
+    return {
+      kind: 'partial',
+      title: 'AI 复盘已生成',
+      detail: `报告内容暂时无法读取。${canRetry ? '可在此重新加载。' : '刷新页面可重试。'}`,
+      actionLabel: canRetry ? '重新加载本轮复盘' : null,
+      retryingLabel: '正在重新加载复盘…',
+    };
+  }
+  return null;
 }

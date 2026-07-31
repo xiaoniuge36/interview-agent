@@ -1,0 +1,56 @@
+import {
+  QuestionCatalogQuerySchema,
+  type QuestionCatalogQuery,
+  type QuestionCatalogResponse,
+} from '@interview-agent/contracts';
+import { useCallback, useEffect, useState } from 'react';
+import { getQuestionCatalog } from '@/lib/question-catalog-api';
+import { createLatestQuestionRequestRunner } from './latest-question-request';
+
+export function useQuestionCatalog(query: QuestionCatalogQuery, enabled: boolean) {
+  const [catalog, setCatalog] = useState<QuestionCatalogResponse | null>(null);
+  const [loading, setLoading] = useState(enabled);
+  const [error, setError] = useState('');
+  const [requestRunner] = useState(createLatestQuestionRequestRunner);
+  const load = useCallback(() => {
+    if (!enabled) return Promise.resolve(false);
+    setLoading(true);
+    setError('');
+    return requestRunner.run({
+      load: () => getQuestionCatalog(query),
+      onError: () => setError('当前筛选结果没有加载成功，请保留题单后重试。'),
+      onSettled: () => setLoading(false),
+      onSuccess: setCatalog,
+    });
+  }, [enabled, query, requestRunner]);
+  useEffect(() => {
+    if (!enabled) {
+      requestRunner.invalidate();
+      setCatalog(null);
+      setLoading(false);
+      setError('');
+      return requestRunner.invalidate;
+    }
+    void load();
+    return requestRunner.invalidate;
+  }, [enabled, load, requestRunner]);
+  return { catalog, loading, error, reload: load };
+}
+
+export function catalogQueryFromString(
+  value: string,
+  learningQuery: { tags: string[]; type: 'single_choice' } | null,
+): QuestionCatalogQuery {
+  const params = new URLSearchParams(value);
+  const parsed = QuestionCatalogQuerySchema.safeParse({
+    query: params.get('query') || undefined,
+    category: params.get('category') || undefined,
+    tags: params.get('tags') || undefined,
+    type: params.get('type') || undefined,
+    difficulty: params.get('difficulty') || undefined,
+    sort: params.get('sort') || undefined,
+    page: params.get('page') || undefined,
+  });
+  const query = parsed.success ? parsed.data : QuestionCatalogQuerySchema.parse({});
+  return learningQuery ? { ...query, ...learningQuery, page: 1 } : query;
+}

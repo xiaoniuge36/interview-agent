@@ -9,6 +9,7 @@ import { PracticeEntry } from './PracticeEntry';
 import { PracticeEvidenceStrip } from './PracticeEvidenceStrip';
 import { PracticeFeedbackLauncher } from './PracticeFeedbackLauncher';
 import { PracticeItemReviewDialog } from './PracticeItemReviewDialog';
+import { PracticeNavigationDialog } from './PracticeNavigationDialog';
 import { PracticeQuestionNav } from './PracticeQuestionNav';
 import { PracticeQuestionStage } from './PracticeQuestionStage';
 import { PracticeRoundCompletionBar } from './PracticeRoundCompletionBar';
@@ -75,6 +76,17 @@ function ActivePractice({ player }: { player: PracticePlayerState }) {
 }
 
 type PracticeItem = NonNullable<PracticePlayerState['session']>['items'][number];
+type PendingNavigation = {
+  confirmation: NonNullable<ReturnType<typeof confirmPracticeNavigation>>;
+  index: number;
+};
+type PracticeNavigationOptions = {
+  item: PracticeItem;
+  onConfirmRequired: (pending: PendingNavigation) => void;
+  onOpenFeedback: (confirmAi: boolean) => void;
+  onShowAnswer: () => void;
+  player: PracticePlayerState;
+};
 
 type PracticeSessionContentProps = {
   player: PracticePlayerState;
@@ -89,29 +101,48 @@ type PracticeSessionContentProps = {
 
 function PracticeSessionContent(props: PracticeSessionContentProps) {
   const contentRef = useRef<HTMLDivElement>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
   const session = props.player.session!;
-  const navigation = practiceNavigation(props.player, props.item, props.onOpenFeedback);
+  const navigation = practiceNavigation({
+    item: props.item,
+    onConfirmRequired: setPendingNavigation,
+    onOpenFeedback: props.onOpenFeedback,
+    onShowAnswer: props.onShowAnswer,
+    player: props.player,
+  });
   useEffect(() => {
     if (props.step === 'feedback') contentRef.current?.scrollIntoView({ block: 'start' });
   }, [props.step]);
-  const selectQuestion = (index: number) => {
+  const confirmNavigation = () => {
+    if (!pendingNavigation) return;
+    const index = pendingNavigation.index;
+    setPendingNavigation(null);
     props.onShowAnswer();
-    navigation.selectIndex(index);
+    props.player.setCurrentIndex(index);
   };
   return (
-    <div ref={contentRef} className="practice-player-layout" data-step={props.step}>
-      <PracticeQuestionNav
-        session={session}
-        currentIndex={props.player.currentIndex}
-        disabled={props.player.busy !== null}
-        onSelect={selectQuestion}
-      />
-      {props.step === 'answer' ? (
-        <PracticeAnswerStep {...props} navigation={navigation} />
-      ) : (
-        <PracticeFeedbackStep {...props} />
-      )}
-    </div>
+    <>
+      <div ref={contentRef} className="practice-player-layout" data-step={props.step}>
+        <PracticeQuestionNav
+          session={session}
+          currentIndex={props.player.currentIndex}
+          disabled={props.player.busy !== null}
+          onSelect={navigation.selectIndex}
+        />
+        {props.step === 'answer' ? (
+          <PracticeAnswerStep {...props} navigation={navigation} />
+        ) : (
+          <PracticeFeedbackStep {...props} />
+        )}
+      </div>
+      {pendingNavigation ? (
+        <PracticeNavigationDialog
+          confirmation={pendingNavigation.confirmation}
+          onCancel={() => setPendingNavigation(null)}
+          onConfirm={confirmNavigation}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -156,6 +187,7 @@ function PracticeFeedbackStep(props: PracticeSessionContentProps) {
   return (
     <>
       <PracticeCoachPanel
+        sessionId={player.sessionId!}
         item={item}
         draft={props.draft}
         solution={player.solutions[item.id]}
@@ -175,16 +207,15 @@ function PracticeFeedbackStep(props: PracticeSessionContentProps) {
   );
 }
 
-function practiceNavigation(
-  player: PracticePlayerState,
-  item: PracticeItem,
-  onOpenFeedback: (confirmAi: boolean) => void,
-) {
+function practiceNavigation(options: PracticeNavigationOptions) {
+  const { item, onConfirmRequired, onOpenFeedback, onShowAnswer, player } = options;
   const session = player.session!;
   const selectIndex = (index: number) => {
     if (index === player.currentIndex || player.busy !== null) return;
-    const allowed = confirmPracticeNavigation(item, player.drafts[item.id] ?? '', window.confirm);
-    if (allowed) player.setCurrentIndex(index);
+    const confirmation = confirmPracticeNavigation(item, player.drafts[item.id] ?? '');
+    if (confirmation) return onConfirmRequired({ confirmation, index });
+    onShowAnswer();
+    player.setCurrentIndex(index);
   };
   const saveAndNext = async () => {
     if (await player.save(item.id))

@@ -46,6 +46,10 @@ class RuntimeSettings(BaseSettings):
         default=None,
         validation_alias="AGENT_RUNTIME_CHECKPOINT_DATABASE_URL",
     )
+    otel_exporter_otlp_endpoint: str | None = Field(
+        default=None,
+        validation_alias="OTEL_EXPORTER_OTLP_ENDPOINT",
+    )
 
     @model_validator(mode="after")
     def require_production_agent_dependencies(self) -> "RuntimeSettings":

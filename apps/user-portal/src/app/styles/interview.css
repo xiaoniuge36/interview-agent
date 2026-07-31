@@ -198,6 +198,25 @@
   line-height: 1.55;
 }
 
+.interview-review-primary-focus {
+  display: grid;
+  gap: 3px;
+  border-left: 3px solid var(--primary);
+  padding-left: 9px;
+}
+
+.interview-review-primary-focus span,
+.interview-review-primary-focus small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.interview-review-primary-focus strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .interview-review-action ul {
   display: grid;
   gap: 6px;
@@ -223,6 +242,8 @@
 
 .interview-review-action button {
   justify-self: start;
+  min-height: 44px;
+  padding: 10px 12px;
 }
 
 .interview-review-confirmation {
@@ -248,9 +269,99 @@
   box-shadow: var(--shadow-raised);
 }
 
+.report-stage-diagnostics {
+  display: grid;
+  gap: 9px;
+}
+
+.report-stage-heading,
+.report-stage-list summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.report-stage-heading h3,
+.report-stage-list p,
+.report-stage-list ul {
+  margin: 0;
+}
+
+.report-stage-heading small,
+.report-stage-list summary small,
+.report-stage-list details > small {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.report-stage-list {
+  display: grid;
+  gap: 8px;
+}
+
+.report-stage-list details {
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: var(--surface-subtle);
+}
+
+.report-stage-list details[data-priority='true'] {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--outline));
+  background: color-mix(in srgb, var(--primary-soft) 55%, var(--surface));
+}
+
+.report-stage-list summary {
+  cursor: pointer;
+}
+
+.report-stage-list summary > span {
+  display: grid;
+  gap: 2px;
+}
+
+.report-stage-list summary b {
+  color: var(--primary-strong);
+  font-size: 17px;
+}
+
+.report-stage-list p,
+.report-stage-list li {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.report-stage-list p {
+  margin-top: 8px;
+}
+
+.report-stage-list ul {
+  display: grid;
+  gap: 3px;
+  padding: 5px 0 0 17px;
+}
+
 .answer-guidance {
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 500;
   line-height: 1.55;
+}
+
+@media (max-width: 760px) {
+  .interview-review-action > button,
+  .interview-review-confirmation button {
+    width: 100%;
+  }
+
+  .interview-review-confirmation > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .interview-review-confirmation button + button {
+    margin-left: 0;
+  }
 }

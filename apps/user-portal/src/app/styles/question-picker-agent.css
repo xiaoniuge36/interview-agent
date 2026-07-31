@@ -115,6 +115,42 @@ html[data-motion='on'] .question-agent-mark::after {
   color: var(--agent-text);
 }
 
+.question-agent-evidence {
+  display: grid;
+  gap: 4px;
+  max-width: 760px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.question-agent-sources {
+  margin-top: 8px;
+}
+
+.question-agent-algorithm {
+  display: inline-flex;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary-strong);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.question-agent-evidence li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 7px;
+  color: var(--agent-text);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.question-agent-evidence strong {
+  color: color-mix(in srgb, var(--primary) 48%, var(--theme-control-text));
+}
+
 .question-agent-meta {
   display: flex;
   flex-wrap: wrap;

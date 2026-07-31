@@ -44,7 +44,14 @@ test('真实模型评价持久化后返回标准解析与追问', async () => {
 
   expect(model.evaluate).toHaveBeenCalledWith(
     context,
-    expect.objectContaining({ answer: '用户回答', targetRole: '后端工程师' }),
+    expect.objectContaining({
+      answer: '用户回答',
+      targetRole: '后端工程师',
+      options: [
+        { id: 'A', text: '单体执行' },
+        { id: 'B', text: '状态机编排' },
+      ],
+    }),
   );
   expect(result.referenceAnswer).toBe('参考答案');
   expect(result.evaluation.followUpQuestion).toContain('补偿');
@@ -117,6 +124,10 @@ function sessionRecord() {
           answer: '参考答案',
           rubric: [{ point: '边界', score: 10, description: '说明职责。' }],
           tags: ['系统设计'],
+          options: [
+            { id: 'A', text: '单体执行' },
+            { id: 'B', text: '状态机编排' },
+          ],
         },
       },
     ],

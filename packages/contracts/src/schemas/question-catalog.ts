@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { CONTRACT_LIMITS } from '../limits';
 import { PracticeModeSchema, PracticeSessionStatusSchema } from './practice';
-import { QuestionSchema, QuestionDifficultySchema, QuestionTypeSchema } from './training';
+import { CandidateQuestionSchema, QuestionDifficultySchema, QuestionTypeSchema } from './training';
 
 const CATALOG_PAGE_SIZE_MAX = 50;
 const CATALOG_PAGE_SIZE_DEFAULT = 20;
 const RECOMMENDATION_LIMIT = 6;
 const RECOMMENDATION_QUESTION_LIMIT = 10;
+const RECOMMENDATION_EVIDENCE_LIMIT = 4;
 
 export const QuestionCatalogCategorySchema = z.enum([
   'engineering',
@@ -47,7 +48,7 @@ export const QuestionCatalogQuerySchema = z.object({
     .default(CATALOG_PAGE_SIZE_DEFAULT),
 });
 
-export const QuestionCatalogItemSchema = QuestionSchema.omit({ answer: true, rubric: true });
+export const QuestionCatalogItemSchema = CandidateQuestionSchema;
 export const QuestionCatalogFacetSchema = z.object({
   value: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   label: z.string().min(1).max(CONTRACT_LIMITS.shortText),
@@ -68,20 +69,35 @@ export const QuestionCatalogResponseSchema = z.object({
   totalPages: z.number().int().nonnegative(),
 });
 
-export const PracticeRecommendationSourceSchema = z.enum([
-  'profile',
-  'job',
+export const PracticeRecommendationSourceSchema = z.enum(['profile', 'job', 'mastery', 'curated']);
+export const PracticeRecommendationEvidenceTypeSchema = z.enum([
   'mastery',
+  'practice',
+  'job',
+  'profile',
   'curated',
+  'retrieval',
 ]);
+export const PracticeRecommendationAlgorithmSchema = z.enum(['rules', 'hybrid']);
+export const PracticeRecommendationEvidenceSchema = z.object({
+  type: PracticeRecommendationEvidenceTypeSchema,
+  sourceId: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  label: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  detail: z.string().min(1).max(CONTRACT_LIMITS.mediumText),
+});
 export const PracticeRecommendationSchema = z.object({
   id: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   title: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   reason: z.string().min(1).max(CONTRACT_LIMITS.mediumText),
   source: PracticeRecommendationSourceSchema,
+  algorithm: PracticeRecommendationAlgorithmSchema.default('rules'),
   category: QuestionCatalogCategorySchema.nullable(),
   estimatedMinutes: z.number().int().positive(),
   questionIds: z.array(z.string().min(1)).min(1).max(RECOMMENDATION_QUESTION_LIMIT),
+  evidence: z
+    .array(PracticeRecommendationEvidenceSchema)
+    .max(RECOMMENDATION_EVIDENCE_LIMIT)
+    .optional(),
 });
 export const PracticeRecommendationListSchema = z
   .array(PracticeRecommendationSchema)
@@ -102,4 +118,5 @@ export type QuestionCatalogCategory = z.infer<typeof QuestionCatalogCategorySche
 export type QuestionCatalogQuery = z.infer<typeof QuestionCatalogQuerySchema>;
 export type QuestionCatalogResponse = z.infer<typeof QuestionCatalogResponseSchema>;
 export type PracticeRecommendation = z.infer<typeof PracticeRecommendationSchema>;
+export type PracticeRecommendationEvidence = z.infer<typeof PracticeRecommendationEvidenceSchema>;
 export type RecentPracticeSummary = z.infer<typeof RecentPracticeSummarySchema>;

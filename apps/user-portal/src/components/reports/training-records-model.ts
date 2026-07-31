@@ -1,4 +1,12 @@
-import type { InterviewSession, PracticeHistoryItem } from '@interview-agent/contracts';
+import type {
+  InterviewReport,
+  InterviewSession,
+  PracticeHistoryItem,
+} from '@interview-agent/contracts';
+import { interviewStageLabel } from '@/components/interview/interview-labels';
+
+const ACTIONABLE_INTERVIEW_SCORE = 70;
+const INTERVIEW_SIGNAL_LIMIT = 2;
 
 export type TrainingRecordFilter = 'all' | 'practice' | 'interview';
 export type TrainingRecord = {
@@ -11,15 +19,20 @@ export type TrainingRecord = {
   score: number | null;
   facts: string[];
   signals: string[];
+  trend: { delta: number; previousScore: number } | null;
 };
 
 export function buildTrainingRecords(
   practices: PracticeHistoryItem[],
   interviews: InterviewSession[],
+  interviewReports: InterviewReport[] = [],
 ): TrainingRecord[] {
-  return [...practices.map(practiceRecord), ...interviews.map(interviewRecord)].sort(
-    (left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt),
-  );
+  const reports = new Map(interviewReports.map((report) => [report.sessionId, report]));
+  const records = [
+    ...practices.map(practiceRecord),
+    ...interviews.map((interview) => interviewRecord(interview, reports.get(interview.id))),
+  ].sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
+  return addScoreTrends(records);
 }
 
 export function filterTrainingRecords(records: TrainingRecord[], filter: TrainingRecordFilter) {
@@ -88,10 +101,11 @@ function practiceRecord(item: PracticeHistoryItem): TrainingRecord {
       `已评 ${item.evaluatedCount}`,
     ],
     signals: item.weaknesses.slice(0, 2),
+    trend: null,
   };
 }
 
-function interviewRecord(item: InterviewSession): TrainingRecord {
+function interviewRecord(item: InterviewSession, report?: InterviewReport): TrainingRecord {
   return {
     id: item.id,
     kind: 'interview',
@@ -99,8 +113,34 @@ function interviewRecord(item: InterviewSession): TrainingRecord {
     updatedAt: item.updatedAt,
     status: item.status,
     href: `/interview?session=${item.id}`,
-    score: null,
+    score: report?.overall.score ?? null,
     facts: [`${item.turns?.length ?? 0} 轮交流`],
-    signals: [],
+    signals: report ? interviewSignals(report) : [],
+    trend: null,
   };
+}
+
+function interviewSignals(report: InterviewReport) {
+  return [...report.stageScores]
+    .filter((stage) => stage.score < ACTIONABLE_INTERVIEW_SCORE)
+    .sort((left, right) => left.score - right.score)
+    .slice(0, INTERVIEW_SIGNAL_LIMIT)
+    .map((stage) => `${interviewStageLabel(stage.stage)} ${Math.round(stage.score)} 分`);
+}
+
+function addScoreTrends(records: TrainingRecord[]) {
+  const previousScores = new Map<TrainingRecord['kind'], number>();
+  return [...records]
+    .reverse()
+    .map((record) => {
+      const previousScore = previousScores.get(record.kind);
+      const trend =
+        record.score !== null && previousScore !== undefined
+          ? { delta: Math.round(record.score - previousScore), previousScore }
+          : null;
+      if (record.score !== null) previousScores.set(record.kind, record.score);
+      else previousScores.delete(record.kind);
+      return { ...record, trend };
+    })
+    .reverse();
 }

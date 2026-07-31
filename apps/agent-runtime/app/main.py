@@ -21,19 +21,28 @@ from app.errors import (
 )
 from app.logging_config import configure_logging
 from app.middleware import RequestBodyLimitMiddleware, RequestLoggingMiddleware
-from app.model_gateway import ModelGatewayClient
+from app.model_gateway import MODEL_PROVIDER_ENDPOINT_BLOCKED, ModelGatewayClient
+from app.request_cancellation import RequestCancelledError, cancel_when_disconnected
 from app.schemas.interview import NextInterviewRequest, NextInterviewResponse
+from app.schemas.practice_report import PracticeReportRequest, PracticeReportResponse
+from app.telemetry import configure_telemetry, start_span
 from app.workflows.interview import next_interview_turn
 from app.workflows.interview_graph import (
     InterviewGraphError,
     create_interview_graph,
     run_interview_graph,
 )
+from app.workflows.practice_report_graph import (
+    PracticeReportGraphError,
+    create_practice_report_graph,
+    run_practice_report_graph,
+)
 
 SERVICE_NAME = "agent-runtime"
 EXPECTED_CALLER = "product-api"
 LOGGER = logging.getLogger("agent_runtime.lifecycle")
 CHECKPOINT_CONNECT_TIMEOUT_SECONDS = 5
+CLIENT_CLOSED_REQUEST_STATUS = 499
 
 
 @asynccontextmanager
@@ -47,7 +56,13 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     )
     async with AsyncExitStack() as stack:
         checkpointer = await checkpoint_for(settings, stack)
+        tracer_provider = configure_telemetry(settings.otel_exporter_otlp_endpoint)
+        if tracer_provider is not None:
+            stack.callback(tracer_provider.shutdown)
         application.state.interview_graph = create_interview_graph(gateway, checkpointer)
+        application.state.practice_report_graph = create_practice_report_graph(
+            gateway, checkpointer
+        )
         LOGGER.info("runtime_started", extra={"event": "runtime_started", "service": SERVICE_NAME})
         yield
     LOGGER.info("runtime_stopped", extra={"event": "runtime_stopped", "service": SERVICE_NAME})
@@ -122,18 +137,63 @@ def readiness(request: Request) -> dict[str, object]:
     dependencies=[Depends(verify_internal_request)],
 )
 async def next_turn(request: Request, payload: NextInterviewRequest) -> NextInterviewResponse:
-    if payload.model_invocation_grant is not None:
+    with start_span(
+        "interview_next",
+        {"interview_agent.trace_id": payload.trace_id, "session.id": payload.session.id},
+    ):
+        if payload.model_invocation_grant is not None:
+            try:
+                return await cancel_when_disconnected(
+                    request,
+                    run_interview_graph(request.app.state.interview_graph, payload),
+                )
+            except RequestCancelledError as error:
+                LOGGER.info(
+                    "runtime_request_cancelled",
+                    extra={"event": "runtime_request_cancelled", "trace_id": payload.trace_id},
+                )
+                raise RuntimeRequestError(
+                    ApiError(
+                        status_code=CLIENT_CLOSED_REQUEST_STATUS,
+                        code="REQUEST_CANCELLED",
+                        message="Request was cancelled by the caller.",
+                    )
+                ) from error
+            except InterviewGraphError as error:
+                raise RuntimeRequestError(
+                    ApiError(
+                        status_code=model_error_status(error),
+                        code=model_error_code(error),
+                        message="模型面试决策暂时无法生成，请稍后重试。",
+                    )
+                ) from error
+        return next_interview_turn(payload.session, payload.answer)
+
+
+@app.post(
+    "/practice/report",
+    response_model=PracticeReportResponse,
+    response_model_by_alias=True,
+    dependencies=[Depends(verify_internal_request)],
+)
+async def practice_report(
+    request: Request,
+    payload: PracticeReportRequest,
+) -> PracticeReportResponse:
+    with start_span(
+        "practice_report",
+        {"interview_agent.trace_id": payload.trace_id, "session.id": payload.session.id},
+    ):
         try:
-            return await run_interview_graph(request.app.state.interview_graph, payload)
-        except InterviewGraphError as error:
+            return await run_practice_report_graph(request.app.state.practice_report_graph, payload)
+        except PracticeReportGraphError as error:
             raise RuntimeRequestError(
                 ApiError(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    code=str(error),
-                    message="模型面试决策暂时无法生成，请稍后重试。",
+                    status_code=model_error_status(error),
+                    code=model_error_code(error),
+                    message="训练报告暂时无法生成，请稍后重试。",
                 )
             ) from error
-    return next_interview_turn(payload.session, payload.answer)
 
 
 async def checkpoint_for(
@@ -155,3 +215,15 @@ def checkpoint_connection_url(database_url: str) -> str:
         return database_url
     separator = "&" if "?" in database_url else "?"
     return f"{database_url}{separator}connect_timeout={CHECKPOINT_CONNECT_TIMEOUT_SECONDS}"
+
+
+def model_error_status(error: Exception) -> int:
+    if str(error) == MODEL_PROVIDER_ENDPOINT_BLOCKED:
+        return status.HTTP_400_BAD_REQUEST
+    return status.HTTP_502_BAD_GATEWAY
+
+
+def model_error_code(error: Exception) -> str:
+    if str(error) == MODEL_PROVIDER_ENDPOINT_BLOCKED:
+        return MODEL_PROVIDER_ENDPOINT_BLOCKED
+    return str(error)

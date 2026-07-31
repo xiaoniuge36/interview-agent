@@ -46,8 +46,10 @@ export class InterviewCommandLeaseHandler {
     if (existing) {
       return this.prepareExisting({ transaction, request, existing, fingerprint });
     }
+    await this.lockOwnedSession(transaction, request);
     const session = await this.requireOwnedSession(transaction, request);
     assertInterviewCommand(session, request.command, request.expectedVersion);
+    await this.assertSessionLeaseAvailable(transaction, request);
     return this.createPending({ transaction, request, session, fingerprint });
   }
 
@@ -187,6 +189,37 @@ export class InterviewCommandLeaseHandler {
     });
     if (!session) throw new NotFoundException('InterviewSession not found');
     return mapSession(session);
+  }
+
+  private async lockOwnedSession(
+    transaction: Prisma.TransactionClient,
+    request: ExecuteCommandRequest,
+  ) {
+    const locked = await transaction.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT "id"
+      FROM "InterviewSession"
+      WHERE "id" = ${request.sessionId}
+        AND "tenantId" = ${request.context.tenantId}
+        AND "userId" = ${request.context.actor.id}
+      FOR UPDATE
+    `);
+    if (locked.length === 0) throw new NotFoundException('InterviewSession not found');
+  }
+
+  private async assertSessionLeaseAvailable(
+    transaction: Prisma.TransactionClient,
+    request: ExecuteCommandRequest,
+  ) {
+    const activeCommand = await transaction.interviewCommand.findFirst({
+      where: {
+        tenantId: request.context.tenantId,
+        sessionId: request.sessionId,
+        status: 'pending',
+        leaseExpiresAt: { gt: new Date() },
+      },
+      select: { id: true },
+    });
+    if (activeCommand) throw commandInProgress();
   }
 
   private leaseExpiration() {

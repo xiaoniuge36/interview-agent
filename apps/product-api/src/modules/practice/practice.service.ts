@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import {
   type CreatePracticeSession,
   type MasteryProfile,
+  type MistakeBook,
+  type MistakeBookQuery,
   type PracticeReport,
   type PracticeRecommendation,
   type PracticeItemFeedback,
@@ -59,6 +61,14 @@ export class PracticeService {
 
   history(context: ProductRequestContext): Promise<PracticeHistoryItem[]> {
     return this.queries.history(context);
+  }
+
+  mistakes(context: ProductRequestContext, query: MistakeBookQuery): Promise<MistakeBook> {
+    return this.queries.mistakes(context, query);
+  }
+
+  reviewMistake(context: ProductRequestContext, mistakeId: string): Promise<PracticeSession> {
+    return this.queries.reviewMistake(context, mistakeId);
   }
 
   recommendationList(context: ProductRequestContext): Promise<PracticeRecommendation[]> {

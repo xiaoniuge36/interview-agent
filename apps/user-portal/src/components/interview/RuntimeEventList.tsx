@@ -17,6 +17,7 @@ type RuntimeEventListProps = {
   events: AgentStreamEvent[];
   phase: AiOperationPhase | null;
   basisSummary: string[];
+  sourceCount?: number;
 };
 
 const PHASE_LABELS: Record<AiOperationPhase, string> = {
@@ -27,7 +28,12 @@ const PHASE_LABELS: Record<AiOperationPhase, string> = {
   saving: '正在保存本轮结果',
 };
 
-export function RuntimeEventList({ events, phase, basisSummary }: RuntimeEventListProps) {
+export function RuntimeEventList({
+  events,
+  phase,
+  basisSummary,
+  sourceCount = 0,
+}: RuntimeEventListProps) {
   return (
     <section className="panel stack compact">
       <div className="eyebrow">本轮进度</div>
@@ -55,6 +61,12 @@ export function RuntimeEventList({ events, phase, basisSummary }: RuntimeEventLi
             ))}
           </ul>
         </div>
+      ) : null}
+      {sourceCount ? (
+        <p className="interview-source-summary">
+          <strong>本轮参考来源</strong>
+          <span>已使用 {sourceCount} 条受控知识来源，未开放自由搜索。</span>
+        </p>
       ) : null}
     </section>
   );

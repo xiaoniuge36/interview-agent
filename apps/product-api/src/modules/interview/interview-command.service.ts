@@ -1,13 +1,12 @@
 ﻿import { HttpException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import type { AiOperationPhase, InterviewCommandResult } from '@interview-agent/contracts';
-import { PolicyService } from '../../common/authz/policy.service';
 import {
-  AgentRuntimeClient,
   AgentRuntimeInvocationError,
   type AgentNextResult,
 } from '../agent-runtime/agent-runtime.client';
 import { buildCompletion } from './interview-command.builder';
-import { InterviewCommandRepository } from './interview-command.repository';
+import { InterviewCommandInfrastructure } from './interview-command-infrastructure';
+import { InterviewRetrievalContextService } from './interview-retrieval-context.service';
 import { toRuntimeContext } from './interview.mapper';
 import { assertRuntimeDecision } from './interview-state-machine';
 import type {
@@ -18,6 +17,7 @@ import type {
   InvocationPreparation,
   StartCommandRequest,
 } from './interview.types';
+import { withTraceSpan } from '../../common/telemetry/telemetry';
 
 export type InterviewCommandStream = {
   phase: (phase: AiOperationPhase) => void;
@@ -29,6 +29,10 @@ export type InterviewStreamCommandResult = {
   result: InterviewCommandResult;
   basisSummary: string[];
 };
+type InterviewCommandExecution = {
+  signal?: AbortSignal;
+  stream?: InterviewCommandStream;
+};
 const MAX_BASIS_SUMMARY_ITEMS = 3;
 
 @Injectable()
@@ -36,10 +40,21 @@ export class InterviewCommandService {
   private readonly logger = new Logger(InterviewCommandService.name);
 
   constructor(
-    private readonly repository: InterviewCommandRepository,
-    private readonly policy: PolicyService,
-    private readonly agent: AgentRuntimeClient,
+    private readonly infrastructure: InterviewCommandInfrastructure,
+    private readonly retrieval: InterviewRetrievalContextService,
   ) {}
+
+  private get repository() {
+    return this.infrastructure.repository;
+  }
+
+  private get policy() {
+    return this.infrastructure.policy;
+  }
+
+  private get agent() {
+    return this.infrastructure.agent;
+  }
 
   start(request: StartCommandRequest) {
     this.policy.assert(request.context.actor, 'interview:create', {
@@ -49,27 +64,33 @@ export class InterviewCommandService {
     return this.repository.start(request);
   }
 
-  async advance(request: AdvanceCommandRequest) {
-    const execution = await this.execute({
-      context: request.context,
-      sessionId: request.sessionId,
-      command: 'advance',
-      expectedVersion: request.input.expectedVersion,
-      idempotencyKey: request.idempotencyKey,
-      answer: undefined,
-    });
+  async advance(request: AdvanceCommandRequest, signal?: AbortSignal) {
+    const execution = await this.execute(
+      {
+        context: request.context,
+        sessionId: request.sessionId,
+        command: 'advance',
+        expectedVersion: request.input.expectedVersion,
+        idempotencyKey: request.idempotencyKey,
+        answer: undefined,
+      },
+      signal ? { signal } : {},
+    );
     return execution.result;
   }
 
-  async submitAnswer(request: AnswerCommandRequest) {
-    const execution = await this.execute({
-      context: request.context,
-      sessionId: request.sessionId,
-      command: 'answer',
-      expectedVersion: request.input.expectedVersion,
-      idempotencyKey: request.idempotencyKey,
-      answer: request.input.answer,
-    });
+  async submitAnswer(request: AnswerCommandRequest, signal?: AbortSignal) {
+    const execution = await this.execute(
+      {
+        context: request.context,
+        sessionId: request.sessionId,
+        command: 'answer',
+        expectedVersion: request.input.expectedVersion,
+        idempotencyKey: request.idempotencyKey,
+        answer: request.input.answer,
+      },
+      signal ? { signal } : {},
+    );
     return execution.result;
   }
 
@@ -83,7 +104,7 @@ export class InterviewCommandService {
         idempotencyKey: request.idempotencyKey,
         answer: undefined,
       },
-      stream,
+      { stream },
     );
   }
 
@@ -97,14 +118,30 @@ export class InterviewCommandService {
         idempotencyKey: request.idempotencyKey,
         answer: request.input.answer,
       },
-      stream,
+      { stream },
     );
   }
 
   private async execute(
     request: ExecuteCommandRequest,
-    stream?: InterviewCommandStream,
+    execution: InterviewCommandExecution = {},
   ): Promise<InterviewStreamCommandResult> {
+    return withTraceSpan(
+      'interview.command',
+      {
+        'interview_agent.trace_id': request.context.traceId,
+        'session.id': request.sessionId,
+        command: request.command,
+      },
+      () => this.executeScoped(request, execution),
+    );
+  }
+
+  private async executeScoped(
+    request: ExecuteCommandRequest,
+    execution: InterviewCommandExecution,
+  ): Promise<InterviewStreamCommandResult> {
+    const { stream } = execution;
     this.assertCommandAccess(request);
     const prepared = await this.repository.prepare(request);
     if (prepared.kind === 'replay') {
@@ -115,7 +152,14 @@ export class InterviewCommandService {
       stream?.phase('preparing');
       stream?.phase('analyzing');
       stream?.phase('composing');
-      runtime = await invokeRuntime(this.agent, prepared, stream);
+      const retrievalContext = await this.retrieval.forCommand(prepared);
+      runtime = await invokeRuntime({
+        agent: this.agent,
+        preparation: prepared,
+        retrievalContext,
+        stream,
+        signal: execution.signal,
+      });
       stream?.phase('validating');
       assertRuntimeDecision(prepared.session, prepared.command, runtime);
       const artifacts = buildCompletion({ preparation: prepared, runtime });
@@ -171,19 +215,29 @@ export class InterviewCommandService {
   }
 }
 
-function invokeRuntime(
-  agent: AgentRuntimeClient,
-  preparation: InvocationPreparation,
-  stream: InterviewCommandStream | undefined,
-) {
-  const input = {
-    session: toRuntimeContext(preparation.session),
-    ...(preparation.answer ? { answer: preparation.answer } : {}),
-    traceId: preparation.context.traceId,
-    commandId: preparation.commandId,
+function invokeRuntime(command: {
+  agent: InterviewCommandInfrastructure['agent'];
+  preparation: InvocationPreparation;
+  retrievalContext: Awaited<ReturnType<InterviewRetrievalContextService['forCommand']>>;
+  stream: InterviewCommandStream | undefined;
+  signal: AbortSignal | undefined;
+}) {
+  const request = {
+    session: toRuntimeContext(command.preparation.session),
+    ...(command.preparation.answer ? { answer: command.preparation.answer } : {}),
+    ...(command.retrievalContext.length ? { retrievalContext: command.retrievalContext } : {}),
+    traceId: command.preparation.context.traceId,
+    commandId: command.preparation.commandId,
   };
-  if (!stream) return agent.next(input, preparation.context);
-  return agent.next(input, preparation.context, streamProgress(stream));
+  if (!command.stream && !command.signal) {
+    return command.agent.next(request, command.preparation.context);
+  }
+  if (!command.stream) {
+    return command.agent.next(request, command.preparation.context, {
+      signal: command.signal as AbortSignal,
+    });
+  }
+  return command.agent.next(request, command.preparation.context, streamProgress(command.stream));
 }
 
 function streamProgress(stream: InterviewCommandStream) {
