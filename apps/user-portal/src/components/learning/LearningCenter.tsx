@@ -34,6 +34,7 @@ export function LearningCenter({
       openedCourseSlug={openedCourseSlug}
     >
       <div className="learning-center">
+        <LearningCenterHero />
         <LearningLibraryRail documents={navigationItems} activeSlug={activeDocument.slug} />
         <section className="learning-reading-desk">
           <DocumentHeader document={activeDocument} />
@@ -53,11 +54,21 @@ export function LearningCenter({
   );
 }
 
+function LearningCenterHero() {
+  return (
+    <header className="learning-center-hero">
+      <span>学习中心</span>
+      <h1>把知识，练成面试时说得清的能力。</h1>
+      <p>沿着完整路线阅读、动手和自测；每一课都能回到对应题目继续验证。</p>
+    </header>
+  );
+}
+
 function DocumentHeader({ document }: { document: LearningDocument }) {
   return (
     <header className="learning-document-header">
       <div>
-        <span className="learning-reading-label">正在阅读</span>
+        <span className="learning-reading-label">正在学习</span>
         <p>{document.sourceName}</p>
       </div>
       <div className="learning-document-meta" aria-label="文档信息">
@@ -86,7 +97,7 @@ function CourseBrief({ document }: { document: LearningDocument }) {
 function DocumentOutline({ document }: { document: LearningDocument }) {
   return (
     <aside className="learning-outline" aria-label="当前文档章节">
-      <strong>本页目录</strong>
+      <strong>本课目录</strong>
       {document.headings.length ? (
         <nav>
           {document.headings.map((heading) => (

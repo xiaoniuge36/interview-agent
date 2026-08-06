@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import type { TrainingContinuation } from './training-continuation';
+import { ActionLabel } from '@/components/consumer/ActionLabel';
+import { SignalField } from '@/components/consumer/SignalField';
 
 export function TrainingContinuationCard({ continuation }: { continuation: TrainingContinuation }) {
   return (
@@ -8,6 +10,7 @@ export function TrainingContinuationCard({ continuation }: { continuation: Train
       data-kind={continuation.kind}
       aria-labelledby="training-continuation-heading"
     >
+      <SignalField />
       <div className="recent-practice-copy">
         <span>{continuation.kicker}</span>
         <h2 id="training-continuation-heading">{continuation.title}</h2>
@@ -15,7 +18,7 @@ export function TrainingContinuationCard({ continuation }: { continuation: Train
       </div>
       <ContinuationState continuation={continuation} />
       <Link href={continuation.href}>
-        {continuation.actionLabel} <span aria-hidden="true">→</span>
+        <ActionLabel label={continuation.actionLabel} />
       </Link>
     </section>
   );

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createUserAgentDrawerCloseAction,
+  createUserAgentSettingsAction,
   createUserAgentTaskLifecycle,
   resolveUserAgentExecutionMessage,
   shouldPublishUserAgentExecutionMessage,
@@ -25,6 +26,34 @@ describe('User Agent drawer close action', () => {
     close();
 
     expect(events).toEqual(['stop', 'close']);
+  });
+});
+
+describe('User Agent settings action', () => {
+  it('closes the drawer without navigating when settings is already open', () => {
+    const events: string[] = [];
+    const openSettings = createUserAgentSettingsAction(
+      '/settings',
+      () => events.push('close'),
+      () => events.push('navigate'),
+    );
+
+    openSettings();
+
+    expect(events).toEqual(['close']);
+  });
+
+  it('closes the drawer before client-side navigation from another page', () => {
+    const events: string[] = [];
+    const openSettings = createUserAgentSettingsAction(
+      '/practice',
+      () => events.push('close'),
+      () => events.push('navigate'),
+    );
+
+    openSettings();
+
+    expect(events).toEqual(['close', 'navigate']);
   });
 });
 

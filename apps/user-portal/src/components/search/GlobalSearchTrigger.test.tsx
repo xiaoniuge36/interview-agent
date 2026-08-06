@@ -11,7 +11,7 @@ describe('全站顶部搜索入口', () => {
 
     expect(html).toContain('aria-label="打开全局搜索"');
     expect(html).toContain('aria-haspopup="dialog"');
-    expect(html).toContain('搜索题目、题库专题或功能页面');
+    expect(html).toContain('搜索题目、课程或功能');
     expect(html).toContain('题目 · 专题 · 页面');
     expect(html).toContain('Ctrl K');
   });

@@ -8,11 +8,13 @@ import {
 } from 'react';
 
 export type UserAgentFloatPosition = { right: number; bottom: number };
+type UserAgentPositionStorage = Pick<Storage, 'setItem'>;
 const POSITION_KEY = 'user-portal.page-agent.position';
-const DEFAULT_POSITION: UserAgentFloatPosition = { right: 24, bottom: 92 };
+const DEFAULT_POSITION: UserAgentFloatPosition = { right: 16, bottom: 92 };
 const EDGE_GAP = 16;
-const FLOAT_SIZE = 58;
+const FLOAT_SIZE = 48;
 const DRAG_THRESHOLD = 6;
+const MOBILE_DOCK_MEDIA_QUERY = '(max-width: 820px)';
 
 type DragState = {
   startX: number;
@@ -34,9 +36,9 @@ type DragContext = {
 };
 
 export function useUserAgentDrag(onOpen: () => void) {
-  const [position, setPosition] = useState<UserAgentFloatPosition>(DEFAULT_POSITION);
+  const [position, setPosition] = useState<UserAgentFloatPosition>(defaultUserAgentFloatPosition);
   const dragRef = useRef<DragState | null>(null);
-  const positionRef = useRef<UserAgentFloatPosition>(DEFAULT_POSITION);
+  const positionRef = useRef<UserAgentFloatPosition>(defaultUserAgentFloatPosition());
   const suppressPointerClickRef = useRef(false);
   useEffect(() => {
     const next = clampPosition(readPosition());
@@ -69,7 +71,12 @@ export function useUserAgentDrag(onOpen: () => void) {
   };
 }
 
+export function defaultUserAgentFloatPosition(): UserAgentFloatPosition {
+  return { ...DEFAULT_POSITION };
+}
+
 function startDrag(event: PointerEvent<HTMLButtonElement>, context: DragContext) {
+  if (window.matchMedia(MOBILE_DOCK_MEDIA_QUERY).matches) return;
   if (event.pointerType === 'mouse' && event.button !== 0) return;
   context.suppressPointerClickRef.current = false;
   const rect = event.currentTarget.getBoundingClientRect();
@@ -118,7 +125,7 @@ function finishDrag(event: PointerEvent<HTMLButtonElement>, context: DragContext
   if (!drag || drag.pointerId !== event.pointerId) return;
   context.dragRef.current = null;
   releasePointerCapture(event);
-  if (drag.moved) return persistPosition(drag.latestPosition);
+  if (drag.moved) persistUserAgentPositionSafely(drag.latestPosition);
 }
 
 function activateFromClick(event: MouseEvent<HTMLButtonElement>, context: DragContext) {
@@ -136,7 +143,7 @@ function cancelDrag(event: PointerEvent<HTMLButtonElement>, context: DragContext
   if (!drag || drag.pointerId !== event.pointerId) return;
   context.dragRef.current = null;
   releasePointerCapture(event);
-  if (drag.moved) persistPosition(drag.latestPosition);
+  if (drag.moved) persistUserAgentPositionSafely(drag.latestPosition);
   const next = clampPosition(drag.latestPosition, drag.width, drag.height);
   context.positionRef.current = next;
   context.setPosition(next);
@@ -157,13 +164,21 @@ function readPosition(): UserAgentFloatPosition {
     if (typeof value?.right === 'number' && typeof value.bottom === 'number')
       return value as UserAgentFloatPosition;
   } catch {
-    return DEFAULT_POSITION;
+    return defaultUserAgentFloatPosition();
   }
-  return DEFAULT_POSITION;
+  return defaultUserAgentFloatPosition();
 }
 
-function persistPosition(position: UserAgentFloatPosition) {
-  window.localStorage.setItem(POSITION_KEY, JSON.stringify(position));
+export function persistUserAgentPositionSafely(
+  position: UserAgentFloatPosition,
+  getStorage: () => UserAgentPositionStorage = () => window.localStorage,
+): boolean {
+  try {
+    getStorage().setItem(POSITION_KEY, JSON.stringify(position));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function clampPosition(position: UserAgentFloatPosition, width = FLOAT_SIZE, height = FLOAT_SIZE) {

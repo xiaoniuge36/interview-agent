@@ -34,6 +34,8 @@ describe('HttpsProviderTransport blocked destinations', () => {
     ['IPv4 shared address range', ['100.64.0.1']],
     ['IPv4 special-purpose range', ['192.0.0.1']],
     ['IPv4 deprecated relay range', ['192.88.99.1']],
+    ['IPv4 benchmark literal range', ['198.18.0.21']],
+    ['mixed global and fake-IP DNS records', ['8.8.8.8', '198.18.0.21']],
     ['IPv4 multicast range', ['224.0.0.1']],
     ['IPv4 reserved range', ['240.0.0.1']],
     ['IPv6 documentation range', ['2001:db8::8']],
@@ -260,14 +262,25 @@ function successfulRequestFactory(
 ): typeof httpsRequest {
   return ((options: RequestOptions, callback: (incoming: unknown) => void) => {
     const lookup = options.lookup as unknown as SocketLookup;
+    let onError: ((error: Error) => void) | undefined;
     state.hostname = String(options.hostname);
     state.servername = String(options.servername);
     lookup(state.hostname, { all }, (error, addresses) => {
-      if (error) throw error;
+      if (error) {
+        onError?.(error);
+        return;
+      }
       state.lookupAddress = Array.isArray(addresses) ? addresses[0]!.address : addresses;
       callback(Object.assign(Readable.from(['ok']), { headers: {}, statusCode: 200 }));
     });
-    return { destroy: jest.fn(), end: jest.fn(), once: jest.fn(), setTimeout: jest.fn() };
+    return {
+      destroy: jest.fn(),
+      end: jest.fn(),
+      once: (_event: string, listener: (error: Error) => void) => {
+        onError = listener;
+      },
+      setTimeout: jest.fn(),
+    };
   }) as unknown as typeof httpsRequest;
 }
 

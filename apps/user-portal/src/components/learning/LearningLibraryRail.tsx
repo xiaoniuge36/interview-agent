@@ -68,8 +68,8 @@ function LibraryProgress({
 }) {
   return (
     <div className="learning-library-heading">
-      <span>LEARNING PATH</span>
-      <h1>资料架</h1>
+      <span>你的学习路线</span>
+      <h2>资料架</h2>
       <strong>完整学习路线</strong>
       <p>{track}</p>
       <div className="learning-path-progress-copy">

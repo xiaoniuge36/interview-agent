@@ -53,7 +53,8 @@ export const assertRuntimeDecision = (
   const nextStage = stageOrder.indexOf(decision.stage);
   const forbiddenStage = ['report_ready', 'memory_updated'].includes(decision.stage);
   const regressed = nextStage < currentStage;
-  const invalidInitialStage = command === 'advance' && decision.stage !== 'warmup';
+  const invalidInitialStage =
+    command === 'advance' && !['warmup', 'self_intro'].includes(decision.stage);
   const invalidFinalStage = decision.shouldFinish && decision.stage !== 'final_evaluation';
 
   if (forbiddenStage || regressed || invalidInitialStage || invalidFinalStage) {

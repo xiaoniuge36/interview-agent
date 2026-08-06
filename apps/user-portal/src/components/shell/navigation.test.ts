@@ -4,6 +4,7 @@ import {
   navigationPendingReducer,
   navigationPendingAnnouncement,
   navigationLinkClass,
+  navigationAriaCurrent,
   navIdFromPathname,
   shouldStartNavigationPending,
 } from './navigation';
@@ -22,6 +23,13 @@ it('sidebar navigation exposes the learning center and keeps it active for neste
   expect(navIdFromPathname('/learn/agent-basics')).toBe('learn');
 });
 
+it('keeps the practice flow under the questions navigation tab', () => {
+  expect(navIdFromPathname('/practice')).toBe('questions');
+  expect(navIdFromPathname('/practice/session-1')).toBe('questions');
+  expect(navigationAriaCurrent('/practice', '/questions', true)).toBe('location');
+  expect(navigationAriaCurrent('/questions', '/questions', true)).toBe('page');
+});
+
 it('sidebar navigation announces an optimistic destination without pretending the route has committed', () => {
   expect(navigationPendingAnnouncement('reports')).toBe('正在打开复盘中心…');
   expect(navigationPendingAnnouncement(null)).toBe('');
@@ -29,8 +37,8 @@ it('sidebar navigation announces an optimistic destination without pretending th
 
 it('sidebar navigation only marks unmodified primary clicks to a different route as pending', () => {
   const click = {
-    active: 'home' as const,
     target: 'reports' as const,
+    currentPathname: '/home',
     defaultPrevented: false,
     button: 0,
     altKey: false,
@@ -47,12 +55,19 @@ it('sidebar navigation only marks unmodified primary clicks to a different route
   expect(shouldStartNavigationPending({ ...click, altKey: true })).toBe(false);
   expect(shouldStartNavigationPending({ ...click, button: 2 })).toBe(false);
   expect(shouldStartNavigationPending({ ...click, defaultPrevented: true })).toBe(false);
+  expect(
+    shouldStartNavigationPending({
+      ...click,
+      currentPathname: '/practice',
+      target: 'questions',
+    }),
+  ).toBe(true);
 });
 
 it('sidebar navigation uses the last primary destination and clears on same-route, route commit, or timeout', () => {
   const first = {
-    active: 'home' as const,
     target: 'questions' as const,
+    currentPathname: '/home',
     defaultPrevented: false,
     button: 0,
     altKey: false,

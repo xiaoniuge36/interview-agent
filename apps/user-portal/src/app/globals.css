@@ -32,3 +32,9 @@
 @import './styles/mistake-book.css';
 @import './styles/responsive.css';
 @import './styles/mobile-navigation.css';
+@import './styles/consumer-shell.css';
+@import './styles/consumer-auth.css';
+@import './styles/consumer-motion.css';
+@import './styles/consumer-home.css';
+@import './styles/consumer-learning.css';
+@import './styles/consumer-practice.css';

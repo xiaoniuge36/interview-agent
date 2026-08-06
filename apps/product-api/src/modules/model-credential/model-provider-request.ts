@@ -1,8 +1,9 @@
-import { lookup } from 'node:dns/promises';
 import type { IncomingMessage } from 'node:http';
 import { request as httpsRequest, type RequestOptions } from 'node:https';
 import { isIP } from 'node:net';
 import { Readable } from 'node:stream';
+import { validateProviderAddresses } from './model-provider-address-policy';
+import { resolveProviderAddresses, systemResolveAll, type ResolveAll } from './model-provider-dns';
 import { e2eModelStubUrl } from './model-provider-e2e';
 
 const MODEL_REQUEST_TIMEOUT_MS = 30_000;
@@ -10,27 +11,7 @@ const HTTPS_DEFAULT_PORT = 443;
 const HTTP_BAD_GATEWAY = 502;
 const IPV4_FAMILY = 4;
 const IPV6_FAMILY = 6;
-const IPV4_RADIX = 256;
 const DISABLED_SOCKET_TIMEOUT_MS = 0;
-const NON_GLOBAL_IPV4_CIDRS = [
-  ['0.0.0.0', '0.255.255.255'],
-  ['10.0.0.0', '10.255.255.255'],
-  ['100.64.0.0', '100.127.255.255'],
-  ['127.0.0.0', '127.255.255.255'],
-  ['169.254.0.0', '169.254.255.255'],
-  ['172.16.0.0', '172.31.255.255'],
-  ['192.0.0.0', '192.0.0.255'],
-  ['192.0.2.0', '192.0.2.255'],
-  ['192.88.99.0', '192.88.99.255'],
-  ['192.168.0.0', '192.168.255.255'],
-  ['198.18.0.0', '198.19.255.255'],
-  ['198.51.100.0', '198.51.100.255'],
-  ['203.0.113.0', '203.0.113.255'],
-  ['224.0.0.0', '255.255.255.255'],
-] as const;
-const NON_GLOBAL_IPV4_RANGES = NON_GLOBAL_IPV4_CIDRS.map(
-  ([start, end]) => [ipv4Number(start), ipv4Number(end)] as const,
-);
 
 type Destination = {
   hostname: string;
@@ -52,7 +33,7 @@ export class ModelProviderError extends Error {
   }
 }
 
-export type ResolveAll = (hostname: string) => Promise<string[]>;
+export type { ResolveAll } from './model-provider-dns';
 export type ProviderTransport = {
   fetch(url: string, request: RequestInit, options?: ProviderTransportOptions): Promise<Response>;
 };
@@ -70,7 +51,7 @@ export type ProviderFetchOptions = {
 
 export class HttpsProviderTransport implements ProviderTransport {
   constructor(
-    private readonly resolveAll: ResolveAll = defaultResolveAll,
+    private readonly resolveAll: ResolveAll = systemResolveAll,
     private readonly requestFactory: typeof httpsRequest = httpsRequest,
   ) {}
 
@@ -145,7 +126,7 @@ export class HttpsProviderTransport implements ProviderTransport {
   };
 
   private async resolveForSocket(hostname: string): Promise<SocketAddress[]> {
-    const addresses = await this.resolveAll(normalizeHostname(hostname));
+    const addresses = await resolveProviderAddresses(normalizeHostname(hostname), this.resolveAll);
     validateAddresses(addresses);
     return addresses.map(toSocketAddress);
   }
@@ -206,32 +187,12 @@ function parseDestination(value: string): Destination {
   }
 }
 
-async function defaultResolveAll(hostname: string): Promise<string[]> {
-  const records = await lookup(hostname, { all: true, verbatim: true });
-  return records.map((record) => record.address);
-}
-
 function validateAddresses(addresses: string[]) {
-  if (!addresses.length || addresses.some((address) => !isGlobalAddress(address))) {
+  try {
+    validateProviderAddresses(addresses);
+  } catch {
     throw new ModelProviderError('MODEL_PROVIDER_ENDPOINT_BLOCKED');
   }
-}
-
-function isGlobalAddress(address: string) {
-  const family = isIP(address);
-  if (family === IPV6_FAMILY) {
-    return /^[23][0-9a-f]{3}:/i.test(address) && !/^2001:0?db8:/i.test(address);
-  }
-  return family === IPV4_FAMILY && !isNonGlobalIpv4(address);
-}
-
-function isNonGlobalIpv4(address: string) {
-  const value = ipv4Number(address);
-  return NON_GLOBAL_IPV4_RANGES.some(([start, end]) => value >= start && value <= end);
-}
-
-function ipv4Number(address: string) {
-  return address.split('.').reduce((value, part) => value * IPV4_RADIX + Number(part), 0);
 }
 
 function isIpAddress(value: string) {

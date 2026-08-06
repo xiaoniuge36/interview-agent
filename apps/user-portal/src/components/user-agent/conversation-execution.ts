@@ -15,6 +15,17 @@ export function createUserAgentDrawerCloseAction(stop: () => void, close: () => 
   };
 }
 
+export function createUserAgentSettingsAction(
+  pathname: string,
+  close: () => void,
+  navigate: () => void,
+) {
+  return () => {
+    close();
+    if (pathname !== '/settings') navigate();
+  };
+}
+
 export function createUserAgentTaskLifecycle() {
   let latest = 0;
   const pendingSubmissions = new Set<string | null>();

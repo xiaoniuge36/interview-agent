@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { HomeWelcome } from './HomeWelcome';
 import { TrainingContinuationCard } from './TrainingContinuationCard';
 import type { TrainingContinuation } from './training-continuation';
+import { ActionLabel } from '@/components/consumer/ActionLabel';
+import { SignalField } from '@/components/consumer/SignalField';
 
 type AgentRecommendationRailProps = {
   displayName?: string | null | undefined;
@@ -91,6 +93,7 @@ function RecommendationCard({
 }) {
   return (
     <article className="agent-recommendation-card">
+      <SignalField />
       <div className="agent-recommendation-meta">
         <span>{sourceLabel(recommendation.source)}</span>
         <span>
@@ -103,7 +106,11 @@ function RecommendationCard({
         <p>{recommendation.reason}</p>
       </div>
       <button type="button" onClick={onStart} disabled={busy}>
-        {busy ? '正在创建题单…' : '采用这组题开始练习'}
+        <ActionLabel
+          label="采用这组题开始练习"
+          busy={busy}
+          busyLabel="正在创建题单…"
+        />
       </button>
       <Link className="agent-self-picker-link" href="/questions">
         自己组一轮

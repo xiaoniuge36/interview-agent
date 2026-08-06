@@ -1,11 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { PageAgentCore } from '@page-agent/core';
+import { MobileBottomNav } from '../shell/MobileBottomNav';
 import { UserAgentDrawer } from './UserAgentDrawer';
-import { UserAgentFloatButton } from './UserAgentFloatButton';
-import { createUserAgentDrawerCloseAction } from './conversation-execution';
+import { UserAgentFloatButton, UserAgentMobileTrigger } from './UserAgentFloatButton';
+import {
+  createUserAgentDrawerCloseAction,
+  createUserAgentSettingsAction,
+} from './conversation-execution';
 import { formatUserAgentConversationContext } from './user-agent-runtime';
 import { resolveUserAgentPageContext } from './user-agent-page-context';
 import { useUserAgentConfig } from './useUserAgentConfig';
@@ -23,7 +27,9 @@ export function UserAgentWidget() {
 }
 
 function useUserAgentWidgetController() {
-  const pageContext = resolveUserAgentPageContext(usePathname());
+  const pathname = usePathname();
+  const router = useRouter();
+  const pageContext = resolveUserAgentPageContext(pathname);
   const [open, setOpen] = useState(false);
   const agentRef = useRef<PageAgentCore | null>(null);
   const config = useUserAgentConfig();
@@ -46,15 +52,14 @@ function useUserAgentWidgetController() {
   });
   agentRef.current = runtime.agent;
   useRunTelemetry(runtime, runLifecycle);
-  const drag = useUserAgentDrag(() => setOpen(true));
+  const openAgent = useCallback(() => setOpen(true), []);
+  const drag = useUserAgentDrag(openAgent);
   const close = useCallback(
     () => createUserAgentDrawerCloseAction(conversation.stop, () => setOpen(false))(),
     [conversation.stop],
   );
-  const openSettings = useCallback(() => {
-    setOpen(false);
-    window.location.href = '/settings';
-  }, []);
+  const closeForSettings = useCallback(() => setOpen(false), []);
+  const openSettings = useUserAgentSettingsNavigation(pathname, router, closeForSettings);
   return {
     open,
     config,
@@ -63,10 +68,22 @@ function useUserAgentWidgetController() {
     conversation,
     runtime,
     drag,
+    openAgent,
     close,
     openSettings,
     pageContext,
   };
+}
+
+function useUserAgentSettingsNavigation(
+  pathname: string,
+  router: ReturnType<typeof useRouter>,
+  close: () => void,
+) {
+  return useMemo(
+    () => createUserAgentSettingsAction(pathname, close, () => router.push('/settings')),
+    [close, pathname, router],
+  );
 }
 
 function useUserAgentRunIntegration(conversationId: string | null) {
@@ -108,7 +125,16 @@ function useRunTelemetry(
 function UserAgentWidgetView(props: ReturnType<typeof useUserAgentWidgetController>) {
   return (
     <>
-      <UserAgentFloatButton {...props.drag} status={props.runtime.status} />
+      <MobileBottomNav
+        agentTrigger={
+          <UserAgentMobileTrigger
+            open={props.open}
+            onClick={props.openAgent}
+            status={props.runtime.status}
+          />
+        }
+      />
+      <UserAgentFloatButton {...props.drag} open={props.open} status={props.runtime.status} />
       <UserAgentDrawer
         activeConversationId={props.conversations.activeId}
         activity={props.runtime.activity}

@@ -2,8 +2,8 @@
   position: fixed;
   z-index: 1250;
   display: grid;
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   place-items: center;
   border: 1px solid rgb(255 255 255 / 34%);
   border-radius: 50%;
@@ -48,8 +48,8 @@
 .user-agent-float-mark {
   position: relative;
   z-index: 1;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   overflow: visible;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -239,6 +239,54 @@
   .user-agent-conversation-row { min-width: 190px; }
   .user-agent-quick-grid { grid-template-columns: 1fr; }
   .user-agent-float-label, .user-agent-model { display: none; }
+}
+@media (max-width: 820px) {
+  .user-agent-float { display: none; }
+  .user-agent-mobile-trigger {
+    position: relative;
+    min-width: 0;
+    display: grid;
+    place-items: center;
+    grid-template-rows: 20px auto;
+    align-content: center;
+    gap: 3px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 9px;
+    font-weight: 750;
+    touch-action: manipulation;
+  }
+  .user-agent-mobile-trigger:hover,
+  .user-agent-mobile-trigger:focus-visible,
+  .user-agent-mobile-trigger[aria-expanded='true'] {
+    background: var(--consumer-violet-soft);
+    color: var(--consumer-violet);
+  }
+  .user-agent-mobile-trigger:focus-visible {
+    outline: 2px solid currentcolor;
+    outline-offset: -2px;
+  }
+  .user-agent-mobile-trigger .user-agent-float-mark { width: 20px; height: 20px; }
+  .user-agent-mobile-trigger .user-agent-float-mark-monogram {
+    stroke: currentcolor;
+    stroke-width: 2.3;
+  }
+  .user-agent-mobile-trigger .user-agent-float-mark-accent {
+    stroke: var(--consumer-coral);
+    stroke-width: 2.3;
+  }
+  .user-agent-mobile-trigger .user-agent-float-status {
+    top: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+  }
+  .user-agent-mobile-label {
+    line-height: 1;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .user-agent-float, .user-agent-float-label, .user-agent-float-mark { transition: none; }

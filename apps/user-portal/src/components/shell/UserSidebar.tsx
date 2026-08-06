@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useReducer, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { NavigationIcon } from './NavigationIcon';
 import {
   NAV_ITEMS,
+  navigationAriaCurrent,
   navigationClickFromEvent,
   navigationLinkClass,
   navigationPendingAnnouncement,
@@ -14,13 +14,14 @@ import {
   type NavigationPendingAction,
   type NavigationId,
 } from './navigation';
-import { warmDevelopmentRoute, warmNavigationRoutes } from './navigation-prefetch';
+import { warmNavigationRoutes } from './navigation-prefetch';
 
 const NAV_PENDING_TIMEOUT_MS = 4000;
 const NAV_PREFETCH_TIMEOUT_MS = 1200;
 const NAV_PREFETCH_FALLBACK_DELAY_MS = 120;
-const SHOULD_WARM_DEVELOPMENT_ROUTES = process.env.NODE_ENV === 'development';
 const SIDEBAR_PENDING_STATUS_ID = 'sidebar-navigation-pending-status';
+const PRIMARY_NAVIGATION: NavigationId[] = ['home', 'questions', 'learn', 'interview', 'reports'];
+const PRIMARY_NAV_ITEMS = NAV_ITEMS.filter((item) => PRIMARY_NAVIGATION.includes(item.id));
 
 export function UserSidebar() {
   const pathname = usePathname();
@@ -39,16 +40,17 @@ export function UserSidebar() {
   }, [pending]);
 
   return (
-    <aside className="user-sidebar" aria-label="主导航">
+    <div className="user-sidebar">
       <SidebarBrand />
       <SidebarNavigation
         active={active}
+        pathname={pathname}
         pending={pending}
         pendingAnnouncement={navigationPendingAnnouncement(pending)}
         onNavigate={dispatchPending}
         onWarm={router.prefetch}
       />
-    </aside>
+    </div>
   );
 }
 
@@ -59,11 +61,10 @@ function useNavigationWarmup(pathname: string, prefetch: (href: string) => void)
     const warmRoutes = () =>
       warmNavigationRoutes({
         pathname,
-        targets: NAV_ITEMS,
+        targets: PRIMARY_NAV_ITEMS,
         prefetched: prefetched.current,
         prefetch,
         signal: controller.signal,
-        ...(SHOULD_WARM_DEVELOPMENT_ROUTES ? { warmDevelopmentRoute } : {}),
       });
     const requestIdle = window.requestIdleCallback;
     if (requestIdle) {
@@ -83,7 +84,7 @@ function useNavigationWarmup(pathname: string, prefetch: (href: string) => void)
 
 function SidebarBrand() {
   return (
-    <Link className="sidebar-brand" href="/home">
+    <Link className="sidebar-brand" href="/home" aria-label="Interview Agent 首页">
       <span className="sidebar-mark" aria-hidden="true">
         <BrandMark />
       </span>
@@ -103,6 +104,7 @@ function SidebarBrand() {
 
 export function SidebarNavigation(props: {
   active: NavigationId;
+  pathname: string;
   pending: NavigationId | null;
   pendingAnnouncement: string;
   onNavigate: (action: NavigationPendingAction) => void;
@@ -113,12 +115,16 @@ export function SidebarNavigation(props: {
       <span id={SIDEBAR_PENDING_STATUS_ID} className="sr-only" role="status">
         {props.pendingAnnouncement}
       </span>
-      {NAV_ITEMS.map((item) => (
+      {PRIMARY_NAV_ITEMS.map((item) => (
         <Link
           key={item.id}
           className={navigationLinkClass(props.active, props.pending, item.id)}
           href={item.href}
-          aria-current={props.active === item.id ? 'page' : undefined}
+          aria-current={navigationAriaCurrent(
+            props.pathname,
+            item.href,
+            props.active === item.id,
+          )}
           aria-describedby={props.pending === item.id ? SIDEBAR_PENDING_STATUS_ID : undefined}
           data-navigation-pending={props.pending === item.id ? 'true' : undefined}
           onMouseEnter={() => props.onWarm(item.href)}
@@ -126,30 +132,30 @@ export function SidebarNavigation(props: {
           onClick={(event) =>
             props.onNavigate({
               type: 'navigate',
-              click: navigationClickFromEvent(event, props.active, item.id),
+              click: navigationClickFromEvent(event, item.id, props.pathname),
             })
           }
         >
-          <NavigationIcon name={item.icon} />
-          <span>{item.label}</span>
+          <span>{primaryNavigationLabel(item.id)}</span>
         </Link>
       ))}
     </nav>
   );
 }
 
+function primaryNavigationLabel(id: NavigationId): string {
+  if (id === 'home') return '今天';
+  if (id === 'questions') return '刷题';
+  if (id === 'interview') return '模拟面试';
+  if (id === 'reports') return '成长';
+  return '学习';
+}
+
 function BrandMark() {
   return (
     <svg viewBox="0 0 32 32" focusable="false">
-      <path
-        d="M8.25 9.5h5.2M10.85 9.5v13M8.25 22.5h5.2M15.8 22.5l4.7-13 4.7 13"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2.1"
-      />
-      <path d="M17.5 18h6" fill="none" stroke="#65E1C2" strokeLinecap="round" strokeWidth="2" />
+      <path d="M9 9.5v13M9 9.5h5M9 22.5h5M17 22.5l4.5-13 4.5 13" />
+      <path className="brand-mark-signal" d="M18.6 18h5.8" />
     </svg>
   );
 }

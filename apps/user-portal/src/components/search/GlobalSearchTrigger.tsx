@@ -24,7 +24,7 @@ export function GlobalSearchTriggerView({
   actions?: ReactNode;
 }) {
   return (
-    <header className="global-search-dock" aria-label="全局搜索入口">
+    <div className="global-search-dock" aria-label="全局搜索入口">
       <div className="global-search-dock-inner">
         <div className="global-search-dock-brand" aria-hidden="true">
           <span>✦</span>
@@ -41,10 +41,10 @@ export function GlobalSearchTriggerView({
           <SearchIcon />
           <span className="global-search-trigger-copy">
             <strong className="global-search-trigger-desktop-copy">
-              搜索题目、题库专题或功能页面
+              搜索题目、课程或功能
             </strong>
-            <strong className="global-search-trigger-mobile-copy">搜索全部</strong>
-            <small>在当前页面直接查找，不打断训练进度</small>
+            <strong className="global-search-trigger-mobile-copy">搜索</strong>
+            <small>题目 · 课程 · 页面</small>
           </span>
           <kbd>Ctrl K</kbd>
         </button>
@@ -53,7 +53,7 @@ export function GlobalSearchTriggerView({
           {actions}
         </div>
       </div>
-    </header>
+    </div>
   );
 }
 

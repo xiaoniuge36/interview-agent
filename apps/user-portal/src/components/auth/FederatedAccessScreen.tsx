@@ -12,7 +12,12 @@ export function FederatedAccessScreen() {
   return (
     <main className="access-shell">
       <AccessStory />
-      <section className="access-panel federated-access" aria-labelledby="federated-access-title">
+      <section
+        className="access-panel federated-access"
+        id="access-panel"
+        aria-labelledby="federated-access-title"
+        tabIndex={-1}
+      >
         <span className="brand-mark" aria-hidden="true">
           <span className="brand-mark-core" />
         </span>

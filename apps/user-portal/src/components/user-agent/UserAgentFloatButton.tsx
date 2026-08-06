@@ -3,6 +3,7 @@ import type { AgentStatus } from '@page-agent/core';
 import type { UserAgentFloatPosition } from './useUserAgentDrag';
 
 export function UserAgentFloatButton(props: {
+  open: boolean;
   position: UserAgentFloatPosition;
   status: AgentStatus;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -11,10 +12,16 @@ export function UserAgentFloatButton(props: {
   onPointerUp: (event: PointerEvent<HTMLButtonElement>) => void;
   onPointerCancel: (event: PointerEvent<HTMLButtonElement>) => void;
 }) {
+  const className =
+    process.env.NODE_ENV === 'development'
+      ? 'user-agent-float development-float'
+      : 'user-agent-float';
   return (
     <button
+      aria-controls="user-agent-drawer"
+      aria-expanded={props.open}
       aria-label="打开 AI 刷题教练"
-      className="user-agent-float"
+      className={className}
       data-page-agent-not-interactive="true"
       onClick={props.onClick}
       onPointerDown={props.onPointerDown}
@@ -22,7 +29,7 @@ export function UserAgentFloatButton(props: {
       onPointerUp={props.onPointerUp}
       onPointerCancel={props.onPointerCancel}
       style={{ right: props.position.right, bottom: props.position.bottom }}
-      title="打开 AI 刷题教练（可拖动）"
+      title="打开 AI 刷题教练"
       type="button"
     >
       <CoachMark />
@@ -32,6 +39,34 @@ export function UserAgentFloatButton(props: {
       />
       <span aria-hidden="true" className="user-agent-float-label">
         AI 刷题教练
+      </span>
+    </button>
+  );
+}
+
+export function UserAgentMobileTrigger(props: {
+  open: boolean;
+  status: AgentStatus;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      aria-controls="user-agent-drawer"
+      aria-expanded={props.open}
+      aria-label="打开 AI 刷题教练"
+      className="user-agent-mobile-trigger"
+      data-page-agent-not-interactive="true"
+      onClick={props.onClick}
+      title="打开 AI 刷题教练"
+      type="button"
+    >
+      <CoachMark />
+      <span
+        aria-hidden="true"
+        className={`user-agent-float-status${props.status === 'running' ? ' is-running' : ''}`}
+      />
+      <span aria-hidden="true" className="user-agent-mobile-label">
+        教练
       </span>
     </button>
   );

@@ -7,7 +7,6 @@ type NavigationWarmupOptions = {
   targets: readonly NavigationTarget[];
   prefetched: Set<string>;
   prefetch: (href: string) => void;
-  warmDevelopmentRoute?: (href: string, signal?: AbortSignal) => Promise<void>;
   signal?: AbortSignal;
 };
 
@@ -22,9 +21,6 @@ export async function warmNavigationRoutes(options: NavigationWarmupOptions): Pr
   if (options.signal?.aborted) return;
   const hrefs = pendingHrefs(options);
   for (const href of hrefs) options.prefetch(href);
-  const warm = options.warmDevelopmentRoute;
-  if (!warm) return;
-  await Promise.allSettled(hrefs.map((href) => warm(href, options.signal)));
 }
 
 export function warmNavigationInteraction(options: NavigationInteractionWarmupOptions): boolean {
@@ -54,15 +50,4 @@ function pendingHrefs(options: NavigationWarmupOptions): string[] {
 
 function isCurrentNavigationHref(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-export async function warmDevelopmentRoute(href: string, signal?: AbortSignal): Promise<void> {
-  try {
-    await fetch(href, {
-      credentials: 'same-origin',
-      ...(signal ? { signal } : {}),
-    });
-  } catch {
-    return;
-  }
 }

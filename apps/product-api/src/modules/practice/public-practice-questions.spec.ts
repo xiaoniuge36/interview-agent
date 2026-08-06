@@ -15,7 +15,7 @@ const CATEGORIES: RoleCategory[] = [
 
 describe('PUBLIC_PRACTICE_QUESTIONS', () => {
   it('为每个岗位类别提供至少五道可用题目并扩充 Agent 专题', () => {
-    expect(PUBLIC_PRACTICE_QUESTIONS).toHaveLength(67);
+    expect(PUBLIC_PRACTICE_QUESTIONS).toHaveLength(69);
     CATEGORIES.forEach((category) => {
       const questions = PUBLIC_PRACTICE_QUESTIONS.filter((question) =>
         question.tags.includes(practiceCategoryTagFor(category)),
@@ -40,5 +40,26 @@ describe('PUBLIC_PRACTICE_QUESTIONS', () => {
     PUBLIC_PRACTICE_QUESTIONS.forEach((question) => {
       expect(QuestionSchema.parse(question)).toEqual(question);
     });
+  });
+
+  it('包含 Agent Loop 分层关系与最小实现题', () => {
+    const questionsById = new Map(
+      PUBLIC_PRACTICE_QUESTIONS.map((question) => [question.id, question]),
+    );
+
+    expect(questionsById.get('q-agent-bank-open-loop-react-function-layering')).toEqual(
+      expect.objectContaining({
+        title: 'Agent Loop、ReAct 与 Function Calling 的关系是什么？',
+        type: 'short_answer',
+        tags: expect.arrayContaining(['Agent Loop', 'ReAct', 'Function Calling']),
+      }),
+    );
+    expect(questionsById.get('q-agent-bank-open-minimal-agent-loop')).toEqual(
+      expect.objectContaining({
+        title: '如何用 Go 实现一个最小可用的 Agent Loop？',
+        type: 'coding',
+        tags: expect.arrayContaining(['Agent Loop', 'Go', 'Tool Calling']),
+      }),
+    );
   });
 });

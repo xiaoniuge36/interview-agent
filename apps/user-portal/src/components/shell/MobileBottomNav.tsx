@@ -2,17 +2,20 @@
 
 import Link from 'next/link';
 import {
+  Fragment,
   useCallback,
   useEffect,
   useReducer,
   useRef,
   type MouseEvent,
   type PointerEvent,
+  type ReactNode,
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { NavigationIcon } from './NavigationIcon';
 import {
   navigationClickFromEvent,
+  navigationAriaCurrent,
   navigationLinkClass,
   navigationPendingAnnouncement,
   navigationPendingReducer,
@@ -22,17 +25,12 @@ import {
   type NavigationPendingAction,
   type NavigationId,
 } from './navigation';
-import {
-  warmDevelopmentRoute,
-  warmNavigationInteraction,
-  warmNavigationRoutes,
-} from './navigation-prefetch';
+import { warmNavigationInteraction, warmNavigationRoutes } from './navigation-prefetch';
 
 const MOBILE_NAVIGATION: NavigationId[] = [
   'home',
   'questions',
   'learn',
-  'profile',
   'interview',
   'reports',
 ];
@@ -40,9 +38,8 @@ const MOBILE_PENDING_TIMEOUT_MS = 4000;
 const MOBILE_PREFETCH_TIMEOUT_MS = 1200;
 const MOBILE_PREFETCH_FALLBACK_DELAY_MS = 120;
 const MOBILE_PENDING_STATUS_ID = 'mobile-navigation-pending-status';
-const SHOULD_WARM_DEVELOPMENT_ROUTES = process.env.NODE_ENV === 'development';
 
-export function MobileBottomNav() {
+export function MobileBottomNav({ agentTrigger }: { agentTrigger: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const active = navIdFromPathname(pathname);
@@ -52,6 +49,8 @@ export function MobileBottomNav() {
     <nav className="mobile-bottom-nav" aria-label="移动端主导航" aria-busy={pending !== null}>
       <MobileNavigationItems
         active={active}
+        agentTrigger={agentTrigger}
+        pathname={pathname}
         pending={pending}
         onNavigate={dispatchPending}
         onWarm={warm}
@@ -62,6 +61,8 @@ export function MobileBottomNav() {
 
 export function MobileNavigationItems(props: {
   active: NavigationId;
+  agentTrigger: ReactNode;
+  pathname: string;
   pending: NavigationId | null;
   onNavigate: (action: NavigationPendingAction) => void;
   onWarm: (href: string) => void;
@@ -72,40 +73,50 @@ export function MobileNavigationItems(props: {
         {navigationPendingAnnouncement(props.pending)}
       </span>
       {MOBILE_NAVIGATION.map((id) => {
-        const item = navItemById(id);
         return (
-          <Link
-            key={id}
-            className={navigationLinkClass(props.active, props.pending, id)}
-            href={item.href}
-            aria-current={props.active === id ? 'page' : undefined}
-            aria-describedby={props.pending === id ? MOBILE_PENDING_STATUS_ID : undefined}
-            data-navigation-pending={props.pending === id ? 'true' : undefined}
-            onFocus={() => props.onWarm(item.href)}
-            onPointerDown={(event) =>
-              warmMobileNavigation({
-                event,
-                active: props.active,
-                target: id,
-                onWarm: props.onWarm,
-                href: item.href,
-              })
-            }
-            onClick={(event) =>
-              trackMobileNavigation({
-                event,
-                active: props.active,
-                target: id,
-                dispatchPending: props.onNavigate,
-              })
-            }
-          >
-            <NavigationIcon name={item.icon} />
-            <span>{mobileLabel(id)}</span>
-          </Link>
+          <Fragment key={id}>
+            <MobileNavigationLink id={id} {...props} />
+            {id === 'learn' ? props.agentTrigger : null}
+          </Fragment>
         );
       })}
     </>
+  );
+}
+
+function MobileNavigationLink(
+  props: Omit<Parameters<typeof MobileNavigationItems>[0], 'agentTrigger'> & { id: NavigationId },
+) {
+  const item = navItemById(props.id);
+  return (
+    <Link
+      className={navigationLinkClass(props.active, props.pending, props.id)}
+      href={item.href}
+      aria-current={navigationAriaCurrent(props.pathname, item.href, props.active === props.id)}
+      aria-describedby={props.pending === props.id ? MOBILE_PENDING_STATUS_ID : undefined}
+      data-navigation-pending={props.pending === props.id ? 'true' : undefined}
+      onFocus={() => props.onWarm(item.href)}
+      onPointerDown={(event) =>
+        warmMobileNavigation({
+          event,
+          pathname: props.pathname,
+          target: props.id,
+          onWarm: props.onWarm,
+          href: item.href,
+        })
+      }
+      onClick={(event) =>
+        trackMobileNavigation({
+          event,
+          pathname: props.pathname,
+          target: props.id,
+          dispatchPending: props.onNavigate,
+        })
+      }
+    >
+      <NavigationIcon name={item.icon} />
+      <span>{mobileLabel(props.id)}</span>
+    </Link>
   );
 }
 
@@ -134,7 +145,6 @@ function useMobileNavigationWarmup(pathname: string, prefetch: (href: string) =>
         prefetched: prefetched.current,
         prefetch,
         signal: controller.signal,
-        ...(SHOULD_WARM_DEVELOPMENT_ROUTES ? { warmDevelopmentRoute } : {}),
       });
     const requestIdle = window.requestIdleCallback;
     if (requestIdle) {
@@ -159,31 +169,30 @@ function useMobileNavigationWarmup(pathname: string, prefetch: (href: string) =>
 
 function trackMobileNavigation(options: {
   event: MouseEvent<HTMLAnchorElement>;
-  active: NavigationId;
+  pathname: string;
   target: NavigationId;
   dispatchPending: (action: NavigationPendingAction) => void;
 }) {
   options.dispatchPending({
     type: 'navigate',
-    click: navigationClickFromEvent(options.event, options.active, options.target),
+    click: navigationClickFromEvent(options.event, options.target, options.pathname),
   });
 }
 
 function warmMobileNavigation(options: {
   event: PointerEvent<HTMLAnchorElement>;
-  active: NavigationId;
+  pathname: string;
   target: NavigationId;
   href: string;
   onWarm: (href: string) => void;
 }) {
-  const click = navigationClickFromEvent(options.event, options.active, options.target);
+  const click = navigationClickFromEvent(options.event, options.target, options.pathname);
   if (shouldStartNavigationPending(click)) options.onWarm(options.href);
 }
 
 function mobileLabel(id: NavigationId) {
   if (id === 'questions') return '刷题';
   if (id === 'learn') return '学习';
-  if (id === 'profile') return 'Agent';
   if (id === 'interview') return '模拟';
   if (id === 'reports') return '复盘';
   return '首页';

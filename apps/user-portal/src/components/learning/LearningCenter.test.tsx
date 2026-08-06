@@ -88,6 +88,9 @@ it('renders the library, GFM content and safe external links', () => {
   expect(markup).toContain('href="#learning-path"');
   expect(markup).toContain('下一课');
   expect(markup).toContain('进入题库验证');
+  expect(markup.match(/<h1/g)).toHaveLength(1);
+  expect(markup).toContain('<h2 class="learning-article-title">Agent 工程基础</h2>');
+  expect(markup).toMatch(/<h3[^>]*id="核心概念"[^>]*>核心概念<\/h3>/);
   expect(markup).toContain('<table>');
   expect(markup).toContain('id="核心概念"');
   expect(markup).toContain('href="https://example.com/docs"');
@@ -116,6 +119,14 @@ it('keeps course actions large enough for touch input', () => {
 
   expect(actionRule).toContain('min-height: 44px');
   expect(stylesheet).toContain('.learning-library-heading .learning-storage-notice {');
+});
+
+it('reserves a desktop docking lane beside the learning outline', () => {
+  const stylesheet = readFileSync(resolve('src/app/styles/consumer-learning.css'), 'utf8');
+
+  expect(stylesheet).toMatch(
+    /@media \(min-width: 1181px\) \{[\s\S]*?\.learning-outline nav \{ padding-right: 20px; \}/,
+  );
 });
 
 it('centers the active course in an overflowing rail and clamps both edges', () => {

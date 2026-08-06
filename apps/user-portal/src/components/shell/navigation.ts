@@ -92,6 +92,7 @@ export function navItemById(id: NavigationId): NavigationItem {
 
 export function navIdFromPathname(pathname: string): NavigationId {
   if (pathname === '/job' || pathname.startsWith('/job/')) return 'profile';
+  if (pathname === '/practice' || pathname.startsWith('/practice/')) return 'questions';
   const match = NAV_ITEMS.find(
     (item) => pathname === item.href || pathname.startsWith(item.href + '/'),
   );
@@ -107,9 +108,18 @@ export function navigationLinkClass(
   return active === item ? 'active' : '';
 }
 
+export function navigationAriaCurrent(
+  pathname: string,
+  href: string,
+  active: boolean,
+): 'page' | 'location' | undefined {
+  if (pathname === href) return 'page';
+  return active ? 'location' : undefined;
+}
+
 export type NavigationClick = {
-  active: NavigationId;
   target: NavigationId;
+  currentPathname: string;
   defaultPrevented: boolean;
   button: number;
   altKey: boolean;
@@ -122,7 +132,7 @@ export type NavigationPendingAction =
   { type: 'clear' } | { type: 'navigate'; click: NavigationClick };
 
 export function shouldStartNavigationPending(click: NavigationClick) {
-  return isUnmodifiedPrimaryClick(click) && click.active !== click.target;
+  return isUnmodifiedPrimaryClick(click) && !isCurrentNavigationTarget(click);
 }
 
 export function navigationPendingReducer(
@@ -131,7 +141,7 @@ export function navigationPendingReducer(
 ) {
   if (action.type === 'clear') return null;
   if (!isUnmodifiedPrimaryClick(action.click)) return pending;
-  return action.click.active === action.click.target ? null : action.click.target;
+  return isCurrentNavigationTarget(action.click) ? null : action.click.target;
 }
 
 export function navigationPendingAnnouncement(pending: NavigationId | null) {
@@ -139,11 +149,15 @@ export function navigationPendingAnnouncement(pending: NavigationId | null) {
 }
 
 export function navigationClickFromEvent(
-  event: Omit<NavigationClick, 'active' | 'target'>,
-  active: NavigationId,
+  event: Omit<NavigationClick, 'currentPathname' | 'target'>,
   target: NavigationId,
+  currentPathname: string,
 ): NavigationClick {
-  return { ...event, active, target };
+  return { ...event, currentPathname, target };
+}
+
+function isCurrentNavigationTarget(click: NavigationClick) {
+  return click.currentPathname === navItemById(click.target).href;
 }
 
 function isUnmodifiedPrimaryClick(click: NavigationClick) {

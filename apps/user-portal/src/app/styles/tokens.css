@@ -8,6 +8,9 @@
   --surface-strong: #eee9e3;
   --outline: #e5dfd8;
   --outline-strong: #d3cbc3;
+  --field-bg: #fcfdff;
+  --field-bg-focus: #ffffff;
+  --field-label: #4a5870;
   --ink: #24242d;
   --text: var(--ink);
   --text-muted: #6e6b70;
@@ -42,6 +45,10 @@
   --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.05);
   --shadow-raised: 0 8px 24px rgba(15, 23, 42, 0.08), 0 24px 48px rgba(15, 23, 42, 0.06);
   --shadow-focus: 0 0 0 3px var(--primary-glow);
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+  --scrollbar-thumb: color-mix(in srgb, var(--ink) 16%, transparent);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--ink) 30%, transparent);
   --font-sans:
     var(--font-ui), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif, system-ui,
     -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -97,6 +104,9 @@ html[data-theme='night'] {
   --surface-strong: #252730;
   --outline: #30313c;
   --outline-strong: #434551;
+  --field-bg: #16171e;
+  --field-bg-focus: #1c1d25;
+  --field-label: #b8b4bf;
   --ink: #f2f0f4;
   --text-muted: #aaa6b1;
   --text-subtle: #7f7b87;
@@ -153,7 +163,7 @@ html {
 }
 
 body {
-  min-width: 320px;
+  min-width: 0;
   margin: 0;
   background: var(--canvas);
   color: var(--text);
@@ -166,6 +176,38 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+html {
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+
+html[data-motion='on'] body {
+  transition:
+    background-color var(--duration-base) ease,
+    color var(--duration-base) ease;
 }
 
 button,

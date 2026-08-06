@@ -33,6 +33,7 @@ export function UserAgentDrawer(props: UserAgentDrawerProps) {
         aria-label="AI 刷题教练"
         aria-modal={presentation.ariaModal}
         className="user-agent-drawer"
+        id="user-agent-drawer"
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}

@@ -1,22 +1,50 @@
 import Link from 'next/link';
+import { ActionLabel } from '@/components/consumer/ActionLabel';
+import { SignalField } from '@/components/consumer/SignalField';
+import { SplitRevealText } from '@/components/consumer/SplitRevealText';
+
+const PRACTICE_MODES = [
+  {
+    href: '/questions',
+    kicker: '自由组题',
+    title: '选一组题，马上开始',
+    copy: '按技术方向、难度和题型组合 1–10 道题。',
+    meta: '适合 10–30 分钟专注训练',
+  },
+  {
+    href: '/interview',
+    kicker: '场景训练',
+    title: '进入完整模拟面试',
+    copy: '从开场到追问，练习连续表达和临场组织。',
+    meta: '适合面试前完整演练',
+  },
+  {
+    href: '/reports',
+    kicker: '基于证据',
+    title: '从上次薄弱点再练',
+    copy: '回到评价与错题证据，选择最值得补强的一轮。',
+    meta: '适合阶段复盘与巩固',
+  },
+] as const;
 
 export function PracticeEntry() {
   return (
     <div className="practice-entry-page">
       <section className="practice-entry" aria-labelledby="practice-entry-heading">
         <section className="practice-entry-hero">
+          <SignalField />
           <span>Practice workspace · 自主训练</span>
-          <h1 id="practice-entry-heading">
-            把想练的题，
+          <h1 id="practice-entry-heading" aria-label="把想练的题，组合成一轮专注练习">
+            <SplitRevealText text="把想练的题，" />
             <br />
-            组合成一轮专注练习
+            <SplitRevealText text="组合成一轮专注练习" />
           </h1>
           <p>
             无需完善个人档案，直接从公共题库选择 1–10 道题。作答、查看解析和 AI 评价都由你决定。
           </p>
           <div className="practice-entry-actions">
             <Link href="/questions">
-              去题库选择题目 <span aria-hidden="true">→</span>
+              <ActionLabel label="去题库选择题目" />
             </Link>
             <Link href="/home">返回题库大厅</Link>
           </div>
@@ -34,7 +62,35 @@ export function PracticeEntry() {
         </section>
         <PracticeEntryGuide />
       </section>
+      <PracticeEntryModes />
     </div>
+  );
+}
+
+function PracticeEntryModes() {
+  return (
+    <section className="practice-entry-modes" aria-labelledby="practice-entry-modes-heading">
+      <header>
+        <div>
+          <span>不确定从哪里开始？</span>
+          <h2 id="practice-entry-modes-heading">选择今天的训练方式</h2>
+        </div>
+        <p>自由刷题、完整模拟和弱项复盘，三条路径都回到真实面试表达。</p>
+      </header>
+      <div className="practice-mode-grid">
+        {PRACTICE_MODES.map((mode, index) => (
+          <Link className="practice-mode-card" href={mode.href} key={mode.href}>
+            <span>{mode.kicker}</span>
+            <strong>{mode.title}</strong>
+            <p>{mode.copy}</p>
+            <footer>
+              <small>{mode.meta}</small>
+              {index === 0 ? <ActionLabel label="开始" /> : <i aria-hidden="true">→</i>}
+            </footer>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 

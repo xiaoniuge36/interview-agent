@@ -8,7 +8,9 @@ const AGENT_HUB = 'https://github.com/Zchary1106/agent-interview-hub';
 const AGENT_STUDY = 'https://github.com/Callous-0923/agent-study';
 const AI_GUIDE = 'https://github.com/guocong-bincai/ai-interview-guide';
 const AI_HANDBOOK = 'https://github.com/nageoffer/ai-handbook';
+const LEARN_CLAUDE_CODE = 'https://github.com/shareAI-lab/learn-claude-code';
 const OPENAI_COOKBOOK = 'https://github.com/openai/openai-cookbook';
+const REACT_PAPER = 'https://arxiv.org/abs/2210.03629';
 
 const OPEN_QUESTIONS: AgentOpenQuestionInput[] = [
   {
@@ -22,6 +24,30 @@ const OPEN_QUESTIONS: AgentOpenQuestionInput[] = [
     tags: ['RAG', '多租户', '系统设计'],
     points: ['权限前置过滤', '检索生成链路', '评估审计闭环'],
     sourceRefs: [AI_GUIDE, AI_HANDBOOK],
+  },
+  {
+    suffix: 'open-loop-react-function-layering',
+    title: 'Agent Loop、ReAct 与 Function Calling 的关系是什么？',
+    stem: '请从定位、职责边界和运行层级说明三者的区别与组合方式，并解释为什么 Agent Loop 不一定采用 ReAct。',
+    type: 'short_answer',
+    difficulty: 'medium',
+    answer:
+      'Agent Loop 是运行时控制框架，负责上下文和状态、模型调用、工具执行、结果回填、终止、重试与资源预算；ReAct 是循环内部根据观察交替推理和行动的一种决策策略；Function Calling 是模型以结构化参数表达工具请求的协议。常见组合是 Loop 驱动运行、ReAct 决定下一步、Function Calling 承载动作，但 Loop 也可以采用 Plan-and-Execute、固定工作流或状态机策略，因此 Agent Loop 不等于 ReAct。',
+    tags: ['Agent Loop', 'ReAct', 'Function Calling'],
+    points: ['运行时与决策分层', '工具协议定位', '替代策略与适用边界'],
+    sourceRefs: [REACT_PAPER, LEARN_CLAUDE_CODE],
+  },
+  {
+    suffix: 'open-minimal-agent-loop',
+    title: '如何用 Go 实现一个最小可用的 Agent Loop？',
+    stem: '请给出核心数据结构或伪代码，覆盖 Tool Schema 与分发、消息历史、模型 Tool Call、Observation 回填、最终答案、最大步数和错误处理。',
+    type: 'coding',
+    difficulty: 'hard',
+    answer:
+      '先用 Tool 接口暴露 Schema 和 Call，并由 ToolBox 按名称注册、查找和执行，再把内部 Schema 转成模型 API 的工具定义。外层会话循环把用户输入追加到 messages；内层在 maxSteps 内携带 messages 和 tools 调用模型，先保存 Assistant Message：若没有 Tool Call 就返回最终答案；否则逐个校验并执行工具，把结果或结构化错误连同 tool_call_id 追加为 Tool Message，再进入下一轮。循环还应检查空响应、未知工具、参数错误、超时和步数上限，并持续返回更新后的消息历史。',
+    tags: ['Agent Loop', 'Go', 'Tool Calling'],
+    points: ['工具抽象与分发', '消息循环与结果回填', '终止预算与错误处理'],
+    sourceRefs: [LEARN_CLAUDE_CODE],
   },
   {
     suffix: 'open-loop-termination',

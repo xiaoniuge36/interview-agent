@@ -2,9 +2,9 @@
 
 import { existsSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
-import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { isPortAvailable, isServiceHealthy } from './dev-service-reuse.mjs';
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const isWindows = process.platform === 'win32';
@@ -41,10 +41,15 @@ const services = [
     port: 8000,
     url: 'http://localhost:8000',
     hotReload: 'Uvicorn reload',
+    health: {
+      url: 'http://127.0.0.1:8000/health',
+      expectedHealth: { status: 'ok', service: 'agent-runtime' },
+    },
   },
 ];
 
 const children = new Set();
+const reusedServices = new Set();
 let isShuttingDown = false;
 
 function getPnpmInvocation(pnpmArgs) {
@@ -128,18 +133,17 @@ function runInfrastructure() {
 async function ensurePortsAvailable() {
   const occupied = [];
   for (const service of services) {
-    const probe = createServer();
     try {
-      await listenOnPort(probe, service.port);
-    } catch (error) {
-      if (error?.code === 'EADDRINUSE' || error?.code === 'EACCES') {
-        occupied.push(`${service.label} ${service.port}`);
+      if (await isPortAvailable(service.port)) continue;
+
+      if (service.health && (await isServiceHealthy(service.health))) {
+        reusedServices.add(service);
       } else {
-        fail(`无法检查端口 ${service.port}：${error.message}`);
-        return false;
+        occupied.push(`${service.label} ${service.port}`);
       }
-    } finally {
-      if (probe.listening) probe.close();
+    } catch (error) {
+      fail(`无法检查端口 ${service.port}：${error.message}`);
+      return false;
     }
   }
 
@@ -149,22 +153,6 @@ async function ensurePortsAvailable() {
   }
 
   return true;
-}
-
-function listenOnPort(server, port) {
-  return new Promise((resolvePromise, rejectPromise) => {
-    const onError = (error) => {
-      server.removeListener('listening', onListening);
-      rejectPromise(error);
-    };
-    const onListening = () => {
-      server.removeListener('error', onError);
-      resolvePromise();
-    };
-    server.once('error', onError);
-    server.once('listening', onListening);
-    server.listen(port, '127.0.0.1');
-  });
 }
 
 function writeOutput(label, chunk, pending) {
@@ -244,7 +232,13 @@ if (args.has('--help')) {
 ) {
   console.log('\nInterview Agent 开发环境启动中……');
   console.log('前端页面会在依赖就绪后自动可用，按 Ctrl+C 可全部停止。\n');
-  for (const service of services) startService(service);
+  for (const service of services) {
+    if (reusedServices.has(service)) {
+      console.log(`[${service.label}] Reusing healthy service on port ${service.port}.`);
+    } else {
+      startService(service);
+    }
+  }
   console.log('访问地址：');
   for (const service of services) console.log(`  ${service.label.padEnd(5)} ${service.url}`);
   console.log('');

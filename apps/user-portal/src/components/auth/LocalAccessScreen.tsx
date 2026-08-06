@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useAuth } from '@interview-agent/auth-client';
 import { FieldIcon } from '@/components/FieldIcon';
 import { AccessStory } from './AccessStory';
 import { createExclusiveAccessActionRunner } from './access-action-single-flight';
+import { resolveAccessError } from './access-error';
 import { INITIAL_ACCESS_FORM, type AccessForm, type AccessMode } from './access-types';
 import {
   clearAccessFormError,
@@ -19,7 +20,12 @@ export function LocalAccessScreen() {
   return (
     <main className="access-shell">
       <AccessStory />
-      <section className="access-panel" aria-labelledby="access-title">
+      <section
+        className="access-panel"
+        id="access-panel"
+        aria-labelledby="access-title"
+        tabIndex={-1}
+      >
         <AccessHeading isRegistering={access.isRegistering} />
         <AccessTabs mode={access.mode} onChange={access.selectMode} />
         <LocalAccessForm {...access} />
@@ -38,36 +44,42 @@ function useLocalAccess() {
   const [mode, setMode] = useState<AccessMode>('sign-in');
   const [form, setForm] = useState<AccessForm>(INITIAL_ACCESS_FORM);
   const [formErrors, setFormErrors] = useState<AccessFormErrors>({});
+  const [submittedMode, setSubmittedMode] = useState<AccessMode | null>(null);
   const [runAccessAction] = useState(createExclusiveAccessActionRunner);
   const isRegistering = mode === 'register';
-
   function selectMode(nextMode: AccessMode) {
     setMode(nextMode);
     setFormErrors({});
+    setSubmittedMode(null);
   }
-
   function updateField(field: keyof AccessForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
     setFormErrors((current) => clearAccessFormError(current, field));
+    setSubmittedMode(null);
   }
-
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const errors = validateAccessForm(form, mode);
     setFormErrors(errors);
     if (hasAccessFormErrors(errors)) {
+      setSubmittedMode(null);
       focusFirstInvalidAccessField(errors, mode, focusAccessField);
       return;
     }
-
+    setSubmittedMode(mode);
     await runAccessAction(() => authenticateLocalAccess(auth, form, isRegistering));
   }
-
   return {
     mode,
     form,
     formErrors,
     auth,
+    authError: resolveAccessError({
+      authStatus: auth.status,
+      currentMode: mode,
+      error: auth.error,
+      submittedMode,
+    }),
     isRegistering,
     isSubmitting: auth.status === 'loading',
     selectMode,
@@ -109,15 +121,23 @@ type AccessTabsProps = {
   onChange: (mode: AccessMode) => void;
 };
 
-function AccessTabs({ mode, onChange }: AccessTabsProps) {
+const ACCESS_TAB_IDS: Record<AccessMode, string> = {
+  'sign-in': 'sign-in-tab',
+  register: 'register-tab',
+};
+
+export function AccessTabs({ mode, onChange }: AccessTabsProps) {
   return (
     <div className="access-tabs" role="tablist" aria-label="登录方式">
       <button
         className={mode === 'sign-in' ? 'access-tab active' : 'access-tab'}
         type="button"
         role="tab"
+        id={ACCESS_TAB_IDS['sign-in']}
         aria-selected={mode === 'sign-in'}
         aria-controls="sign-in-panel"
+        tabIndex={mode === 'sign-in' ? 0 : -1}
+        onKeyDown={(event) => handleAccessTabKeyDown(event, mode, onChange)}
         onClick={() => onChange('sign-in')}
       >
         登录
@@ -126,14 +146,37 @@ function AccessTabs({ mode, onChange }: AccessTabsProps) {
         className={mode === 'register' ? 'access-tab active' : 'access-tab'}
         type="button"
         role="tab"
+        id={ACCESS_TAB_IDS.register}
         aria-selected={mode === 'register'}
         aria-controls="register-panel"
+        tabIndex={mode === 'register' ? 0 : -1}
+        onKeyDown={(event) => handleAccessTabKeyDown(event, mode, onChange)}
         onClick={() => onChange('register')}
       >
         注册
       </button>
     </div>
   );
+}
+
+export function resolveAccessTabKey(mode: AccessMode, key: string): AccessMode | null {
+  if (key === 'Home') return 'sign-in';
+  if (key === 'End') return 'register';
+  if (key === 'ArrowLeft' || key === 'ArrowRight')
+    return mode === 'sign-in' ? 'register' : 'sign-in';
+  return null;
+}
+
+function handleAccessTabKeyDown(
+  event: KeyboardEvent<HTMLButtonElement>,
+  mode: AccessMode,
+  onChange: (mode: AccessMode) => void,
+) {
+  const nextMode = resolveAccessTabKey(mode, event.key);
+  if (!nextMode) return;
+  event.preventDefault();
+  onChange(nextMode);
+  event.currentTarget.ownerDocument.getElementById(ACCESS_TAB_IDS[nextMode])?.focus();
 }
 
 type LocalAccessFormProps = ReturnType<typeof useLocalAccess>;
@@ -145,6 +188,7 @@ function LocalAccessForm(props: LocalAccessFormProps) {
       id={panelId}
       className="access-form"
       role="tabpanel"
+      aria-labelledby={ACCESS_TAB_IDS[props.mode]}
       aria-busy={props.isSubmitting}
       noValidate
       onSubmit={(event) => void props.submit(event)}
@@ -158,9 +202,9 @@ function LocalAccessForm(props: LocalAccessFormProps) {
         isRegistering={props.isRegistering}
         onChange={props.updateField}
       />
-      {props.auth.status === 'error' && props.auth.error ? (
+      {props.authError ? (
         <p className="access-error" role="alert">
-          {props.auth.error}
+          {props.authError}
         </p>
       ) : null}
       <button className="button access-submit" type="submit" disabled={props.isSubmitting}>

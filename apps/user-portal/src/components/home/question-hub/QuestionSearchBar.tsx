@@ -25,9 +25,9 @@ export function QuestionSearchBar({
     >
       <div className="question-search-copy">
         <span className="question-hub-kicker">Question library · 自主训练</span>
-        <h1 id="question-hub-heading">
+        <h2 id="question-hub-heading">
           {compact ? '想按自己的节奏练？' : '今天，想把哪类问题练明白？'}
-        </h1>
+        </h2>
         <p>直接搜索题目、技能或岗位方向。个人档案只用于增强 Agent 推荐，不限制你浏览和刷题。</p>
       </div>
       <form className="question-search-form" onSubmit={submit}>

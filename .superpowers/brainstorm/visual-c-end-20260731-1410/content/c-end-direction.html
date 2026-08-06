@@ -1,0 +1,125 @@
+<style>
+  :root { --ink:#172033; --muted:#6f7889; --line:#e7e8ec; --paper:#fbfaf7; --blue:#6258ea; --coral:#ff765f; --green:#1fa37a; }
+  body { background:#f3f1ed !important; }
+  .brief { max-width:1500px; margin:0 auto; }
+  .brief h2 { margin-bottom:8px; font-size:30px; letter-spacing:-.03em; color:var(--ink); }
+  .brief > .subtitle { max-width:880px; margin-bottom:24px; color:var(--muted); }
+  .direction-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; align-items:start; }
+  .direction { overflow:hidden; border:1px solid #dedde1; border-radius:22px; background:#fff; box-shadow:0 14px 38px rgba(29,34,47,.06); cursor:pointer; transition:.2s ease; }
+  .direction:hover { transform:translateY(-3px); box-shadow:0 18px 46px rgba(29,34,47,.10); }
+  .direction.selected { outline:3px solid var(--blue); outline-offset:3px; }
+  .direction-head { display:flex; align-items:flex-start; gap:12px; padding:18px 20px 14px; border-bottom:1px solid var(--line); }
+  .letter { flex:0 0 32px; height:32px; display:grid; place-items:center; border-radius:11px; background:#f0eefc; color:var(--blue); font-weight:800; }
+  .direction-head h3 { margin:0; font-size:17px; color:var(--ink); }
+  .direction-head p { margin:4px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+  .tag { margin-left:auto; padding:5px 9px; border-radius:999px; background:#ecf8f3; color:#167b5e; font-size:10px; font-weight:800; white-space:nowrap; }
+  .screen { min-height:510px; padding:0; background:var(--paper); color:var(--ink); }
+  .mini-topbar { height:46px; padding:0 14px; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--line); background:rgba(255,255,255,.86); }
+  .brand { font-weight:900; letter-spacing:-.04em; }
+  .brand i { color:var(--coral); font-style:normal; }
+  .mini-nav { display:flex; gap:12px; color:#848a97; font-size:9px; font-weight:700; }
+  .mini-nav .active { color:var(--ink); }
+  .avatar { margin-left:auto; width:24px; height:24px; display:grid; place-items:center; border-radius:50%; background:#ece9ff; font-size:9px; }
+  .canvas { padding:21px; }
+  .greeting { color:#8b91a0; font-size:9px; font-weight:700; letter-spacing:.06em; }
+  .canvas h4 { margin:6px 0 16px; font-size:23px; line-height:1.12; letter-spacing:-.05em; }
+  .today-card { position:relative; overflow:hidden; min-height:156px; padding:20px; border-radius:20px; background:#24283c; color:#fff; }
+  .today-card:after { content:''; position:absolute; width:170px; height:170px; right:-70px; top:-80px; border:28px solid rgba(255,118,95,.32); border-radius:50%; }
+  .today-card small { color:#b9bed0; font-size:9px; }
+  .today-card strong { display:block; max-width:270px; margin-top:9px; font-size:20px; line-height:1.2; letter-spacing:-.03em; }
+  .today-card p { margin:9px 0 15px; color:#bec4d5; font-size:9px; }
+  .cta { display:inline-flex; min-height:29px; padding:0 13px; align-items:center; border-radius:999px; background:var(--coral); color:#fff; font-size:9px; font-weight:800; }
+  .progress-row { display:grid; grid-template-columns:1.3fr .7fr; gap:11px; margin-top:12px; }
+  .soft-card { padding:14px; border:1px solid var(--line); border-radius:15px; background:#fff; }
+  .soft-card span { color:#8b91a0; font-size:8px; }
+  .soft-card strong { display:block; margin:6px 0; font-size:12px; }
+  .meter { height:5px; border-radius:99px; background:#eeeef2; overflow:hidden; }
+  .meter b { display:block; width:62%; height:100%; border-radius:99px; background:var(--green); }
+  .streak { display:grid; place-items:center; text-align:center; background:#fff4e7; }
+  .streak strong { font-size:23px; color:#d66b25; }
+  .screen-b { background:#f9f9fb; }
+  .screen-b .mini-topbar { background:#151728; color:#fff; border:0; }
+  .screen-b .mini-nav { color:#9ca3b8; }
+  .screen-b .mini-nav .active { color:#fff; }
+  .journey-hero { margin:0 -21px; padding:21px 21px 58px; background:linear-gradient(145deg,#28243f,#37315a); color:#fff; }
+  .journey-hero .greeting { color:#bcb6d5; }
+  .journey-hero h4 { max-width:320px; margin-bottom:8px; }
+  .journey-hero p { max-width:320px; margin:0; color:#c9c4dc; font-size:9px; line-height:1.6; }
+  .journey-path { margin-top:-38px; padding:17px; border-radius:18px; background:#fff; box-shadow:0 12px 30px rgba(35,32,51,.12); }
+  .path-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .path-head strong { font-size:12px; }
+  .path-head span { color:var(--blue); font-size:9px; font-weight:800; }
+  .path-step { display:grid; grid-template-columns:25px 1fr auto; gap:10px; align-items:center; padding:11px 0; border-top:1px solid #efeff3; }
+  .path-step:first-of-type { border-top:0; }
+  .node { width:25px; height:25px; display:grid; place-items:center; border-radius:9px; background:#efedff; color:var(--blue); font-size:9px; font-weight:900; }
+  .path-step.done .node { background:#e5f5ef; color:var(--green); }
+  .path-step strong { display:block; font-size:10px; }
+  .path-step small { color:#9297a4; font-size:8px; }
+  .path-step em { color:#8b91a0; font-size:8px; font-style:normal; }
+  .screen-c { background:#f7f4ef; }
+  .screen-c .mini-topbar { border:0; background:#f7f4ef; }
+  .coach { padding:20px; border:1px solid #e5dfd7; border-radius:22px; background:#fffdfa; }
+  .coach-mark { width:40px; height:40px; display:grid; place-items:center; border-radius:15px; background:#e5f5ef; color:var(--green); font-size:16px; }
+  .coach h4 { margin:15px 0 8px; }
+  .coach p { margin:0 0 17px; color:#777064; font-size:10px; line-height:1.65; }
+  .prompt { display:flex; align-items:center; gap:8px; min-height:40px; padding:0 12px; border:1px solid #e1dbd2; border-radius:14px; background:#fff; color:#a19b91; font-size:9px; }
+  .prompt b { margin-left:auto; width:25px; height:25px; display:grid; place-items:center; border-radius:9px; background:var(--ink); color:#fff; }
+  .quick-title { margin:17px 0 9px; font-size:10px; font-weight:800; }
+  .quick-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .quick { padding:12px; border-radius:14px; background:#eee9df; }
+  .quick strong { display:block; font-size:10px; }
+  .quick span { color:#8e877b; font-size:8px; }
+  .direction-foot { min-height:116px; padding:16px 20px 19px; border-top:1px solid var(--line); background:#fff; }
+  .direction-foot strong { color:var(--ink); font-size:12px; }
+  .direction-foot ul { margin:8px 0 0; padding-left:16px; color:var(--muted); font-size:11px; line-height:1.55; }
+  @media(max-width:1050px){ .direction-grid{grid-template-columns:1fr;} .screen{min-height:auto;} }
+</style>
+
+<div class="brief">
+  <h2>C 端应该先让用户感受到什么？</h2>
+  <p class="subtitle">三种方案都保留题库、学习、面试与报告，但用不同的首屏心智组织。请点选最接近你预期的一项；推荐 A，它最能吸收 iFace 的低门槛刷题体验，又能保留本项目的个性化 Agent 优势。</p>
+  <div class="direction-grid">
+    <section class="direction" data-choice="a-action-home" onclick="toggleSelect(this)">
+      <div class="direction-head">
+        <div class="letter">A</div><div><h3>行动首页</h3><p>像消费级学习产品：今天练什么，一眼就能开始</p></div><span class="tag">推荐</span>
+      </div>
+      <div class="screen">
+        <div class="mini-topbar"><span class="brand">Offer<i>Lab</i></span><div class="mini-nav"><span class="active">今天</span><span>学习</span><span>题库</span><span>模拟面试</span><span>成长</span></div><span class="avatar">林</span></div>
+        <div class="canvas">
+          <div class="greeting">下午好，林同学 · 距离目标面试还有 12 天</div>
+          <h4>今天，练会一个<br>真正会被追问的知识点。</h4>
+          <div class="today-card"><small>教练为你排好的下一步 · 约 18 分钟</small><strong>用 STAR 讲清楚你的 RAG 项目难点</strong><p>来自上次模拟面试的表达薄弱项</p><span class="cta">开始今日训练 →</span></div>
+          <div class="progress-row"><div class="soft-card"><span>本周目标</span><strong>3 / 5 次训练</strong><div class="meter"><b></b></div></div><div class="soft-card streak"><span>连续学习</span><strong>6 天</strong></div></div>
+        </div>
+      </div>
+      <div class="direction-foot"><strong>适合：</strong><ul><li>降低选择压力，强化“打开就练”</li><li>顶栏导航替代后台式常驻侧栏</li><li>学习、题库和报告退到连续旅程中</li></ul></div>
+    </section>
+
+    <section class="direction" data-choice="b-growth-journey" onclick="toggleSelect(this)">
+      <div class="direction-head">
+        <div class="letter">B</div><div><h3>成长旅程</h3><p>像课程与闯关产品：用阶段地图建立长期成就感</p></div>
+      </div>
+      <div class="screen screen-b">
+        <div class="mini-topbar"><span class="brand">OfferPath</span><div class="mini-nav"><span class="active">成长路线</span><span>练习场</span><span>复盘</span></div><span class="avatar">林</span></div>
+        <div class="canvas">
+          <div class="journey-hero"><div class="greeting">AI 应用工程师 · 第 2 阶段</div><h4>把项目经历，练成面试官听得懂的证据。</h4><p>你已完成基础知识准备，接下来聚焦系统设计与项目表达。</p></div>
+          <div class="journey-path"><div class="path-head"><strong>你的 Offer 路线</strong><span>完成 42%</span></div><div class="path-step done"><span class="node">✓</span><div><strong>补齐 Agent 基础</strong><small>7 个知识点已掌握</small></div><em>已完成</em></div><div class="path-step"><span class="node">2</span><div><strong>项目表达强化</strong><small>当前：RAG 项目深挖</small></div><em>继续 →</em></div><div class="path-step"><span class="node">3</span><div><strong>模拟面试冲刺</strong><small>解锁后进行 3 轮演练</small></div><em>待解锁</em></div><div class="path-step"><span class="node">★</span><div><strong>毕业复盘</strong><small>形成你的能力证据册</small></div><em>目标</em></div></div>
+        </div>
+      </div>
+      <div class="direction-foot"><strong>适合：</strong><ul><li>长期学习动力和阶段成就更强</li><li>学习路线成为产品中心</li><li>自由刷题入口会相对弱化</li></ul></div>
+    </section>
+
+    <section class="direction" data-choice="c-ai-coach" onclick="toggleSelect(this)">
+      <div class="direction-head">
+        <div class="letter">C</div><div><h3>AI 教练</h3><p>像个人陪练助手：从对话开始，由 Agent 帮用户选路</p></div>
+      </div>
+      <div class="screen screen-c">
+        <div class="mini-topbar"><span class="brand">Milo Interview</span><div class="mini-nav"><span class="active">教练</span><span>训练</span><span>我的进步</span></div><span class="avatar">林</span></div>
+        <div class="canvas">
+          <div class="coach"><span class="coach-mark">✦</span><h4>林同学，今天想先解决哪件事？</h4><p>我记得你在准备 AI 应用工程师岗位。上次面试里，系统设计思路很好，但项目指标还缺少量化证据。</p><div class="prompt">告诉教练你的面试安排或困惑…<b>↑</b></div><div class="quick-title">也可以直接开始</div><div class="quick-grid"><div class="quick"><strong>继续上次练习</strong><span>RAG 可靠性 · 12 分钟</span></div><div class="quick"><strong>来一场模拟面试</strong><span>基于目标 JD 自动出题</span></div><div class="quick"><strong>复盘薄弱项</strong><span>最近 3 次训练总结</span></div><div class="quick"><strong>随便刷 5 题</strong><span>从高频题库快速开始</span></div></div></div>
+        </div>
+      </div>
+      <div class="direction-foot"><strong>适合：</strong><ul><li>Agent 差异化最突出，体验更有人情味</li><li>对新用户友好，但主路径依赖对话质量</li><li>容易把核心功能藏进聊天入口</li></ul></div>
+    </section>
+  </div>
+</div>

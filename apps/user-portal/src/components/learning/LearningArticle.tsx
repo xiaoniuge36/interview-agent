@@ -7,8 +7,17 @@ import { slugify } from '@/lib/learning/learning-documents';
 export function LearningArticle({ document }: { document: LearningDocument }) {
   const nextHeadingId = createHeadingIdFactory();
   const components: Components = {
-    h2: ({ children }) => <h2 id={nextHeadingId(children)}>{children}</h2>,
-    h3: ({ children }) => <h3 id={nextHeadingId(children)}>{children}</h3>,
+    h1: ({ children }) => <h2 className="learning-article-title">{children}</h2>,
+    h2: ({ children }) => (
+      <h3 className="learning-article-section" id={nextHeadingId(children)}>
+        {children}
+      </h3>
+    ),
+    h3: ({ children }) => (
+      <h4 className="learning-article-subsection" id={nextHeadingId(children)}>
+        {children}
+      </h4>
+    ),
     a: ({ href, children }) => {
       const external = isExternalLink(href);
       return (

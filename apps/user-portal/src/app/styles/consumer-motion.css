@@ -1,0 +1,109 @@
+.consumer-split-reveal {
+  display: inline;
+}
+
+.consumer-reveal-character {
+  display: inline-block;
+  white-space: pre;
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(0.55em) rotate(1.5deg);
+  animation: consumer-character-reveal 620ms var(--ease-out) forwards;
+  animation-delay: calc(70ms + var(--reveal-delay));
+}
+
+@keyframes consumer-character-reveal {
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) rotate(0);
+  }
+}
+
+.consumer-signal-field {
+  position: absolute !important;
+  z-index: 0 !important;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-content: center;
+  gap: 9px 12px;
+  overflow: hidden;
+  padding: 18px;
+  opacity: 0.055;
+  color: #ffffff;
+  mask-image: radial-gradient(circle at 82% 42%, #000 0 18%, transparent 62%);
+  transition: opacity 320ms var(--ease-out), transform 520ms var(--ease-out);
+  pointer-events: none;
+}
+
+.consumer-signal-field i {
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 700;
+  text-align: center;
+}
+
+.agent-recommendation-card:hover .consumer-signal-field,
+.recent-practice-card:hover .consumer-signal-field {
+  opacity: 0.12;
+  transform: translate3d(-7px, 4px, 0);
+}
+
+.consumer-action-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.consumer-action-arrow {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  transition: transform 220ms var(--ease-out), background 220ms var(--ease-out);
+}
+
+button:hover .consumer-action-arrow,
+a:hover .consumer-action-arrow {
+  background: rgba(255, 255, 255, 0.24);
+  transform: translateX(3px);
+}
+
+.consumer-action-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: -12px 0 0 currentColor, 12px 0 0 currentColor;
+  animation: consumer-action-busy 800ms ease-in-out infinite alternate;
+}
+
+@keyframes consumer-action-busy {
+  to { opacity: 0.28; transform: scale(0.78); }
+}
+
+html[data-motion='off'] .consumer-reveal-character,
+html[data-motion='off'] .consumer-action-pulse {
+  opacity: 1;
+  filter: none;
+  transform: none;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .consumer-reveal-character,
+  .consumer-action-pulse {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    animation: none;
+  }
+  .consumer-signal-field,
+  .consumer-action-arrow { transition: none; }
+}
