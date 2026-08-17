@@ -1,0 +1,770 @@
+<style>
+  .refine-intro {
+    max-width: 900px;
+    margin-bottom: 24px;
+  }
+
+  .refine-intro h2 {
+    max-width: 820px;
+    margin: 8px 0 10px;
+    font-size: clamp(30px, 4.5vw, 54px);
+    line-height: 1.06;
+    letter-spacing: -0.055em;
+  }
+
+  .refine-intro .subtitle {
+    max-width: 820px;
+    line-height: 1.75;
+  }
+
+  .theme-switcher {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 14px;
+  }
+
+  .theme-switcher button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #dfe3eb;
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: #fff;
+    color: #40475a;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 760;
+    cursor: pointer;
+  }
+
+  .theme-switcher button.active {
+    border-color: #4b59d2;
+    box-shadow: 0 0 0 3px rgba(75,89,210,.12);
+    color: #3342c3;
+  }
+
+  .theme-switcher i {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+  }
+
+  .theme-switcher button:nth-child(1) i { background: linear-gradient(135deg,#4054d8 0 50%,#ff8969 50%); }
+  .theme-switcher button:nth-child(2) i { background: linear-gradient(135deg,#557491 0 50%,#d78464 50%); }
+  .theme-switcher button:nth-child(3) i { background: linear-gradient(135deg,#5a3c60 0 50%,#a9d6e9 50%); }
+
+  .product-preview {
+    --p-bg: #f6f7fb;
+    --p-surface: rgba(255,255,255,.84);
+    --p-ink: #172033;
+    --p-muted: #6d7487;
+    --p-line: #dfe4ef;
+    --p-brand: #4054d8;
+    --p-brand-soft: #e9ecff;
+    --p-action: #ff8969;
+    --p-success: #2fb7a8;
+    --p-dark: #172033;
+    --p-dark-copy: #dce2f2;
+    position: relative;
+    min-height: 690px;
+    overflow: hidden;
+    border: 1px solid rgba(45,53,76,.12);
+    border-radius: 26px;
+    background: var(--p-bg);
+    color: var(--p-ink);
+    box-shadow: 0 30px 90px rgba(27,34,55,.17);
+    transition: background 360ms ease, color 360ms ease;
+  }
+
+  .product-preview.instrument {
+    --p-bg: #edf3f7;
+    --p-surface: rgba(249,252,253,.82);
+    --p-ink: #273042;
+    --p-muted: #677688;
+    --p-line: #d1dce4;
+    --p-brand: #557491;
+    --p-brand-soft: #dde8ef;
+    --p-action: #304a63;
+    --p-success: #4a8b78;
+    --p-dark: #304050;
+    --p-dark-copy: #e8f0f4;
+  }
+
+  .product-preview.cabin {
+    --p-bg: #211925;
+    --p-surface: rgba(53,40,58,.84);
+    --p-ink: #f4ecf5;
+    --p-muted: #c3b5c6;
+    --p-line: rgba(255,255,255,.11);
+    --p-brand: #a9d6e9;
+    --p-brand-soft: #443449;
+    --p-action: #a9d6e9;
+    --p-success: #e4b483;
+    --p-dark: #49334c;
+    --p-dark-copy: #f6eefa;
+  }
+
+  .preview-grid,
+  .preview-glow,
+  .preview-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .preview-grid {
+    opacity: .38;
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--p-brand) 9%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--p-brand) 9%, transparent) 1px, transparent 1px);
+    background-size: 52px 52px;
+    mask-image: linear-gradient(to bottom, #000, transparent 74%);
+  }
+
+  .preview-glow {
+    background:
+      radial-gradient(circle at 16% 20%, color-mix(in srgb, var(--p-brand) 18%, transparent), transparent 25rem),
+      radial-gradient(circle at 86% 55%, color-mix(in srgb, var(--p-success) 14%, transparent), transparent 28rem);
+  }
+
+  .preview-particles::before,
+  .preview-particles::after {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--p-brand);
+    box-shadow:
+      140px 58px 0 -1px var(--p-brand),
+      278px 122px 0 -1px var(--p-success),
+      466px 62px 0 -1px var(--p-brand),
+      720px 132px 0 -1px var(--p-brand),
+      940px 88px 0 -1px var(--p-success),
+      1080px 214px 0 -1px var(--p-brand),
+      820px 380px 0 -1px var(--p-success),
+      550px 420px 0 -1px var(--p-brand),
+      118px 470px 0 -1px var(--p-success);
+    content: '';
+    opacity: .35;
+    animation: particle-drift 8s ease-in-out infinite alternate;
+  }
+
+  .preview-particles::before { top: 30px; left: 30px; }
+  .preview-particles::after { right: 100px; bottom: 120px; transform: scale(.72); animation-delay: -3.5s; }
+
+  .preview-header {
+    position: relative;
+    z-index: 3;
+    min-height: 62px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 22px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--p-line);
+    background: color-mix(in srgb, var(--p-bg) 74%, transparent);
+    backdrop-filter: blur(18px) saturate(1.25);
+  }
+
+  .preview-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+
+  .preview-brand-mark {
+    position: relative;
+    width: 27px;
+    height: 27px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--p-brand);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--p-brand) 26%, transparent);
+  }
+
+  .preview-brand-mark::after {
+    position: absolute;
+    inset: 7px;
+    border: 2px solid var(--p-bg);
+    border-top-left-radius: 7px;
+    content: '';
+    transform: rotate(45deg);
+  }
+
+  .preview-nav {
+    display: flex;
+    justify-content: center;
+    gap: 21px;
+    color: var(--p-muted);
+    font-size: 9px;
+    font-weight: 720;
+  }
+
+  .preview-nav span:first-child {
+    position: relative;
+    color: var(--p-ink);
+  }
+
+  .preview-nav span:first-child::after {
+    position: absolute;
+    right: 0;
+    bottom: -9px;
+    left: 0;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--p-brand);
+    content: '';
+  }
+
+  .preview-account {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .preview-search {
+    width: 116px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--p-line);
+    border-radius: 999px;
+    padding: 0 9px;
+    background: var(--p-surface);
+    color: var(--p-muted);
+    font-size: 7px;
+  }
+
+  .preview-avatar {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--p-dark);
+    color: var(--p-dark-copy);
+    font-size: 8px;
+    font-weight: 850;
+  }
+
+  .preview-main {
+    position: relative;
+    z-index: 2;
+    padding: 46px clamp(24px, 4vw, 58px) 50px;
+  }
+
+  .preview-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(250px, .8fr);
+    align-items: end;
+    gap: 30px;
+  }
+
+  .preview-label {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 13px;
+    padding: 6px 10px;
+    border: 1px solid color-mix(in srgb, var(--p-brand) 24%, var(--p-line));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--p-brand-soft) 78%, transparent);
+    color: var(--p-brand);
+    font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: .12em;
+  }
+
+  .preview-label i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--p-success);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--p-success) 15%, transparent);
+    animation: status-pulse 1.8s ease-in-out infinite;
+  }
+
+  .preview-title {
+    max-width: 720px;
+    margin: 0;
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: clamp(38px, 5.5vw, 76px);
+    font-weight: 900;
+    line-height: .99;
+    letter-spacing: -.075em;
+  }
+
+  .preview-title em {
+    color: var(--p-brand);
+    font-style: normal;
+  }
+
+  .preview-title span {
+    position: relative;
+    display: inline-block;
+  }
+
+  .preview-title span::after {
+    position: absolute;
+    right: -4px;
+    bottom: 5px;
+    left: 1px;
+    height: 7px;
+    z-index: -1;
+    background: var(--p-action);
+    content: '';
+    opacity: .34;
+    transform: skewX(-14deg);
+  }
+
+  .preview-brief {
+    padding: 17px 18px;
+    border-left: 3px solid var(--p-brand);
+    background: color-mix(in srgb, var(--p-surface) 82%, transparent);
+    box-shadow: 0 18px 42px color-mix(in srgb, var(--p-ink) 8%, transparent);
+    transform: rotate(-1.1deg);
+  }
+
+  .preview-brief strong {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .preview-brief p {
+    margin: 0;
+    color: var(--p-muted);
+    font-size: 8px;
+    line-height: 1.7;
+  }
+
+  .preview-marquee {
+    margin: 32px calc(clamp(24px, 4vw, 58px) * -1) 25px;
+    overflow: hidden;
+    border-block: 1px solid var(--p-line);
+    background: color-mix(in srgb, var(--p-dark) 96%, transparent);
+    color: var(--p-dark-copy);
+  }
+
+  .preview-marquee-track {
+    width: max-content;
+    display: flex;
+    gap: 26px;
+    padding: 8px 0;
+    font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: .13em;
+    animation: marquee-run 18s linear infinite;
+  }
+
+  .preview-marquee-track b { color: var(--p-action); }
+
+  .preview-content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.32fr) minmax(230px, .68fr);
+    gap: 16px;
+  }
+
+  .preview-mission {
+    position: relative;
+    min-height: 245px;
+    overflow: hidden;
+    padding: 24px;
+    border-radius: 20px;
+    background: var(--p-dark);
+    color: var(--p-dark-copy);
+    box-shadow: 0 25px 55px color-mix(in srgb, var(--p-dark) 27%, transparent);
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+
+  .product-preview:hover .preview-mission {
+    transform: translateY(-4px);
+    box-shadow: 0 34px 70px color-mix(in srgb, var(--p-dark) 34%, transparent);
+  }
+
+  .preview-mission::before {
+    position: absolute;
+    top: -126px;
+    right: -86px;
+    width: 280px;
+    height: 280px;
+    border: 36px solid var(--p-action);
+    border-radius: 50%;
+    content: '';
+    opacity: .22;
+    animation: mission-orbit 7s ease-in-out infinite alternate;
+  }
+
+  .preview-mission::after {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -45%;
+    width: 34%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.09), transparent);
+    content: '';
+    transform: skewX(-18deg);
+    animation: card-scan 5.8s ease-in-out infinite;
+  }
+
+  .mission-top,
+  .mission-footer {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mission-top {
+    padding-bottom: 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--p-dark-copy) 14%, transparent);
+    font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    font-size: 7px;
+    letter-spacing: .08em;
+    opacity: .72;
+  }
+
+  .mission-title {
+    position: relative;
+    z-index: 1;
+    max-width: 610px;
+    margin: 19px 0 9px;
+    color: #fff;
+    font-size: clamp(21px, 2.6vw, 34px);
+    font-weight: 880;
+    line-height: 1.18;
+    letter-spacing: -.045em;
+  }
+
+  .mission-copy {
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    margin: 0 0 22px;
+    font-size: 9px;
+    line-height: 1.65;
+    opacity: .7;
+  }
+
+  .mission-cta {
+    min-width: 132px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 999px;
+    background: var(--p-action);
+    color: color-mix(in srgb, var(--p-dark) 92%, #000);
+    font-size: 9px;
+    font-weight: 900;
+  }
+
+  .product-preview.cabin .mission-cta { color: #2d2231; }
+
+  .mission-cta b { transition: transform 180ms ease; }
+  .product-preview:hover .mission-cta b { transform: translateX(5px); }
+
+  .mission-proof {
+    color: var(--p-dark-copy);
+    font-size: 7px;
+    opacity: .63;
+  }
+
+  .preview-side {
+    display: grid;
+    gap: 12px;
+  }
+
+  .preview-stat,
+  .preview-next {
+    position: relative;
+    overflow: hidden;
+    padding: 18px;
+    border: 1px solid var(--p-line);
+    border-radius: 16px;
+    background: var(--p-surface);
+    backdrop-filter: blur(14px);
+  }
+
+  .preview-stat small,
+  .preview-next small {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--p-muted);
+    font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    font-size: 6px;
+    font-weight: 800;
+    letter-spacing: .12em;
+  }
+
+  .preview-stat strong {
+    display: block;
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: -.06em;
+  }
+
+  .preview-stat p,
+  .preview-next p {
+    margin: 5px 0 0;
+    color: var(--p-muted);
+    font-size: 8px;
+    line-height: 1.55;
+  }
+
+  .preview-next strong {
+    display: block;
+    max-width: 220px;
+    font-size: 14px;
+    line-height: 1.28;
+  }
+
+  .preview-next::after {
+    position: absolute;
+    right: -25px;
+    bottom: -27px;
+    color: color-mix(in srgb, var(--p-brand) 13%, transparent);
+    font-family: 'Arial Black', sans-serif;
+    font-size: 92px;
+    font-weight: 900;
+    content: '02';
+  }
+
+  .type-specimen {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .type-specimen > div {
+    padding: 15px;
+    border: 1px solid #e1e4eb;
+    border-radius: 14px;
+    background: #fff;
+  }
+
+  .type-specimen span {
+    display: block;
+    margin-bottom: 9px;
+    color: #788095;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  .type-display {
+    color: #1d2436;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -.06em;
+  }
+
+  .type-body {
+    color: #374055;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 13px;
+    font-weight: 450;
+    line-height: 1.7;
+  }
+
+  .type-tech {
+    color: #4054d8;
+    font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    font-size: 13px;
+    font-weight: 750;
+    letter-spacing: .08em;
+  }
+
+  .approach-title {
+    margin: 30px 0 8px;
+    font-size: 24px;
+    letter-spacing: -.04em;
+  }
+
+  .approach-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .approach-options .option {
+    min-height: 178px;
+    align-items: flex-start;
+  }
+
+  .approach-options .content h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .approach-options .content b {
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: #eceeff;
+    color: #4050cb;
+    font-size: 9px;
+  }
+
+  .approach-options ul {
+    margin: 10px 0 0;
+    padding-left: 17px;
+    color: #687084;
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  @keyframes status-pulse {
+    0%,100% { transform: scale(1); opacity: .7; }
+    50% { transform: scale(1.35); opacity: 1; }
+  }
+
+  @keyframes particle-drift {
+    from { transform: translate3d(0,0,0); opacity: .2; }
+    to { transform: translate3d(22px,14px,0); opacity: .5; }
+  }
+
+  @keyframes marquee-run {
+    to { transform: translateX(-35%); }
+  }
+
+  @keyframes mission-orbit {
+    from { transform: translate3d(0,0,0) rotate(-5deg); }
+    to { transform: translate3d(-16px,18px,0) rotate(5deg); }
+  }
+
+  @keyframes card-scan {
+    0%,55% { transform: translateX(0) skewX(-18deg); opacity: 0; }
+    68% { opacity: 1; }
+    100% { transform: translateX(440%) skewX(-18deg); opacity: 0; }
+  }
+
+  @media (max-width: 900px) {
+    .preview-hero,
+    .preview-content-grid { grid-template-columns: 1fr; }
+    .preview-nav { display: none; }
+    .preview-header { grid-template-columns: 1fr auto; }
+    .preview-account { grid-column: 2; }
+    .preview-brief { max-width: 440px; }
+    .type-specimen,
+    .approach-options { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,*::before,*::after { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="refine-intro">
+  <div class="label">参考站拆解后的系统化方案</div>
+  <h2>不是把作品集特效搬进业务系统，而是把它的设计纪律搬进来</h2>
+  <p class="subtitle">保留三套可切换主题；统一强字重标题、章节标签、技术字体、非对称切面和关键状态动效。登录与首页负责建立记忆点，刷题、学习、面试、报告页面则保持长期可读。</p>
+</div>
+
+<div class="theme-switcher" aria-label="预览主题">
+  <button class="active" type="button" onclick="switchPreviewTheme('focus', this)"><i></i>清醒教练</button>
+  <button type="button" onclick="switchPreviewTheme('instrument', this)"><i></i>训练仪表</button>
+  <button type="button" onclick="switchPreviewTheme('cabin', this)"><i></i>夜练训练舱</button>
+</div>
+
+<div class="product-preview focus" id="product-preview">
+  <div class="preview-grid"></div>
+  <div class="preview-glow"></div>
+  <div class="preview-particles"></div>
+  <header class="preview-header">
+    <div class="preview-brand"><span class="preview-brand-mark"></span><span>INTERVIEW AGENT</span></div>
+    <nav class="preview-nav"><span>今天</span><span>刷题</span><span>学习</span><span>模拟面试</span><span>成长档案</span></nav>
+    <div class="preview-account"><span class="preview-search">搜索题目、课程 <b>⌘K</b></span><span class="preview-avatar">Q</span></div>
+  </header>
+  <main class="preview-main">
+    <section class="preview-hero">
+      <div>
+        <span class="preview-label"><i></i>AGENT PLAN · 08 / 14</span>
+        <h1 class="preview-title">今天只练<em>最有价值</em>的<span>一题</span></h1>
+      </div>
+      <aside class="preview-brief">
+        <strong>你的训练命令已经生成</strong>
+        <p>依据目标岗位、最近练习与薄弱项，优先处理最影响面试表现的能力。页面不再堆满功能入口，而是先给出下一步。</p>
+      </aside>
+    </section>
+
+    <div class="preview-marquee">
+      <div class="preview-marquee-track">
+        <span>CONTEXT ENGINEERING</span><b>◆</b><span>RAG</span><b>◆</b><span>TOOL CALLING</span><b>◆</b><span>AGENT MEMORY</span><b>◆</b><span>INTERVIEW EVIDENCE</span><b>◆</b><span>CONTEXT ENGINEERING</span><b>◆</b><span>RAG</span><b>◆</b><span>TOOL CALLING</span>
+      </div>
+    </div>
+
+    <section class="preview-content-grid">
+      <article class="preview-mission">
+        <div class="mission-top"><span>MISSION 01 · 约 18 分钟</span><span>依据 3 条训练证据</span></div>
+        <h2 class="mission-title">Agent 记忆与上下文工程：怎样让回答不再“失忆”</h2>
+        <p class="mission-copy">上一轮回答遗漏了短期状态、长期记忆和检索触发之间的边界。本轮会用一道真实场景题完成诊断、回答、反馈和复练。</p>
+        <div class="mission-footer"><span class="mission-cta">开始训练 <b>→</b></span><span class="mission-proof">Agent 推荐 · 可切换自主组题</span></div>
+      </article>
+      <aside class="preview-side">
+        <div class="preview-stat"><small>WEEKLY RHYTHM</small><strong>04 / 07</strong><p>本周已完成 4 次训练，连续练习 3 天。</p></div>
+        <div class="preview-next"><small>NEXT CHAPTER</small><strong>RAG 检索质量与评估</strong><p>完成本题后解锁下一学习节点。</p></div>
+      </aside>
+    </section>
+  </main>
+</div>
+
+<div class="type-specimen">
+  <div><span>DISPLAY · 中文展示层</span><div class="type-display">不是更花，而是更有判断力</div></div>
+  <div><span>BODY · 长文本阅读层</span><div class="type-body">中文正文使用稳定字面与更舒适的行高，保证刷题、课程和报告页面长时间阅读不疲劳。</div></div>
+  <div><span>TECH · 标签与数据层</span><div class="type-tech">MISSION_01 · 18 MIN · 64%</div></div>
+</div>
+
+<h3 class="approach-title">实施强度怎么选？</h3>
+<p class="subtitle">我建议选择 A：把参考站的视觉纪律系统化，而不是让每个业务页面都变成作品集。</p>
+
+<div class="options approach-options">
+  <div class="option" data-choice="a-balanced-system" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>平衡型全站升级 <b>推荐</b></h3>
+      <p>三套完整主题 + 新字体系统 + Motion 页面过渡 + 少量 Canvas/CSS 氛围动效。</p>
+      <ul><li>登录、首页强视觉</li><li>业务工作区克制可读</li><li>性能与维护成本可控</li></ul>
+    </div>
+  </div>
+  <div class="option" data-choice="b-showcase-heavy" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>全站强动效实验化</h3>
+      <p>刷题、学习、报告等页面也使用持续粒子、滚动场景与大幅构图。</p>
+      <ul><li>冲击力最强</li><li>内容页干扰更高</li><li>移动端与性能风险最大</li></ul>
+    </div>
+  </div>
+  <div class="option" data-choice="c-phased-upgrade" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>分阶段逐页升级</h3>
+      <p>先优化登录、首页、刷题入口，再扩展学习、面试、成长和设置页面。</p>
+      <ul><li>回归风险最低</li><li>每阶段可独立验收</li><li>短期内页面风格会新旧并存</li></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchPreviewTheme(theme, button) {
+    const preview = document.getElementById('product-preview');
+    preview.className = `product-preview ${theme}`;
+    document.querySelectorAll('.theme-switcher button').forEach((item) => item.classList.remove('active'));
+    button.classList.add('active');
+  }
+</script>

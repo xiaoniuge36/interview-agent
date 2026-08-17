@@ -1,0 +1,552 @@
+<style>
+  .white-intro {
+    max-width: 900px;
+    margin-bottom: 22px;
+  }
+
+  .white-intro h2 {
+    max-width: 850px;
+    margin: 7px 0 10px;
+    font-size: clamp(32px,4.8vw,58px);
+    line-height: 1.04;
+    letter-spacing: -.06em;
+  }
+
+  .white-intro .subtitle {
+    max-width: 810px;
+    line-height: 1.75;
+  }
+
+  .white-theme-preview {
+    position: relative;
+    min-height: 760px;
+    overflow: hidden;
+    border: 1px solid #161922;
+    background: #f7f8f5;
+    color: #11131a;
+    box-shadow: 16px 16px 0 #11131a;
+  }
+
+  .white-grid,
+  .white-noise,
+  .white-shape {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .white-grid {
+    background-image:
+      linear-gradient(rgba(24,31,48,.065) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(24,31,48,.065) 1px,transparent 1px);
+    background-size: 48px 48px;
+    mask-image: linear-gradient(to bottom,#000 0 72%,transparent 100%);
+  }
+
+  .white-noise {
+    opacity: .18;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+  }
+
+  .white-shape::before {
+    position: absolute;
+    top: -110px;
+    right: -80px;
+    width: 410px;
+    height: 410px;
+    border: 58px solid #2457ff;
+    border-radius: 50%;
+    content: '';
+    opacity: .92;
+    animation: white-orbit 8s ease-in-out infinite alternate;
+  }
+
+  .white-shape::after {
+    position: absolute;
+    right: 14%;
+    bottom: -110px;
+    width: 420px;
+    height: 190px;
+    background: #f04732;
+    clip-path: polygon(0 34%,100% 0,84% 100%,12% 78%);
+    content: '';
+    opacity: .9;
+    animation: white-shape-drift 7s ease-in-out infinite alternate;
+  }
+
+  .white-header {
+    position: relative;
+    z-index: 4;
+    min-height: 62px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 24px;
+    border-bottom: 3px solid #11131a;
+    padding: 0 25px;
+    background: rgba(247,248,245,.88);
+    backdrop-filter: blur(16px);
+  }
+
+  .white-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    font-weight: 950;
+    letter-spacing: -.02em;
+  }
+
+  .white-brand i {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    background: #11131a;
+    color: #fff;
+    font-family: ui-monospace,Consolas,monospace;
+    font-style: normal;
+    font-size: 9px;
+    box-shadow: 4px 4px 0 #2457ff;
+  }
+
+  .white-nav {
+    display: flex;
+    justify-content: center;
+    gap: 23px;
+    font-size: 9px;
+    font-weight: 760;
+  }
+
+  .white-nav span:first-child {
+    position: relative;
+    color: #2457ff;
+  }
+
+  .white-nav span:first-child::after {
+    position: absolute;
+    right: 0;
+    bottom: -11px;
+    left: 0;
+    height: 3px;
+    background: #2457ff;
+    content: '';
+    animation: nav-line-in .7s cubic-bezier(.22,1,.36,1) both;
+  }
+
+  .white-theme-chip {
+    padding: 7px 10px;
+    border: 2px solid #11131a;
+    background: #fff;
+    color: #11131a;
+    font-family: ui-monospace,Consolas,monospace;
+    font-size: 7px;
+    font-weight: 850;
+    letter-spacing: .08em;
+    box-shadow: 3px 3px 0 #f04732;
+  }
+
+  .white-main {
+    position: relative;
+    z-index: 2;
+    padding: 46px clamp(28px,5vw,72px) 56px;
+  }
+
+  .white-hero {
+    min-height: 320px;
+    display: grid;
+    grid-template-columns: minmax(0,1.25fr) minmax(230px,.75fr);
+    align-items: center;
+    gap: 40px;
+  }
+
+  .white-kicker {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 15px;
+    border: 2px solid #11131a;
+    padding: 6px 9px;
+    background: #fff;
+    color: #11131a;
+    font-family: ui-monospace,Consolas,monospace;
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    box-shadow: 4px 4px 0 #2457ff;
+    animation: label-drop .65s cubic-bezier(.22,1,.36,1) both;
+  }
+
+  .white-kicker i {
+    width: 6px;
+    height: 6px;
+    background: #f04732;
+    animation: white-pulse 1.5s ease-in-out infinite;
+  }
+
+  .white-title {
+    max-width: 800px;
+    margin: 0;
+    font-family: 'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;
+    font-size: clamp(50px,7vw,102px);
+    font-weight: 950;
+    line-height: .91;
+    letter-spacing: -.085em;
+  }
+
+  .white-title span {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(38px) skewY(5deg);
+    animation: title-rise .8s cubic-bezier(.22,1,.36,1) forwards;
+  }
+
+  .white-title span:nth-child(2) { color: #2457ff; animation-delay: .09s; }
+  .white-title span:nth-child(3) { animation-delay: .18s; }
+  .white-title span:nth-child(4) { color: #f04732; animation-delay: .27s; }
+
+  .white-copy {
+    max-width: 590px;
+    margin: 20px 0 0;
+    border-left: 7px solid #2457ff;
+    padding-left: 14px;
+    color: #555d6d;
+    font-size: 10px;
+    font-weight: 560;
+    line-height: 1.75;
+    animation: copy-reveal .7s .34s cubic-bezier(.22,1,.36,1) both;
+  }
+
+  .white-stamp-wrap {
+    min-height: 230px;
+    display: grid;
+    place-items: center;
+  }
+
+  .white-stamp {
+    position: relative;
+    width: 178px;
+    height: 178px;
+    display: grid;
+    place-items: center;
+    border: 20px solid #11131a;
+    border-radius: 50%;
+    background: #f04732;
+    color: #fff;
+    box-shadow: 13px 13px 0 #2457ff;
+    animation: stamp-float 4.2s ease-in-out infinite alternate;
+  }
+
+  .white-stamp::before {
+    position: absolute;
+    inset: 10px;
+    border: 2px dashed #fff;
+    border-radius: 50%;
+    content: '';
+    animation: stamp-spin 18s linear infinite;
+  }
+
+  .white-stamp strong {
+    max-width: 96px;
+    text-align: center;
+    font-family: 'Noto Sans SC',sans-serif;
+    font-size: 18px;
+    font-weight: 950;
+    line-height: 1.08;
+  }
+
+  .white-ticker {
+    margin: 27px calc(clamp(28px,5vw,72px) * -1) 25px;
+    overflow: hidden;
+    border-block: 3px solid #11131a;
+    background: #11131a;
+    color: #fff;
+  }
+
+  .white-ticker-track {
+    width: max-content;
+    display: flex;
+    gap: 26px;
+    padding: 9px 0;
+    font-size: 8px;
+    font-weight: 850;
+    letter-spacing: .05em;
+    animation: chinese-ticker 20s linear infinite;
+  }
+
+  .white-ticker b { color: #f04732; }
+
+  .white-content {
+    display: grid;
+    grid-template-columns: minmax(0,1.38fr) minmax(250px,.62fr);
+    gap: 15px;
+  }
+
+  .white-mission {
+    position: relative;
+    min-height: 240px;
+    overflow: hidden;
+    border: 3px solid #11131a;
+    padding: 25px;
+    background: #fff;
+    box-shadow: 10px 10px 0 #11131a;
+    transition: transform .24s cubic-bezier(.22,1,.36,1),box-shadow .24s ease;
+  }
+
+  .white-theme-preview:hover .white-mission {
+    transform: translate(-4px,-4px);
+    box-shadow: 16px 16px 0 #11131a;
+  }
+
+  .white-mission::before {
+    position: absolute;
+    top: -70px;
+    right: -92px;
+    width: 260px;
+    height: 260px;
+    border: 38px solid #2457ff;
+    border-radius: 50%;
+    content: '';
+    opacity: .16;
+    animation: mission-ring 6s ease-in-out infinite alternate;
+  }
+
+  .white-mission::after {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -30%;
+    width: 20%;
+    background: linear-gradient(90deg,transparent,rgba(36,87,255,.12),transparent);
+    content: '';
+    transform: skewX(-20deg);
+    animation: mission-scan 5.5s ease-in-out infinite;
+  }
+
+  .white-mission-meta {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-family: ui-monospace,Consolas,monospace;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: .08em;
+  }
+
+  .white-mission h3 {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 18px 0 10px;
+    font-size: clamp(23px,2.8vw,38px);
+    font-weight: 950;
+    line-height: 1.13;
+    letter-spacing: -.05em;
+  }
+
+  .white-mission p {
+    position: relative;
+    z-index: 1;
+    max-width: 650px;
+    margin: 0 0 22px;
+    color: #626a78;
+    font-size: 9px;
+    line-height: 1.65;
+  }
+
+  .white-button {
+    position: relative;
+    z-index: 1;
+    min-width: 142px;
+    min-height: 39px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #11131a;
+    background: #2457ff;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 900;
+    box-shadow: 5px 5px 0 #11131a;
+    transition: transform .16s ease,box-shadow .16s ease;
+  }
+
+  .white-button:hover {
+    transform: translate(3px,3px);
+    box-shadow: 2px 2px 0 #11131a;
+  }
+
+  .white-side {
+    display: grid;
+    gap: 13px;
+  }
+
+  .white-stat,
+  .white-next {
+    min-height: 110px;
+    border: 3px solid #11131a;
+    padding: 17px;
+    background: #f7f8f5;
+    box-shadow: 7px 7px 0 #f04732;
+  }
+
+  .white-side small {
+    display: block;
+    font-family: ui-monospace,Consolas,monospace;
+    font-size: 6px;
+    font-weight: 850;
+    letter-spacing: .12em;
+  }
+
+  .white-stat strong {
+    display: block;
+    margin-top: 7px;
+    font-size: 34px;
+    font-weight: 950;
+    letter-spacing: -.05em;
+  }
+
+  .white-next strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.25;
+  }
+
+  .motion-section {
+    margin-top: 30px;
+  }
+
+  .motion-section h3 {
+    margin-bottom: 8px;
+    font-size: 25px;
+    letter-spacing: -.04em;
+  }
+
+  .motion-timeline {
+    display: grid;
+    grid-template-columns: repeat(5,minmax(0,1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .motion-timeline div {
+    min-height: 126px;
+    border: 1px solid #dfe3eb;
+    padding: 14px;
+    background: #fff;
+  }
+
+  .motion-timeline b {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 11px;
+    background: #11131a;
+    color: #fff;
+    font-family: ui-monospace,Consolas,monospace;
+    font-size: 9px;
+  }
+
+  .motion-timeline strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #202638;
+    font-size: 11px;
+  }
+
+  .motion-timeline span {
+    color: #697185;
+    font-size: 9px;
+    line-height: 1.55;
+  }
+
+  @keyframes nav-line-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes label-drop { from { opacity:0;transform:translateY(-18px) rotate(-2deg); } to { opacity:1;transform:none; } }
+  @keyframes title-rise { to { opacity:1;transform:none; } }
+  @keyframes copy-reveal { from { opacity:0;transform:translateX(-24px); } to { opacity:1;transform:none; } }
+  @keyframes white-pulse { 50% { transform:scale(1.5);opacity:.55; } }
+  @keyframes stamp-float { to { transform:translateY(-10px) rotate(3deg); } }
+  @keyframes stamp-spin { to { transform:rotate(360deg); } }
+  @keyframes chinese-ticker { to { transform:translateX(-38%); } }
+  @keyframes white-orbit { to { transform:translate3d(-22px,20px,0) rotate(6deg); } }
+  @keyframes white-shape-drift { to { transform:translate3d(34px,-16px,0) rotate(-3deg); } }
+  @keyframes mission-ring { to { transform:translate3d(-18px,16px,0) rotate(7deg); } }
+  @keyframes mission-scan { 0%,56% { transform:translateX(0) skewX(-20deg);opacity:0; } 68% { opacity:1; } 100% { transform:translateX(700%) skewX(-20deg);opacity:0; } }
+
+  @media (max-width:900px) {
+    .white-nav { display:none; }
+    .white-header { grid-template-columns:1fr auto; }
+    .white-hero,.white-content { grid-template-columns:1fr; }
+    .motion-timeline { grid-template-columns:1fr; }
+    .white-stamp-wrap { min-height:190px; }
+  }
+
+  @media (prefers-reduced-motion:reduce) {
+    *,*::before,*::after { animation:none!important;transition:none!important; }
+  }
+</style>
+
+<div class="white-intro">
+  <div class="label">第四套主题 · 白昼编辑部</div>
+  <h2>明亮，但不寡淡；白色主题也要有清晰的设计立场</h2>
+  <p class="subtitle">以白、墨黑为主体，用钴蓝建立品牌、朱红强调行动。保留硬边、粗字、网格和印刷感，避免重新变成普通后台界面。前三套暗色主题保持不变。</p>
+</div>
+
+<div class="white-theme-preview">
+  <div class="white-grid"></div>
+  <div class="white-noise"></div>
+  <div class="white-shape"></div>
+  <header class="white-header">
+    <div class="white-brand"><i>IA</i><span>面试训练智能体</span></div>
+    <nav class="white-nav"><span>今天</span><span>刷题</span><span>学习</span><span>模拟面试</span><span>成长档案</span></nav>
+    <span class="white-theme-chip">主题：白昼编辑部</span>
+  </header>
+  <main class="white-main">
+    <section class="white-hero">
+      <div>
+        <span class="white-kicker"><i></i>今日任务 · 第一项</span>
+        <h1 class="white-title"><span>今天，</span><span>只练</span><span>最有价值的</span><span>一题。</span></h1>
+        <p class="white-copy">根据目标岗位、最近练习与薄弱项，先完成最影响面试结果的一步。页面会解释为什么推荐、完成后能改进什么。</p>
+      </div>
+      <div class="white-stamp-wrap"><div class="white-stamp"><strong>训练已经就绪</strong></div></div>
+    </section>
+
+    <div class="white-ticker">
+      <div class="white-ticker-track">
+        <span>上下文工程</span><b>◆</b><span>检索增强生成</span><b>◆</b><span>工具调用</span><b>◆</b><span>智能体记忆</span><b>◆</b><span>面试证据</span><b>◆</b><span>训练复盘</span><b>◆</b><span>上下文工程</span><b>◆</b><span>检索增强生成</span><b>◆</b><span>工具调用</span>
+      </div>
+    </div>
+
+    <section class="white-content">
+      <article class="white-mission">
+        <div class="white-mission-meta"><span>任务一 · 预计十八分钟</span><span>依据三条训练证据</span></div>
+        <h3>智能体记忆与上下文工程：怎样让回答不再“失忆”</h3>
+        <p>从一道真实场景题开始，完成回答、反馈与复练。系统会给出具体补强建议，而不是只呈现一个分数。</p>
+        <span class="white-button">开始训练 →</span>
+      </article>
+      <aside class="white-side">
+        <div class="white-stat"><small>本周训练节奏</small><strong>四 / 七</strong></div>
+        <div class="white-next"><small>下一学习章节</small><strong>检索质量与评估</strong></div>
+      </aside>
+    </section>
+  </main>
+</div>
+
+<section class="motion-section">
+  <h3>全站动画节奏</h3>
+  <p class="subtitle">动画服务于状态和注意力，不让所有元素同时运动。</p>
+  <div class="motion-timeline">
+    <div><b>一</b><strong>页面进入</strong><span>标题分行错峰上浮，正文随后出现。</span></div>
+    <div><b>二</b><strong>导航切换</strong><span>共享下划线滑动到新栏目，内容交叉淡入。</span></div>
+    <div><b>三</b><strong>滚动显现</strong><span>章节标签、课程卡和报告段落按阅读顺序出现。</span></div>
+    <div><b>四</b><strong>任务反馈</strong><span>保存、评分、完成和下一题使用短促弹性反馈。</span></div>
+    <div><b>五</b><strong>氛围动画</strong><span>粒子、扫描和滚动字幕低速运行，失焦时暂停。</span></div>
+  </div>
+</section>
