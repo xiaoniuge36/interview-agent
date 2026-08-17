@@ -5,6 +5,8 @@ import { TrainingContinuationCard } from './TrainingContinuationCard';
 import type { TrainingContinuation } from './training-continuation';
 import { ActionLabel } from '@/components/consumer/ActionLabel';
 import { SignalField } from '@/components/consumer/SignalField';
+import { ChineseTicker } from '@/components/consumer/ChineseTicker';
+import { ThemeAtmosphere } from '@/components/theme/ThemeAtmosphere';
 
 type AgentRecommendationRailProps = {
   displayName?: string | null | undefined;
@@ -22,9 +24,11 @@ export function AgentRecommendationRail(props: AgentRecommendationRailProps) {
   const { actionError, continuation, displayName } = props;
   return (
     <section className="home-training-plan" aria-labelledby="home-training-plan-heading">
+      <ThemeAtmosphere context="home" />
       <header className="home-training-plan-header">
         <HomeWelcome displayName={displayName} continuation={continuation ?? null} />
       </header>
+      <ChineseTicker />
       <RailPrimaryContent {...props} />
       {actionError ? (
         <p className="agent-action-error" role="alert">

@@ -1,20 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import type { AccentColor, ThemeMode, ThemePreferences } from './theme-preferences';
+import type { ThemeMode, ThemePreferences } from './theme-preferences';
 import { useThemePreferences } from './ThemePreferencesProvider';
 
-const THEMES: Array<{ value: ThemeMode; label: string; helper: string }> = [
-  { value: 'dawn', label: '晨光', helper: '温暖、专注' },
-  { value: 'ocean', label: '海盐', helper: '清爽、理性' },
-  { value: 'night', label: '深夜', helper: '低亮度训练' },
-];
-const ACCENTS: Array<{ value: AccentColor; label: string }> = [
-  { value: 'coral', label: '珊瑚' },
-  { value: 'blue', label: '蓝色' },
-  { value: 'teal', label: '薄荷' },
-  { value: 'amber', label: '琥珀' },
-];
+export const THEME_OPTIONS = [
+  { value: 'aurora', label: '极光叙事', helper: '渐变巨字与星空轨道' },
+  { value: 'terminal', label: '终端工业', helper: '命令语义与状态扫描' },
+  { value: 'constructivist', label: '结构主义印刷', helper: '红黑米白与硬边构图' },
+  { value: 'daylight', label: '白昼编辑部', helper: '高对比明亮阅读' },
+  { value: 'glass', label: '雾光玻璃', helper: '通透材质与空间景深' },
+  { value: 'playground', label: '彩色训练场', helper: '明亮模块与成长反馈' },
+] satisfies Array<{ value: ThemeMode; label: string; helper: string }>;
 
 export function ThemeMenu({ variant }: { variant: 'sidebar' | 'floating' | 'topbar' }) {
   const controls = useThemePreferences();
@@ -23,14 +20,14 @@ export function ThemeMenu({ variant }: { variant: 'sidebar' | 'floating' | 'topb
   const closeMenu = useCallback(() => setOpen(false), []);
   useThemeMenuDismissal(open, rootRef, closeMenu);
 
-  const theme = THEMES.find((item) => item.value === controls.preferences.theme) ?? THEMES[0]!;
-  const accent = ACCENTS.find((item) => item.value === controls.preferences.accent) ?? ACCENTS[0]!;
+  const theme =
+    THEME_OPTIONS.find((item) => item.value === controls.preferences.theme) ?? THEME_OPTIONS[0]!;
   return (
     <div className={`theme-menu theme-menu-${variant}`} ref={rootRef}>
       <ThemeMenuTrigger
         variant={variant}
         open={open}
-        summary={`${theme.label} · ${accent.label}`}
+        summary={theme.label}
         onToggle={() => setOpen((value) => !value)}
       />
       {open ? <ThemeMenuPopover {...controls} /> : null}
@@ -70,7 +67,7 @@ function ThemeMenuTrigger(props: {
     <button
       className="theme-menu-trigger"
       type="button"
-      aria-label="切换外观主题和主题色"
+      aria-label="切换外观主题"
       aria-expanded={props.open}
       onClick={props.onToggle}
     >
@@ -88,19 +85,20 @@ function ThemeMenuTrigger(props: {
 type ThemeMenuPopoverProps = {
   preferences: ThemePreferences;
   setTheme: (theme: ThemeMode) => void;
-  setAccent: (accent: AccentColor) => void;
   setMotion: (motion: boolean) => void;
 };
 
-function ThemeMenuPopover(props: ThemeMenuPopoverProps) {
+export function ThemeMenuPopover(props: ThemeMenuPopoverProps) {
   return (
-    <div className="theme-menu-popover" role="dialog" aria-label="外观与主题色">
+    <div className="theme-menu-popover" role="dialog" aria-label="外观主题">
       <header>
-        <strong>外观与主题色</strong>
+        <span>
+          <strong>选择界面主题</strong>
+          <small>六种完整视觉语言</small>
+        </span>
         <small>保存在当前设备</small>
       </header>
       <ThemeModeList preferences={props.preferences} onSelect={props.setTheme} />
-      <ThemeAccentSection preferences={props.preferences} onSelect={props.setAccent} />
       <ThemeMotionRow preferences={props.preferences} onChange={props.setMotion} />
     </div>
   );
@@ -112,7 +110,7 @@ function ThemeModeList(props: {
 }) {
   return (
     <div className="theme-mode-list">
-      {THEMES.map((item) => (
+      {THEME_OPTIONS.map((item) => (
         <button
           key={item.value}
           type="button"
@@ -131,29 +129,6 @@ function ThemeModeList(props: {
   );
 }
 
-function ThemeAccentSection(props: {
-  preferences: ThemePreferences;
-  onSelect: (accent: AccentColor) => void;
-}) {
-  return (
-    <div className="theme-accent-section">
-      <span>主题色</span>
-      <div>
-        {ACCENTS.map((item) => (
-          <button
-            key={item.value}
-            className={`accent-${item.value}`}
-            type="button"
-            aria-label={item.label}
-            aria-pressed={props.preferences.accent === item.value}
-            onClick={() => props.onSelect(item.value)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function ThemeMotionRow(props: {
   preferences: ThemePreferences;
   onChange: (motion: boolean) => void;
@@ -161,12 +136,12 @@ function ThemeMotionRow(props: {
   return (
     <div className="theme-motion-row">
       <span>
-        <strong>界面微动效</strong>
-        <small>保留选题和 Agent 状态反馈</small>
+        <strong>界面动态效果</strong>
+        <small>控制页面进入、环境氛围与状态反馈</small>
       </span>
       <button
         type="button"
-        aria-label="界面微动效"
+        aria-label="界面动态效果"
         aria-pressed={props.preferences.motion}
         onClick={() => props.onChange(!props.preferences.motion)}
       />

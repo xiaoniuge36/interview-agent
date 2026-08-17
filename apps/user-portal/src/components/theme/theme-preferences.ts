@@ -1,31 +1,42 @@
-export const THEME_STORAGE_KEY = 'offerpilot:theme-preferences:v1';
+import {
+  ThemeModeSchema,
+  ThemePreferencesSchema,
+  type ThemeMode,
+  type ThemePreferences,
+} from '@interview-agent/contracts';
 
-export type ThemeMode = 'dawn' | 'ocean' | 'night';
-export type AccentColor = 'coral' | 'blue' | 'teal' | 'amber';
+export const THEME_STORAGE_KEY = 'offerpilot:theme-preferences:v2';
+export const LEGACY_THEME_STORAGE_KEY = 'offerpilot:theme-preferences:v1';
+export const THEMES = ThemeModeSchema.options;
 
-export type ThemePreferences = {
-  theme: ThemeMode;
-  accent: AccentColor;
-  motion: boolean;
-};
+export type { ThemeMode, ThemePreferences };
 
 export const DEFAULT_THEME_PREFERENCES: ThemePreferences = {
-  theme: 'dawn',
-  accent: 'coral',
+  theme: 'daylight',
   motion: true,
 };
 
-const THEMES: ThemeMode[] = ['dawn', 'ocean', 'night'];
-const ACCENTS: AccentColor[] = ['coral', 'blue', 'teal', 'amber'];
+const LEGACY_THEME_MAP = {
+  dawn: 'daylight',
+  ocean: 'glass',
+  night: 'aurora',
+} as const satisfies Record<string, ThemeMode>;
 
 export function parseThemePreferences(value: unknown): ThemePreferences {
-  if (!isRecord(value)) return DEFAULT_THEME_PREFERENCES;
-  if (!THEMES.includes(value.theme as ThemeMode)) return DEFAULT_THEME_PREFERENCES;
-  if (!ACCENTS.includes(value.accent as AccentColor)) return DEFAULT_THEME_PREFERENCES;
+  const parsed = ThemePreferencesSchema.safeParse(value);
+  return parsed.success ? parsed.data : DEFAULT_THEME_PREFERENCES;
+}
+
+export function parseStoredThemePreferences(v2: unknown, v1: unknown): ThemePreferences {
+  const current = ThemePreferencesSchema.safeParse(v2);
+  if (current.success) return current.data;
+  if (!isRecord(v1)) return DEFAULT_THEME_PREFERENCES;
+
+  const theme = LEGACY_THEME_MAP[v1.theme as keyof typeof LEGACY_THEME_MAP];
+  if (!theme) return DEFAULT_THEME_PREFERENCES;
   return {
-    theme: value.theme as ThemeMode,
-    accent: value.accent as AccentColor,
-    motion: typeof value.motion === 'boolean' ? value.motion : true,
+    theme,
+    motion: typeof v1.motion === 'boolean' ? v1.motion : true,
   };
 }
 

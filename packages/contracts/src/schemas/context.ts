@@ -13,6 +13,8 @@ export const RoleSchema = z.enum([
 export const ActionSchema = z.enum([
   'profile:read',
   'profile:write',
+  'preferences:read',
+  'preferences:write',
   'job_intent:read',
   'job_intent:write',
   'interview:create',

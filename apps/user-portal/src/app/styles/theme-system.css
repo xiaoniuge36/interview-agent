@@ -1,0 +1,201 @@
+:root {
+  --font-display: var(--font-chinese), 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: var(--font-chinese), 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-tech: var(--font-tech-face), Consolas, monospace;
+  --theme-display-family: var(--font-display);
+  --theme-canvas: #f7f8f5;
+  --theme-surface: #ffffff;
+  --theme-surface-raised: #ffffff;
+  --theme-ink: #11131a;
+  --theme-text-muted: #626a78;
+  --theme-line: #dfe3eb;
+  --theme-primary: #2457ff;
+  --theme-on-primary: #ffffff;
+  --theme-secondary: #7f65db;
+  --theme-accent: #f04732;
+  --theme-success: #168676;
+  --theme-warning: #b56a12;
+  --theme-danger: #c93737;
+  --theme-shadow: 8px 8px 0 #11131a;
+  --theme-shadow-raised: 12px 14px 0 rgba(17, 19, 26, 0.16);
+  --theme-radius-panel: 0px;
+  --theme-radius-control: 0px;
+  --theme-border-width: 2px;
+  --theme-panel-blur: 0px;
+  --theme-nav-surface: #11131a;
+  --theme-nav-ink: #f7f8f5;
+  --theme-grid-color: rgba(17, 19, 26, 0.07);
+  --theme-selection: rgba(36, 87, 255, 0.2);
+}
+
+html[data-theme='daylight'] {
+  color-scheme: light;
+  --theme-canvas: #f6f7f3;
+  --theme-surface: #ffffff;
+  --theme-surface-raised: #ffffff;
+  --theme-ink: #101219;
+  --theme-text-muted: #606877;
+  --theme-line: #d8dce4;
+  --theme-primary: #2457ff;
+  --theme-on-primary: #ffffff;
+  --theme-secondary: #693bd5;
+  --theme-accent: #ee4932;
+  --theme-success: #087f6c;
+  --theme-warning: #a95d0c;
+  --theme-danger: #c83232;
+  --theme-shadow: 7px 7px 0 #101219;
+  --theme-shadow-raised: 12px 14px 0 rgba(16, 18, 25, 0.14);
+  --theme-radius-panel: 2px;
+  --theme-radius-control: 3px;
+  --theme-border-width: 2px;
+  --theme-panel-blur: 0px;
+  --theme-nav-surface: #101219;
+  --theme-nav-ink: #f8f9f5;
+  --theme-grid-color: rgba(16, 18, 25, 0.075);
+  --theme-selection: rgba(36, 87, 255, 0.22);
+}
+
+html[data-theme='aurora'] {
+  color-scheme: dark;
+  --theme-canvas: #070811;
+  --theme-surface: rgba(18, 20, 39, 0.9);
+  --theme-surface-raised: rgba(27, 29, 53, 0.94);
+  --theme-ink: #f6f3ff;
+  --theme-text-muted: #aaa8c0;
+  --theme-line: rgba(174, 184, 255, 0.2);
+  --theme-primary: #8c7cff;
+  --theme-on-primary: #080914;
+  --theme-secondary: #35d9e8;
+  --theme-accent: #ff5db1;
+  --theme-success: #55dcb1;
+  --theme-warning: #ffc86b;
+  --theme-danger: #ff7185;
+  --theme-shadow: 0 24px 70px rgba(1, 3, 16, 0.56);
+  --theme-shadow-raised: 0 32px 90px rgba(0, 0, 12, 0.62);
+  --theme-radius-panel: 24px;
+  --theme-radius-control: 14px;
+  --theme-border-width: 1px;
+  --theme-panel-blur: 22px;
+  --theme-nav-surface: rgba(9, 10, 24, 0.82);
+  --theme-nav-ink: #f6f3ff;
+  --theme-grid-color: rgba(91, 217, 232, 0.075);
+  --theme-selection: rgba(140, 124, 255, 0.34);
+}
+
+html[data-theme='terminal'] {
+  color-scheme: dark;
+  --theme-display-family: var(--font-display);
+  --theme-canvas: #090d12;
+  --theme-surface: #0f151d;
+  --theme-surface-raised: #131c26;
+  --theme-ink: #e8f0f7;
+  --theme-text-muted: #8b9bab;
+  --theme-line: #273646;
+  --theme-primary: #58a6ff;
+  --theme-on-primary: #071018;
+  --theme-secondary: #3fb950;
+  --theme-accent: #d2a8ff;
+  --theme-success: #56d364;
+  --theme-warning: #e3b341;
+  --theme-danger: #ff7b72;
+  --theme-shadow: 0 14px 36px rgba(0, 0, 0, 0.36);
+  --theme-shadow-raised: 0 22px 52px rgba(0, 0, 0, 0.46);
+  --theme-radius-panel: 4px;
+  --theme-radius-control: 3px;
+  --theme-border-width: 1px;
+  --theme-panel-blur: 0px;
+  --theme-nav-surface: #070a0e;
+  --theme-nav-ink: #d9e5ef;
+  --theme-grid-color: rgba(88, 166, 255, 0.08);
+  --theme-selection: rgba(63, 185, 80, 0.28);
+}
+
+html[data-theme='constructivist'] {
+  color-scheme: light;
+  --theme-canvas: #eee8da;
+  --theme-surface: #f9f3e5;
+  --theme-surface-raised: #fff9ec;
+  --theme-ink: #171411;
+  --theme-text-muted: #625b52;
+  --theme-line: #171411;
+  --theme-primary: #d52b1e;
+  --theme-on-primary: #fff9ec;
+  --theme-secondary: #171411;
+  --theme-accent: #f0b429;
+  --theme-success: #16714c;
+  --theme-warning: #9d5a08;
+  --theme-danger: #b82018;
+  --theme-shadow: 8px 8px 0 #171411;
+  --theme-shadow-raised: 12px 12px 0 #d52b1e;
+  --theme-radius-panel: 0px;
+  --theme-radius-control: 0px;
+  --theme-border-width: 3px;
+  --theme-panel-blur: 0px;
+  --theme-nav-surface: #171411;
+  --theme-nav-ink: #f9f3e5;
+  --theme-grid-color: rgba(23, 20, 17, 0.09);
+  --theme-selection: rgba(213, 43, 30, 0.24);
+}
+
+html[data-theme='glass'] {
+  color-scheme: light;
+  --theme-canvas: #edf4ff;
+  --theme-surface: rgba(255, 255, 255, 0.78);
+  --theme-surface-raised: rgba(255, 255, 255, 0.92);
+  --theme-ink: #15213b;
+  --theme-text-muted: #65718a;
+  --theme-line: rgba(77, 102, 151, 0.2);
+  --theme-primary: #3c6df0;
+  --theme-on-primary: #ffffff;
+  --theme-secondary: #8875ec;
+  --theme-accent: #28b8ad;
+  --theme-success: #168676;
+  --theme-warning: #aa6814;
+  --theme-danger: #cf4057;
+  --theme-shadow: 0 20px 58px rgba(59, 85, 136, 0.17);
+  --theme-shadow-raised: 0 30px 74px rgba(59, 85, 136, 0.23);
+  --theme-radius-panel: 28px;
+  --theme-radius-control: 16px;
+  --theme-border-width: 1px;
+  --theme-panel-blur: 24px;
+  --theme-nav-surface: rgba(244, 248, 255, 0.76);
+  --theme-nav-ink: #15213b;
+  --theme-grid-color: rgba(60, 109, 240, 0.065);
+  --theme-selection: rgba(60, 109, 240, 0.22);
+}
+
+html[data-theme='playground'] {
+  color-scheme: light;
+  --theme-canvas: #fff8dd;
+  --theme-surface: #ffffff;
+  --theme-surface-raised: #ffffff;
+  --theme-ink: #20223d;
+  --theme-text-muted: #65647b;
+  --theme-line: #20223d;
+  --theme-primary: #7657f5;
+  --theme-on-primary: #ffffff;
+  --theme-secondary: #27a9e8;
+  --theme-accent: #ff6b59;
+  --theme-success: #159873;
+  --theme-warning: #c77700;
+  --theme-danger: #dd3d5a;
+  --theme-shadow: 6px 7px 0 #20223d;
+  --theme-shadow-raised: 9px 10px 0 #27a9e8;
+  --theme-radius-panel: 20px;
+  --theme-radius-control: 13px;
+  --theme-border-width: 3px;
+  --theme-panel-blur: 0px;
+  --theme-nav-surface: #ffffff;
+  --theme-nav-ink: #20223d;
+  --theme-grid-color: rgba(118, 87, 245, 0.08);
+  --theme-selection: rgba(255, 107, 89, 0.24);
+}
+
+html[data-theme='daylight'] body,
+html[data-theme='constructivist'] body,
+html[data-theme='terminal'] body {
+  background-image:
+    linear-gradient(var(--theme-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--theme-grid-color) 1px, transparent 1px);
+  background-size: 32px 32px;
+}

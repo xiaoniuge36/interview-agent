@@ -7,6 +7,7 @@ import { GlobalSearchProvider } from './search/GlobalSearchProvider';
 import { GlobalSearchDialog } from './search/GlobalSearchDialog';
 import { GlobalSearchTrigger } from './search/GlobalSearchTrigger';
 import { UserAgentWidget } from './user-agent/UserAgentWidget';
+import { ThemeAtmosphere } from './theme/ThemeAtmosphere';
 
 type UserShellProps = { children: ReactNode };
 
@@ -19,6 +20,7 @@ export function UserShell({ children }: UserShellProps) {
   return (
     <GlobalSearchProvider>
       <div className={shellClassName}>
+        <ThemeAtmosphere context="shell" />
         <a className="skip-link" href="#main-content">
           跳到主要内容
         </a>

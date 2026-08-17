@@ -1,3 +1,5 @@
+import { PageMotion } from '@/components/motion/PageMotion';
+
 export default function AuthenticatedRouteTemplate({ children }: { children: React.ReactNode }) {
-  return <div className="route-view">{children}</div>;
+  return <PageMotion>{children}</PageMotion>;
 }

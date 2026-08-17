@@ -13,6 +13,7 @@ const auth = vi.hoisted(() => ({
 }));
 
 vi.mock('@interview-agent/auth-client', () => ({ useAuth: () => auth.current }));
+vi.mock('./AccessThemeMenu', () => ({ AccessThemeMenu: () => null }));
 
 const { FederatedAccessScreen } = await import('./FederatedAccessScreen');
 

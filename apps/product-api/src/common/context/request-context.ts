@@ -11,6 +11,8 @@ const roleScopes: Record<Role, Action[]> = {
   user: [
     'profile:read',
     'profile:write',
+    'preferences:read',
+    'preferences:write',
     'job_intent:read',
     'job_intent:write',
     'interview:create',

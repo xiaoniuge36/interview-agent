@@ -219,6 +219,8 @@ test('platform governance roles and scopes are part of the shared contract', () 
   assert.equal(ActionSchema.parse('analytics:read'), 'analytics:read');
   assert.equal(ActionSchema.parse('account:read'), 'account:read');
   assert.equal(ActionSchema.parse('account:write'), 'account:write');
+  assert.equal(ActionSchema.parse('preferences:read'), 'preferences:read');
+  assert.equal(ActionSchema.parse('preferences:write'), 'preferences:write');
 });
 
 test('local administrator creation normalizes email and enforces tenant assignment', () => {

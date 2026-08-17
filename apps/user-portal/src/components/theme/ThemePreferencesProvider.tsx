@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@interview-agent/auth-client';
 import {
   createContext,
   useCallback,
@@ -12,58 +13,131 @@ import {
 } from 'react';
 import {
   DEFAULT_THEME_PREFERENCES,
+  LEGACY_THEME_STORAGE_KEY,
   THEME_STORAGE_KEY,
-  parseThemePreferences,
+  parseStoredThemePreferences,
   serializeThemePreferences,
-  type AccentColor,
   type ThemeMode,
   type ThemePreferences,
 } from './theme-preferences';
+import {
+  createLatestThemePreferenceQueue,
+  synchronizeInitialPreferences,
+} from './theme-preferences-sync';
+import { getUserPreferences, saveUserPreferences } from '@/lib/user-preferences-api';
 
 type ThemePreferencesContextValue = {
   preferences: ThemePreferences;
   setTheme: (theme: ThemeMode) => void;
-  setAccent: (accent: AccentColor) => void;
   setMotion: (motion: boolean) => void;
 };
 
 const ThemePreferencesContext = createContext<ThemePreferencesContextValue | null>(null);
 
 export function ThemePreferencesProvider({ children }: { children: ReactNode }) {
+  const controls = useThemePreferenceControls();
+  return (
+    <ThemePreferencesContext.Provider value={controls}>{children}</ThemePreferencesContext.Provider>
+  );
+}
+
+function useThemePreferenceControls(): ThemePreferencesContextValue {
+  const auth = useAuth();
+  const { preferences, preferencesRef, replacePreferences } = useLocalThemePreferenceState();
+  const identityKey = auth.status === 'authenticated' ? (auth.identity?.subject ?? null) : null;
+  const enqueueRemote = useThemePreferenceCloudSync(
+    identityKey,
+    preferencesRef,
+    replacePreferences,
+  );
+  const updatePreferences = useCallback(
+    (patch: Partial<ThemePreferences>) => {
+      const next = { ...preferencesRef.current, ...patch };
+      replacePreferences(next);
+      enqueueRemote(next);
+    },
+    [enqueueRemote, preferencesRef, replacePreferences],
+  );
+  const setTheme = useCallback(
+    (theme: ThemeMode) => updatePreferences({ theme }),
+    [updatePreferences],
+  );
+  const setMotion = useCallback(
+    (motion: boolean) => updatePreferences({ motion }),
+    [updatePreferences],
+  );
+  return useMemo(() => ({ preferences, setTheme, setMotion }), [preferences, setMotion, setTheme]);
+}
+
+function useLocalThemePreferenceState() {
   const [preferences, setPreferences] = useState(DEFAULT_THEME_PREFERENCES);
   const initialized = useRef(false);
+  const preferencesRef = useRef(DEFAULT_THEME_PREFERENCES);
 
   useEffect(() => {
     if (!initialized.current) {
       initialized.current = true;
       const stored = readStoredPreferences();
+      preferencesRef.current = stored;
       applyPreferences(stored);
       setPreferences(stored);
       return;
     }
+    preferencesRef.current = preferences;
     applyPreferences(preferences);
     persistPreferences(preferences);
   }, [preferences]);
 
-  const setTheme = useCallback((theme: ThemeMode) => {
-    setPreferences((current) => ({ ...current, theme }));
+  const replacePreferences = useCallback((next: ThemePreferences) => {
+    preferencesRef.current = next;
+    setPreferences(next);
   }, []);
-  const setAccent = useCallback((accent: AccentColor) => {
-    setPreferences((current) => ({ ...current, accent }));
-  }, []);
-  const setMotion = useCallback((motion: boolean) => {
-    setPreferences((current) => ({ ...current, motion }));
-  }, []);
-  const value = useMemo(
-    () => ({ preferences, setTheme, setAccent, setMotion }),
-    [preferences, setAccent, setMotion, setTheme],
+  return useMemo(
+    () => ({ preferences, preferencesRef, replacePreferences }),
+    [preferences, replacePreferences],
   );
+}
 
-  return (
-    <ThemePreferencesContext.Provider value={value}>
-      {children}
-    </ThemePreferencesContext.Provider>
-  );
+function useThemePreferenceCloudSync(
+  identityKey: string | null,
+  preferencesRef: { current: ThemePreferences },
+  replacePreferences: (next: ThemePreferences) => void,
+) {
+  const syncGenerationRef = useRef(0);
+  const writeReadyRef = useRef(false);
+  const saveQueueRef = useRef<ReturnType<typeof createLatestThemePreferenceQueue> | null>(null);
+  if (!saveQueueRef.current) {
+    saveQueueRef.current = createLatestThemePreferenceQueue(saveUserPreferences);
+  }
+
+  useEffect(() => {
+    const generation = syncGenerationRef.current + 1;
+    syncGenerationRef.current = generation;
+    writeReadyRef.current = false;
+    saveQueueRef.current?.reset();
+    if (!identityKey) return;
+
+    void synchronizeInitialPreferences(
+      preferencesRef.current,
+      getUserPreferences,
+      saveUserPreferences,
+    ).then((result) => {
+      if (syncGenerationRef.current !== generation) return;
+      replacePreferences(result.preferences);
+      writeReadyRef.current = true;
+    });
+
+    return () => {
+      if (syncGenerationRef.current !== generation) return;
+      syncGenerationRef.current += 1;
+      writeReadyRef.current = false;
+      saveQueueRef.current?.reset();
+    };
+  }, [identityKey, preferencesRef, replacePreferences]);
+
+  return useCallback((preferences: ThemePreferences) => {
+    if (writeReadyRef.current) saveQueueRef.current?.enqueue(preferences);
+  }, []);
 }
 
 export function useThemePreferences() {
@@ -74,11 +148,16 @@ export function useThemePreferences() {
 
 function readStoredPreferences() {
   try {
-    const value = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return value ? parseThemePreferences(JSON.parse(value)) : DEFAULT_THEME_PREFERENCES;
+    const v2 = readJson(window.localStorage.getItem(THEME_STORAGE_KEY));
+    const v1 = readJson(window.localStorage.getItem(LEGACY_THEME_STORAGE_KEY));
+    return parseStoredThemePreferences(v2, v1);
   } catch {
     return DEFAULT_THEME_PREFERENCES;
   }
+}
+
+function readJson(value: string | null): unknown {
+  return value ? JSON.parse(value) : null;
 }
 
 function persistPreferences(preferences: ThemePreferences) {
@@ -92,6 +171,6 @@ function persistPreferences(preferences: ThemePreferences) {
 function applyPreferences(preferences: ThemePreferences) {
   const root = document.documentElement;
   root.dataset.theme = preferences.theme;
-  root.dataset.accent = preferences.accent;
   root.dataset.motion = preferences.motion ? 'on' : 'off';
+  delete root.dataset.accent;
 }

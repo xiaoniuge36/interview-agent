@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@interview-agent/auth-client';
 import { AccessStory } from './AccessStory';
+import { AccessThemeMenu } from './AccessThemeMenu';
 import { createExclusiveAccessActionRunner } from './access-action-single-flight';
 
 export function FederatedAccessScreen() {
@@ -11,6 +12,7 @@ export function FederatedAccessScreen() {
   const signIn = () => void runAccessAction(() => auth.signIn());
   return (
     <main className="access-shell">
+      <AccessThemeMenu />
       <AccessStory />
       <section
         className="access-panel federated-access"

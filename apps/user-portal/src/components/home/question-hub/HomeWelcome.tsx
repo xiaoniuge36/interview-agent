@@ -1,6 +1,6 @@
 import { createHomeWelcome } from './home-welcome-model';
 import type { TrainingContinuation } from './training-continuation';
-import { SplitRevealText } from '@/components/consumer/SplitRevealText';
+import { StaggeredTitle } from '@/components/motion/StaggeredTitle';
 
 type HomeWelcomeProps = {
   displayName?: string | null | undefined;
@@ -18,15 +18,16 @@ export function HomeWelcome({ displayName, continuation }: HomeWelcomeProps) {
           今天的训练计划
         </span>
         <span className="home-welcome-greeting">{welcome.title}</span>
-        <h1 id="home-training-plan-heading">
-          <SplitRevealText
-            text={
-              continuation
-                ? '接着上次的进度，把这一轮练完。'
-                : '今天，练会一个真正会被追问的知识点。'
-            }
-          />
-        </h1>
+        <StaggeredTitle
+          as="h1"
+          id="home-training-plan-heading"
+          className="home-welcome-title"
+          segments={
+            continuation
+              ? ['接着上次的进度，', '把这一轮练完。']
+              : ['今天，', '练会一个', '真正会被追问的知识点。']
+          }
+        />
         <p>{welcome.detail}</p>
       </div>
       <aside className="home-welcome-status" aria-label="陪练状态">

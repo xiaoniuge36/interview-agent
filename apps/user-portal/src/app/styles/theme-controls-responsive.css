@@ -24,7 +24,25 @@
     right: 12px;
     bottom: auto;
     left: auto;
-    width: min(276px, calc(100vw - 24px));
+    width: min(590px, calc(100vw - 24px));
+  }
+}
+
+@media (max-width: 620px) {
+  .theme-menu-popover {
+    padding: 15px;
+  }
+
+  .theme-mode-list {
+    grid-template-columns: 1fr;
+  }
+
+  .theme-mode-list > button {
+    min-height: 76px;
+  }
+
+  .theme-menu-popover header > small {
+    display: none;
   }
 }
 

@@ -1,10 +1,13 @@
 import Link from 'next/link';
+import { StaggeredTitle } from '@/components/motion/StaggeredTitle';
+import { ThemeAtmosphere } from '@/components/theme/ThemeAtmosphere';
 
 const TRAINING_DAYS = ['一', '二', '三', '四', '五', '六', '日'] as const;
 
 export function AccessStory() {
   return (
     <section className="access-story" aria-label="产品介绍">
+      <ThemeAtmosphere context="auth" />
       <AccessBrand />
       <div className="access-story-copy">
         <StoryCopy />
@@ -33,11 +36,7 @@ function StoryCopy() {
   return (
     <>
       <span className="access-kicker">从今天开始准备</span>
-      <h1>
-        下一次面试，
-        <br />
-        别靠临场发挥。
-      </h1>
+      <StaggeredTitle as="h1" segments={['下一次面试，', '别靠临场发挥。']} />
       <p>每天完成一个有依据的小训练，把知识、项目和表达逐步练成面试时拿得出手的证据。</p>
     </>
   );

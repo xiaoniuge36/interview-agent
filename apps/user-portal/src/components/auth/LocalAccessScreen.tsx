@@ -4,6 +4,7 @@ import { useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useAuth } from '@interview-agent/auth-client';
 import { FieldIcon } from '@/components/FieldIcon';
 import { AccessStory } from './AccessStory';
+import { AccessThemeMenu } from './AccessThemeMenu';
 import { createExclusiveAccessActionRunner } from './access-action-single-flight';
 import { resolveAccessError } from './access-error';
 import { INITIAL_ACCESS_FORM, type AccessForm, type AccessMode } from './access-types';
@@ -19,6 +20,7 @@ export function LocalAccessScreen() {
   const access = useLocalAccess();
   return (
     <main className="access-shell">
+      <AccessThemeMenu />
       <AccessStory />
       <section
         className="access-panel"
