@@ -4,12 +4,37 @@
   --training-accent-soft: var(--primary-soft);
   --training-surface: var(--surface);
   --training-outline: var(--outline);
-  background: var(--surface-subtle);
+  min-height: calc(100vh - 72px);
+  padding: clamp(30px, 4vw, 56px) clamp(18px, 3.4vw, 56px) 120px;
+  background:
+    radial-gradient(
+      circle at 78% 0,
+      color-mix(in srgb, var(--primary) 8%, transparent),
+      transparent 30%
+    ),
+    var(--surface-subtle);
 }
 
 .practice-player-header {
-  margin-bottom: 22px;
-  padding: 8px 4px 0;
+  width: min(1460px, 100%);
+  margin: 0 auto 24px;
+  padding: clamp(22px, 2.8vw, 36px) clamp(22px, 3.2vw, 44px);
+  align-items: center;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.practice-player-header::before {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: clamp(22px, 3.2vw, 44px);
+  width: 74px;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(90deg, var(--primary), var(--theme-secondary));
+  content: '';
 }
 
 .practice-player-header h1 {
@@ -31,16 +56,19 @@
 }
 
 .practice-player-progress {
-  min-width: 286px;
-  padding: 11px 13px;
+  width: min(330px, 100%);
+  min-width: min(286px, 100%);
+  padding: 13px 15px 14px;
   border: 1px solid color-mix(in srgb, var(--primary) 17%, var(--outline));
   border-radius: 14px;
   background: color-mix(in srgb, var(--surface) 76%, transparent);
 }
 
 .practice-player-layout {
+  width: min(1460px, 100%);
+  margin: 0 auto;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
-  gap: 20px;
+  gap: clamp(18px, 2vw, 28px);
 }
 
 .practice-question-nav {
@@ -49,10 +77,10 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 20px;
+  gap: clamp(14px, 2vw, 24px);
   border: 0;
   border-radius: 0;
-  padding: 0 3px;
+  padding: 2px 2px 0;
   background: transparent;
   box-shadow: none;
 }
@@ -132,15 +160,15 @@
 .practice-question-stage {
   min-height: 0;
   border-radius: 18px;
-  padding: clamp(28px, 3vw, 42px);
+  padding: clamp(32px, 3.5vw, 50px);
   box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 6%, transparent);
 }
 
 .practice-question-stage h1 {
   max-width: 860px;
-  margin-top: 24px;
+  margin: 28px 0 14px;
   font-size: clamp(26px, 2.6vw, 38px);
-  line-height: 1.24;
+  line-height: 1.2;
 }
 
 .practice-question-stem {
@@ -156,11 +184,11 @@
 }
 
 .practice-answer-editor {
-  margin-top: 30px;
+  margin-top: 34px;
 }
 
 .practice-answer-editor textarea {
-  min-height: clamp(245px, 35vh, 410px);
+  min-height: clamp(260px, 39vh, 460px);
   border-radius: 15px;
   padding: 18px;
   background: color-mix(in srgb, var(--surface-subtle) 74%, var(--surface));
@@ -173,7 +201,7 @@
 
 .practice-answer-actions {
   border-radius: 12px;
-  padding: 10px 0 0;
+  padding: 14px 0 0;
 }
 
 .practice-answer-actions button,
@@ -206,7 +234,7 @@
 }
 
 .practice-question-stage > footer {
-  margin-top: 28px;
+  margin-top: 32px;
   padding-top: 19px;
 }
 
@@ -216,13 +244,13 @@
 }
 
 .practice-coach-panel {
-  top: 22px;
+  top: 94px;
   border-radius: 18px;
   box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 .practice-coach-panel > header {
-  padding: 21px 21px 19px;
+  padding: 24px 24px 22px;
   background: linear-gradient(
     150deg,
     color-mix(in srgb, var(--sidebar-bg) 78%, var(--primary)),
@@ -240,7 +268,7 @@
 }
 
 .practice-coach-section {
-  padding: 19px 21px;
+  padding: 21px 24px;
 }
 
 .practice-coach-locked button,
@@ -342,7 +370,7 @@
 
 .practice-round-actions {
   width: min(1460px, 100%);
-  margin: 20px auto 0;
+  margin: 24px auto 0;
   border-radius: 15px;
 }
 

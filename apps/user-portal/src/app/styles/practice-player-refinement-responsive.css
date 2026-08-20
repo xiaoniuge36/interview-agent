@@ -14,12 +14,33 @@
 }
 
 @media (max-width: 760px) {
+  .practice-player-page {
+    min-height: calc(100vh - 62px);
+    padding: 22px 15px 140px;
+  }
+
   .practice-player-header {
-    padding-inline: 1px;
+    margin-bottom: 18px;
+    padding: 21px 18px 22px;
+    gap: 18px;
+  }
+
+  .practice-player-header::before {
+    left: 18px;
+  }
+
+  .practice-player-header h1 {
+    font-size: clamp(26px, 8vw, 34px);
   }
 
   .practice-player-progress {
     min-width: 0;
+    width: 100%;
+  }
+
+  .practice-evidence-strip {
+    margin-bottom: 18px;
+    padding: 14px;
   }
 
   .practice-question-nav {
@@ -44,6 +65,7 @@
 
   .practice-question-stage {
     border-radius: 17px;
+    padding: 25px 20px 24px;
   }
 
   .practice-question-stage h1 {
