@@ -82,7 +82,7 @@
   margin-bottom: 7px;
   color: var(--primary-strong);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .practice-starter-copy p,
 .practice-session-header p,
@@ -209,7 +209,7 @@
   gap: 4px;
   color: var(--ink);
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 700;
 }
 .practice-answer-label span + span {
   color: var(--text-muted);
@@ -426,7 +426,7 @@
   margin: 0;
   color: var(--primary-strong);
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .practice-role-context {

@@ -16,7 +16,7 @@ export const DEFAULT_THEME_PREFERENCES: ThemePreferences = {
   motion: true,
 };
 
-const LEGACY_THEME_MAP = {
+export const LEGACY_THEME_MAP = {
   dawn: 'daylight',
   ocean: 'glass',
   night: 'aurora',

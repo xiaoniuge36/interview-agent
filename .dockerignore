@@ -1,11 +1,18 @@
+# 版本管理与本地工具目录
 .git
 .github
 .cursor
+.superpowers
+.mcp.json
+
+# 依赖与构建产物
 node_modules
 **/node_modules
 .pnpm-store
 .next
 **/.next
+.next-dev
+**/.next-dev
 dist
 **/dist
 build
@@ -14,10 +21,14 @@ coverage
 **/coverage
 .turbo
 **/.turbo
+*.tsbuildinfo
+
+# Python 虚拟环境与缓存
 .venv
 **/.venv
 .pytest_cache
 **/.pytest_cache
+**/.pytest-*
 .ruff_cache
 **/.ruff_cache
 .mypy_cache
@@ -25,13 +36,22 @@ coverage
 __pycache__
 **/__pycache__
 *.py[cod]
-*.tsbuildinfo
+
+# 本地环境与审计产物
 .env
 .env.*
 .audit-current.json
 .coverage
-????
-????
-??
-???
-/prisma
+.index-tmp
+
+# 非构建输入的文档与测试产物
+需求/
+设计稿/
+技术方案/
+参考资料/
+docs/
+e2e/
+evals/
+scripts/
+test-results/
+playwright-report/

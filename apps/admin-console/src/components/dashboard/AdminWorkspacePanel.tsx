@@ -50,7 +50,7 @@ function WorkspaceGroup({
         <Empty
           description={`暂未${label}，可在页面标题旁点击收藏。`}
           image={<StarOutlined />}
-          imageStyle={{ fontSize: 24, height: 28 }}
+          styles={{ image: { fontSize: 24, height: 28 } }}
         />
       )}
     </div>

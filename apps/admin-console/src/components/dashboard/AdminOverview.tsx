@@ -58,7 +58,7 @@ function AdminOpsBanner(props: { pending: number; onNavigate: (view: AdminView) 
         </Button>
       }
       icon={<CheckCircleOutlined />}
-      message={hasPending ? `有 ${props.pending} 道候选题待审核` : '治理队列健康'}
+      title={hasPending ? `有 ${props.pending} 道候选题待审核` : '治理队列健康'}
       description={
         hasPending ? '建议优先完成内容审核，再检查模型和运行状态。' : '当前没有待审核候选题。'
       }

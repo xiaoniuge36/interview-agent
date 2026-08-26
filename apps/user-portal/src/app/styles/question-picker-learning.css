@@ -23,7 +23,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
 }
 
@@ -60,7 +60,7 @@
   border-radius: 9px;
   color: var(--primary-strong);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .learning-question-context-actions a.primary,

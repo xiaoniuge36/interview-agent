@@ -1,4 +1,4 @@
-import type { InterviewSession, PracticeHistoryItem } from '@interview-agent/contracts';
+import type { InterviewSessionSummary, PracticeHistoryItem } from '@interview-agent/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   buildTrainingRecords,
@@ -30,7 +30,7 @@ const interviews = [
     title: 'Product interview',
     status: 'report_ready',
     updatedAt: '2026-07-21T10:00:00.000Z',
-  } as InterviewSession,
+  } as InterviewSessionSummary,
 ];
 
 describe('training records model', () => {
@@ -89,7 +89,7 @@ it('adds persisted interview scores, weakest stages, and the previous-score tren
       updatedAt: '2026-07-23T10:00:00.000Z',
     },
     interviews[0],
-  ] as InterviewSession[];
+  ] as InterviewSessionSummary[];
   const reports = [
     interviewReport('interview-latest', 54, 42),
     interviewReport('interview-older', 35, 30),
@@ -123,7 +123,7 @@ it('does not invent a previous-round trend across a missing adjacent score', () 
 });
 
 function interviewSession(id: string, updatedAt: string) {
-  return { id, title: id, status: 'report_ready', updatedAt } as InterviewSession;
+  return { id, title: id, status: 'report_ready', updatedAt } as InterviewSessionSummary;
 }
 
 function interviewReport(sessionId: string, overallScore: number, stageScore: number) {

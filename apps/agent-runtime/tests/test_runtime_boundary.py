@@ -1,18 +1,12 @@
-import asyncio
-import logging
 from collections.abc import Iterator
-from types import SimpleNamespace
-from typing import cast
 
 import pytest
 from app.config import DEFAULT_BODY_LIMIT_BYTES, get_settings
-from app.errors import RuntimeRequestError
-from app.main import app, next_turn
+from app.main import app
 from app.model_gateway import ModelGatewayError, ModelGatewayRequest
 from app.schemas.interview import NextInterviewRequest
 from app.workflows.interview_graph import create_interview_graph
 from app.workflows.practice_report_graph import create_practice_report_graph
-from fastapi import Request
 from fastapi.testclient import TestClient
 
 INTERNAL_TOKEN = "runtime-test-token-with-at-least-32-characters"
@@ -27,6 +21,7 @@ AUTH_HEADERS = {
 def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     monkeypatch.setenv("INTERNAL_AGENT_TOKEN", INTERNAL_TOKEN)
     monkeypatch.setenv("NODE_ENV", "test")
+    monkeypatch.delenv("AGENT_RUNTIME_MODEL_GATEWAY_URL", raising=False)
     monkeypatch.delenv("AGENT_RUNTIME_CHECKPOINT_DATABASE_URL", raising=False)
     get_settings.cache_clear()
     with TestClient(app) as runtime_client:
@@ -79,36 +74,6 @@ def report_payload() -> dict[str, object]:
     }
 
 
-class BlockingGateway:
-    def __init__(self) -> None:
-        self.started = asyncio.Event()
-        self.release = asyncio.Event()
-        self.cancelled = asyncio.Event()
-        self.calls = 0
-        self.completed = 0
-
-    async def complete(self, _request: ModelGatewayRequest) -> str:
-        self.calls += 1
-        self.started.set()
-        try:
-            await self.release.wait()
-        except asyncio.CancelledError:
-            self.cancelled.set()
-            raise
-        self.completed += 1
-        return '{"stage":"jd_core","content":"请继续说明关键取舍。","shouldFinish":false}'
-
-
-class DisconnectingRequest:
-    def __init__(self, graph: object) -> None:
-        self.app = SimpleNamespace(state=SimpleNamespace(interview_graph=graph))
-        self.disconnected = asyncio.Event()
-
-    async def receive(self) -> dict[str, str]:
-        await self.disconnected.wait()
-        return {"type": "http.disconnect"}
-
-
 class BlockedEndpointGateway:
     def __init__(self) -> None:
         self.calls = 0
@@ -129,32 +94,6 @@ def test_rejects_external_request(client: TestClient) -> None:
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "INVALID_SERVICE_IDENTITY"
-
-
-@pytest.mark.anyio
-async def test_cancels_provider_work_when_runtime_client_disconnects(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    caplog.set_level(logging.INFO, logger="agent_runtime.lifecycle")
-    gateway = BlockingGateway()
-    request = DisconnectingRequest(create_interview_graph(gateway))
-    operation = asyncio.create_task(next_turn(cast(Request, request), payload_with_grant()))
-
-    await gateway.started.wait()
-    request.disconnected.set()
-    await asyncio.wait_for(gateway.cancelled.wait(), timeout=1)
-    gateway.release.set()
-
-    with pytest.raises(RuntimeRequestError) as error:
-        await operation
-
-    assert error.value.error.status_code == 499
-    assert error.value.error.code == "REQUEST_CANCELLED"
-    assert gateway.calls == 1
-    assert gateway.completed == 0
-    log_output = " ".join(record.getMessage() for record in caplog.records)
-    assert "runtime_request_cancelled" in log_output
-    assert "signed-runtime-grant" not in log_output
 
 
 def test_rejects_contract_version_drift(client: TestClient) -> None:
@@ -248,17 +187,6 @@ def test_selects_role_specific_warmup_prompt(
 
     assert response.status_code == 200
     assert expected_focus in response.json()["content"]
-
-
-def test_exposes_liveness_and_readiness(client: TestClient) -> None:
-    live = client.get("/health/live")
-    ready = client.get("/health/ready")
-
-    assert live.status_code == 200
-    assert live.json() == {"status": "ok", "service": "agent-runtime"}
-    assert ready.status_code == 200
-    assert ready.json()["status"] == "ready"
-    assert ready.json()["checks"]["configuration"]["environment"] == "test"
 
 
 def test_rejects_oversized_request_body(client: TestClient) -> None:

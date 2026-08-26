@@ -13,9 +13,9 @@ import type { ProductRequestContext } from '../../common/context/request-context
 import { PrismaService } from '../../common/database/prisma.service';
 import { ImportInfrastructure } from './import-infrastructure';
 import {
+  addCandidateReviewStatusCount,
   emptyCandidateReviewProgress,
   IMPORT_TASK_ORDER,
-  incrementCandidateReviewProgress,
   initialReviewProgress,
   mapImportTask,
   sourceChunkSequence,
@@ -25,6 +25,7 @@ import { MarkdownImportExtractor } from './markdown-import-extractor';
 const IMPORT_LIST_LIMIT = 100;
 const IMPORT_EXPORT_LIMIT = 10_000;
 const PAGE_INDEX_OFFSET = 1;
+const REVIEW_SOURCE_CHUNK_LIMIT = 200;
 type ImportTaskPage = {
   items: ImportTask[];
   total: number;
@@ -134,6 +135,7 @@ export class ImportService {
         where: { assetId: task.assetId, tenantId: context.tenantId },
         select: { content: true, metadata: true },
         orderBy: { createdAt: 'asc' },
+        take: REVIEW_SOURCE_CHUNK_LIMIT,
       }),
       this.withCandidateReviewProgress(context.tenantId, [task]),
     ]);
@@ -219,22 +221,38 @@ export class ImportService {
   ): Promise<ImportTask[]> {
     if (!tasks.length) return [];
     const taskIds = tasks.map((task) => task.id);
-    const candidates = await this.prisma.candidateQuestion.findMany({
-      where: { tenantId, importTaskId: { in: taskIds } },
-      select: { importTaskId: true, publishedQuestionId: true, status: true },
-    });
-    const progressByTask = new Map(
-      taskIds.map((taskId) => [taskId, emptyCandidateReviewProgress()]),
-    );
-    for (const candidate of candidates) {
-      const progress = candidate.importTaskId
-        ? progressByTask.get(candidate.importTaskId)
-        : undefined;
-      if (progress) incrementCandidateReviewProgress(progress, candidate);
-    }
+    const progressByTask = await this.candidateReviewProgress(tenantId, taskIds);
     return tasks.map((task) =>
       mapImportTask(task, progressByTask.get(task.id) ?? emptyCandidateReviewProgress()),
     );
+  }
+
+  private async candidateReviewProgress(tenantId: string, taskIds: string[]) {
+    const scope = { tenantId, importTaskId: { in: taskIds } };
+    const [statusGroups, publishedGroups] = await Promise.all([
+      this.prisma.candidateQuestion.groupBy({
+        by: ['importTaskId', 'status'],
+        where: { ...scope, publishedQuestionId: null },
+        _count: { _all: true },
+      }),
+      this.prisma.candidateQuestion.groupBy({
+        by: ['importTaskId'],
+        where: { ...scope, publishedQuestionId: { not: null } },
+        _count: { _all: true },
+      }),
+    ]);
+    const progressByTask = new Map(
+      taskIds.map((taskId) => [taskId, emptyCandidateReviewProgress()]),
+    );
+    for (const group of statusGroups) {
+      const progress = group.importTaskId ? progressByTask.get(group.importTaskId) : undefined;
+      if (progress) addCandidateReviewStatusCount(progress, group.status, group._count._all);
+    }
+    for (const group of publishedGroups) {
+      const progress = group.importTaskId ? progressByTask.get(group.importTaskId) : undefined;
+      if (progress) progress.published += group._count._all;
+    }
+    return progressByTask;
   }
 
   private queryScope(

@@ -2,13 +2,13 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Req } from '@nestjs/
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
 import {
-  UserAgentAppendMessagesSchema,
-  UserPageAgentCompleteRunSchema,
-  UserPageAgentCreateRunSchema,
-  UserAgentCreateConversationSchema,
-  UserPageAgentHeartbeatRunSchema,
-  UserAgentRenameConversationSchema,
-} from './user-page-agent.schemas';
+  PageAgentAppendMessagesSchema,
+  PageAgentCompleteRunSchema,
+  PageAgentCreateConversationSchema,
+  PageAgentCreateRunSchema,
+  PageAgentHeartbeatRunSchema,
+  PageAgentRenameConversationSchema,
+} from '../page-agent-core/page-agent.schemas';
 import { UserPageAgentConversationService } from './user-page-agent-conversation.service';
 import { UserPageAgentRunService } from './user-page-agent-run.service';
 import { UserPageAgentService } from './user-page-agent.service';
@@ -39,7 +39,7 @@ export class UserPageAgentController {
 
   @Post('conversations')
   createConversation(@Req() request: ProductRequest, @Body() body: unknown) {
-    const input = UserAgentCreateConversationSchema.parse(body ?? {});
+    const input = PageAgentCreateConversationSchema.parse(body ?? {});
     return this.conversations.create(request.context, input.title);
   }
 
@@ -54,7 +54,7 @@ export class UserPageAgentController {
     @Param('conversationId') conversationId: string,
     @Body() body: unknown,
   ) {
-    const input = UserAgentRenameConversationSchema.parse(body);
+    const input = PageAgentRenameConversationSchema.parse(body);
     return this.conversations.rename(request.context, conversationId, input.title);
   }
 
@@ -72,7 +72,7 @@ export class UserPageAgentController {
     @Param('conversationId') conversationId: string,
     @Body() body: unknown,
   ) {
-    const input = UserAgentAppendMessagesSchema.parse(body);
+    const input = PageAgentAppendMessagesSchema.parse(body);
     return this.conversations.appendMessages(request.context, conversationId, input.messages);
   }
 
@@ -92,11 +92,7 @@ export class UserPageAgentController {
     @Param('conversationId') conversationId: string,
     @Body() body: unknown,
   ) {
-    return this.runs.create(
-      request.context,
-      conversationId,
-      UserPageAgentCreateRunSchema.parse(body),
-    );
+    return this.runs.create(request.context, conversationId, PageAgentCreateRunSchema.parse(body));
   }
 
   @Patch('runs/:runId/heartbeat')
@@ -105,7 +101,7 @@ export class UserPageAgentController {
     @Param('runId') runId: string,
     @Body() body: unknown,
   ) {
-    return this.runs.heartbeat(request.context, runId, UserPageAgentHeartbeatRunSchema.parse(body));
+    return this.runs.heartbeat(request.context, runId, PageAgentHeartbeatRunSchema.parse(body));
   }
 
   @Post('runs/:runId/complete')
@@ -114,6 +110,6 @@ export class UserPageAgentController {
     @Param('runId') runId: string,
     @Body() body: unknown,
   ) {
-    return this.runs.complete(request.context, runId, UserPageAgentCompleteRunSchema.parse(body));
+    return this.runs.complete(request.context, runId, PageAgentCompleteRunSchema.parse(body));
   }
 }

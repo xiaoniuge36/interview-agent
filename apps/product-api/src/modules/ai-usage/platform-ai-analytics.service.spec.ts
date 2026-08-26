@@ -47,6 +47,11 @@ describe('PlatformAiAnalyticsService', () => {
     expect(store.groupBy.mock.calls[0][0].where).toEqual(
       expect.objectContaining({ provider: 'deepseek', operation: 'practice_evaluation' }),
     );
+    expect(result.trend).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ date: utcToday(), invocations: 1, succeeded: 1 }),
+      ]),
+    );
   });
 
   it('does not query global usage when the platform check fails', async () => {
@@ -114,9 +119,27 @@ function createAiInvocationStore() {
   };
 }
 
+const ISO_DATE_LENGTH = 10;
+
+function utcToday(): string {
+  return new Date().toISOString().slice(0, ISO_DATE_LENGTH);
+}
+
+function trendRow() {
+  return {
+    day: new Date(`${utcToday()}T00:00:00.000Z`),
+    invocations: 1,
+    succeeded: 1,
+    failed: 0,
+    cancelled: 0,
+    totalTokens: null,
+  };
+}
+
 function createAnalyticsPrisma(store: ReturnType<typeof createAiInvocationStore>) {
   return {
     aiInvocation: store,
+    $queryRaw: jest.fn().mockResolvedValue([trendRow()]),
     backgroundJob: { count: jest.fn().mockResolvedValue(1) },
     retrievalChunk: {
       count: jest.fn().mockResolvedValueOnce(10).mockResolvedValueOnce(8),

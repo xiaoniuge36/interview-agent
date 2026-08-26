@@ -1,9 +1,9 @@
-import type { InterviewSession } from '@interview-agent/contracts';
+import type { InterviewSessionSummary } from '@interview-agent/contracts';
 import { describe, expect, it } from 'vitest';
 import { latestReportReadyInterview } from './reports-model';
 
-function session(id: string, status: InterviewSession['status'], updatedAt: string) {
-  return { id, status, updatedAt } as InterviewSession;
+function session(id: string, status: InterviewSessionSummary['status'], updatedAt: string) {
+  return { id, status, updatedAt } as InterviewSessionSummary;
 }
 
 describe('latestReportReadyInterview', () => {

@@ -1,5 +1,9 @@
 'use client';
 
+import './styles/auth.css';
+import './styles/auth-refinement.css';
+import './styles/consumer-auth.css';
+import './styles/consumer-theme-surfaces.css';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@interview-agent/auth-client';

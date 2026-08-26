@@ -48,7 +48,8 @@ export function roleInputFor(title: string): CreateJobIntentInput {
 
 export function interviewPlanForJob(job: JobIntentPayload | undefined) {
   const roleTitle = job?.intent.targetRole.trim() || GENERIC_ROLE;
-  const analyzedTags = job?.profile?.interviewFocus.filter(Boolean).slice(0, MAX_INTERVIEW_FOCUS_TAGS) ?? [];
+  const analyzedTags =
+    job?.profile?.interviewFocus.filter(Boolean).slice(0, MAX_INTERVIEW_FOCUS_TAGS) ?? [];
   const template = findRoleTemplate(roleTitle);
   return {
     roleTitle,

@@ -5,7 +5,7 @@ import {
   ProfilePayloadSchema,
   UpsertProfileInputSchema,
   type CreateJobIntentInput,
-  type InterviewSession,
+  type InterviewSessionSummary,
   type JobIntentPayload,
   type ProfilePayload,
   type UpsertProfileInput,
@@ -16,14 +16,14 @@ import { listInterviews } from './interview-api';
 export type WorkspaceData = {
   profile: ProfilePayload;
   jobs: JobIntentPayload[];
-  interviews: InterviewSession[];
+  interviews: InterviewSessionSummary[];
 };
 
 export async function loadWorkspaceData(): Promise<WorkspaceData> {
   const [profile, jobs, interviews] = await Promise.all([
     apiRequest({ path: '/profile', schema: ProfilePayloadSchema }),
     apiRequest({ path: '/job-intents', schema: JobIntentListSchema }),
-    listInterviews().catch(() => [] as InterviewSession[]),
+    listInterviews().catch(() => [] as InterviewSessionSummary[]),
   ]);
   return { profile, jobs, interviews };
 }

@@ -56,7 +56,7 @@ function HealthyQueue() {
     <Empty
       description="当前没有需要升级处理的治理事项。"
       image={<CheckCircleOutlined className="admin-attention-icon healthy" />}
-      imageStyle={{ fontSize: 28, height: 32 }}
+      styles={{ image: { fontSize: 28, height: 32 } }}
     />
   );
 }

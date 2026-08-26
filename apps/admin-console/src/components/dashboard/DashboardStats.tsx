@@ -22,14 +22,19 @@ const STAT_DEFINITIONS: readonly StatDefinition[] = [
 ];
 
 export function DashboardStats({ state }: { state: SectionState<Dashboard> }) {
-  if (state.status !== 'ready') return <SectionFeedback state={state} loadingMessage="正在汇总治理指标" />;
+  if (state.status !== 'ready')
+    return <SectionFeedback state={state} loadingMessage="正在汇总治理指标" />;
   return (
     <section aria-label="治理指标">
       <Row gutter={[COMPACT_GUTTER, COMPACT_GUTTER]}>
         {STAT_DEFINITIONS.map((item) => (
           <Col key={item.key} lg={4} sm={8} xs={12}>
             <Card className="admin-dense-card" size="small">
-              <Statistic suffix={item.suffix} title={item.label} value={statValue(state.data.stats[item.key], item.suffix)} />
+              <Statistic
+                suffix={item.suffix}
+                title={item.label}
+                value={statValue(state.data.stats[item.key], item.suffix)}
+              />
             </Card>
           </Col>
         ))}

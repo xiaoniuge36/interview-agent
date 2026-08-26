@@ -1,3 +1,8 @@
+import '../../styles/practice.css';
+import '../../styles/practice-player.css';
+import '../../styles/practice-item-review.css';
+import '../../styles/consumer-practice.css';
+import '../../styles/consumer-theme-surfaces.css';
 import { Suspense } from 'react';
 import { PracticePageContent } from '@/components/practice/PracticePageContent';
 import { RouteLoadingState } from '@/components/shell/RouteLoadingState';

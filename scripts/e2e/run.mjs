@@ -25,7 +25,10 @@ const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const E2E_POSTGRES_CONTAINER = 'interview-agent-e2e-postgres';
 const E2E_POSTGRES_IMAGE = 'pgvector/pgvector:0.8.1-pg16';
 export function serviceCommands(environment) {
-  const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const pnpm = pnpmCommand();
+  // 默认以生产构建运行前端（next build + next start，不启用 standalone 输出）；
+  // 设置 E2E_DEV_SERVER=1 可回退到 next dev，便于本地调试。
+  const nextCommand = useDevServer() ? 'dev' : 'start';
   return [
     {
       label: 'MODEL',
@@ -71,10 +74,11 @@ export function serviceCommands(environment) {
         '@interview-agent/user-portal',
         'exec',
         'next',
-        'dev',
+        nextCommand,
         '-p',
         E2E_USER_PORT,
       ],
+      environment: frontendEnvironment(environment),
     },
     {
       label: 'ADMIN',
@@ -84,16 +88,37 @@ export function serviceCommands(environment) {
         '@interview-agent/admin-console',
         'exec',
         'next',
-        'dev',
+        nextCommand,
         '-p',
         E2E_ADMIN_PORT,
       ],
+      environment: frontendEnvironment(environment),
     },
   ].map((service) => ({
     ...service,
     environment: service.environment ?? environment,
     cwd: service.cwd ?? rootDir,
   }));
+}
+
+function useDevServer() {
+  return process.env.E2E_DEV_SERVER === '1';
+}
+
+function frontendEnvironment(environment) {
+  if (useDevServer()) return environment;
+  return { ...environment, NODE_ENV: 'production' };
+}
+
+async function buildFrontends(environment) {
+  const pnpm = pnpmCommand();
+  for (const filter of ['@interview-agent/user-portal', '@interview-agent/admin-console']) {
+    await runCommand(pnpm, ['--filter', filter, 'exec', 'next', 'build'], {
+      cwd: rootDir,
+      env: frontendEnvironment(environment),
+      label: `E2E build ${filter}`,
+    });
+  }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -114,6 +139,7 @@ async function runE2e() {
     databaseName: 'interview_agent',
     databasePort: E2E_DATABASE_PORT,
   });
+  if (!useDevServer()) await buildFrontends(environment);
   const services = [];
   let postgres = null;
   let redis = null;

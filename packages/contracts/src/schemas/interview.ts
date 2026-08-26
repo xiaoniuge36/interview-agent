@@ -60,7 +60,14 @@ export const InterviewSessionSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export const InterviewListSchema = z.array(InterviewSessionSchema).max(CONTRACT_LIMITS.mediumList);
+export const InterviewSessionSummarySchema = InterviewSessionSchema.omit({ turns: true }).extend({
+  turnCount: z.number().int().nonnegative(),
+  candidateTurnCount: z.number().int().nonnegative(),
+});
+
+export const InterviewListSchema = z
+  .array(InterviewSessionSummarySchema)
+  .max(CONTRACT_LIMITS.mediumList);
 export const AgentRuntimeContractVersionSchema = z.literal('interview-runtime.v1');
 
 export const AgentRuntimeTurnContextSchema = z.object({
@@ -186,6 +193,7 @@ export type InterviewSessionStatus = z.infer<typeof InterviewSessionStatusSchema
 export type InterviewTurnRole = z.infer<typeof InterviewTurnRoleSchema>;
 export type InterviewTurn = z.infer<typeof InterviewTurnSchema>;
 export type InterviewSession = z.infer<typeof InterviewSessionSchema>;
+export type InterviewSessionSummary = z.infer<typeof InterviewSessionSummarySchema>;
 export type AgentRuntimeSessionContext = z.infer<typeof AgentRuntimeSessionContextSchema>;
 export type AgentRuntimeRetrievalContext = z.infer<typeof AgentRuntimeRetrievalContextSchema>;
 export type AgentRuntimeNextRequest = z.infer<typeof AgentRuntimeNextRequestSchema>;

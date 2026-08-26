@@ -124,7 +124,7 @@ Expected: 重复命令仅产生一组事件，平行会话不丢 evidence。
 
 - [ ] Step 3: 在 Banner 中展示 evidence，保留自主选题入口。
 
-  <ul aria-label="推荐依据">{recommendation.evidence.map((item) => <li key={item.type + item.sourceId}>{item.label}：{item.detail}</li>)}</ul>
+<ul aria-label="推荐依据">{recommendation.evidence.map((item) => <li key={item.type + item.sourceId}>{item.label}：{item.detail}</li>)}</ul>
 
 - [ ] Step 4: 运行 API、UI 和 E2E。
 

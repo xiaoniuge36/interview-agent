@@ -21,12 +21,14 @@
 ### Task 1: 扩展模型连接更新契约与后端状态转换
 
 **Files:**
+
 - Modify: `packages/contracts/src/schemas/model-credential.ts`
 - Modify: `packages/contracts/src/model-credential.test.ts`
 - Modify: `apps/product-api/src/modules/model-credential/model-credential.service.ts`
 - Modify: `apps/product-api/src/modules/model-credential/model-credential.service.spec.ts`
 
 **Interfaces:**
+
 - Consumes: `PATCH /model-credentials/:credentialId` 的 `UpdateModelCredentialInputSchema`。
 - Produces: `provider?: ModelProvider` 可安全更新；非兼容端点服务商清除 `baseUrl`，任一连接参数变化均重置验证状态。
 
@@ -83,10 +85,12 @@ Expected: 契约和服务层测试通过，密钥明文断言仍只出现在测�
 ### Task 2: 补齐管理端模型连接 API 适配层
 
 **Files:**
+
 - Modify: `apps/admin-console/src/lib/admin-page-agent-api.ts`
 - Create: `apps/admin-console/src/lib/admin-page-agent-api.test.ts`
 
 **Interfaces:**
+
 - Consumes: `UpdateModelCredentialInputSchema`、`ModelCredentialViewSchema`、`DELETE /model-credentials/:id`。
 - Produces: `updateAdminModelCredential()` 和 `deleteAdminModelCredential()`，供模型连接管理组件调用。
 
@@ -110,7 +114,11 @@ export function updateAdminModelCredential(id: string, input: UpdateModelCredent
 }
 
 export function deleteAdminModelCredential(id: string): Promise<null> {
-  return adminRequest({ path: `/model-credentials/${encodeURIComponent(id)}`, schema: z.null(), init: { method: 'DELETE' } });
+  return adminRequest({
+    path: `/model-credentials/${encodeURIComponent(id)}`,
+    schema: z.null(),
+    init: { method: 'DELETE' },
+  });
 }
 ```
 
@@ -123,6 +131,7 @@ Expected: PATCH 与 DELETE 只使用站内 API 路径，编辑请求不包含任
 ### Task 3: 实现模型连接管理与安全编辑表单
 
 **Files:**
+
 - Create: `apps/admin-console/src/components/admin-agent/ModelCredentialForm.tsx`
 - Create: `apps/admin-console/src/components/admin-agent/model-credential-form-model.ts`
 - Create: `apps/admin-console/src/components/admin-agent/model-credential-form-model.test.ts`
@@ -132,19 +141,34 @@ Expected: PATCH 与 DELETE 只使用站内 API 路径，编辑请求不包含任
 - Modify: `apps/admin-console/src/app/styles/admin-agent.css`
 
 **Interfaces:**
+
 - Consumes: `listAdminModelCredentials`、`createAdminModelCredential`、`updateAdminModelCredential`、`testAdminModelCredential`、`deleteAdminModelCredential`。
 - Produces: `toCredentialUpdateInput(values)` 省略空 API Key，和由现有设置按钮打开的 `AdminAgentCredentialManager`；变更后调用 `reloadConfig()` 让 Agent 使用最新默认连接。
 
 - [ ] **Step 1: 写安全表单模型测试**
 
 ```ts
-expect(toCredentialUpdateInput({ apiKey: '', provider: 'openai', model: 'gpt-4.1-mini', isDefault: false })).toEqual({
+expect(
+  toCredentialUpdateInput({
+    apiKey: '',
+    provider: 'openai',
+    model: 'gpt-4.1-mini',
+    isDefault: false,
+  }),
+).toEqual({
   provider: 'openai',
   model: 'gpt-4.1-mini',
   baseUrl: null,
   isDefault: false,
 });
-expect(toCredentialUpdateInput({ apiKey: 'sk-rotated-secret', provider: 'openai', model: 'gpt-4.1-mini', isDefault: false })).toEqual({
+expect(
+  toCredentialUpdateInput({
+    apiKey: 'sk-rotated-secret',
+    provider: 'openai',
+    model: 'gpt-4.1-mini',
+    isDefault: false,
+  }),
+).toEqual({
   provider: 'openai',
   apiKey: 'sk-rotated-secret',
   model: 'gpt-4.1-mini',
@@ -167,12 +191,18 @@ expect(toCredentialUpdateInput({ apiKey: 'sk-rotated-secret', provider: 'openai'
 
 ```tsx
 <Popconfirm
-  description={credential.isDefault ? '删除后系统会自动选择另一条已验证连接作为默认模型。' : '删除后无法恢复该模型连接。'}
+  description={
+    credential.isDefault
+      ? '删除后系统会自动选择另一条已验证连接作为默认模型。'
+      : '删除后无法恢复该模型连接。'
+  }
   okText="删除连接"
   onConfirm={() => void removeCredential(credential)}
   title={`确认删除 ${credential.model}？`}
 >
-  <Button danger type="link">删除</Button>
+  <Button danger type="link">
+    删除
+  </Button>
 </Popconfirm>
 ```
 
@@ -199,10 +229,12 @@ Expected: 编辑留空 API Key 不会提交密钥字段；删除默认连接出�
 ### Task 4: 集成验证与安全回归
 
 **Files:**
+
 - Modify: `apps/product-api/src/modules/model-credential/model-credential.service.spec.ts`
 - Modify: `apps/admin-console/src/components/admin-agent/model-credential-form-model.test.ts`
 
 **Interfaces:**
+
 - Consumes: Task 1 的更新契约和 Task 3 的管理组件。
 - Produces: 覆盖编辑、删除、密钥掩码和状态重测的回归门禁。
 

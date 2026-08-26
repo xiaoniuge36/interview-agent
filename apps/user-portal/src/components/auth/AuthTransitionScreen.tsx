@@ -6,12 +6,14 @@ const TRANSITION_COPY = {
     title: '正在确认登录状态',
     detail: '正在验证当前账号会话，请稍候。',
     status: '正在恢复安全会话',
+    signal: 'SECURE LINK · OIDC',
   },
   entering: {
     eyebrow: '已确认身份',
     title: '正在进入训练空间',
     detail: '登录状态已准备就绪，即将带你返回刚才的位置。',
     status: '正在完成页面跳转',
+    signal: 'SESSION READY',
   },
 } as const;
 
@@ -21,20 +23,30 @@ export function AuthTransitionScreen({ stage }: { stage: AuthTransitionStage }) 
   return (
     <main className={`auth-bootstrap ${stage}`} role="status" aria-live="polite" aria-busy="true">
       <section className="auth-transition-card" aria-labelledby="auth-transition-title">
-        <div className="auth-transition-brand" aria-label="Interview Agent">
-          <span className="brand-mark" aria-hidden="true">
-            <span className="brand-mark-core" />
+        <header className="auth-transition-brand" aria-label="Interview Agent">
+          <span className="auth-transition-mark" aria-hidden="true">
+            <span className="brand-mark">
+              <span className="brand-mark-core" />
+            </span>
+            <span className="auth-transition-orbit" />
           </span>
           <span>
             <strong>Interview Agent</strong>
             <small>你的面试 Agent</small>
           </span>
-        </div>
+          <em className="auth-transition-signal" aria-hidden="true">
+            {copy.signal}
+          </em>
+        </header>
 
         <div className="auth-transition-copy">
           <span>{copy.eyebrow}</span>
           <h1 id="auth-transition-title">{copy.title}</h1>
           <p>{copy.detail}</p>
+        </div>
+
+        <div className="auth-transition-track" aria-hidden="true">
+          <i />
         </div>
 
         <div className="auth-transition-status">

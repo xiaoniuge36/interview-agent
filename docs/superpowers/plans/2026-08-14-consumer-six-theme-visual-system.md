@@ -42,12 +42,14 @@
 ### Task 1: 六主题偏好与旧数据迁移
 
 **Files:**
+
 - Modify: `apps/user-portal/src/components/theme/theme-preferences.ts`
 - Modify: `apps/user-portal/src/components/theme/theme-preferences.test.ts`
 - Modify: `apps/user-portal/src/components/theme/ThemePreferencesProvider.tsx`
 - Modify: `apps/user-portal/src/app/layout.tsx`
 
 **Interfaces:**
+
 - Produces: `ThemeMode`, `ThemePreferences`, `parseThemePreferences(value)`, `parseStoredThemePreferences(v2, v1)`, `serializeThemePreferences(value)`。
 - Consumes: 浏览器 `localStorage` 与 `<html data-theme data-motion>`。
 
@@ -217,6 +219,7 @@ Expected: 无空白错误；不出现用户原有文件内容被覆盖。
 ### Task 2: 中文字体与 Motion 基础设施
 
 **Files:**
+
 - Modify: `apps/user-portal/package.json`
 - Modify: `pnpm-lock.yaml`
 - Modify: `apps/user-portal/src/app/layout.tsx`
@@ -227,6 +230,7 @@ Expected: 无空白错误；不出现用户原有文件内容被覆盖。
 - Modify: `apps/user-portal/src/app/(app)/template.tsx`
 
 **Interfaces:**
+
 - Produces: `MotionSystemProvider`, `PageMotion`。
 - Consumes: `ThemePreferences.motion`。
 
@@ -245,7 +249,11 @@ import { PageMotion } from './PageMotion';
 
 describe('页面动效基础设施', () => {
   it('保留页面内容和可定位的动效容器', () => {
-    const markup = renderToStaticMarkup(<PageMotion><h1>练习首页</h1></PageMotion>);
+    const markup = renderToStaticMarkup(
+      <PageMotion>
+        <h1>练习首页</h1>
+      </PageMotion>,
+    );
     expect(markup).toContain('route-motion-view');
     expect(markup).toContain('练习首页');
   });
@@ -331,6 +339,7 @@ Expected: 除 Task 4 尚未处理的 ThemeMenu accent 类型外无新增错误�
 ### Task 3: 六主题语义 token 与环境动画
 
 **Files:**
+
 - Create: `apps/user-portal/src/app/styles/theme-system.css`
 - Create: `apps/user-portal/src/app/styles/theme-atmospheres.css`
 - Create: `apps/user-portal/src/components/theme/theme-system.test.ts`
@@ -338,6 +347,7 @@ Expected: 除 Task 4 尚未处理的 ThemeMenu accent 类型外无新增错误�
 - Modify: `apps/user-portal/src/app/globals.css`
 
 **Interfaces:**
+
 - Produces: 语义 token、`theme-atmosphere-*` class、六主题材质变量。
 - Consumes: `<html data-theme>` 与 `<html data-motion>`。
 
@@ -352,14 +362,17 @@ const css = readFileSync(resolve('src/app/styles/theme-system.css'), 'utf8');
 const atmosphereCss = readFileSync(resolve('src/app/styles/theme-atmospheres.css'), 'utf8');
 
 describe('六主题样式契约', () => {
-  it.each(['aurora','terminal','constructivist','daylight','glass','playground']) (
+  it.each(['aurora', 'terminal', 'constructivist', 'daylight', 'glass', 'playground'])(
     '包含 %s 主题',
     (theme) => expect(css).toContain(`html[data-theme='${theme}']`),
   );
-  it.each(['--theme-canvas','--theme-surface','--theme-ink','--theme-primary','--theme-radius-panel']) (
-    '定义语义变量 %s',
-    (token) => expect(css).toContain(token),
-  );
+  it.each([
+    '--theme-canvas',
+    '--theme-surface',
+    '--theme-ink',
+    '--theme-primary',
+    '--theme-radius-panel',
+  ])('定义语义变量 %s', (token) => expect(css).toContain(token));
   it('为关闭动态效果提供环境层降级', () => {
     expect(atmosphereCss).toContain("html[data-motion='off'] .theme-atmosphere");
     expect(atmosphereCss).toContain('@media (prefers-reduced-motion: reduce)');
@@ -440,6 +453,7 @@ Expected: 无空白错误。
 ### Task 4: 六主题菜单与全局外壳
 
 **Files:**
+
 - Modify: `apps/user-portal/src/components/theme/ThemeMenu.tsx`
 - Modify: `apps/user-portal/src/components/theme/theme-preferences.test.ts`
 - Create: `apps/user-portal/src/components/theme/ThemeMenu.test.tsx`
@@ -449,6 +463,7 @@ Expected: 无空白错误。
 - Modify: `apps/user-portal/src/components/UserShell.tsx`
 
 **Interfaces:**
+
 - Consumes: `ThemeMode`、`useThemePreferences().setTheme/setMotion`。
 - Produces: 六主题预览、中文说明、动态效果开关。
 
@@ -457,7 +472,14 @@ Expected: 无空白错误。
 ```tsx
 it('渲染六套中文主题并移除独立强调色', () => {
   const markup = renderToStaticMarkup(<ThemeMenu variant="topbar" />);
-  for (const label of ['极光叙事','终端工业','结构主义印刷','白昼编辑部','雾光玻璃','彩色训练场']) {
+  for (const label of [
+    '极光叙事',
+    '终端工业',
+    '结构主义印刷',
+    '白昼编辑部',
+    '雾光玻璃',
+    '彩色训练场',
+  ]) {
     expect(markup).toContain(label);
   }
   expect(markup).not.toContain('主题色');
@@ -511,6 +533,7 @@ Expected: PASS。
 ### Task 5: 中文标题、滚动字幕与登录/首页品牌层
 
 **Files:**
+
 - Create: `apps/user-portal/src/components/motion/StaggeredTitle.tsx`
 - Create: `apps/user-portal/src/components/motion/StaggeredTitle.test.tsx`
 - Create: `apps/user-portal/src/components/consumer/ChineseTicker.tsx`
@@ -524,6 +547,7 @@ Expected: PASS。
 - Modify: `apps/user-portal/src/app/styles/consumer-motion.css`
 
 **Interfaces:**
+
 - Produces: `StaggeredTitle({ segments, as? })`、`ChineseTicker({ items })`、`ThemeAtmosphere({ context })`。
 - Consumes: 现有首页推荐、继续训练与认证结构。
 
@@ -532,7 +556,7 @@ Expected: PASS。
 ```tsx
 it('标题保留完整可访问名称并按短语分段', () => {
   const markup = renderToStaticMarkup(
-    <StaggeredTitle segments={['今天，','只练','最有价值的','一题。']} />,
+    <StaggeredTitle segments={['今天，', '只练', '最有价值的', '一题。']} />,
   );
   expect(markup).toContain('aria-label="今天，只练最有价值的一题。"');
   expect(markup.match(/staggered-title-segment/g)).toHaveLength(4);
@@ -540,7 +564,14 @@ it('标题保留完整可访问名称并按短语分段', () => {
 
 it('滚动字幕全部使用中文训练概念并复制队列', () => {
   const markup = renderToStaticMarkup(<ChineseTicker />);
-  for (const text of ['上下文工程','检索增强生成','工具调用','智能体记忆','面试证据','训练复盘']) {
+  for (const text of [
+    '上下文工程',
+    '检索增强生成',
+    '工具调用',
+    '智能体记忆',
+    '面试证据',
+    '训练复盘',
+  ]) {
     expect(markup).toContain(text);
   }
   expect(markup).not.toContain('CONTEXT ENGINEERING');
@@ -599,6 +630,7 @@ Expected: PASS。
 ### Task 6: 全部业务页面主题表面与短促反馈
 
 **Files:**
+
 - Create: `apps/user-portal/src/app/styles/consumer-theme-surfaces.css`
 - Create: `apps/user-portal/src/components/theme/consumer-theme-surfaces.test.ts`
 - Modify: `apps/user-portal/src/app/globals.css`
@@ -613,6 +645,7 @@ Expected: PASS。
 - Modify: `apps/user-portal/src/app/styles/user-agent.css`
 
 **Interfaces:**
+
 - Consumes: 既有页面 class 与 Task 3 语义 token。
 - Produces: 统一 `.card/.panel/.button/.input` 表面、主题特有材质与 `data-motion` 反馈。
 
@@ -679,11 +712,13 @@ Expected: PASS。
 ### Task 7: 全量验证与浏览器视觉检查
 
 **Files:**
+
 - Verify: `apps/user-portal/src/**/*`
 - Verify: `apps/user-portal/package.json`
 - Verify: `pnpm-lock.yaml`
 
 **Interfaces:**
+
 - Consumes: Tasks 1–6 的完整实现。
 - Produces: 自动化门禁结果、桌面/移动浏览器验证记录和明确未验证边界。
 

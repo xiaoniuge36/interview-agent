@@ -1,6 +1,6 @@
 import type {
   InterviewReport,
-  InterviewSession,
+  InterviewSessionSummary,
   PracticeHistoryItem,
 } from '@interview-agent/contracts';
 import { interviewStageLabel } from '@/components/interview/interview-labels';
@@ -24,7 +24,7 @@ export type TrainingRecord = {
 
 export function buildTrainingRecords(
   practices: PracticeHistoryItem[],
-  interviews: InterviewSession[],
+  interviews: InterviewSessionSummary[],
   interviewReports: InterviewReport[] = [],
 ): TrainingRecord[] {
   const reports = new Map(interviewReports.map((report) => [report.sessionId, report]));
@@ -105,7 +105,7 @@ function practiceRecord(item: PracticeHistoryItem): TrainingRecord {
   };
 }
 
-function interviewRecord(item: InterviewSession, report?: InterviewReport): TrainingRecord {
+function interviewRecord(item: InterviewSessionSummary, report?: InterviewReport): TrainingRecord {
   return {
     id: item.id,
     kind: 'interview',
@@ -114,7 +114,7 @@ function interviewRecord(item: InterviewSession, report?: InterviewReport): Trai
     status: item.status,
     href: `/interview?session=${item.id}`,
     score: report?.overall.score ?? null,
-    facts: [`${item.turns?.length ?? 0} 轮交流`],
+    facts: [`${item.turnCount ?? 0} 轮交流`],
     signals: report ? interviewSignals(report) : [],
     trend: null,
   };

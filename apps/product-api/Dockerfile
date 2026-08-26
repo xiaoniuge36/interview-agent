@@ -16,7 +16,7 @@ COPY packages/contracts/package.json packages/contracts/package.json
 FROM manifests AS build
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter @interview-agent/product-api...
-COPY tsconfig.base.json turbo.json .eslintrc.cjs eslint.config.mjs eslint.next.config.mjs ./
+COPY tsconfig.base.json turbo.json ./
 COPY packages/contracts packages/contracts
 COPY apps/product-api apps/product-api
 RUN pnpm --filter @interview-agent/product-api build
@@ -52,7 +52,16 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:3001/api/health/live').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
 CMD ["node", "apps/product-api/dist/main.js"]
 
-FROM build AS migration
+# migration 阶段同时服务于 Compose 的 migration 与 bootstrap-admin：
+# 只需要 prisma CLI、schema 与迁移文件、生成的 Prisma Client，以及
+# bootstrap-admin.ts 依赖的 src/common/authn 模块（仅依赖 zod 与 node 内置模块），
+# 不携带 NestJS 构建产物与 contracts 源码。
+FROM manifests AS migration
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile --filter @interview-agent/product-api...
+COPY apps/product-api/prisma apps/product-api/prisma
+COPY apps/product-api/src/common/authn apps/product-api/src/common/authn
+RUN pnpm --filter @interview-agent/product-api exec prisma generate --schema prisma/schema
 ENV NODE_ENV=production
 USER node
 CMD ["pnpm", "db:migrate:deploy"]

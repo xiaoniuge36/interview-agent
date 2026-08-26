@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getUserPageAgentConfig, type UserPageAgentConfig } from '@/lib/user-page-agent-api';
-import { createLatestUserAgentConfigRequest } from './user-agent-config-request';
+import { createLatestRequestRunner } from '@interview-agent/api-client';
 
 export function useUserAgentConfig() {
   const [config, setConfig] = useState<UserPageAgentConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [request] = useState(createLatestUserAgentConfigRequest);
+  const [request] = useState(createLatestRequestRunner);
   const reload = useCallback(async () => {
     setLoading(true);
     await request.run({

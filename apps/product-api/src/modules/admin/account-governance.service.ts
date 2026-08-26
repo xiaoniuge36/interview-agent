@@ -35,6 +35,7 @@ import { loadAccountPage } from './account-governance-query';
 
 const EXPORT_LIMIT = 10_000;
 const DETAIL_AUDIT_LIMIT = 20;
+const TENANT_OPTION_LIMIT = 500;
 const SYSTEM_TENANT_SLUG = 'system';
 
 @Injectable()
@@ -102,6 +103,7 @@ export class AccountGovernanceService {
     const tenants = await this.prisma.tenant.findMany({
       select: { id: true, name: true, slug: true },
       orderBy: { name: 'asc' },
+      take: TENANT_OPTION_LIMIT,
     });
     return TenantOptionSchema.array().parse(tenants);
   }

@@ -6,7 +6,8 @@ type SourceQuestion = { question: string; answer: string; thinking?: string };
 type SourceGroup = { company: string; questions: SourceQuestion[] };
 
 const SOURCE_URL = 'https://github.com/Zchary1106/agent-interview-hub';
-const DEFAULT_DATA_PATH = 'C:/Users/69483/AppData/Local/Temp/agent-interview-hub-a7335231-e701-4826-be74-fd18ea76c216/data.json';
+const DEFAULT_DATA_PATH =
+  'C:/Users/69483/AppData/Local/Temp/agent-interview-hub-a7335231-e701-4826-be74-fd18ea76c216/data.json';
 const TENANT_ID = 'public';
 const prisma = new PrismaClient();
 
@@ -46,7 +47,13 @@ function toQuestion(company: string, source: SourceQuestion, index: number) {
     difficulty: 'medium' as const,
     tags: ['agent-interview-hub', company],
     answer: source.answer,
-    rubric: [{ point: '覆盖问题核心知识点并给出可落地的工程方案', score: 1, description: '答案应体现原题库提供的关键技术要点。' }] as Prisma.InputJsonValue,
+    rubric: [
+      {
+        point: '覆盖问题核心知识点并给出可落地的工程方案',
+        score: 1,
+        description: '答案应体现原题库提供的关键技术要点。',
+      },
+    ] as Prisma.InputJsonValue,
     sourceRefs: [`${SOURCE_URL}#${company}`],
     status: 'published' as const,
   };
@@ -58,7 +65,9 @@ function inferType(question: string) {
   return 'short_answer' as const;
 }
 
-main().catch((error: unknown) => {
-  console.error('Question import failed.', error);
-  process.exitCode = 1;
-}).finally(() => prisma.$disconnect());
+main()
+  .catch((error: unknown) => {
+    console.error('Question import failed.', error);
+    process.exitCode = 1;
+  })
+  .finally(() => prisma.$disconnect());

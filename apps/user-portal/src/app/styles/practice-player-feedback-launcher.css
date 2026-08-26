@@ -30,7 +30,7 @@
   color: color-mix(in srgb, var(--success) 68%, white);
   font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 850;
+  font-weight: 700;
   letter-spacing: 0.1em;
 }
 
@@ -73,7 +73,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 850;
+  font-weight: 700;
 }
 
 .practice-feedback-launcher li div {
@@ -119,7 +119,7 @@
   box-shadow: 0 10px 22px color-mix(in srgb, var(--primary) 24%, transparent);
   color: white;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .practice-feedback-launcher-action button:hover:not(:disabled) {

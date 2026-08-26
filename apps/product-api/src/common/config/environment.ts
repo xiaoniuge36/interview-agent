@@ -168,6 +168,7 @@ function validateProduction(environment: Environment, context: z.RefinementCtx) 
   if (environment.AUTH_MODE === 'development') {
     addIssue(context, 'AUTH_MODE', '生产环境禁止使用 development 认证模式。');
   }
+  validateProductionRedis(environment, context);
   if (environment.AGENT_RUNTIME_FALLBACK_ENABLED) {
     addIssue(context, 'AGENT_RUNTIME_FALLBACK_ENABLED', '生产环境禁止启用本地 Runtime 降级。');
   }
@@ -184,6 +185,12 @@ function validateProduction(environment: Environment, context: z.RefinementCtx) 
     addIssue(context, 'OTEL_EXPORTER_OTLP_HEADERS', '生产环境 OTLP 导出必须配置认证头。');
   }
   validateProductionOidcClients(environment, context);
+}
+
+function validateProductionRedis(environment: Environment, context: z.RefinementCtx) {
+  if (!environment.REDIS_REQUIRED) {
+    addIssue(context, 'REDIS_REQUIRED', '生产环境必须启用 Redis（REDIS_REQUIRED 不得为 false）。');
+  }
 }
 
 function validateProductionOidcClients(environment: Environment, context: z.RefinementCtx) {
@@ -247,10 +254,15 @@ function isCredentialKey(value: string | undefined) {
 }
 
 export function validateEnvironment(configuration: Record<string, unknown>): Environment {
-  const parsed = EnvironmentSchema.safeParse(configuration);
+  const parsed = EnvironmentSchema.safeParse(withProductionRedisDefault(configuration));
   if (parsed.success) return parsed.data;
   const details = parsed.error.issues
     .map((issue) => `${issue.path.join('.') || 'environment'}: ${issue.message}`)
     .join('; ');
   throw new Error(`环境变量校验失败：${details}`);
+}
+
+function withProductionRedisDefault(configuration: Record<string, unknown>) {
+  if (configuration.NODE_ENV !== 'production') return configuration;
+  return { REDIS_REQUIRED: 'true', ...configuration };
 }

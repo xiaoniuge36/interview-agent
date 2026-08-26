@@ -8,7 +8,7 @@ import { ModelCredentialCard } from './ModelCredentialCard';
 import { ModelReadinessBanner } from './ModelReadinessBanner';
 import { emptyModelConnection, type ModelConnectionDraft } from './model-connection-form';
 import { modelConnectionReadiness } from './model-connection-readiness';
-import { createLatestCredentialListRequest } from './model-credential-list-request';
+import { createLatestRequestRunner } from '@interview-agent/api-client';
 import {
   settingsReturnTargetFromSearch,
   type SettingsReturnTarget,
@@ -157,7 +157,7 @@ function useConnections() {
   const [credentials, setCredentials] = useState<ModelCredentialView[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [request] = useState(createLatestCredentialListRequest);
+  const [request] = useState(createLatestRequestRunner);
   const refresh = useCallback(() => {
     setLoading(true);
     return request.run({

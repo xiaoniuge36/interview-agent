@@ -24,9 +24,7 @@ describe('route chunk recovery', () => {
         pathname: '/questions',
         search: '?difficulty=intro',
       }),
-    ).toBe(
-      '/questions?difficulty=intro|/_next/static/chunks/app/(app)/practice/page.js',
-    );
+    ).toBe('/questions?difficulty=intro|/_next/static/chunks/app/(app)/practice/page.js');
   });
 
   it('reloads at most once for the same route and resource', () => {

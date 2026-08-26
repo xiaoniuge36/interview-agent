@@ -25,6 +25,7 @@ function setup() {
       findMany: jest.fn(async () => []),
       findFirst: jest.fn(),
     },
+    interviewTurn: { groupBy: jest.fn(async () => []) },
     interviewReport: { findUnique: jest.fn() },
   };
   const events = { stream: jest.fn() };
@@ -36,7 +37,25 @@ function setup() {
   return { service, prisma, events };
 }
 
-describe('InterviewQueryService authorization', () => {
+function sessionRecord() {
+  return {
+    id: 'session-a',
+    tenantId: 'tenant-a',
+    userId: 'user-a',
+    jobIntentId: null,
+    status: 'waiting_user',
+    stage: 'tech_basics',
+    version: 3,
+    eventSequence: 6,
+    workflowRunId: 'workflow-1',
+    title: 'Agent 模拟面试',
+    createdAt: new Date('2026-07-01T08:00:00.000Z'),
+    updatedAt: new Date('2026-07-01T09:00:00.000Z'),
+    _count: { turns: 6 },
+  };
+}
+
+describe('InterviewQueryService list summaries', () => {
   it('always scopes list queries by tenant and owner', async () => {
     const { service, prisma } = setup();
 
@@ -44,8 +63,34 @@ describe('InterviewQueryService authorization', () => {
     expect(prisma.interviewSession.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { tenantId: 'tenant-a', userId: 'user-a' } }),
     );
+    expect(prisma.interviewTurn.groupBy).not.toHaveBeenCalled();
   });
 
+  it('returns turn-count summaries instead of full transcripts', async () => {
+    const { service, prisma } = setup();
+    prisma.interviewSession.findMany.mockResolvedValue([sessionRecord()] as never);
+    prisma.interviewTurn.groupBy.mockResolvedValue([
+      { sessionId: 'session-a', _count: { _all: 2 } },
+    ] as never);
+
+    const result = await service.list(context());
+
+    expect(result).toEqual([
+      expect.objectContaining({ id: 'session-a', turnCount: 6, candidateTurnCount: 2 }),
+    ]);
+    expect(result[0]).not.toHaveProperty('turns');
+    expect(prisma.interviewSession.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ include: { _count: { select: { turns: true } } } }),
+    );
+    expect(prisma.interviewTurn.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { tenantId: 'tenant-a', sessionId: { in: ['session-a'] }, role: 'candidate' },
+      }),
+    );
+  });
+});
+
+describe('InterviewQueryService authorization', () => {
   it('does not expose a session from another tenant or owner', async () => {
     const { service, prisma } = setup();
     prisma.interviewSession.findFirst.mockResolvedValue(null);

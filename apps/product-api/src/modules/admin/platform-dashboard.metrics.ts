@@ -4,6 +4,7 @@ import {
   type PlatformDashboard,
   type PlatformTrendPoint,
 } from '@interview-agent/contracts';
+import { Prisma } from '@prisma/client';
 import type { PrismaService } from '../../common/database/prisma.service';
 
 const RECENT_FAILURE_LIMIT = 4;
@@ -156,25 +157,39 @@ async function loadRuntimeMetrics(prisma: PrismaService, range: TimeRange) {
   };
 }
 
+type DailyCountRow = { day: Date; count: number };
+
+const PUBLISHED_QUESTION_FILTER = Prisma.sql`AND "status" = ${'published'}::"QuestionStatus"`;
+
 async function loadTrendMetrics(prisma: PrismaService, range: TimeRange) {
-  const createdAt = rangeFilter(range);
   const [accounts, questions, interviewReports, practiceReports, runs] = await Promise.all([
-    prisma.user.findMany({ where: { createdAt }, select: { createdAt: true } }),
-    prisma.question.findMany({
-      where: { createdAt, status: 'published' },
-      select: { createdAt: true },
-    }),
-    prisma.interviewReport.findMany({ where: { createdAt }, select: { createdAt: true } }),
-    prisma.practiceReport.findMany({ where: { createdAt }, select: { createdAt: true } }),
-    prisma.agentRun.findMany({ where: { createdAt }, select: { createdAt: true } }),
+    dailyCreationCounts(prisma, range, { table: 'User' }),
+    dailyCreationCounts(prisma, range, { table: 'Question', filter: PUBLISHED_QUESTION_FILTER }),
+    dailyCreationCounts(prisma, range, { table: 'InterviewReport' }),
+    dailyCreationCounts(prisma, range, { table: 'PracticeReport' }),
+    dailyCreationCounts(prisma, range, { table: 'AgentRun' }),
   ]);
   const trend = createTrendBuckets(range);
-  addTrendMetric(trend, accounts, 'accountsCreated');
-  addTrendMetric(trend, questions, 'questionsPublished');
-  addTrendMetric(trend, interviewReports, 'trainingCompleted');
-  addTrendMetric(trend, practiceReports, 'trainingCompleted');
-  addTrendMetric(trend, runs, 'agentRuns');
+  addTrendCounts(trend, accounts, 'accountsCreated');
+  addTrendCounts(trend, questions, 'questionsPublished');
+  addTrendCounts(trend, interviewReports, 'trainingCompleted');
+  addTrendCounts(trend, practiceReports, 'trainingCompleted');
+  addTrendCounts(trend, runs, 'agentRuns');
   return Object.values(trend);
+}
+
+function dailyCreationCounts(
+  prisma: PrismaService,
+  range: TimeRange,
+  source: { table: string; filter?: Prisma.Sql },
+): Promise<DailyCountRow[]> {
+  return prisma.$queryRaw<DailyCountRow[]>(Prisma.sql`
+    SELECT date_trunc('day', "createdAt") AS day, COUNT(*)::int AS count
+    FROM ${Prisma.raw(`"${source.table}"`)}
+    WHERE "createdAt" >= ${range.startAt} AND "createdAt" < ${range.endAt}
+    ${source.filter ?? Prisma.empty}
+    GROUP BY 1
+  `);
 }
 
 function createTrendBuckets(range: TimeRange): Record<string, PlatformTrendPoint> {
@@ -195,14 +210,14 @@ function createTrendBuckets(range: TimeRange): Record<string, PlatformTrendPoint
   return buckets;
 }
 
-function addTrendMetric(
+function addTrendCounts(
   trend: Record<string, PlatformTrendPoint>,
-  records: Array<{ createdAt: Date }>,
+  rows: DailyCountRow[],
   metric: keyof Omit<PlatformTrendPoint, 'date'>,
 ) {
-  for (const record of records) {
-    const bucket = trend[utcDate(record.createdAt)];
-    if (bucket) bucket[metric] += 1;
+  for (const row of rows) {
+    const bucket = trend[utcDate(row.day)];
+    if (bucket) bucket[metric] += Number(row.count);
   }
 }
 

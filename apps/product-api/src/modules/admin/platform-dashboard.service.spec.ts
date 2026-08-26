@@ -108,6 +108,7 @@ async function expectPlatformDashboardAggregation() {
         expect.objectContaining({ date: '2026-07-13', trainingCompleted: 2 }),
       ]),
     );
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(5);
   } finally {
     jest.useRealTimers();
   }
@@ -120,15 +121,25 @@ function dashboardDependencies() {
 
 function dashboardPrismaDependencies() {
   return {
-    user: dashboardUserDependencies(),
+    user: {
+      count: jest
+        .fn()
+        .mockResolvedValueOnce(8)
+        .mockResolvedValueOnce(3)
+        .mockResolvedValueOnce(2)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(2)
+        .mockResolvedValueOnce(6)
+        .mockResolvedValueOnce(2),
+    },
     tenant: { count: jest.fn().mockResolvedValue(5) },
     importTask: { count: jest.fn().mockResolvedValueOnce(4).mockResolvedValueOnce(1) },
     candidateQuestion: { count: jest.fn().mockResolvedValue(3) },
-    question: questionDependencies(),
+    question: { count: jest.fn().mockResolvedValue(7) },
     interviewSession: { count: jest.fn().mockResolvedValue(6) },
-    interviewReport: reportDependencies('2026-07-13T08:00:00.000Z'),
+    interviewReport: { count: jest.fn().mockResolvedValue(4) },
     practiceSession: { count: jest.fn().mockResolvedValue(5) },
-    practiceReport: practiceReportDependencies(),
+    practiceReport: { count: jest.fn().mockResolvedValue(3) },
     agentRun: agentRunDependencies(),
     aiInvocation: {
       groupBy: jest.fn().mockResolvedValue([
@@ -140,55 +151,27 @@ function dashboardPrismaDependencies() {
         { operation: 'admin_page_agent', status: 'succeeded', _count: { _all: 2 } },
       ]),
     },
+    $queryRaw: trendQueryDependencies(),
   };
 }
 
-function dashboardUserDependencies() {
-  const user = {
-    count: jest
-      .fn()
-      .mockResolvedValueOnce(8)
-      .mockResolvedValueOnce(3)
-      .mockResolvedValueOnce(2)
-      .mockResolvedValueOnce(1)
-      .mockResolvedValueOnce(2)
-      .mockResolvedValueOnce(6)
-      .mockResolvedValueOnce(2),
-    findMany: jest
-      .fn()
-      .mockResolvedValue([
-        { createdAt: new Date('2026-07-10T08:00:00.000Z') },
-        { createdAt: new Date('2026-07-11T08:00:00.000Z') },
-        { createdAt: new Date('2026-07-11T12:00:00.000Z') },
-      ]),
-  };
-  return user;
-}
-
-function questionDependencies() {
-  return {
-    count: jest.fn().mockResolvedValue(7),
-    findMany: jest.fn().mockResolvedValue([{ createdAt: new Date('2026-07-12T08:00:00.000Z') }]),
-  };
-}
-
-function reportDependencies(createdAt: string) {
-  return {
-    count: jest.fn().mockResolvedValue(4),
-    findMany: jest.fn().mockResolvedValue([{ createdAt: new Date(createdAt) }]),
-  };
-}
-
-function practiceReportDependencies() {
-  return {
-    count: jest.fn().mockResolvedValue(3),
-    findMany: jest
-      .fn()
-      .mockResolvedValue([
-        { createdAt: new Date('2026-07-13T10:00:00.000Z') },
-        { createdAt: new Date('2026-07-14T08:00:00.000Z') },
-      ]),
-  };
+function trendQueryDependencies() {
+  return jest
+    .fn()
+    .mockResolvedValueOnce([
+      { day: new Date('2026-07-10T00:00:00.000Z'), count: 1 },
+      { day: new Date('2026-07-11T00:00:00.000Z'), count: 2 },
+    ])
+    .mockResolvedValueOnce([{ day: new Date('2026-07-12T00:00:00.000Z'), count: 1 }])
+    .mockResolvedValueOnce([{ day: new Date('2026-07-13T00:00:00.000Z'), count: 1 }])
+    .mockResolvedValueOnce([
+      { day: new Date('2026-07-13T00:00:00.000Z'), count: 1 },
+      { day: new Date('2026-07-14T00:00:00.000Z'), count: 1 },
+    ])
+    .mockResolvedValueOnce([
+      { day: new Date('2026-07-10T00:00:00.000Z'), count: 1 },
+      { day: new Date('2026-07-12T00:00:00.000Z'), count: 1 },
+    ]);
 }
 
 function agentRunDependencies() {
@@ -202,28 +185,20 @@ function agentRunDependencies() {
       .mockResolvedValueOnce(1)
       .mockResolvedValueOnce(1),
     aggregate: jest.fn().mockResolvedValue({ _avg: { latencyMs: 342 } }),
-    findMany: jest.fn((args: { where: { status?: unknown } }) => {
-      if (!args.where.status) {
-        return Promise.resolve([
-          { createdAt: new Date('2026-07-10T08:00:00.000Z') },
-          { createdAt: new Date('2026-07-12T08:00:00.000Z') },
-        ]);
-      }
-      return Promise.resolve([
-        {
-          id: 'run-1',
-          sessionId: 'session-1',
-          type: 'mock_interview',
-          status: 'failed',
-          stage: 'warmup',
-          traceId: 'trace-000001',
-          latencyMs: 500,
-          schemaValid: false,
-          fallbackUsed: false,
-          attemptCount: 1,
-          updatedAt: new Date('2026-07-15T00:00:00.000Z'),
-        },
-      ]);
-    }),
+    findMany: jest.fn().mockResolvedValue([
+      {
+        id: 'run-1',
+        sessionId: 'session-1',
+        type: 'mock_interview',
+        status: 'failed',
+        stage: 'warmup',
+        traceId: 'trace-000001',
+        latencyMs: 500,
+        schemaValid: false,
+        fallbackUsed: false,
+        attemptCount: 1,
+        updatedAt: new Date('2026-07-15T00:00:00.000Z'),
+      },
+    ]),
   };
 }

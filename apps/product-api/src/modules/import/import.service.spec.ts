@@ -132,20 +132,20 @@ async function expectCandidateReviewProgress() {
     importTaskRecord({ candidateCount: 4 }),
     importTaskRecord({ id: 'import-2', candidateCount: 2 }),
   ]);
-  prisma.candidateQuestion.findMany.mockResolvedValue([
-    { importTaskId: 'import-1', status: 'pending', publishedQuestionId: null },
-    { importTaskId: 'import-1', status: 'approved', publishedQuestionId: null },
-    { importTaskId: 'import-1', status: 'needs_edit', publishedQuestionId: null },
-    { importTaskId: 'import-1', status: 'approved', publishedQuestionId: 'question-1' },
-    { importTaskId: 'import-2', status: 'rejected', publishedQuestionId: null },
-    { importTaskId: 'import-2', status: 'pending', publishedQuestionId: null },
-  ]);
+  seedCandidateProgressGroups(prisma.candidateQuestion.groupBy);
 
   const result = await queryService(service).query(context, parseQuery());
 
-  expect(prisma.candidateQuestion.findMany).toHaveBeenCalledWith({
-    where: { tenantId: context.tenantId, importTaskId: { in: ['import-1', 'import-2'] } },
-    select: { importTaskId: true, publishedQuestionId: true, status: true },
+  const scope = { tenantId: context.tenantId, importTaskId: { in: ['import-1', 'import-2'] } };
+  expect(prisma.candidateQuestion.groupBy).toHaveBeenNthCalledWith(1, {
+    by: ['importTaskId', 'status'],
+    where: { ...scope, publishedQuestionId: null },
+    _count: { _all: true },
+  });
+  expect(prisma.candidateQuestion.groupBy).toHaveBeenNthCalledWith(2, {
+    by: ['importTaskId'],
+    where: { ...scope, publishedQuestionId: { not: null } },
+    _count: { _all: true },
   });
   expect(result.items).toEqual([
     expect.objectContaining({
@@ -171,6 +171,18 @@ async function expectCandidateReviewProgress() {
   ]);
 }
 
+function seedCandidateProgressGroups(groupBy: jest.Mock) {
+  groupBy
+    .mockResolvedValueOnce([
+      { importTaskId: 'import-1', status: 'pending', _count: { _all: 1 } },
+      { importTaskId: 'import-1', status: 'approved', _count: { _all: 1 } },
+      { importTaskId: 'import-1', status: 'needs_edit', _count: { _all: 1 } },
+      { importTaskId: 'import-2', status: 'rejected', _count: { _all: 1 } },
+      { importTaskId: 'import-2', status: 'pending', _count: { _all: 1 } },
+    ])
+    .mockResolvedValueOnce([{ importTaskId: 'import-1', _count: { _all: 1 } }]);
+}
+
 async function expectReviewContext() {
   const { service, prisma, policy } = createService();
   prisma.importTask.findFirst.mockResolvedValue(importTaskRecord());
@@ -190,6 +202,7 @@ async function expectReviewContext() {
     where: { assetId: 'asset-1', tenantId: context.tenantId },
     select: { content: true, metadata: true },
     orderBy: { createdAt: 'asc' },
+    take: 200,
   });
   expect(result).toEqual({
     task: expect.objectContaining({ id: 'import-1', title: 'Retrieval import' }),
@@ -208,7 +221,7 @@ function createService() {
       findMany: jest.fn(),
     },
     candidateQuestion: {
-      findMany: jest.fn().mockResolvedValue([]),
+      groupBy: jest.fn().mockResolvedValue([]),
     },
   };
   const policy = { assert: jest.fn() };

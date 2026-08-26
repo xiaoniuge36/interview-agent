@@ -57,11 +57,12 @@ interview-agent/
 
 ## 技术栈
 
-- Node.js 22（CI 基准；仓库允许 20–24）
+- Node.js：支持范围 20–24，CI 基准 22
+- Python：支持范围 3.11–3.12，CI 基准 3.12
 - pnpm 10.33.0、Turborepo
 - Next.js 15、React 18、TypeScript 5、Zod
 - NestJS 11、Prisma 6、PostgreSQL 16 + pgvector、Redis 7
-- Python 3.11/3.12、uv、FastAPI、Pydantic
+- uv、FastAPI、Pydantic
 - Jest、Vitest、Node Test Runner、Pytest、Ruff、mypy
 
 ## 环境准备
@@ -160,6 +161,18 @@ pnpm db:seed              # 幂等写入默认租户与公共题目
 
 `db:seed` 需要可用的 `DATABASE_URL`，可以重复执行，不应创建重复数据。
 
+### 导入外部题库（agent-interview-hub）
+
+`scripts/import-agent-interview-hub.ts` 用于把 [agent-interview-hub](https://github.com/Zchary1106/agent-interview-hub) 整理的公司面试题 JSON 导入 `public` 租户题库：脚本按「公司 + 题干 + 序号」哈希生成稳定 ID 做幂等 upsert，可重复执行；根据题干自动推断题型（system_design / project_deep_dive / short_answer），并写入统一评分标准与来源引用。
+
+使用前需要可用的 `DATABASE_URL` 且已执行 `pnpm db:generate` 与迁移；数据文件为 `[{ company, questions: [{ question, answer, thinking? }] }]` 结构的 JSON：
+
+```powershell
+pnpm exec tsx scripts/import-agent-interview-hub.ts <data.json 路径>
+```
+
+不传路径时使用脚本内置的本机默认路径（仅适用于原始导入环境），因此团队使用时应显式传入数据文件路径。
+
 ## 认证模式
 
 ### Product API
@@ -216,11 +229,22 @@ pnpm test:e2e
 pnpm verify
 ```
 
+`pnpm verify` 覆盖上面列出的静态检查、单元测试、构建与审计门禁，但**不包含 E2E**；端到端验收需要单独执行 `pnpm test:e2e`。
+
+确定性评测门禁可独立运行：
+
+```powershell
+pnpm test:evals            # practice-evaluation 与 report 的 Schema/Golden 校验
+pnpm test:retrieval-eval   # 12 例检索 Golden 的 Recall@5 / MRR / nDCG 指标
+```
+
+两者均为纯确定性检查，不需要数据库或真实模型凭证，已接入 CI。`evals/run-agent-evals.ts` 的可选 LLM Judge（`LLM_JUDGE_ENABLED=true` 且配置 `LLM_JUDGE_URL`）需要真实 Judge 服务，不在 CI 中执行。
+
 Agent Runtime 的 lint 同时执行 Ruff、格式检查和结构门禁；测试启用分支覆盖率且最低覆盖率为 85%。TypeScript ESLint 规则对源文件执行以下硬限制：文件不超过 300 行、函数不超过 50 行、嵌套不超过 3 层、位置参数不超过 3 个、圈复杂度不超过 10，并禁止未命名魔法数字。
 
-`pnpm test:e2e` 需要 Docker 和 Playwright Chromium。它会启动独立的 PostgreSQL、Redis、模型替身、Product API、Agent Runtime、用户端和后台端，并在独立端口完成登录、模型调用、审核发布、看板与密钥脱敏验收，不会复用本地开发服务。
+`pnpm test:e2e` 需要 Docker 和 Playwright Chromium。它会启动独立的 PostgreSQL、Redis、模型替身、Product API、Agent Runtime、用户端和后台端，并在独立端口完成登录、模型调用、审核发布、看板与密钥脱敏验收，不会复用本地开发服务。前端默认先 `next build` 再以 `next start` 运行生产构建（不启用 standalone 输出）；本地调试可设置 `E2E_DEV_SERVER=1` 回退到 `next dev`。容器镜像构建通过 `NEXT_OUTPUT_STANDALONE=true` 显式开启 standalone 输出。
 
-CI 还执行数据库迁移与集成测试、隔离 E2E 验收、生产依赖审计、Compose 校验、Docker 镜像构建、Gitleaks、Dependency Review、SPDX SBOM 和 CodeQL。E2E 失败或取消时会保留 Playwright 报告与测试产物。
+CI 将质量门禁拆分为并行任务（静态检查、Lint、类型检查、单元测试与评测、数据库迁移与集成测试、构建、依赖审计），并通过聚合的 `quality` 任务作为分支保护入口；此外还执行隔离 E2E 验收、Compose 校验、Docker 镜像构建、Gitleaks、Dependency Review、SPDX SBOM 和 CodeQL。E2E 失败或取消时会保留 Playwright 报告与测试产物。
 
 ## 发布前检查
 

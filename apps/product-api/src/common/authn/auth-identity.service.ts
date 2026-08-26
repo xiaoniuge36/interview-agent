@@ -50,7 +50,10 @@ export class AuthIdentityService {
       request.headers['x-development-actor'] ?? 'user',
     );
     if (!result.success) {
-      throw unauthorized('INVALID_DEVELOPMENT_IDENTITY', '开发身份仅允许 user 或 admin。');
+      throw unauthorized(
+        'INVALID_DEVELOPMENT_IDENTITY',
+        '开发身份仅允许 user、admin 或 platform_admin。',
+      );
     }
     return developmentIdentity(result.data);
   }

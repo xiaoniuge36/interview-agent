@@ -1,14 +1,27 @@
+"""Practice report generation graph.
+
+检索上下文由 Product API 注入，Runtime 不做检索：retrieval context arrives
+pre-fetched on the request, so the graph goes straight from context
+preparation to synthesis. The graph asks the model gateway for a report,
+repairs one invalid response, falls back to a deterministic report when the
+provider cannot deliver a usable result, and fails fast (without a wasted
+fallback) when the provider endpoint is blocked.
+"""
+
+import asyncio
 import json
+import logging
+from collections.abc import Hashable
 from dataclasses import dataclass
 from typing import Protocol, cast
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 from pydantic import ValidationError
 from typing_extensions import TypedDict
 
+from app.config import DEFAULT_GRAPH_TIMEOUT_SECONDS
 from app.model_gateway import (
     MODEL_PROVIDER_ENDPOINT_BLOCKED,
     ModelGatewayError,
@@ -20,12 +33,10 @@ from app.schemas.practice_report import (
     PracticeReportResponse,
 )
 from app.workflows.practice_report_content import deterministic_report, response_from
+from app.workflows.shared import ModelGateway, log_graph_event, strip_code_fence
 
 REPORT_SCHEMA_VERSION = "practice-report-runtime.v1"
-
-
-class ModelGateway(Protocol):
-    async def complete(self, request: ModelGatewayRequest) -> str: ...
+LOGGER = logging.getLogger("agent_runtime.practice_report_graph")
 
 
 class PracticeReportGraphState(TypedDict, total=False):
@@ -77,59 +88,60 @@ def create_practice_report_graph(
         PracticeReportGraphState,
     ] = StateGraph(PracticeReportGraphState, context_schema=PracticeReportGraphContext)
     graph.add_node("prepare_context", prepare_context)
-    graph.add_node(
-        "retrieve_evidence",
-        retrieve_evidence,  # type: ignore[arg-type]
-    )
     graph.add_node("synthesize_report", report_node(gateway, repair=False))
-    graph.add_node("validate_schema", validate_schema)
     graph.add_node("repair_once", report_node(gateway, repair=True))
     graph.add_node("deterministic_fallback", deterministic_fallback)
-    graph.add_node("emit_memory_events", emit_memory_events)
     graph.add_edge(START, "prepare_context")
     graph.add_conditional_edges(
         "prepare_context",
         route_after_prepare,
-        {"complete": END, "retrieve": "retrieve_evidence"},
+        {"complete": END, "synthesize": "synthesize_report"},
     )
-    graph.add_edge("retrieve_evidence", "synthesize_report")
-    graph.add_edge("synthesize_report", "validate_schema")
-    graph.add_conditional_edges(
-        "validate_schema",
-        route_validation,
-        {
-            "valid": "emit_memory_events",
-            "repair": "repair_once",
-            "fallback": "deterministic_fallback",
-        },
-    )
-    graph.add_edge("repair_once", "validate_schema")
+    validation_routes: dict[Hashable, str] = {
+        "valid": END,
+        "repair": "repair_once",
+        "fallback": "deterministic_fallback",
+        "failure": END,
+    }
+    graph.add_conditional_edges("synthesize_report", route_validation, validation_routes)
+    graph.add_conditional_edges("repair_once", route_validation, validation_routes)
     graph.add_edge("deterministic_fallback", END)
-    graph.add_edge("emit_memory_events", END)
-    return cast(
-        PracticeReportGraphRunner, graph.compile(checkpointer=checkpointer or InMemorySaver())
-    )
+    return cast(PracticeReportGraphRunner, graph.compile(checkpointer=checkpointer))
 
 
 async def run_practice_report_graph(
     graph: PracticeReportGraphRunner,
     request: PracticeReportRequest,
+    timeout_seconds: float = DEFAULT_GRAPH_TIMEOUT_SECONDS,
 ) -> PracticeReportResponse:
     grant = request.model_invocation_grant
     if grant is None:
         raise PracticeReportGraphError("MODEL_INVOCATION_GRANT_REQUIRED")
     sanitized = request.model_copy(update={"model_invocation_grant": None})
-    state = await graph.ainvoke(
+    invocation = graph.ainvoke(
         {"request": sanitized},
         {"configurable": {"thread_id": practice_report_thread_id(request)}},
         context=PracticeReportGraphContext(grant=grant),
     )
+    try:
+        state = await asyncio.wait_for(invocation, timeout=timeout_seconds)
+    except TimeoutError as error:
+        log_graph_event(
+            LOGGER,
+            "practice_report_timed_out",
+            {
+                "code": "MODEL_PROVIDER_TIMEOUT",
+                "trace_id": request.trace_id,
+                "session_id": request.session.id,
+            },
+        )
+        raise PracticeReportGraphError("MODEL_PROVIDER_TIMEOUT") from error
     if state.get("failure_code") == MODEL_PROVIDER_ENDPOINT_BLOCKED:
         raise PracticeReportGraphError(MODEL_PROVIDER_ENDPOINT_BLOCKED)
     decision = state.get("decision")
     if decision is None:
-        raise PracticeReportGraphError(state.get("failure_code", "PRACTICE_REPORT_FAILED"))
-    return PracticeReportResponse.model_validate(decision)
+        raise PracticeReportGraphError(state.get("failure_code") or "PRACTICE_REPORT_FAILED")
+    return decision
 
 
 def practice_report_thread_id(request: PracticeReportRequest) -> str:
@@ -149,11 +161,7 @@ def prepare_context(state: PracticeReportGraphState) -> PracticeReportGraphState
 
 
 def route_after_prepare(state: PracticeReportGraphState) -> str:
-    return "complete" if state.get("completed") else "retrieve"
-
-
-def retrieve_evidence(_state: PracticeReportGraphState) -> PracticeReportGraphState:
-    return {"failure_code": ""}
+    return "complete" if state.get("completed") else "synthesize"
 
 
 def report_node(gateway: ModelGateway, *, repair: bool) -> ReportNode:
@@ -163,22 +171,38 @@ def report_node(gateway: ModelGateway, *, repair: bool) -> ReportNode:
         runtime: Runtime[PracticeReportGraphContext],
     ) -> PracticeReportGraphState:
         request = state["request"]
+        attempt = 2 if repair else 1
         try:
             raw = await gateway.complete(gateway_request(request, runtime.context.grant, repair))
             decision = parse_decision(raw, request)
-            return {
-                "decision": response_from(request, decision),
-                "generation_valid": True,
-                "repair_attempted": repair,
-                "repair_allowed": False,
-                "failure_code": "",
-            }
         except ModelGatewayError as error:
+            log_generation_failure(error.code, request, attempt)
             return generation_failure(error.code, repair=repair, repair_allowed=False)
         except (ValueError, ValidationError, json.JSONDecodeError):
+            log_generation_failure("MODEL_PROVIDER_RESPONSE_INVALID", request, attempt)
             return generation_failure("MODEL_PROVIDER_RESPONSE_INVALID", repair=repair)
+        return {
+            "decision": response_from(request, decision),
+            "generation_valid": True,
+            "repair_attempted": repair,
+            "repair_allowed": False,
+            "failure_code": "",
+        }
 
     return generate
+
+
+def log_generation_failure(code: str, request: PracticeReportRequest, attempt: int) -> None:
+    log_graph_event(
+        LOGGER,
+        "practice_report_generation_failed",
+        {
+            "code": code,
+            "attempt": attempt,
+            "trace_id": request.trace_id,
+            "session_id": request.session.id,
+        },
+    )
 
 
 def generation_failure(
@@ -195,24 +219,28 @@ def generation_failure(
     }
 
 
-def validate_schema(state: PracticeReportGraphState) -> PracticeReportGraphState:
-    return state
-
-
 def route_validation(state: PracticeReportGraphState) -> str:
     if state.get("generation_valid") and state.get("decision") is not None:
         return "valid"
+    if state.get("failure_code") == MODEL_PROVIDER_ENDPOINT_BLOCKED:
+        return "failure"
     if state.get("repair_allowed") and not state.get("repair_attempted"):
         return "repair"
     return "fallback"
 
 
 def deterministic_fallback(state: PracticeReportGraphState) -> PracticeReportGraphState:
-    return {"decision": deterministic_report(state["request"]), "completed": True}
-
-
-def emit_memory_events(state: PracticeReportGraphState) -> PracticeReportGraphState:
-    return {"completed": True, "decision": state["decision"]}
+    request = state["request"]
+    log_graph_event(
+        LOGGER,
+        "practice_report_fallback_used",
+        {
+            "code": state.get("failure_code") or "MODEL_PROVIDER_RESPONSE_INVALID",
+            "trace_id": request.trace_id,
+            "session_id": request.session.id,
+        },
+    )
+    return {"decision": deterministic_report(request), "completed": True}
 
 
 def parse_decision(raw: str, request: PracticeReportRequest) -> PracticeReportDecision:
@@ -259,14 +287,3 @@ def user_prompt(request: PracticeReportRequest) -> str:
         ],
     }
     return json.dumps(payload, ensure_ascii=False)
-
-
-def strip_code_fence(value: str) -> str:
-    stripped = value.strip()
-    if stripped.startswith("```json"):
-        stripped = stripped[len("```json") :].lstrip()
-    elif stripped.startswith("```"):
-        stripped = stripped[len("```") :].lstrip()
-    if stripped.endswith("```"):
-        stripped = stripped[: -len("```")].rstrip()
-    return stripped

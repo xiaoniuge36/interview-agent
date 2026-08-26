@@ -45,18 +45,15 @@ export function initialReviewProgress(
   return { ...emptyCandidateReviewProgress(), pending: candidates.length };
 }
 
-export function incrementCandidateReviewProgress(
+export function addCandidateReviewStatusCount(
   progress: CandidateReviewProgress,
-  candidate: { publishedQuestionId: string | null; status: string },
+  status: string,
+  count: number,
 ) {
-  if (candidate.publishedQuestionId) {
-    progress.published += 1;
-    return;
-  }
-  if (candidate.status === 'pending') progress.pending += 1;
-  if (candidate.status === 'needs_edit') progress.needsEdit += 1;
-  if (candidate.status === 'approved') progress.approved += 1;
-  if (candidate.status === 'rejected') progress.rejected += 1;
+  if (status === 'pending') progress.pending += count;
+  if (status === 'needs_edit') progress.needsEdit += count;
+  if (status === 'approved') progress.approved += count;
+  if (status === 'rejected') progress.rejected += count;
 }
 
 export function sourceChunkSequence(metadata: Prisma.JsonValue, fallback: number): number {

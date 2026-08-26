@@ -11,6 +11,7 @@ import {
   type InterviewCommandResult,
   type InterviewReport,
   type InterviewSession,
+  type InterviewSessionSummary,
   type StartInterviewInput,
   type SubmitInterviewAnswerInput,
 } from '@interview-agent/contracts';
@@ -18,7 +19,7 @@ import { apiRequest, createIdempotencyKey } from './api';
 import { ApiError } from './api';
 import { runAiOperationStream } from './ai-operation-stream';
 
-export function listInterviews(): Promise<InterviewSession[]> {
+export function listInterviews(): Promise<InterviewSessionSummary[]> {
   return apiRequest({
     path: '/interviews',
     schema: InterviewListSchema,

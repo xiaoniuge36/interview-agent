@@ -17,7 +17,7 @@
 .learning-article-title {
   margin: 0 0 32px;
   font-size: clamp(32px, 4vw, 46px);
-  font-weight: 820;
+  font-weight: 700;
   letter-spacing: -0.06em;
   line-height: 1.16;
 }
@@ -37,14 +37,14 @@
   padding-top: 22px;
   border-top: 1px solid var(--outline);
   font-size: 24px;
-  font-weight: 780;
+  font-weight: 700;
   letter-spacing: -0.035em;
 }
 
 .learning-article-subsection {
   margin: 34px 0 12px;
   font-size: 18px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.025em;
 }
 
@@ -60,7 +60,7 @@
 
 .learning-markdown a {
   color: var(--primary-strong);
-  font-weight: 650;
+  font-weight: 700;
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, var(--primary) 38%, transparent);
   text-underline-offset: 3px;
@@ -124,7 +124,7 @@
 .learning-markdown th {
   background: var(--surface-subtle);
   color: var(--ink);
-  font-weight: 740;
+  font-weight: 700;
 }
 
 .learning-markdown tr:last-child td {

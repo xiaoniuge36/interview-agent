@@ -1,5 +1,4 @@
-﻿import { ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+﻿import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -24,7 +23,6 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.enableCors(corsOptions(config));
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.enableShutdownHooks();
 
   if (config.get('API_SWAGGER_ENABLED', { infer: true })) {

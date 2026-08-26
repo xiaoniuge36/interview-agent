@@ -48,7 +48,7 @@
   background: var(--warning-soft);
   color: var(--warning);
   font-size: 10px;
-  font-weight: 650;
+  font-weight: 700;
   line-height: 1.55;
 }
 
@@ -63,7 +63,7 @@
   justify-content: space-between;
   color: var(--text-subtle);
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: 0.05em;
 }
 
@@ -86,7 +86,7 @@
   color: var(--text-subtle);
   font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .learning-document-link.completed .learning-course-index {
@@ -116,7 +116,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .learning-course-brief > strong {
@@ -143,7 +143,7 @@
 .learning-course-actions span {
   color: var(--text-subtle);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .learning-course-actions strong {
@@ -184,7 +184,7 @@
   background: var(--surface);
   color: var(--text-muted);
   font-size: 11px;
-  font-weight: 720;
+  font-weight: 700;
 }
 
 .learning-course-action-buttons button:hover,

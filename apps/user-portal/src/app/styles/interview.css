@@ -264,7 +264,7 @@
   background: var(--sidebar-bg);
   color: var(--surface);
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.06em;
   box-shadow: var(--shadow-raised);
 }

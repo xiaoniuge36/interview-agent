@@ -14,7 +14,8 @@ COPY packages/auth-client/package.json packages/auth-client/package.json
 COPY apps/admin-console/package.json apps/admin-console/package.json
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter @interview-agent/admin-console...
-COPY tsconfig.base.json .eslintrc.cjs eslint.config.mjs eslint.next.config.mjs ./
+# next build 的 lint 步骤使用 flat config（eslint.config.mjs 及其引用的 eslint.next.config.mjs）
+COPY tsconfig.base.json eslint.config.mjs eslint.next.config.mjs ./
 COPY packages/contracts packages/contracts
 COPY packages/auth-client packages/auth-client
 COPY apps/admin-console apps/admin-console
@@ -35,6 +36,8 @@ ENV NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID=${NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID}
 ENV NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI=${NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI}
 ENV NEXT_PUBLIC_ADMIN_OIDC_POST_LOGOUT_REDIRECT_URI=${NEXT_PUBLIC_ADMIN_OIDC_POST_LOGOUT_REDIRECT_URI}
 ENV NEXT_PUBLIC_OIDC_SCOPE=${NEXT_PUBLIC_OIDC_SCOPE}
+# 容器运行时依赖 standalone 输出（runtime 阶段复制 .next/standalone）
+ENV NEXT_OUTPUT_STANDALONE=true
 RUN pnpm --filter @interview-agent/admin-console build
 
 FROM ${NODE_IMAGE} AS runtime

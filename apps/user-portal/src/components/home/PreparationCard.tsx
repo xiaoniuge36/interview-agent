@@ -1,4 +1,4 @@
-import type { InterviewSession, InterviewSessionStatus } from '@interview-agent/contracts';
+import type { InterviewSessionStatus, InterviewSessionSummary } from '@interview-agent/contracts';
 import Link from 'next/link';
 import { interviewStageLabel } from '@/components/interview/interview-labels';
 import type { DashboardModel } from './dashboard-types';
@@ -8,7 +8,7 @@ export function PreparationCard({
   interviews,
 }: {
   model: DashboardModel;
-  interviews: InterviewSession[];
+  interviews: InterviewSessionSummary[];
 }) {
   return (
     <section className="preparation-card" aria-labelledby="continue-preparing-heading">
@@ -41,7 +41,7 @@ function PreparationDetails({
   latest,
 }: {
   action: DashboardModel['action'];
-  latest: InterviewSession | undefined;
+  latest: InterviewSessionSummary | undefined;
 }) {
   return (
     <div className="preparation-detail-grid">

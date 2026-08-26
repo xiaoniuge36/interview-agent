@@ -10,6 +10,7 @@ const CHANNEL_PREFIX = 'interview-events';
 const CHANNEL_IDLE_TTL_MS = 30_000;
 const HEARTBEAT_INTERVAL_MS = 15_000;
 const CLIENT_RETRY_MS = 2_000;
+const REPLAY_BATCH_SIZE = 500;
 
 type ChannelState = {
   key: string;
@@ -36,9 +37,7 @@ export class InterviewEventBus {
   ) {}
 
   async publishMany(input: PublishEventsInput) {
-    for (const event of input.events) {
-      await this.publish(input.tenantId, event);
-    }
+    await Promise.all(input.events.map((event) => this.publish(input.tenantId, event)));
   }
 
   stream(tenantId: string, sessionId: string, afterSequence: number): Observable<MessageEvent> {
@@ -104,16 +103,9 @@ export class InterviewEventBus {
   }) {
     try {
       await this.ensureRedisSubscription(input.state);
-      const records = await this.prisma.interviewEvent.findMany({
-        where: {
-          tenantId: input.tenantId,
-          sessionId: input.sessionId,
-          sequence: { gt: input.afterSequence },
-        },
-        orderBy: { sequence: 'asc' },
-      });
+      const replayed = await this.loadReplayEvents(input);
       if (!input.isActive()) return;
-      const pending = [...records.map(mapEvent), ...input.buffered].sort(
+      const pending = [...replayed, ...input.buffered].sort(
         (left, right) => left.sequence - right.sequence,
       );
       let sequence = input.getLastSequence();
@@ -122,6 +114,27 @@ export class InterviewEventBus {
       input.finishReplay();
     } catch (error) {
       if (input.isActive()) input.subscriber.error(error);
+    }
+  }
+
+  private async loadReplayEvents(input: {
+    tenantId: string;
+    sessionId: string;
+    afterSequence: number;
+    isActive: () => boolean;
+  }): Promise<AgentStreamEvent[]> {
+    const events: AgentStreamEvent[] = [];
+    let cursor = input.afterSequence;
+    for (;;) {
+      const batch = await this.prisma.interviewEvent.findMany({
+        where: { tenantId: input.tenantId, sessionId: input.sessionId, sequence: { gt: cursor } },
+        orderBy: { sequence: 'asc' },
+        take: REPLAY_BATCH_SIZE,
+      });
+      events.push(...batch.map(mapEvent));
+      const last = batch[batch.length - 1];
+      if (!last || batch.length < REPLAY_BATCH_SIZE || !input.isActive()) return events;
+      cursor = last.sequence;
     }
   }
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { interviewPlanForJob, ROLE_GROUPS, ROLE_TITLE_OPTIONS, roleInputFor } from './interview-roles';
+import {
+  interviewPlanForJob,
+  ROLE_GROUPS,
+  ROLE_TITLE_OPTIONS,
+  roleInputFor,
+} from './interview-roles';
 
 describe('interview role templates', () => {
   it('covers core internet roles across six commercial role groups', () => {

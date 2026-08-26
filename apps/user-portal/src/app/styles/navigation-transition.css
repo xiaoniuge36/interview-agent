@@ -16,66 +16,40 @@
   color: #ffffff;
 }
 
+/* 路由切换骨架屏：结构化占位（页头 + 指标条 + 内容网格），shimmer 扫光主题感知。 */
 .route-loading-state {
   align-content: start;
-  gap: 26px;
+  gap: 24px;
   min-height: min(720px, calc(100vh - 32px));
 }
 
-.route-loading-signal {
-  display: grid;
-  grid-template-columns: minmax(72px, 116px) repeat(3, 7px);
-  align-items: center;
-  gap: 7px;
-  width: min(220px, 48vw);
-  padding-top: 8px;
-}
-
-.route-loading-signal span {
-  height: 2px;
-  border-radius: 99px;
-  background: color-mix(in srgb, var(--primary) 52%, var(--outline));
-  transform-origin: left;
-  animation: route-signal-line 900ms var(--ease-out) infinite alternate;
-}
-
-.route-loading-signal i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--primary) 24%, var(--outline));
-  animation: route-signal-dot 900ms ease-in-out infinite alternate;
-}
-
-.route-loading-signal i:nth-child(3) {
-  animation-delay: 120ms;
-}
-
-.route-loading-signal i:nth-child(4) {
-  animation-delay: 240ms;
-}
-
 .route-loading-intro,
-.route-loading-card {
+.route-loading-card,
+.route-loading-stat {
   display: grid;
 }
 
-.route-loading-intro {
-  gap: 12px;
-  max-width: 680px;
-}
-
+/* 骨架条基元 */
 .route-loading-intro span,
 .route-loading-intro strong,
 .route-loading-intro p,
 .route-loading-card span,
 .route-loading-card strong,
-.route-loading-card p {
+.route-loading-card p,
+.route-loading-stat span,
+.route-loading-stat strong,
+.route-loading-row i,
+.route-loading-row p {
   display: block;
   margin: 0;
   border-radius: 99px;
-  background: color-mix(in srgb, var(--outline) 70%, var(--surface));
+  background: color-mix(in srgb, var(--theme-ink) 9%, var(--theme-surface));
   animation: route-skeleton-breathe 1100ms ease-in-out infinite alternate;
+}
+
+.route-loading-intro {
+  gap: 12px;
+  max-width: 680px;
 }
 
 .route-loading-intro span {
@@ -85,13 +59,40 @@
 
 .route-loading-intro strong {
   width: min(380px, 68vw);
-  height: 38px;
-  border-radius: 12px;
+  height: 36px;
+  border-radius: var(--theme-radius-control);
 }
 
 .route-loading-intro p {
   width: min(610px, 80vw);
-  height: 14px;
+  height: 13px;
+}
+
+/* 指标占位条 */
+.route-loading-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 680px;
+}
+
+.route-loading-stat {
+  gap: 10px;
+  padding: 16px 18px;
+  border: var(--theme-border-width) solid color-mix(in srgb, var(--theme-line) 82%, transparent);
+  border-radius: var(--theme-radius-panel);
+  background: var(--theme-surface);
+}
+
+.route-loading-stat span {
+  width: 52px;
+  height: 8px;
+}
+
+.route-loading-stat strong {
+  width: 74%;
+  height: 20px;
+  border-radius: var(--theme-radius-control);
 }
 
 .route-loading-grid {
@@ -102,13 +103,31 @@
 }
 
 .route-loading-card {
+  position: relative;
   min-height: 260px;
   gap: 16px;
   padding: 26px;
-  border: 1px solid color-mix(in srgb, var(--outline) 88%, transparent);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--surface) 94%, var(--primary-soft));
-  box-shadow: 0 10px 30px rgba(20, 33, 61, 0.035);
+  overflow: hidden;
+  border: var(--theme-border-width) solid color-mix(in srgb, var(--theme-line) 88%, transparent);
+  border-radius: var(--theme-radius-panel);
+  background: var(--theme-surface);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-ink) 4%, transparent);
+}
+
+/* shimmer 扫光 */
+.route-loading-card::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 32%,
+    color-mix(in srgb, var(--theme-primary) 7%, transparent) 50%,
+    transparent 68%
+  );
+  transform: translateX(-100%);
+  animation: route-skeleton-shimmer 1.9s ease-in-out infinite;
+  content: '';
+  pointer-events: none;
 }
 
 .route-loading-card.compact {
@@ -122,8 +141,8 @@
 
 .route-loading-card strong {
   width: min(260px, 70%);
-  height: 23px;
-  border-radius: 8px;
+  height: 22px;
+  border-radius: var(--theme-radius-control);
 }
 
 .route-loading-card p {
@@ -135,37 +154,58 @@
   width: 68%;
 }
 
-@keyframes route-signal-line {
-  from {
-    opacity: 0.45;
-    transform: scaleX(0.42);
-  }
-  to {
-    opacity: 1;
-    transform: scaleX(1);
-  }
+.route-loading-rows {
+  display: grid;
+  gap: 12px;
 }
 
-@keyframes route-signal-dot {
-  from {
-    opacity: 0.28;
-  }
-  to {
-    opacity: 0.9;
-  }
+.route-loading-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.route-loading-row i {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--theme-radius-control);
+}
+
+.route-loading-row p {
+  height: 12px;
+}
+
+.route-loading-row:nth-child(2) p {
+  width: 84%;
+}
+
+.route-loading-row:nth-child(3) p {
+  width: 64%;
+}
+
+.route-loading-row:nth-child(4) p {
+  width: 74%;
 }
 
 @keyframes route-skeleton-breathe {
   from {
-    opacity: 0.54;
+    opacity: 0.6;
   }
   to {
-    opacity: 0.92;
+    opacity: 0.95;
+  }
+}
+
+@keyframes route-skeleton-shimmer {
+  to {
+    transform: translateX(100%);
   }
 }
 
 @media (max-width: 760px) {
-  .route-loading-grid {
+  .route-loading-grid,
+  .route-loading-stats {
     grid-template-columns: 1fr;
   }
   .route-loading-card.compact {
@@ -173,19 +213,33 @@
   }
 }
 
+html[data-motion='off'] .route-loading-card::after {
+  animation: none;
+  transform: none;
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .route-view,
   .sidebar-nav a,
   .sidebar-nav a.pending,
-  .route-loading-signal span,
-  .route-loading-signal i,
   .route-loading-intro span,
   .route-loading-intro strong,
   .route-loading-intro p,
   .route-loading-card span,
   .route-loading-card strong,
-  .route-loading-card p {
+  .route-loading-card p,
+  .route-loading-stat span,
+  .route-loading-stat strong,
+  .route-loading-row i,
+  .route-loading-row p {
     animation: none;
     transform: none;
+  }
+
+  .route-loading-card::after {
+    animation: none;
+    transform: none;
+    opacity: 0;
   }
 }

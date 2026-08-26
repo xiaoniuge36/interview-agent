@@ -11,9 +11,13 @@ export function PlatformHealthSummary({ dashboard }: { dashboard: PlatformDashbo
         <div>
           <Typography.Text className="platform-bi-kicker">OPERATIONS OVERVIEW</Typography.Text>
           <Typography.Title level={3}>运营概览</Typography.Title>
-          <Typography.Text type="secondary">内容供给、训练使用和 Agent 运行状态的实时汇总。</Typography.Text>
+          <Typography.Text type="secondary">
+            内容供给、训练使用和 Agent 运行状态的实时汇总。
+          </Typography.Text>
         </div>
-        <Tag className={`platform-bi-health-tag platform-bi-health-${health.level}`}>{health.label}</Tag>
+        <Tag className={`platform-bi-health-tag platform-bi-health-${health.level}`}>
+          {health.label}
+        </Tag>
       </div>
       <div className="platform-bi-overview-content">
         <div className="platform-bi-health-status">
@@ -23,8 +27,15 @@ export function PlatformHealthSummary({ dashboard }: { dashboard: PlatformDashbo
         <div className="platform-bi-summary-metrics">
           <Metric label="账号总量" value={dashboard.accounts.total} />
           <Metric label="窗口新增" value={dashboard.accounts.created} />
-          <Metric label="训练完成" value={dashboard.training.reports + dashboard.training.practiceReports} />
-          <Metric label="平均延迟" suffix="ms" value={Math.round(dashboard.runtime.averageLatencyMs)} />
+          <Metric
+            label="训练完成"
+            value={dashboard.training.reports + dashboard.training.practiceReports}
+          />
+          <Metric
+            label="平均延迟"
+            suffix="ms"
+            value={Math.round(dashboard.runtime.averageLatencyMs)}
+          />
         </div>
       </div>
     </Card>

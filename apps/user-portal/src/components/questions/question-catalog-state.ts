@@ -5,13 +5,13 @@ import {
 } from '@interview-agent/contracts';
 import { useCallback, useEffect, useState } from 'react';
 import { getQuestionCatalog } from '@/lib/question-catalog-api';
-import { createLatestQuestionRequestRunner } from './latest-question-request';
+import { createLatestRequestRunner } from '@interview-agent/api-client';
 
 export function useQuestionCatalog(query: QuestionCatalogQuery, enabled: boolean) {
   const [catalog, setCatalog] = useState<QuestionCatalogResponse | null>(null);
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState('');
-  const [requestRunner] = useState(createLatestQuestionRequestRunner);
+  const [requestRunner] = useState(createLatestRequestRunner);
   const load = useCallback(() => {
     if (!enabled) return Promise.resolve(false);
     setLoading(true);

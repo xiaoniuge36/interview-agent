@@ -1,31 +1,10 @@
+/* :root 仅保留字体与展示族 fallback；主题色板一律由 html[data-theme='…'] 提供
+   （html 元素服务端即固定 data-theme="daylight"，不存在无主题态，无需重复色板）。 */
 :root {
   --font-display: var(--font-chinese), 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --font-body: var(--font-chinese), 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --font-tech: var(--font-tech-face), Consolas, monospace;
   --theme-display-family: var(--font-display);
-  --theme-canvas: #f7f8f5;
-  --theme-surface: #ffffff;
-  --theme-surface-raised: #ffffff;
-  --theme-ink: #11131a;
-  --theme-text-muted: #626a78;
-  --theme-line: #dfe3eb;
-  --theme-primary: #2457ff;
-  --theme-on-primary: #ffffff;
-  --theme-secondary: #7f65db;
-  --theme-accent: #f04732;
-  --theme-success: #168676;
-  --theme-warning: #b56a12;
-  --theme-danger: #c93737;
-  --theme-shadow: 8px 8px 0 #11131a;
-  --theme-shadow-raised: 12px 14px 0 rgba(17, 19, 26, 0.16);
-  --theme-radius-panel: 0px;
-  --theme-radius-control: 0px;
-  --theme-border-width: 2px;
-  --theme-panel-blur: 0px;
-  --theme-nav-surface: #11131a;
-  --theme-nav-ink: #f7f8f5;
-  --theme-grid-color: rgba(17, 19, 26, 0.07);
-  --theme-selection: rgba(36, 87, 255, 0.2);
 }
 
 html[data-theme='daylight'] {

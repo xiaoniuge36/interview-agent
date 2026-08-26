@@ -65,9 +65,7 @@ export function attemptRouteChunkRecovery(input: RouteChunkRecoveryAttempt): boo
   return true;
 }
 
-export function attemptRouteChunkRecoverySafely(
-  input: SafeRouteChunkRecoveryAttempt,
-): boolean {
+export function attemptRouteChunkRecoverySafely(input: SafeRouteChunkRecoveryAttempt): boolean {
   try {
     return attemptRouteChunkRecovery({
       failure: input.failure,
@@ -85,10 +83,7 @@ export function isRouteChunkFailure(failure: unknown): boolean {
   return CHUNK_FAILURE_PATTERNS.some((pattern) => pattern.test(message));
 }
 
-export function routeChunkFailureKey(
-  failure: unknown,
-  location: RecoveryLocation,
-): string | null {
+export function routeChunkFailureKey(failure: unknown, location: RecoveryLocation): string | null {
   if (!isRouteChunkFailure(failure)) return null;
   const message = failureMessage(failure);
   const resource = message.match(CHUNK_RESOURCE_PATTERN)?.[0] ?? normalizedFailure(message);
@@ -104,17 +99,15 @@ function failureMessage(failure: unknown): string {
 }
 
 function normalizedFailure(message: string): string {
-  return message
-    .trim()
-    .replace(/\s+/g, ' ')
-    .slice(0, MAX_NORMALIZED_FAILURE_LENGTH)
-    .toLowerCase();
+  return message.trim().replace(/\s+/g, ' ').slice(0, MAX_NORMALIZED_FAILURE_LENGTH).toLowerCase();
 }
 
 function readRecoveryKeys(storage: RecoveryStorage): Set<string> | null {
   try {
     const parsed = JSON.parse(storage.getItem(ROUTE_CHUNK_RECOVERY_KEY) ?? '[]');
-    return new Set(Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : []);
+    return new Set(
+      Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : [],
+    );
   } catch {
     return null;
   }

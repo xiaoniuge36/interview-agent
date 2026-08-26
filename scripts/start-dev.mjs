@@ -5,6 +5,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { isPortAvailable, isServiceHealthy } from './dev-service-reuse.mjs';
+import { commandInvocation, pipeOutput, stopChildProcess } from './lib/process.mjs';
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const isWindows = process.platform === 'win32';
@@ -53,11 +54,7 @@ const reusedServices = new Set();
 let isShuttingDown = false;
 
 function getPnpmInvocation(pnpmArgs) {
-  if (!isWindows) return { command: pnpmCommand, args: pnpmArgs };
-  return {
-    command: process.env.ComSpec ?? 'cmd.exe',
-    args: ['/d', '/s', '/c', [pnpmCommand, ...pnpmArgs].join(' ')],
-  };
+  return commandInvocation(pnpmCommand, pnpmArgs);
 }
 
 function printHelp() {
@@ -155,42 +152,13 @@ async function ensurePortsAvailable() {
   return true;
 }
 
-function writeOutput(label, chunk, pending) {
-  const lines = `${pending}${chunk.toString()}`.split(/\r?\n/);
-  const nextPending = lines.pop() ?? '';
-  for (const line of lines) {
-    process.stdout.write(`[${label}] ${line}\n`);
-  }
-  return nextPending;
-}
-
-function pipeOutput(stream, label) {
-  let pending = '';
-  stream.on('data', (chunk) => {
-    pending = writeOutput(label, chunk, pending);
-  });
-  stream.on('end', () => {
-    if (pending) process.stdout.write(`[${label}] ${pending}\n`);
-  });
-}
-
-function stopChild(child) {
-  if (!child.pid || child.exitCode !== null) return;
-  if (isWindows) {
-    spawnSync('taskkill', ['/pid', String(child.pid), '/t', '/f'], {
-      stdio: 'ignore',
-      windowsHide: true,
-    });
-    return;
-  }
-  child.kill('SIGTERM');
-}
-
 function stopAll(exitCode = 0) {
   if (isShuttingDown) return;
   isShuttingDown = true;
-  for (const child of children) stopChild(child);
-  setTimeout(() => process.exit(exitCode), 250);
+  const exitDelayMs = 250;
+  void Promise.all([...children].map((child) => stopChildProcess(child))).finally(() =>
+    setTimeout(() => process.exit(exitCode), exitDelayMs),
+  );
 }
 
 function startService(service) {

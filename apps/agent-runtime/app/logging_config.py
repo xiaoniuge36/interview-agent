@@ -12,6 +12,10 @@ SAFE_RECORD_FIELDS: Final = (
     "outcome",
     "trace_id",
     "service",
+    "code",
+    "attempt",
+    "retryable",
+    "session_id",
 )
 
 

@@ -32,9 +32,7 @@ export function PracticeSessionPanel(props: PracticeSessionPanelProps) {
         onFinish={props.onFinish}
       />
       {!ready && !isFinished ? (
-        <p className="practice-help-text">
-          完成并保存全部回答后，即可生成本轮复盘。
-        </p>
+        <p className="practice-help-text">完成并保存全部回答后，即可生成本轮复盘。</p>
       ) : null}
     </div>
   );
@@ -58,7 +56,9 @@ function SessionHeader({ session, savedCount }: { session: PracticeSession; save
         <p>建议结合问题背景、个人职责、关键决策与可验证结果来组织回答。</p>
       </div>
       <div className="practice-progress-wrap">
-        <span>{savedCount} / {questionCount} 题已保存</span>
+        <span>
+          {savedCount} / {questionCount} 题已保存
+        </span>
         <progress
           className="practice-progress"
           value={savedCount}
@@ -84,7 +84,9 @@ function PracticeQuestion(props: PracticeQuestionProps) {
           <div className="stage">第 {props.item.sequence} 题</div>
           <h3>{props.item.question.title}</h3>
         </div>
-        <span className="practice-difficulty">{difficultyLabel(props.item.question.difficulty)}</span>
+        <span className="practice-difficulty">
+          {difficultyLabel(props.item.question.difficulty)}
+        </span>
       </div>
       <p>{props.item.question.stem}</p>
       <QuestionTags tags={props.item.question.tags} />
@@ -105,9 +107,7 @@ function PracticeQuestion(props: PracticeQuestionProps) {
       />
       <PracticeFeedback evaluation={props.item.evaluation} />
       <div className="practice-actions">
-        <span className="practice-save-state">
-          {answerState.label}
-        </span>
+        <span className="practice-save-state">{answerState.label}</span>
         <SaveAnswerButton
           itemId={props.item.id}
           itemBusy={answerState.itemBusy}
@@ -177,7 +177,11 @@ function QuestionTags({ tags }: { tags: string[] }) {
   );
 }
 
-function PracticeFeedback({ evaluation }: { evaluation: PracticeSession['items'][number]['evaluation'] }) {
+function PracticeFeedback({
+  evaluation,
+}: {
+  evaluation: PracticeSession['items'][number]['evaluation'];
+}) {
   if (!evaluation) return null;
   return (
     <aside className="practice-feedback" aria-label="本题即时反馈">

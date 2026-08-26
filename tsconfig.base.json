@@ -14,10 +14,14 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
+      "@interview-agent/api-client": ["packages/api-client/src"],
+      "@interview-agent/api-client/*": ["packages/api-client/src/*"],
       "@interview-agent/auth-client": ["packages/auth-client/src"],
       "@interview-agent/auth-client/*": ["packages/auth-client/src/*"],
       "@interview-agent/contracts": ["packages/contracts/src"],
-      "@interview-agent/contracts/*": ["packages/contracts/src/*"]
+      "@interview-agent/contracts/*": ["packages/contracts/src/*"],
+      "@interview-agent/page-agent-client": ["packages/page-agent-client/src"],
+      "@interview-agent/page-agent-client/*": ["packages/page-agent-client/src/*"]
     }
   }
 }

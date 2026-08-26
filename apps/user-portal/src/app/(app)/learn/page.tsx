@@ -1,3 +1,8 @@
+import '../../styles/learning-center.css';
+import '../../styles/learning-article.css';
+import '../../styles/learning-path.css';
+import '../../styles/consumer-learning.css';
+import '../../styles/consumer-theme-surfaces.css';
 import type { Metadata } from 'next';
 import { LearningCenter } from '@/components/learning/LearningCenter';
 import {

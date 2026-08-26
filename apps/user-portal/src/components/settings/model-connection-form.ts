@@ -28,7 +28,8 @@ export function emptyModelConnection(): ModelConnectionDraft {
 export function validateModelConnection(value: ModelConnectionDraft): ModelConnectionErrors {
   const errors: ModelConnectionErrors = {};
   if (!value.model.trim()) errors.model = '请输入模型名称。';
-  if (needsBaseUrl(value) && !validUrl(value.baseUrl)) errors.baseUrl = '请输入有效的 HTTPS Base URL。';
+  if (needsBaseUrl(value) && !validUrl(value.baseUrl))
+    errors.baseUrl = '请输入有效的 HTTPS Base URL。';
   if (!value.existing && value.apiKey.trim().length < MIN_API_KEY_LENGTH) {
     errors.apiKey = '请输入有效的 API Key。';
   }

@@ -59,7 +59,9 @@ describe('requestAdminJson error responses', () => {
       ),
     ).toBe(true);
     expect(
-      isAdminSessionExpired(new AdminApiError({ message: '没有权限', code: 'FORBIDDEN', status: 403 })),
+      isAdminSessionExpired(
+        new AdminApiError({ message: '没有权限', code: 'FORBIDDEN', status: 403 }),
+      ),
     ).toBe(false);
   });
 

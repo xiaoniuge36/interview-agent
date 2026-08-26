@@ -168,11 +168,13 @@ Expected: FAIL because no durable run lifecycle or recovery component is connect
 - [ ] **Step 3: Implement lifecycle integration and accessible compact UI**
 
 ```tsx
-{latestRun?.status === 'interrupted' ? (
-  <button type="button" onClick={() => onRetry(latestRun.prompt, latestRun.id)}>
-    安全重试
-  </button>
-) : null}
+{
+  latestRun?.status === 'interrupted' ? (
+    <button type="button" onClick={() => onRetry(latestRun.prompt, latestRun.id)}>
+      安全重试
+    </button>
+  ) : null;
+}
 ```
 
 - [ ] **Step 4: Verify focused tests are GREEN**

@@ -13,6 +13,7 @@
 ### Task 1: 消费级全局外壳
 
 **Files:**
+
 - Modify: `apps/user-portal/src/components/shell/UserSidebar.tsx`
 - Modify: `apps/user-portal/src/components/search/GlobalSearchTrigger.tsx`
 - Create: `apps/user-portal/src/app/styles/consumer-shell.css`
@@ -40,6 +41,7 @@ Expected: 两个测试文件全部通过。
 ### Task 2: 登录页行动预览
 
 **Files:**
+
 - Modify: `apps/user-portal/src/components/auth/AccessStory.tsx`
 - Create: `apps/user-portal/src/components/auth/AccessStory.test.tsx`
 - Create: `apps/user-portal/src/app/styles/consumer-auth.css`
@@ -66,6 +68,7 @@ Expected: 新旧认证结构测试全部通过。
 ### Task 3: 首页“今日下一步”
 
 **Files:**
+
 - Create: `apps/user-portal/src/components/consumer/SplitRevealText.tsx`
 - Create: `apps/user-portal/src/components/consumer/SignalField.tsx`
 - Create: `apps/user-portal/src/components/consumer/ActionLabel.tsx`
@@ -104,6 +107,7 @@ Expected: 首页渲染、继续训练和推荐开始测试全部通过。
 ### Task 4: 学习中心阅读体验
 
 **Files:**
+
 - Modify: `apps/user-portal/src/components/learning/LearningCenter.tsx`
 - Modify: `apps/user-portal/src/components/learning/LearningLibraryRail.tsx`
 - Create: `apps/user-portal/src/app/styles/consumer-learning.css`
@@ -127,6 +131,7 @@ Expected: 阅读、课程动作和进度结构测试全部通过。
 ### Task 5: 集成验证与视觉检查
 
 **Files:**
+
 - Verify: `apps/user-portal/src/**/*`
 
 - [x] **Step 1: 运行完整用户端验证**

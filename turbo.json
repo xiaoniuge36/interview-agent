@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["CI", "NODE_ENV"],
   "tasks": {
     "dev": {
       "cache": false,
@@ -7,18 +8,33 @@
     },
     "build": {
       "dependsOn": ["^build"],
+      "env": ["NEXT_OUTPUT_STANDALONE", "NEXT_PUBLIC_*"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "typecheck": {
       "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/tsconfig.base.json"],
       "outputs": []
     },
     "lint": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/eslint.config.mjs",
+        "$TURBO_ROOT$/eslint.next.config.mjs",
+        "$TURBO_ROOT$/.prettierrc.json"
+      ],
       "outputs": []
     },
     "test": {
-      "outputs": [],
-      "cache": false
+      "env": [
+        "AUTH_MODE",
+        "DATABASE_URL",
+        "REDIS_REQUIRED",
+        "REDIS_URL",
+        "RUN_DATABASE_INTEGRATION"
+      ],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/tsconfig.base.json"],
+      "outputs": []
     }
   }
 }

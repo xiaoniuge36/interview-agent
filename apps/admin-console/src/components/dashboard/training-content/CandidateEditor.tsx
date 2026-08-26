@@ -43,7 +43,7 @@ function CandidateEditorContent({
       {detailState.hasError ? (
         <Empty description="暂无可展示的候选题详情。" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : null}
-      {actions.message ? <Alert message={actions.message} showIcon type="success" /> : null}
+      {actions.message ? <Alert title={actions.message} showIcon type="success" /> : null}
     </div>
   );
 }

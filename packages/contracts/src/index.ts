@@ -14,6 +14,7 @@ export * from './schemas/report';
 export * from './schemas/admin';
 export * from './schemas/admin-runtime';
 export * from './schemas/model-credential';
+export * from './schemas/page-agent';
 export * from './schemas/background-job';
 export * from './schemas/retrieval';
 export * from './fixtures/seed-questions';

@@ -58,13 +58,13 @@
 
 .recent-training-status strong {
   color: var(--ink);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .recent-practice-card > a {
   color: var(--primary-strong);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .question-hub-error {
@@ -86,7 +86,7 @@
   padding: 0;
   background: transparent;
   color: var(--primary-strong);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .question-discovery {

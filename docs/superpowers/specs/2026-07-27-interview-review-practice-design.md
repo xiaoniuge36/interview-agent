@@ -31,12 +31,12 @@ to the report stages, and creates a normal practice session linked to the source
   weakness.
 - Map interview stages to question types without copying any answer content:
 
-  | Interview stage | Practice question type |
-  | --- | --- |
-  | `self_intro`, `hr` | `behavioral` |
-  | `tech_basics`, `jd_core` | `short_answer` |
-  | `project_deep_dive` | `project_deep_dive` |
-  | `scenario_design` | `system_design` |
+  | Interview stage          | Practice question type |
+  | ------------------------ | ---------------------- |
+  | `self_intro`, `hr`       | `behavioral`           |
+  | `tech_basics`, `jd_core` | `short_answer`         |
+  | `project_deep_dive`      | `project_deep_dive`    |
+  | `scenario_design`        | `system_design`        |
 
 - Ignore `warmup`, `final_evaluation`, and `report_ready`; they are not independent question skills.
 - Prefer questions matching both the interview session's target-role category and selected types. If

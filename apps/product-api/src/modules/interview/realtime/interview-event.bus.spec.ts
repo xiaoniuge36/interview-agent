@@ -63,9 +63,19 @@ async function flushAsync() {
   await Promise.resolve();
 }
 
-describe('InterviewEventBus', () => {
-  afterEach(() => jest.useRealTimers());
+function expectBatchQuery(findMany: jest.Mock, batch: { call: number; afterSequence: number }) {
+  expect(findMany).toHaveBeenNthCalledWith(
+    batch.call,
+    expect.objectContaining({
+      where: expect.objectContaining({ sequence: { gt: batch.afterSequence } }),
+      take: 500,
+    }),
+  );
+}
 
+afterEach(() => jest.useRealTimers());
+
+describe('InterviewEventBus streaming', () => {
   it('deduplicates the database replay and live-event race by sequence', async () => {
     const query = deferred<Prisma.InterviewEventGetPayload<object>[]>();
     const { bus, listener } = setup(query.promise);
@@ -111,5 +121,51 @@ describe('InterviewEventBus', () => {
     expect(redis.unsubscribe).toHaveBeenCalledWith('interview-events:tenant-a:session-1');
     const channels = (bus as unknown as { channels: Map<string, unknown> }).channels;
     expect(channels.size).toBe(0);
+  });
+});
+
+describe('InterviewEventBus batching', () => {
+  it('replays long histories in bounded batches while preserving sequence order', async () => {
+    const { bus, prisma } = setup(Promise.resolve([]));
+    const fullBatch = Array.from({ length: 500 }, (_, index) => record(index + 1));
+    prisma.interviewEvent.findMany
+      .mockResolvedValueOnce(fullBatch)
+      .mockResolvedValueOnce([record(501)]);
+    const received: MessageEvent[] = [];
+    const subscription = bus.stream('tenant-a', 'session-1', 0).subscribe((value) => {
+      if (value.type !== 'heartbeat') received.push(value);
+    });
+    await flushAsync();
+    await flushAsync();
+
+    expect(prisma.interviewEvent.findMany).toHaveBeenCalledTimes(2);
+    expectBatchQuery(prisma.interviewEvent.findMany, { call: 1, afterSequence: 0 });
+    expectBatchQuery(prisma.interviewEvent.findMany, { call: 2, afterSequence: 500 });
+    expect(received).toHaveLength(501);
+    expect((received[0]?.data as AgentStreamEvent).sequence).toBe(1);
+    expect((received.at(-1)?.data as AgentStreamEvent).sequence).toBe(501);
+    subscription.unsubscribe();
+  });
+
+  it('dispatches batched publishes concurrently instead of serially awaiting each one', async () => {
+    const { bus, redis } = setup(Promise.resolve([]));
+    const releases: Array<() => void> = [];
+    redis.publish.mockImplementation(
+      () =>
+        new Promise<undefined>((resolve) => {
+          releases.push(() => resolve(undefined));
+        }),
+    );
+    const completed = jest.fn();
+    void bus.publishMany({ tenantId: 'tenant-a', events: [event(1), event(2)] }).then(completed);
+    await flushAsync();
+
+    expect(redis.publish).toHaveBeenCalledTimes(2);
+    expect(completed).not.toHaveBeenCalled();
+
+    for (const release of releases) release();
+    await flushAsync();
+    await flushAsync();
+    expect(completed).toHaveBeenCalled();
   });
 });

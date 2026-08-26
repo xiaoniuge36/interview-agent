@@ -75,7 +75,6 @@ describe('optimistic navigation feedback', () => {
     expect(markup).toContain('正在打开复盘中心…');
     expect(anchorFor(markup, '/reports')).not.toContain('aria-current');
   });
-
 });
 
 describe('mobile navigation semantics', () => {

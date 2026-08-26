@@ -27,7 +27,8 @@
     .profile-page-workspace,
     .training-archive,
     .settings-workspace
-  ) :is(.h1, .h2, h1, h2) {
+  )
+  :is(.h1, .h2, h1, h2) {
   color: var(--theme-ink);
   font-family: var(--theme-display-family);
   letter-spacing: -0.045em;
@@ -40,7 +41,8 @@
     .profile-page-workspace,
     .training-archive,
     .settings-workspace
-  ) :is(.panel, .card) {
+  )
+  :is(.panel, .card) {
   border-color: var(--theme-line);
   border-radius: var(--theme-radius-panel);
   background: var(--theme-surface);
@@ -55,7 +57,8 @@
     .profile-page-workspace,
     .training-archive,
     .settings-workspace
-  ) :is(input, textarea, select) {
+  )
+  :is(input, textarea, select) {
   border-color: var(--theme-line);
   border-radius: var(--theme-radius-control);
   background: var(--field-bg);
@@ -69,7 +72,8 @@
     .profile-page-workspace,
     .training-archive,
     .settings-workspace
-  ) :is(input, textarea, select):focus {
+  )
+  :is(input, textarea, select):focus {
   border-color: var(--theme-primary);
   background: var(--field-bg-focus);
   box-shadow: var(--shadow-focus);
@@ -522,7 +526,8 @@ button:disabled {
 
 /* User Agent drawer: remove the fixed blue skin and inherit the active theme. */
 .user-agent-float {
-  border: var(--theme-border-width) solid color-mix(in srgb, var(--theme-primary) 62%, var(--theme-line));
+  border: var(--theme-border-width) solid
+    color-mix(in srgb, var(--theme-primary) 62%, var(--theme-line));
   border-radius: var(--theme-radius-control);
   background: linear-gradient(145deg, var(--theme-primary), var(--theme-secondary));
   color: var(--theme-on-primary);
@@ -672,90 +677,93 @@ button:disabled {
 }
 
 /* Theme-specific material rules. */
-html[data-theme='aurora'] :is(
-  .learning-reading-desk,
-  .practice-question-stage,
-  .practice-answer-panel,
-  .interview-context,
-  .transcript,
-  .profile-form-panel,
-  .settings-section,
-  .global-search-dialog,
-  .user-agent-drawer
-) {
+html[data-theme='aurora']
+  :is(
+    .learning-reading-desk,
+    .practice-question-stage,
+    .practice-answer-panel,
+    .interview-context,
+    .transcript,
+    .profile-form-panel,
+    .settings-section,
+    .global-search-dialog,
+    .user-agent-drawer
+  ) {
   background: color-mix(in srgb, var(--theme-surface-raised) 94%, #080914);
 }
 
-html[data-theme='terminal'] :is(
-  .learning-course-index,
-  .practice-player-progress,
-  .interview-session-pulse,
-  .training-archive-record-facts,
-  .global-search-group h3,
-  .user-agent-eyebrow
-) {
+html[data-theme='terminal']
+  :is(
+    .learning-course-index,
+    .practice-player-progress,
+    .interview-session-pulse,
+    .training-archive-record-facts,
+    .global-search-group h3,
+    .user-agent-eyebrow
+  ) {
   font-family: var(--font-tech);
   letter-spacing: 0.04em;
 }
 
-html[data-theme='constructivist'] :is(
-  .learning-library-heading,
-  .learning-reading-desk,
-  .practice-entry,
-  .practice-entry-hero,
-  .practice-mode-card,
-  .interview-toolbar,
-  .interview-context,
-  .transcript,
-  .profile-form-panel,
-  .profile-memory-rail,
-  .training-archive-summary,
-  .training-archive-record,
-  .mistake-book,
-  .settings-section,
-  .global-search-dialog,
-  .user-agent-drawer
-) {
+html[data-theme='constructivist']
+  :is(
+    .learning-library-heading,
+    .learning-reading-desk,
+    .practice-entry,
+    .practice-entry-hero,
+    .practice-mode-card,
+    .interview-toolbar,
+    .interview-context,
+    .transcript,
+    .profile-form-panel,
+    .profile-memory-rail,
+    .training-archive-summary,
+    .training-archive-record,
+    .mistake-book,
+    .settings-section,
+    .global-search-dialog,
+    .user-agent-drawer
+  ) {
   border-radius: 0;
 }
 
-html[data-theme='constructivist'] :is(
-  .training-archive-record:hover,
-  .mistake-book-row:hover,
-  .practice-mode-card:hover
-) {
+html[data-theme='constructivist']
+  :is(.training-archive-record:hover, .mistake-book-row:hover, .practice-mode-card:hover) {
   transform: translate(-3px, -3px);
 }
 
-html[data-theme='glass'] :is(
-  .learning-library-heading,
-  .learning-reading-desk,
-  .practice-entry,
-  .profile-form-panel,
-  .settings-section,
-  .global-search-dialog,
-  .user-agent-drawer-header
-) {
+html[data-theme='glass']
+  :is(
+    .learning-library-heading,
+    .learning-reading-desk,
+    .practice-entry,
+    .profile-form-panel,
+    .settings-section,
+    .global-search-dialog,
+    .user-agent-drawer-header
+  ) {
   backdrop-filter: blur(26px) saturate(1.18);
 }
 
-html[data-theme='playground'] :is(
-  .training-archive-summary > div,
-  .profile-completion,
-  .practice-evidence-strip,
-  .settings-usage-card
-) {
+html[data-theme='playground']
+  :is(
+    .training-archive-summary > div,
+    .profile-completion,
+    .practice-evidence-strip,
+    .settings-usage-card
+  ) {
   border: 2px solid var(--theme-line);
   box-shadow: 5px 6px 0 color-mix(in srgb, var(--theme-secondary) 82%, transparent);
 }
 
-html[data-motion='on'] :is(
-  .practice-mode-card,
-  .training-archive-record,
-  .mistake-book-row,
-  .global-search-option,
-  .user-agent-conversation-row
-) {
+html[data-motion='on']
+  :is(
+    .practice-mode-card,
+    .training-archive-record,
+    .mistake-book-row,
+    .global-search-option,
+    .user-agent-conversation-row
+  ) {
   transition:
     transform 180ms var(--ease-out),
     border-color 180ms ease,
@@ -763,13 +771,14 @@ html[data-motion='on'] :is(
     box-shadow 180ms ease;
 }
 
-html[data-motion='off'] :is(
-  .practice-mode-card,
-  .training-archive-record,
-  .mistake-book-row,
-  .global-search-option,
-  .user-agent-conversation-row
-) {
+html[data-motion='off']
+  :is(
+    .practice-mode-card,
+    .training-archive-record,
+    .mistake-book-row,
+    .global-search-option,
+    .user-agent-conversation-row
+  ) {
   transition: none;
 }
 

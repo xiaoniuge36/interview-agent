@@ -130,7 +130,7 @@
 .theme-menu-popover header strong {
   font-family: var(--theme-display-family);
   font-size: 16px;
-  font-weight: 850;
+  font-weight: 700;
   letter-spacing: -0.035em;
 }
 
@@ -190,7 +190,7 @@
 .theme-mode-list strong {
   font-family: var(--theme-display-family);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .theme-mode-list small {
@@ -257,7 +257,9 @@
   color: #8c7cff;
   border-radius: 16px;
 }
-.theme-preview-aurora::before { background: #111329; }
+.theme-preview-aurora::before {
+  background: #111329;
+}
 
 .theme-preview-terminal {
   --preview-accent: #3fb950;
@@ -265,7 +267,9 @@
   color: #58a6ff;
   border-radius: 4px;
 }
-.theme-preview-terminal::before { background: #070a0e; }
+.theme-preview-terminal::before {
+  background: #070a0e;
+}
 
 .theme-preview-constructivist {
   --preview-accent: #d52b1e;
@@ -275,7 +279,9 @@
   border-radius: 0;
   box-shadow: 4px 4px 0 #d52b1e;
 }
-.theme-preview-constructivist::before { background: #171411; }
+.theme-preview-constructivist::before {
+  background: #171411;
+}
 
 .theme-preview-daylight {
   --preview-accent: #ee4932;
@@ -284,7 +290,9 @@
   border-radius: 2px;
   box-shadow: 3px 3px 0 #101219;
 }
-.theme-preview-daylight::before { background: #2457ff; }
+.theme-preview-daylight::before {
+  background: #2457ff;
+}
 
 .theme-preview-glass {
   --preview-accent: #28b8ad;
@@ -293,7 +301,9 @@
   border-radius: 18px;
   box-shadow: 0 7px 20px rgba(60, 109, 240, 0.2);
 }
-.theme-preview-glass::before { background: rgba(136, 117, 236, 0.56); }
+.theme-preview-glass::before {
+  background: rgba(136, 117, 236, 0.56);
+}
 
 .theme-preview-playground {
   --preview-accent: #ff6b59;
@@ -303,7 +313,9 @@
   border-radius: 14px;
   box-shadow: 4px 4px 0 #27a9e8;
 }
-.theme-preview-playground::before { background: #7657f5; }
+.theme-preview-playground::before {
+  background: #7657f5;
+}
 
 .theme-option-check {
   width: 18px;
@@ -408,6 +420,12 @@ html[data-theme='terminal'] .theme-mode-list small {
 }
 
 @keyframes theme-menu-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

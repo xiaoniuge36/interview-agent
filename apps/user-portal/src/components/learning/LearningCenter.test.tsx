@@ -125,7 +125,7 @@ it('reserves a desktop docking lane beside the learning outline', () => {
   const stylesheet = readFileSync(resolve('src/app/styles/consumer-learning.css'), 'utf8');
 
   expect(stylesheet).toMatch(
-    /@media \(min-width: 1181px\) \{[\s\S]*?\.learning-outline nav \{ padding-right: 20px; \}/,
+    /@media \(min-width: 1181px\) \{[\s\S]*?\.learning-outline nav \{\s*padding-right: 20px;\s*\}/,
   );
 });
 

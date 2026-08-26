@@ -10,3 +10,14 @@
 @import './practice-player-feedback-step.css';
 @import './practice-player-ai-confirmation.css';
 @import './practice-player-evaluation-result.css';
+
+/* 移动端底部导航避让（原 mobile-navigation.css，随路由级 CSS 拆分迁入以保持层叠次序）。 */
+@media (max-width: 820px) {
+  .practice-player-page {
+    padding-bottom: 176px;
+  }
+
+  .practice-round-actions {
+    bottom: 82px;
+  }
+}

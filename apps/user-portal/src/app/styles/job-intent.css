@@ -59,7 +59,7 @@
   display: block;
   color: var(--primary-strong);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -229,7 +229,7 @@
   background: color-mix(in srgb, var(--primary-soft) 72%, var(--surface));
   color: var(--primary-strong);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .job-training-path p,

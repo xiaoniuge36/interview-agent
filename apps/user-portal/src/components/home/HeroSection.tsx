@@ -1,6 +1,6 @@
 import type {
-  InterviewSession,
   InterviewSessionStatus,
+  InterviewSessionSummary,
   JobIntentPayload,
   ProfilePayload,
 } from '@interview-agent/contracts';
@@ -13,7 +13,7 @@ import type { DashboardModel, NextAction, TimelineState, TimelineStep } from './
 type HeroSectionProps = {
   profile: ProfilePayload;
   jobs: JobIntentPayload[];
-  interviews: InterviewSession[];
+  interviews: InterviewSessionSummary[];
 };
 type ActionContext = Pick<DashboardModel, 'active' | 'jobRole' | 'profileRole'> & {
   interviewCount: number;
@@ -76,7 +76,7 @@ function PreparationTimeline({
   interviews,
 }: {
   model: DashboardModel;
-  interviews: InterviewSession[];
+  interviews: InterviewSessionSummary[];
 }) {
   return (
     <section className="preparation-timeline" aria-labelledby="timeline-heading">
@@ -196,7 +196,10 @@ function MemoryNextAction({ action }: { action: NextAction }) {
   );
 }
 
-function buildTimeline(model: DashboardModel, interviews: InterviewSession[]): TimelineStep[] {
+function buildTimeline(
+  model: DashboardModel,
+  interviews: InterviewSessionSummary[],
+): TimelineStep[] {
   const complete = [
     Boolean(model.profileRole),
     Boolean(model.jobRole),
@@ -238,7 +241,7 @@ function buildTimeline(model: DashboardModel, interviews: InterviewSession[]): T
 function createDashboardModel(
   profile: ProfilePayload,
   job: JobIntentPayload | undefined,
-  interviews: InterviewSession[],
+  interviews: InterviewSessionSummary[],
 ): DashboardModel {
   const active = interviews.find((item) => ACTIVE_STATUSES.has(item.status)) ?? null;
   const completed = interviews.filter((item) => item.status === 'report_ready').length;

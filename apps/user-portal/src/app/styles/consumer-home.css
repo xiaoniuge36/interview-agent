@@ -60,7 +60,7 @@
   margin-top: 8px;
   color: var(--theme-text-muted);
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .home-training-plan h1 {
@@ -69,7 +69,7 @@
   color: var(--theme-ink);
   font-family: var(--theme-display-family);
   font-size: clamp(38px, 5vw, 68px);
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1.04;
   letter-spacing: -0.07em;
   text-wrap: balance;
@@ -203,9 +203,11 @@
   background: var(--theme-primary);
   color: var(--theme-on-primary);
   font-size: 13px;
-  font-weight: 850;
+  font-weight: 700;
   box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-primary) 28%, transparent);
-  transition: transform 180ms var(--ease-out), box-shadow 180ms ease;
+  transition:
+    transform 180ms var(--ease-out),
+    box-shadow 180ms ease;
 }
 
 .home-training-plan .agent-recommendation-card button:hover,
@@ -265,7 +267,7 @@
   display: inline-flex;
   align-items: center;
   color: var(--theme-primary);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .question-hub-supporting-content {
@@ -456,4 +458,11 @@ html[data-theme='playground'] .question-topic-card:nth-child(3n + 3) {
 html[data-motion='off'] .home-training-plan .agent-recommendation-card::after,
 html[data-motion='off'] .home-training-plan .recent-practice-card::after {
   transition: none;
+}
+
+/* 移动端底部导航避让（原 mobile-navigation.css，随路由级 CSS 拆分迁入以保持层叠次序）。 */
+@media (max-width: 820px) {
+  .question-hub-page {
+    padding-bottom: 126px;
+  }
 }

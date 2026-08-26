@@ -72,14 +72,14 @@ html[data-motion='on'] .question-agent-mark::after {
 .question-agent-banner > div > span {
   color: color-mix(in srgb, var(--primary) 52%, var(--theme-control-text));
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .question-agent-banner h2 {
   margin: 3px 0 0;
   color: var(--theme-control-text);
   font-size: 15px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -135,7 +135,7 @@ html[data-motion='on'] .question-agent-mark::after {
   background: color-mix(in srgb, var(--primary) 10%, transparent);
   color: var(--primary-strong);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .question-agent-evidence li {
@@ -187,7 +187,7 @@ html[data-motion='on'] .question-agent-mark::after {
   background: var(--primary);
   color: var(--theme-control-text);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 

@@ -26,6 +26,7 @@
 ## Task 1: 定义失败测试与隔离契约
 
 **Files:**
+
 - Create: `scripts/e2e/run.test.mjs`
 - Create: `e2e/user-practice.spec.ts`
 - Create: `e2e/admin-governance.spec.ts`
@@ -89,6 +90,7 @@ Expected: FAIL，原因是 `createE2eEnvironment` 尚不存在；`pnpm exec play
 ## Task 2: 实现运行器与模型替身
 
 **Files:**
+
 - Create: `scripts/e2e/child-process.mjs`
 - Create: `scripts/e2e/model-stub.mjs`
 - Create: `scripts/e2e/run.mjs`
@@ -124,7 +126,8 @@ export function createE2eEnvironment(source) {
 
 ```js
 if (mode === 'rate_limited') return json(response, 429, { error: { message: 'e2e rate limit' } });
-if (mode === 'invalid_json') return json(response, 200, { choices: [{ message: { content: '{invalid' } }] });
+if (mode === 'invalid_json')
+  return json(response, 200, { choices: [{ message: { content: '{invalid' } }] });
 return json(response, 200, completionResponse(request));
 ```
 
@@ -154,6 +157,7 @@ Expected: PASS，无需服务启动即可验证端口、schema 与命令。
 ## Task 3: 配置 Playwright 与用户验收
 
 **Files:**
+
 - Create: `playwright.config.ts`
 - Create: `e2e/helpers/api.ts`
 - Create: `e2e/helpers/auth.ts`
@@ -163,9 +167,16 @@ Expected: PASS，无需服务启动即可验证端口、schema 与命令。
 
 ```ts
 export default defineConfig({
-  testDir: './e2e', timeout: 45_000, retries: process.env.CI ? 1 : 0,
+  testDir: './e2e',
+  timeout: 45_000,
+  retries: process.env.CI ? 1 : 0,
   outputDir: 'test-results/e2e',
-  use: { baseURL: 'http://127.0.0.1:3100', trace: 'retain-on-failure', screenshot: 'only-on-failure', video: 'retain-on-failure' },
+  use: {
+    baseURL: 'http://127.0.0.1:3100',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+  },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 });
 ```
@@ -197,6 +208,7 @@ Expected: PASS，覆盖登录失效、SSE、成功复盘和失败保护。
 ## Task 4: 实现后台治理验收
 
 **Files:**
+
 - Modify: `e2e/helpers/api.ts`
 - Modify: `e2e/helpers/auth.ts`
 - Modify: `e2e/admin-governance.spec.ts`
@@ -228,6 +240,7 @@ Expected: PASS，覆盖权限拒绝、模型密钥脱敏和导入审核发布。
 ## Task 5: CI 门禁与发布文档
 
 **Files:**
+
 - Modify: `.github/workflows/ci.yml`
 - Modify: `README.md`
 

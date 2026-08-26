@@ -6,12 +6,14 @@ import {
   InterviewCommandResultSchema,
   InterviewReportSchema,
   InterviewSessionSchema,
+  InterviewSessionSummarySchema,
   InterviewTurnSchema,
   type AgentRuntimeSessionContext,
   type AgentStreamEvent,
   type InterviewCommandResult,
   type InterviewReport,
   type InterviewSession,
+  type InterviewSessionSummary,
   type InterviewTurn,
 } from '@interview-agent/contracts';
 import { jsonValue } from '../../common/audit/audit.service';
@@ -20,11 +22,29 @@ export type SessionWithTurns = Prisma.InterviewSessionGetPayload<{
   include: { turns: true };
 }>;
 
+export type SessionWithTurnCount = Prisma.InterviewSessionGetPayload<{
+  include: { _count: { select: { turns: true } } };
+}>;
+
 export function mapSession(record: SessionWithTurns): InterviewSession {
   return InterviewSessionSchema.parse({
     ...record,
     jobIntentId: record.jobIntentId ?? undefined,
     turns: record.turns.map(mapTurn),
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  });
+}
+
+export function mapSessionSummary(
+  record: SessionWithTurnCount,
+  candidateTurnCount: number,
+): InterviewSessionSummary {
+  return InterviewSessionSummarySchema.parse({
+    ...record,
+    jobIntentId: record.jobIntentId ?? undefined,
+    turnCount: record._count.turns,
+    candidateTurnCount,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   });

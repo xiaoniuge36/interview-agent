@@ -19,7 +19,7 @@
   color: var(--primary);
   font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 850;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -72,7 +72,7 @@
   background: var(--primary-soft);
   color: var(--primary-strong);
   font-size: 9px;
-  font-weight: 850;
+  font-weight: 700;
 }
 .selected-question-list strong {
   overflow: hidden;
@@ -128,7 +128,7 @@
   border-radius: 10px;
   background: var(--primary);
   color: var(--theme-control-text);
-  font-weight: 800;
+  font-weight: 700;
 }
 .selected-question-tray footer button:disabled {
   opacity: 0.52;
@@ -245,7 +245,7 @@
   background: var(--primary-soft);
   color: var(--primary-strong);
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .selected-question-compose:disabled {

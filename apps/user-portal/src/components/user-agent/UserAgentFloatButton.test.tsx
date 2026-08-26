@@ -62,7 +62,6 @@ describe('UserAgentFloatButton', () => {
     expect(markup).toContain('aria-expanded="false"');
     expect(markup).toContain('>教练<');
   });
-
 });
 
 describe('UserAgent desktop trigger sizing', () => {

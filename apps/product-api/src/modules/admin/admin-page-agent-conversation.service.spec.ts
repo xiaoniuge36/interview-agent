@@ -60,6 +60,46 @@ describe('AdminPageAgentConversationService.get', () => {
       }),
     );
   });
+
+  it('loads only the latest bounded messages and returns them ascending', async () => {
+    const prisma = createPrisma();
+    prisma.adminPageAgentConversation.findFirst.mockResolvedValue({
+      id: 'conversation-1',
+      title: '长对话',
+      createdAt: new Date('2026-07-20T00:00:00.000Z'),
+      updatedAt: new Date('2026-07-20T00:05:00.000Z'),
+      _count: { messages: 500 },
+      messages: [
+        {
+          id: 'message-new',
+          role: 'assistant',
+          content: '最新回复',
+          tokenCount: null,
+          createdAt: new Date('2026-07-20T00:05:00.000Z'),
+        },
+        {
+          id: 'message-old',
+          role: 'user',
+          content: '较早提问',
+          tokenCount: null,
+          createdAt: new Date('2026-07-20T00:04:00.000Z'),
+        },
+      ],
+    });
+    const service = new AdminPageAgentConversationService(prisma as never);
+
+    const result = await service.get(context, 'conversation-1');
+
+    expect(prisma.adminPageAgentConversation.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          messages: { orderBy: { createdAt: 'desc' }, take: 200 },
+        }),
+      }),
+    );
+    expect(result.messageCount).toBe(500);
+    expect(result.messages.map((message) => message.id)).toEqual(['message-old', 'message-new']);
+  });
 });
 
 describe('AdminPageAgentConversationService.appendMessages', () => {

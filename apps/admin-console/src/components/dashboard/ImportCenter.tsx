@@ -54,7 +54,7 @@ export function ImportCenter({
           setDrawerOpen(true);
         }}
       />
-      {message ? <Alert message={message} showIcon type="success" /> : null}
+      {message ? <Alert title={message} showIcon type="success" /> : null}
       <ImportHistory
         exportList={exportList}
         isExporting={isExporting}

@@ -43,7 +43,7 @@
 
 - [ ] Step 3: 返回每个命中题目的 RetrievalEvidence，前端只展示来源和摘要。
 
-  <RecommendationSources evidence={recommendation.evidence} />
+<RecommendationSources evidence={recommendation.evidence} />
 
 - [ ] Step 4: 固定相同 JD 和题库，运行 rules/hybrid A/B Golden case。
 
@@ -87,7 +87,7 @@ Expected: 检索不可用不阻塞面试，引用不存在的 sourceId 被 schem
 
 - [ ] Step 3: 将来源显示为可展开 evidence，而不在报告正文伪造事实。
 
-  <ReportEvidence sources={report.evidence} />
+<ReportEvidence sources={report.evidence} />
 
 - [ ] Step 4: 增强 E2E，覆盖无命中和关闭 flag 的降级。
 

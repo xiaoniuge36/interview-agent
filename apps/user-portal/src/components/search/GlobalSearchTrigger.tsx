@@ -40,9 +40,7 @@ export function GlobalSearchTriggerView({
         >
           <SearchIcon />
           <span className="global-search-trigger-copy">
-            <strong className="global-search-trigger-desktop-copy">
-              搜索题目、课程或功能
-            </strong>
+            <strong className="global-search-trigger-desktop-copy">搜索题目、课程或功能</strong>
             <strong className="global-search-trigger-mobile-copy">搜索</strong>
             <small>题目 · 课程 · 页面</small>
           </span>

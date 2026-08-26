@@ -296,7 +296,7 @@
   background: color-mix(in srgb, var(--primary-soft) 74%, var(--surface));
   color: var(--primary-strong);
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .practice-coach-review-trigger:hover {
@@ -347,7 +347,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 8px;
-  font-weight: 850;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -401,7 +401,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
 }
 
@@ -443,7 +443,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
 }
 
@@ -484,7 +484,7 @@
   background: var(--primary-soft);
   color: var(--primary-strong);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .practice-completion-review-list button strong {
@@ -553,7 +553,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
 }
 

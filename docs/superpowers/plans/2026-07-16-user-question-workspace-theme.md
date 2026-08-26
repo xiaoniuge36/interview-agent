@@ -13,6 +13,7 @@
 ### Task 1: 主题偏好模型
 
 **Files:**
+
 - Create: `apps/user-portal/src/components/theme/theme-preferences.ts`
 - Create: `apps/user-portal/src/components/theme/theme-preferences.test.ts`
 
@@ -24,7 +25,9 @@ expect(parseThemePreferences({ theme: 'night', accent: 'teal' })).toEqual({
   accent: 'teal',
   motion: true,
 });
-expect(parseThemePreferences({ theme: 'unknown', accent: 'pink' })).toEqual(DEFAULT_THEME_PREFERENCES);
+expect(parseThemePreferences({ theme: 'unknown', accent: 'pink' })).toEqual(
+  DEFAULT_THEME_PREFERENCES,
+);
 ```
 
 - [ ] **Step 2: 运行测试确认失败**
@@ -55,6 +58,7 @@ Expected: PASS。
 ### Task 2: 无闪烁主题 Provider 与控制面板
 
 **Files:**
+
 - Create: `apps/user-portal/src/components/theme/ThemePreferencesProvider.tsx`
 - Create: `apps/user-portal/src/components/theme/ThemeMenu.tsx`
 - Create: `apps/user-portal/src/app/styles/theme-controls.css`
@@ -83,6 +87,7 @@ Provider 暴露 `preferences`、`setTheme`、`setAccent`、`setMotion`，每次�
 ### Task 3: 主题 tokens 与壳层视觉
 
 **Files:**
+
 - Modify: `apps/user-portal/src/app/styles/tokens.css`
 - Modify: `apps/user-portal/src/app/styles/shell.css`
 
@@ -101,6 +106,7 @@ Provider 暴露 `preferences`、`setTheme`、`setAccent`、`setMotion`，每次�
 ### Task 4: 真实推荐与快速组卷行为
 
 **Files:**
+
 - Modify: `apps/user-portal/src/components/questions/question-picker-model.ts`
 - Modify: `apps/user-portal/src/components/questions/question-picker-model.test.ts`
 - Modify: `apps/user-portal/src/components/questions/useQuestionPicker.ts`
@@ -109,11 +115,7 @@ Provider 暴露 `preferences`、`setTheme`、`setAccent`、`setMotion`，每次�
 - [ ] **Step 1: 为快速组卷写失败测试**
 
 ```ts
-expect(composeQuestionSelection(['q-1'], ['q-1', 'q-2', 'q-3'], 3)).toEqual([
-  'q-1',
-  'q-2',
-  'q-3',
-]);
+expect(composeQuestionSelection(['q-1'], ['q-1', 'q-2', 'q-3'], 3)).toEqual(['q-1', 'q-2', 'q-3']);
 ```
 
 - [ ] **Step 2: 实现去重、上限明确的快速组卷模型**
@@ -131,6 +133,7 @@ expect(composeQuestionSelection(['q-1'], ['q-1', 'q-2', 'q-3'], 3)).toEqual([
 ### Task 5: 题库页面按已确认原型落地
 
 **Files:**
+
 - Modify: `apps/user-portal/src/components/questions/QuestionPickerPage.tsx`
 - Modify: `apps/user-portal/src/components/questions/QuestionFilterPanel.tsx`
 - Modify: `apps/user-portal/src/components/questions/QuestionCatalogList.tsx`
@@ -156,6 +159,7 @@ expect(composeQuestionSelection(['q-1'], ['q-1', 'q-2', 'q-3'], 3)).toEqual([
 ### Task 6: 验证与视觉对照
 
 **Files:**
+
 - Reference: `C:/Users/69483/.gstack/projects/interview-agent/designs/question-bank-agent-20260716/finalized.html`
 - Reference: `C:/Users/69483/.gstack/projects/interview-agent/designs/question-bank-agent-20260716/final-v2-dawn-desktop.png`
 

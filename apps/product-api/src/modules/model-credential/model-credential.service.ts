@@ -15,6 +15,7 @@ import { ModelCredentialInfrastructure } from './model-credential-infrastructure
 import { ModelProviderError } from './model-provider.client';
 
 const KEY_HINT_VISIBLE_CHARACTERS = 4;
+const CREDENTIAL_LIST_LIMIT = 100;
 
 export type ResolvedModelCredential = {
   id: string;
@@ -37,6 +38,7 @@ export class ModelCredentialService {
     const records = await this.infrastructure.prisma.userModelCredential.findMany({
       where: ownerScope(context),
       orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+      take: CREDENTIAL_LIST_LIMIT,
     });
     return ModelCredentialListSchema.parse(records.map(mapCredential));
   }
@@ -205,10 +207,10 @@ function encryptedUpdate(crypto: CredentialCryptoService, apiKey: string) {
 function plainUpdate(input: UpdateModelCredentialInput) {
   const baseUrlUpdate = nextBaseUrl(input);
   const connectionChanged =
-    input.apiKey !== undefined
-    || input.provider !== undefined
-    || input.model !== undefined
-    || input.baseUrl !== undefined;
+    input.apiKey !== undefined ||
+    input.provider !== undefined ||
+    input.model !== undefined ||
+    input.baseUrl !== undefined;
   return {
     ...(input.provider ? { provider: input.provider } : {}),
     ...(input.model ? { model: input.model } : {}),

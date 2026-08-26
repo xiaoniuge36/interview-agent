@@ -1,9 +1,9 @@
-import type { InterviewSession } from '@interview-agent/contracts';
+import type { InterviewSessionSummary } from '@interview-agent/contracts';
 
 export type NextAction = { href: string; label: string; title: string; description: string };
 
 export type DashboardModel = {
-  active: InterviewSession | null;
+  active: InterviewSessionSummary | null;
   action: NextAction;
   completed: number;
   company: string | undefined;

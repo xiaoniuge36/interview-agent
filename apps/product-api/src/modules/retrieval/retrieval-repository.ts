@@ -155,12 +155,15 @@ function vectorLiteral(vector: number[]) {
 }
 
 function publishedKnowledgeAssetScope() {
+  // 注意：EXISTS 子查询里 KnowledgeAsset 自身也有 metadata 列，
+  // 未限定表名时 PostgreSQL 会解析为 asset.metadata（内层作用域优先），
+  // 导致 knowledge 块永远无法命中，必须显式限定 RetrievalChunk.metadata。
   return Prisma.sql`
     AND (
       "entityType" <> 'knowledge'
       OR EXISTS (
         SELECT 1 FROM "KnowledgeAsset" AS "asset"
-        WHERE "asset"."id" = ("metadata"->>'assetId')
+        WHERE "asset"."id" = ("RetrievalChunk"."metadata"->>'assetId')
           AND "asset"."tenantId" = "RetrievalChunk"."tenantId"
           AND "asset"."status" = 'published'
       )

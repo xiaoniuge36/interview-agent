@@ -147,4 +147,3 @@ function parseJson(value: string): unknown {
     throw new SseProtocolError(STREAM_PROTOCOL_ERROR_MESSAGE, { cause: error });
   }
 }
-

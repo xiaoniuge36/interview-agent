@@ -120,11 +120,7 @@ export function SidebarNavigation(props: {
           key={item.id}
           className={navigationLinkClass(props.active, props.pending, item.id)}
           href={item.href}
-          aria-current={navigationAriaCurrent(
-            props.pathname,
-            item.href,
-            props.active === item.id,
-          )}
+          aria-current={navigationAriaCurrent(props.pathname, item.href, props.active === item.id)}
           aria-describedby={props.pending === item.id ? SIDEBAR_PENDING_STATUS_ID : undefined}
           data-navigation-pending={props.pending === item.id ? 'true' : undefined}
           onMouseEnter={() => props.onWarm(item.href)}

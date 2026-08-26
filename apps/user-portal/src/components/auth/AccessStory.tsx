@@ -58,9 +58,7 @@ function TrainingPreview() {
         <span>每周训练节奏</span>
         <div className="access-training-days" aria-label="登录后展示本周真实训练记录">
           {TRAINING_DAYS.map((day) => (
-            <span key={day}>
-              {day}
-            </span>
+            <span key={day}>{day}</span>
           ))}
         </div>
       </footer>

@@ -3,13 +3,16 @@ from os import getenv
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, HttpUrl, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MIN_INTERNAL_TOKEN_LENGTH = 24
 DEFAULT_BODY_LIMIT_BYTES = 1_048_576
 MIN_BODY_LIMIT_BYTES = 1_024
 MAX_BODY_LIMIT_BYTES = 10_485_760
+DEFAULT_GRAPH_TIMEOUT_SECONDS = 90.0
+MIN_GRAPH_TIMEOUT_SECONDS = 1.0
+MAX_GRAPH_TIMEOUT_SECONDS = 600.0
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 LOCAL_ENV_FILE = PROJECT_ROOT / ".env"
 
@@ -38,9 +41,15 @@ class RuntimeSettings(BaseSettings):
         default="INFO",
         validation_alias="RUNTIME_LOG_LEVEL",
     )
-    model_gateway_url: str | None = Field(
+    model_gateway_url: HttpUrl | None = Field(
         default=None,
         validation_alias="AGENT_RUNTIME_MODEL_GATEWAY_URL",
+    )
+    graph_timeout_seconds: float = Field(
+        default=DEFAULT_GRAPH_TIMEOUT_SECONDS,
+        ge=MIN_GRAPH_TIMEOUT_SECONDS,
+        le=MAX_GRAPH_TIMEOUT_SECONDS,
+        validation_alias="RUNTIME_GRAPH_TIMEOUT_SECONDS",
     )
     checkpoint_database_url: SecretStr | None = Field(
         default=None,

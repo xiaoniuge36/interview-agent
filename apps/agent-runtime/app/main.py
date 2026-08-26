@@ -1,11 +1,15 @@
+import asyncio
 import logging
 import secrets
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable
 from contextlib import AsyncExitStack, asynccontextmanager
-from typing import Annotated, cast
+from typing import Annotated, TypeVar, cast
 
+import httpx
+import psycopg
 from fastapi import Depends, FastAPI, Header, Request, status
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -21,7 +25,11 @@ from app.errors import (
 )
 from app.logging_config import configure_logging
 from app.middleware import RequestBodyLimitMiddleware, RequestLoggingMiddleware
-from app.model_gateway import MODEL_PROVIDER_ENDPOINT_BLOCKED, ModelGatewayClient
+from app.model_gateway import (
+    DEFAULT_GATEWAY_TIMEOUT_SECONDS,
+    MODEL_PROVIDER_ENDPOINT_BLOCKED,
+    ModelGatewayClient,
+)
 from app.request_cancellation import RequestCancelledError, cancel_when_disconnected
 from app.schemas.interview import NextInterviewRequest, NextInterviewResponse
 from app.schemas.practice_report import PracticeReportRequest, PracticeReportResponse
@@ -42,7 +50,9 @@ SERVICE_NAME = "agent-runtime"
 EXPECTED_CALLER = "product-api"
 LOGGER = logging.getLogger("agent_runtime.lifecycle")
 CHECKPOINT_CONNECT_TIMEOUT_SECONDS = 5
+READINESS_DATABASE_TIMEOUT_SECONDS = 2.0
 CLIENT_CLOSED_REQUEST_STATUS = 499
+T = TypeVar("T")
 
 
 @asynccontextmanager
@@ -51,10 +61,12 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     configure_logging(settings.log_level)
     application.state.settings = settings
     gateway = ModelGatewayClient(
-        url=settings.model_gateway_url,
+        url=model_gateway_url(settings),
         internal_token=settings.internal_agent_token.get_secret_value(),
+        http_client=httpx.AsyncClient(timeout=DEFAULT_GATEWAY_TIMEOUT_SECONDS),
     )
     async with AsyncExitStack() as stack:
+        stack.push_async_callback(gateway.aclose)
         checkpointer = await checkpoint_for(settings, stack)
         tracer_provider = configure_telemetry(settings.otel_exporter_otlp_endpoint)
         if tracer_provider is not None:
@@ -92,6 +104,10 @@ def current_settings(request: Request) -> RuntimeSettings:
     return cast(RuntimeSettings, request.app.state.settings)
 
 
+def model_gateway_url(settings: RuntimeSettings) -> str | None:
+    return None if settings.model_gateway_url is None else str(settings.model_gateway_url)
+
+
 def verify_internal_request(
     request: Request,
     token: Annotated[str | None, Header(alias="x-internal-agent-token")] = None,
@@ -116,18 +132,66 @@ def liveness() -> dict[str, str]:
 
 
 @app.get("/health/ready")
-def readiness(request: Request) -> dict[str, object]:
+async def readiness(request: Request) -> JSONResponse:
     settings = current_settings(request)
-    return {
-        "status": "ready",
-        "service": SERVICE_NAME,
-        "checks": {
-            "configuration": {
-                "status": "up",
-                "environment": settings.environment,
-            }
+    gateway_configured = settings.model_gateway_url is not None
+    database_ready = await checkpoint_database_ready(settings)
+    ready = gateway_configured and database_ready
+    return JSONResponse(
+        status_code=status.HTTP_200_OK if ready else status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={
+            "status": "ready" if ready else "unavailable",
+            "service": SERVICE_NAME,
+            "checks": {
+                "configuration": {"status": "up", "environment": settings.environment},
+                "model_gateway": {"status": "up" if gateway_configured else "down"},
+                "checkpoint_database": {
+                    "status": "up" if database_ready else "down",
+                    "configured": settings.checkpoint_database_url is not None,
+                },
+            },
         },
-    }
+    )
+
+
+async def checkpoint_database_ready(settings: RuntimeSettings) -> bool:
+    if settings.checkpoint_database_url is None:
+        return True
+    connection_url = checkpoint_connection_url(settings.checkpoint_database_url.get_secret_value())
+    try:
+        await asyncio.wait_for(
+            probe_checkpoint_database(connection_url),
+            timeout=READINESS_DATABASE_TIMEOUT_SECONDS,
+        )
+    except Exception as error:  # readiness must degrade, never crash the probe
+        LOGGER.warning(
+            "readiness_database_check_failed",
+            extra={"event": "readiness_database_check_failed", "code": type(error).__name__},
+        )
+        return False
+    return True
+
+
+async def probe_checkpoint_database(connection_url: str) -> None:
+    async with await psycopg.AsyncConnection.connect(connection_url) as connection:
+        await connection.execute("SELECT 1")
+
+
+async def run_cancellable(request: Request, operation: Awaitable[T], trace_id: str) -> T:
+    try:
+        return await cancel_when_disconnected(request, operation)
+    except RequestCancelledError as error:
+        LOGGER.info(
+            "runtime_request_cancelled",
+            extra={"event": "runtime_request_cancelled", "trace_id": trace_id},
+        )
+        raise RuntimeRequestError(
+            ApiError(
+                status_code=CLIENT_CLOSED_REQUEST_STATUS,
+                code="REQUEST_CANCELLED",
+                message="Request was cancelled by the caller.",
+            )
+        ) from error
 
 
 @app.post(
@@ -141,33 +205,23 @@ async def next_turn(request: Request, payload: NextInterviewRequest) -> NextInte
         "interview_next",
         {"interview_agent.trace_id": payload.trace_id, "session.id": payload.session.id},
     ):
-        if payload.model_invocation_grant is not None:
-            try:
-                return await cancel_when_disconnected(
-                    request,
-                    run_interview_graph(request.app.state.interview_graph, payload),
+        if payload.model_invocation_grant is None:
+            return next_interview_turn(payload.session, payload.answer)
+        operation = run_interview_graph(
+            request.app.state.interview_graph,
+            payload,
+            timeout_seconds=current_settings(request).graph_timeout_seconds,
+        )
+        try:
+            return await run_cancellable(request, operation, payload.trace_id)
+        except InterviewGraphError as error:
+            raise RuntimeRequestError(
+                ApiError(
+                    status_code=model_error_status(error),
+                    code=model_error_code(error),
+                    message="模型面试决策暂时无法生成，请稍后重试。",
                 )
-            except RequestCancelledError as error:
-                LOGGER.info(
-                    "runtime_request_cancelled",
-                    extra={"event": "runtime_request_cancelled", "trace_id": payload.trace_id},
-                )
-                raise RuntimeRequestError(
-                    ApiError(
-                        status_code=CLIENT_CLOSED_REQUEST_STATUS,
-                        code="REQUEST_CANCELLED",
-                        message="Request was cancelled by the caller.",
-                    )
-                ) from error
-            except InterviewGraphError as error:
-                raise RuntimeRequestError(
-                    ApiError(
-                        status_code=model_error_status(error),
-                        code=model_error_code(error),
-                        message="模型面试决策暂时无法生成，请稍后重试。",
-                    )
-                ) from error
-        return next_interview_turn(payload.session, payload.answer)
+            ) from error
 
 
 @app.post(
@@ -184,8 +238,13 @@ async def practice_report(
         "practice_report",
         {"interview_agent.trace_id": payload.trace_id, "session.id": payload.session.id},
     ):
+        operation = run_practice_report_graph(
+            request.app.state.practice_report_graph,
+            payload,
+            timeout_seconds=current_settings(request).graph_timeout_seconds,
+        )
         try:
-            return await run_practice_report_graph(request.app.state.practice_report_graph, payload)
+            return await run_cancellable(request, operation, payload.trace_id)
         except PracticeReportGraphError as error:
             raise RuntimeRequestError(
                 ApiError(

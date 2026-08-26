@@ -20,7 +20,13 @@ export function PlatformTrendChart({ trend }: { trend: PlatformTrendPoint[] }) {
   return (
     <Card
       className="admin-dense-card platform-bi-trend-card"
-      extra={<Segmented options={TREND_OPTIONS} value={metric} onChange={(value) => setMetric(value as TrendMetric)} />}
+      extra={
+        <Segmented
+          options={TREND_OPTIONS}
+          value={metric}
+          onChange={(value) => setMetric(value as TrendMetric)}
+        />
+      }
       title="经营趋势"
     >
       <div className="platform-bi-chart-heading">
@@ -30,7 +36,9 @@ export function PlatformTrendChart({ trend }: { trend: PlatformTrendPoint[] }) {
         </div>
         <Typography.Text type="secondary">按 UTC 日期统计</Typography.Text>
       </div>
-      <div className="platform-bi-chart-area"><PlatformTrendArea metric={metric} trend={trend} /></div>
+      <div className="platform-bi-chart-area">
+        <PlatformTrendArea metric={metric} trend={trend} />
+      </div>
     </Card>
   );
 }

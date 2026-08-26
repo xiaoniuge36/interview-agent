@@ -6,7 +6,7 @@ import type {
   AiUsageSummary as AiUsageSummaryData,
 } from '@interview-agent/contracts';
 import { getAiUsageSummary } from '../../lib/ai-usage-api';
-import { createLatestAiUsageRequest } from './ai-usage-request';
+import { createLatestRequestRunner } from '@interview-agent/api-client';
 
 const PERIODS: { value: AiUsagePeriod; label: string }[] = [
   { value: 'today', label: '今日' },
@@ -144,7 +144,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function useAiUsageSummary(period: AiUsagePeriod): UsageState {
   const [state, setState] = useState<UsageState>({ status: 'loading' });
-  const [request] = useState(createLatestAiUsageRequest);
+  const [request] = useState(createLatestRequestRunner);
   useEffect(() => {
     setState({ status: 'loading' });
     void request.run({

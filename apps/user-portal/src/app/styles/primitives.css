@@ -33,7 +33,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -43,7 +43,7 @@
   margin: 0;
   color: var(--ink);
   letter-spacing: -0.04em;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .h1 {
@@ -227,7 +227,7 @@
   background: var(--primary-soft);
   color: var(--primary-strong);
   font-size: 17px;
-  font-weight: 450;
+  font-weight: 400;
   line-height: 1;
 }
 
@@ -308,7 +308,7 @@ select:disabled {
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .metric {
@@ -326,7 +326,7 @@ select:disabled {
 .metric strong {
   display: block;
   font-size: 28px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.04em;
 }
 
@@ -407,7 +407,7 @@ select:disabled {
   background: var(--field-bg-focus);
   color: var(--text-muted);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 700;
   line-height: 1;
   transition:
     border-color var(--duration-fast) var(--ease-out),

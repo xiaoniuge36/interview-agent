@@ -53,6 +53,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return true;
   }
 
+  async eval(script: string, keys: string[], args: string[]): Promise<unknown> {
+    if (!this.publisher.isReady) throw new Error('Redis client is not ready');
+    return this.publisher.eval(script, { keys, arguments: args });
+  }
+
   async subscribe(channel: string, listener: (payload: string) => void) {
     if (!this.subscriber.isReady) return false;
     await this.subscriber.subscribe(channel, listener);

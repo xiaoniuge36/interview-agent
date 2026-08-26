@@ -1,9 +1,9 @@
-import type { InterviewReport, InterviewSession } from '@interview-agent/contracts';
+import type { InterviewReport, InterviewSessionSummary } from '@interview-agent/contracts';
 
 export const INTERVIEW_REPORT_SUMMARY_LIMIT = 20;
 
 export async function loadInterviewReportSummaries(
-  interviews: InterviewSession[],
+  interviews: InterviewSessionSummary[],
   loadReport: (sessionId: string) => Promise<InterviewReport>,
 ) {
   const requested = [...interviews]

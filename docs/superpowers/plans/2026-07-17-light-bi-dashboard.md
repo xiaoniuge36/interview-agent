@@ -20,6 +20,7 @@
 ### Task 1: 引入图表库并建立客户端图表适配层
 
 **Files:**
+
 - Modify: `apps/admin-console/package.json`
 - Modify: `pnpm-lock.yaml`
 - Create: `apps/admin-console/src/components/dashboard/platform-bi-model.ts`
@@ -27,6 +28,7 @@
 - Test: `apps/admin-console/src/components/dashboard/platform-bi-model.test.ts`
 
 **Interfaces:**
+
 - Consumes: `PlatformDashboard['trend']` 与 `PlatformDashboard['funnel']`。
 - Produces: `toTrendChartData(trend, metric)`、`toFunnelChartData(funnel)`、`PlatformTrendArea`、`PlatformRuntimeGauge`、`PlatformFunnelBar`。
 
@@ -36,7 +38,11 @@
 expect(toTrendChartData(points, 'agentRuns')).toEqual([
   { date: '07/16', value: 4, metric: 'Agent 调用' },
 ]);
-expect(toFunnelChartData(funnel)[1]).toMatchObject({ stage: '待审核存量', value: 21, tone: 'warning' });
+expect(toFunnelChartData(funnel)[1]).toMatchObject({
+  stage: '待审核存量',
+  value: 21,
+  tone: 'warning',
+});
 ```
 
 - [ ] **Step 2: 运行测试确认缺少模型**
@@ -50,10 +56,10 @@ Run: `pnpm --filter @interview-agent/admin-console add @ant-design/charts@^2.6.5
 - [ ] **Step 4: 实现模型与动态图表组件**
 
 ```tsx
-const Area = dynamic(
-  () => import('@ant-design/charts').then((module) => module.Area),
-  { ssr: false, loading: () => <ChartLoading /> },
-);
+const Area = dynamic(() => import('@ant-design/charts').then((module) => module.Area), {
+  ssr: false,
+  loading: () => <ChartLoading />,
+});
 ```
 
 `PlatformTrendArea` 使用渐变面积图、Tooltip、平滑曲线与真实日期轴；`PlatformRuntimeGauge` 使用 0–100 的仪表盘；`PlatformFunnelBar` 使用横向条形图并保留 warning/critical 色。
@@ -65,6 +71,7 @@ Run: `pnpm exec vitest run src/components/dashboard/platform-bi-model.test.ts`
 ### Task 2: 重组轻量 BI 页面与视觉层次
 
 **Files:**
+
 - Modify: `apps/admin-console/src/components/dashboard/PlatformAnalytics.tsx`
 - Modify: `apps/admin-console/src/components/dashboard/PlatformTrendChart.tsx`
 - Modify: `apps/admin-console/src/components/dashboard/PlatformHealthSummary.tsx`
@@ -73,6 +80,7 @@ Run: `pnpm exec vitest run src/components/dashboard/platform-bi-model.test.ts`
 - Modify: `apps/admin-console/src/components/dashboard/PlatformAnalytics.test.tsx`
 
 **Interfaces:**
+
 - Consumes: Task 1 的图表适配组件和现有 `PlatformDashboard`。
 - Produces: 四区布局——运营概览、经营趋势、运行质量、内容与训练/风险。
 
@@ -96,8 +104,16 @@ Run: `pnpm exec vitest run src/components/dashboard/PlatformAnalytics.test.tsx`
 - [ ] **Step 4: 完成响应式 CSS**
 
 ```css
-.platform-bi-grid { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(320px,1fr); gap:16px; }
-@media (max-width: 992px) { .platform-bi-grid { grid-template-columns:1fr; } }
+.platform-bi-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(320px, 1fr);
+  gap: 16px;
+}
+@media (max-width: 992px) {
+  .platform-bi-grid {
+    grid-template-columns: 1fr;
+  }
+}
 ```
 
 桌面端趋势比运行质量更宽；768px 以下单列；图表容器最小高度 280px；取消原 SVG 大圆点和暗色渐变横幅。
@@ -109,6 +125,7 @@ Run: `pnpm exec vitest run src/components/dashboard/PlatformAnalytics.test.tsx`
 ### Task 3: 质量验证与视觉验收
 
 **Files:**
+
 - Verify only: `apps/admin-console`
 
 - [ ] **Step 1: 类型与质量检查**

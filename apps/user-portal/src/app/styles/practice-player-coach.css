@@ -13,7 +13,7 @@
   color: #64d9bf;
   font-family: var(--font-mono);
   font-size: 8px;
-  font-weight: 850;
+  font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
@@ -48,7 +48,7 @@
   color: #087963;
   font-size: 7px;
   font-style: normal;
-  font-weight: 900;
+  font-weight: 700;
 }
 .practice-coach-locked p,
 .practice-ai-ready p {
@@ -66,7 +66,7 @@
   background: #fff;
   color: #2459b8;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .practice-ai-ready button {
   border: 0;
@@ -158,7 +158,7 @@
 .practice-rubric-scores i {
   color: #1c60d5;
   font-style: normal;
-  font-weight: 900;
+  font-weight: 700;
 }
 .practice-evaluation-result blockquote {
   margin: 0;
@@ -174,7 +174,7 @@
   margin-bottom: 4px;
   color: #11806a;
   font-size: 8px;
-  font-weight: 900;
+  font-weight: 700;
   text-transform: uppercase;
 }
 .practice-coach-issue {
@@ -200,7 +200,7 @@
   margin-top: 2px;
   color: #1d5dc9;
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .practice-ai-stream {
@@ -217,7 +217,7 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .practice-ai-stream-status span {
@@ -345,7 +345,7 @@
 .practice-report-evaluation-heading span {
   color: #6f7f94;
   font-size: 11px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .practice-report-evaluation-heading strong {
@@ -372,7 +372,7 @@
 .practice-report-evaluation-gaps span {
   flex: 0 0 auto;
   color: #a86c10;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .practice-report-evaluation-gaps p {
@@ -394,5 +394,5 @@
   margin-bottom: 3px;
   color: #11806a;
   font-size: 9px;
-  font-weight: 850;
+  font-weight: 700;
 }

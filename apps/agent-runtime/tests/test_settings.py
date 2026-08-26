@@ -66,6 +66,50 @@ def test_production_requires_postgres_checkpoint_url(monkeypatch: pytest.MonkeyP
     get_settings.cache_clear()
 
 
+def test_rejects_invalid_model_gateway_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("NODE_ENV", "test")
+    monkeypatch.setenv("INTERNAL_AGENT_TOKEN", "runtime-test-token-with-at-least-32-characters")
+    monkeypatch.setenv("AGENT_RUNTIME_MODEL_GATEWAY_URL", "not-a-valid-url")
+    get_settings.cache_clear()
+
+    with pytest.raises(ValidationError):
+        get_settings()
+
+    get_settings.cache_clear()
+
+
+def test_accepts_a_valid_model_gateway_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("NODE_ENV", "test")
+    monkeypatch.setenv("INTERNAL_AGENT_TOKEN", "runtime-test-token-with-at-least-32-characters")
+    monkeypatch.setenv(
+        "AGENT_RUNTIME_MODEL_GATEWAY_URL",
+        "http://product-api.test/api/internal/model-invocations",
+    )
+    get_settings.cache_clear()
+
+    settings = get_settings()
+
+    assert str(settings.model_gateway_url) == (
+        "http://product-api.test/api/internal/model-invocations"
+    )
+    get_settings.cache_clear()
+
+
+def test_graph_timeout_defaults_and_accepts_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("NODE_ENV", "test")
+    monkeypatch.setenv("INTERNAL_AGENT_TOKEN", "runtime-test-token-with-at-least-32-characters")
+    monkeypatch.delenv("RUNTIME_GRAPH_TIMEOUT_SECONDS", raising=False)
+    get_settings.cache_clear()
+
+    assert get_settings().graph_timeout_seconds == 90.0
+
+    monkeypatch.setenv("RUNTIME_GRAPH_TIMEOUT_SECONDS", "120")
+    get_settings.cache_clear()
+
+    assert get_settings().graph_timeout_seconds == 120.0
+    get_settings.cache_clear()
+
+
 def test_checkpoint_connection_url_adds_a_bounded_timeout() -> None:
     assert checkpoint_connection_url("postgresql://db/runtime") == (
         "postgresql://db/runtime?connect_timeout=5"

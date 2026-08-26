@@ -35,7 +35,7 @@ services:
       - backend
 
   redis:
-    image: redis:7.4-alpine
+    image: redis:7.4-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
     restart: unless-stopped
     command:
       - redis-server
@@ -61,7 +61,7 @@ services:
       - backend
 
   minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -84,7 +84,7 @@ services:
       - backend
 
   minio-init:
-    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3
     depends_on:
       minio:
         condition: service_healthy
@@ -217,7 +217,8 @@ services:
       API_THROTTLE_LIMIT: ${API_THROTTLE_LIMIT:-120}
       DATABASE_URL: postgresql://${POSTGRES_USER:-interview_agent}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-interview_agent}?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
-      REDIS_REQUIRED: ${REDIS_REQUIRED:-true}
+      # 该 Compose 栈自带 Redis，就绪探针必须同时校验 Redis，可用性不允许降级。
+      REDIS_REQUIRED: 'true'
       AUTH_MODE: ${AUTH_MODE:-development}
       JWT_SECRET: ${JWT_SECRET:-}
       JWT_ISSUER: ${JWT_ISSUER:-interview-agent}

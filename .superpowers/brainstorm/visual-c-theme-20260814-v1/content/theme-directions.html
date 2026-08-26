@@ -28,7 +28,10 @@
   .theme-card {
     overflow: hidden;
     border-radius: 22px;
-    transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+    transition:
+      transform 220ms ease,
+      box-shadow 220ms ease,
+      border-color 220ms ease;
   }
 
   .theme-card:hover {
@@ -37,7 +40,9 @@
   }
 
   .theme-card.selected {
-    box-shadow: 0 0 0 3px rgba(72, 83, 214, 0.24), var(--demo-shadow);
+    box-shadow:
+      0 0 0 3px rgba(72, 83, 214, 0.24),
+      var(--demo-shadow);
   }
 
   .theme-card .card-image {
@@ -109,11 +114,26 @@
     align-items: center;
   }
 
-  .mini-brand { gap: 7px; }
-  .mini-brand i { width: 19px; height: 19px; border-radius: 7px; }
-  .mini-nav { gap: 9px; opacity: 0.76; }
-  .mini-actions { gap: 6px; }
-  .mini-actions i { width: 20px; height: 20px; border-radius: 50%; }
+  .mini-brand {
+    gap: 7px;
+  }
+  .mini-brand i {
+    width: 19px;
+    height: 19px;
+    border-radius: 7px;
+  }
+  .mini-nav {
+    gap: 9px;
+    opacity: 0.76;
+  }
+  .mini-actions {
+    gap: 6px;
+  }
+  .mini-actions i {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+  }
 
   .mini-main {
     padding: 27px 20px 24px;
@@ -157,10 +177,12 @@
     min-height: 142px;
     padding: 17px;
     border-radius: 17px;
-    transition: transform 260ms cubic-bezier(.2,.8,.2,1);
+    transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  .theme-card:hover .mini-task { transform: translateY(-3px) scale(1.012); }
+  .theme-card:hover .mini-task {
+    transform: translateY(-3px) scale(1.012);
+  }
 
   .mini-task::after {
     position: absolute;
@@ -224,7 +246,9 @@
     transition: transform 180ms ease;
   }
 
-  .theme-card:hover .mini-cta b { transform: translateX(4px); }
+  .theme-card:hover .mini-cta b {
+    transform: translateX(4px);
+  }
 
   .mini-support {
     display: grid;
@@ -239,8 +263,16 @@
     border-radius: 12px;
   }
 
-  .mini-panel strong { display: block; margin-bottom: 6px; font-size: 8px; }
-  .mini-panel small { display: block; font-size: 6px; opacity: 0.62; }
+  .mini-panel strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 8px;
+  }
+  .mini-panel small {
+    display: block;
+    font-size: 6px;
+    opacity: 0.62;
+  }
 
   .mini-progress-row {
     justify-content: space-between;
@@ -263,55 +295,174 @@
     animation: progress-breathe 2.8s ease-in-out infinite alternate;
   }
 
-  .theme-a .card-image { background: #e9edf8; }
-  .theme-a .mini-app { background: #f8f9fd; color: #172033; }
-  .theme-a .mini-header { border-bottom: 1px solid #e4e8f1; background: rgba(255,255,255,.9); }
-  .theme-a .mini-brand i { background: linear-gradient(145deg, #4054d8, #7887f2); }
-  .theme-a .mini-nav span:first-child { color: #4054d8; }
-  .theme-a .mini-actions i { background: #edf0f7; }
-  .theme-a .mini-eyebrow { color: #4054d8; }
-  .theme-a .mini-eyebrow i { background: #2fb7a8; box-shadow: 0 0 0 4px rgba(47,183,168,.12); }
-  .theme-a .mini-task { background: #172033; color: #d8def0; box-shadow: 0 20px 36px rgba(23,32,51,.19); }
-  .theme-a .mini-task h4 { color: #fff; }
-  .theme-a .mini-task::after { color: #7485f1; }
-  .theme-a .mini-cta { background: #ff8969; color: #172033; }
-  .theme-a .mini-panel { border: 1px solid #e2e6ef; background: #fff; }
-  .theme-a .mini-progress { background: #e7eaf1; }
-  .theme-a .mini-progress i { background: linear-gradient(90deg, #4054d8, #2fb7a8); }
+  .theme-a .card-image {
+    background: #e9edf8;
+  }
+  .theme-a .mini-app {
+    background: #f8f9fd;
+    color: #172033;
+  }
+  .theme-a .mini-header {
+    border-bottom: 1px solid #e4e8f1;
+    background: rgba(255, 255, 255, 0.9);
+  }
+  .theme-a .mini-brand i {
+    background: linear-gradient(145deg, #4054d8, #7887f2);
+  }
+  .theme-a .mini-nav span:first-child {
+    color: #4054d8;
+  }
+  .theme-a .mini-actions i {
+    background: #edf0f7;
+  }
+  .theme-a .mini-eyebrow {
+    color: #4054d8;
+  }
+  .theme-a .mini-eyebrow i {
+    background: #2fb7a8;
+    box-shadow: 0 0 0 4px rgba(47, 183, 168, 0.12);
+  }
+  .theme-a .mini-task {
+    background: #172033;
+    color: #d8def0;
+    box-shadow: 0 20px 36px rgba(23, 32, 51, 0.19);
+  }
+  .theme-a .mini-task h4 {
+    color: #fff;
+  }
+  .theme-a .mini-task::after {
+    color: #7485f1;
+  }
+  .theme-a .mini-cta {
+    background: #ff8969;
+    color: #172033;
+  }
+  .theme-a .mini-panel {
+    border: 1px solid #e2e6ef;
+    background: #fff;
+  }
+  .theme-a .mini-progress {
+    background: #e7eaf1;
+  }
+  .theme-a .mini-progress i {
+    background: linear-gradient(90deg, #4054d8, #2fb7a8);
+  }
 
-  .theme-b .card-image { background: #dce5ec; }
-  .theme-b .mini-app { background: #eef3f7; color: #273042; }
-  .theme-b .mini-header { border-bottom: 1px solid #d5e0e8; background: #edf3f7; }
-  .theme-b .mini-brand i { border-radius: 50%; background: #5c7591; }
-  .theme-b .mini-nav span:first-child { color: #344e68; }
-  .theme-b .mini-actions i { background: #d8e3ea; }
-  .theme-b .mini-eyebrow { color: #557491; }
-  .theme-b .mini-eyebrow i { background: #d78464; box-shadow: 0 0 0 4px rgba(215,132,100,.14); }
-  .theme-b .mini-title { font-weight: 670; letter-spacing: -0.04em; }
-  .theme-b .mini-task { border: 1px solid #cad6df; background: #f8fbfc; color: #273042; box-shadow: 0 16px 34px rgba(44,63,82,.1); }
-  .theme-b .mini-task::after { color: #6e879f; }
-  .theme-b .mini-cta { background: #304a63; color: #fff; }
-  .theme-b .mini-panel { border: 1px solid #d3dee6; background: rgba(255,255,255,.58); }
-  .theme-b .mini-progress { background: #d7e1e8; }
-  .theme-b .mini-progress i { background: linear-gradient(90deg, #557491, #d78464); }
+  .theme-b .card-image {
+    background: #dce5ec;
+  }
+  .theme-b .mini-app {
+    background: #eef3f7;
+    color: #273042;
+  }
+  .theme-b .mini-header {
+    border-bottom: 1px solid #d5e0e8;
+    background: #edf3f7;
+  }
+  .theme-b .mini-brand i {
+    border-radius: 50%;
+    background: #5c7591;
+  }
+  .theme-b .mini-nav span:first-child {
+    color: #344e68;
+  }
+  .theme-b .mini-actions i {
+    background: #d8e3ea;
+  }
+  .theme-b .mini-eyebrow {
+    color: #557491;
+  }
+  .theme-b .mini-eyebrow i {
+    background: #d78464;
+    box-shadow: 0 0 0 4px rgba(215, 132, 100, 0.14);
+  }
+  .theme-b .mini-title {
+    font-weight: 670;
+    letter-spacing: -0.04em;
+  }
+  .theme-b .mini-task {
+    border: 1px solid #cad6df;
+    background: #f8fbfc;
+    color: #273042;
+    box-shadow: 0 16px 34px rgba(44, 63, 82, 0.1);
+  }
+  .theme-b .mini-task::after {
+    color: #6e879f;
+  }
+  .theme-b .mini-cta {
+    background: #304a63;
+    color: #fff;
+  }
+  .theme-b .mini-panel {
+    border: 1px solid #d3dee6;
+    background: rgba(255, 255, 255, 0.58);
+  }
+  .theme-b .mini-progress {
+    background: #d7e1e8;
+  }
+  .theme-b .mini-progress i {
+    background: linear-gradient(90deg, #557491, #d78464);
+  }
 
-  .theme-c .card-image { background: #211925; }
-  .theme-c .mini-app { background: #2d2231; color: #f1eaf3; box-shadow: 0 18px 40px rgba(13,8,16,.42); }
-  .theme-c .mini-header { border-bottom: 1px solid rgba(255,255,255,.08); background: #271d2b; }
-  .theme-c .mini-brand i { background: linear-gradient(145deg, #a26f9a, #d7a67b); }
-  .theme-c .mini-nav { color: #c5b8c9; }
-  .theme-c .mini-nav span:first-child { color: #a9d6e9; }
-  .theme-c .mini-actions i { background: rgba(255,255,255,.08); }
-  .theme-c .mini-eyebrow { color: #a9d6e9; }
-  .theme-c .mini-eyebrow i { background: #e4b483; box-shadow: 0 0 0 4px rgba(228,180,131,.13); }
-  .theme-c .mini-lead { color: #c8bccb; }
-  .theme-c .mini-task { background: linear-gradient(145deg, #49334c, #3b2b42); color: #e8dce9; box-shadow: 0 22px 42px rgba(12,7,14,.32); }
-  .theme-c .mini-task::after { color: #a9d6e9; }
-  .theme-c .mini-task h4 { color: #fff8ff; }
-  .theme-c .mini-cta { background: #a9d6e9; color: #2d2231; }
-  .theme-c .mini-panel { border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.045); }
-  .theme-c .mini-progress { background: rgba(255,255,255,.09); }
-  .theme-c .mini-progress i { background: linear-gradient(90deg, #a9d6e9, #d8a77e); }
+  .theme-c .card-image {
+    background: #211925;
+  }
+  .theme-c .mini-app {
+    background: #2d2231;
+    color: #f1eaf3;
+    box-shadow: 0 18px 40px rgba(13, 8, 16, 0.42);
+  }
+  .theme-c .mini-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: #271d2b;
+  }
+  .theme-c .mini-brand i {
+    background: linear-gradient(145deg, #a26f9a, #d7a67b);
+  }
+  .theme-c .mini-nav {
+    color: #c5b8c9;
+  }
+  .theme-c .mini-nav span:first-child {
+    color: #a9d6e9;
+  }
+  .theme-c .mini-actions i {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .theme-c .mini-eyebrow {
+    color: #a9d6e9;
+  }
+  .theme-c .mini-eyebrow i {
+    background: #e4b483;
+    box-shadow: 0 0 0 4px rgba(228, 180, 131, 0.13);
+  }
+  .theme-c .mini-lead {
+    color: #c8bccb;
+  }
+  .theme-c .mini-task {
+    background: linear-gradient(145deg, #49334c, #3b2b42);
+    color: #e8dce9;
+    box-shadow: 0 22px 42px rgba(12, 7, 14, 0.32);
+  }
+  .theme-c .mini-task::after {
+    color: #a9d6e9;
+  }
+  .theme-c .mini-task h4 {
+    color: #fff8ff;
+  }
+  .theme-c .mini-cta {
+    background: #a9d6e9;
+    color: #2d2231;
+  }
+  .theme-c .mini-panel {
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.045);
+  }
+  .theme-c .mini-progress {
+    background: rgba(255, 255, 255, 0.09);
+  }
+  .theme-c .mini-progress i {
+    background: linear-gradient(90deg, #a9d6e9, #d8a77e);
+  }
 
   .library-note {
     margin-top: 24px;
@@ -321,39 +472,77 @@
     background: #f9fafc;
   }
 
-  .library-note strong { color: #20263a; }
-  .library-note p { margin: 7px 0 0; color: #697185; font-size: 12px; line-height: 1.7; }
+  .library-note strong {
+    color: #20263a;
+  }
+  .library-note p {
+    margin: 7px 0 0;
+    color: #697185;
+    font-size: 12px;
+    line-height: 1.7;
+  }
 
   @keyframes signal-pulse {
-    0%, 100% { transform: scale(1); opacity: .72; }
-    50% { transform: scale(1.25); opacity: 1; }
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.72;
+    }
+    50% {
+      transform: scale(1.25);
+      opacity: 1;
+    }
   }
 
   @keyframes orbit-drift {
-    from { transform: translate3d(0, 0, 0) rotate(-4deg); }
-    to { transform: translate3d(-10px, 12px, 0) rotate(5deg); }
+    from {
+      transform: translate3d(0, 0, 0) rotate(-4deg);
+    }
+    to {
+      transform: translate3d(-10px, 12px, 0) rotate(5deg);
+    }
   }
 
   @keyframes progress-breathe {
-    from { transform: scaleX(.88); transform-origin: left; }
-    to { transform: scaleX(1); transform-origin: left; }
+    from {
+      transform: scaleX(0.88);
+      transform-origin: left;
+    }
+    to {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
   }
 
   @media (max-width: 1100px) {
-    .theme-grid { grid-template-columns: 1fr; }
-    .theme-card .card-image { min-height: auto; }
-    .mini-app { max-width: 600px; margin: 0 auto; }
+    .theme-grid {
+      grid-template-columns: 1fr;
+    }
+    .theme-card .card-image {
+      min-height: auto;
+    }
+    .mini-app {
+      max-width: 600px;
+      margin: 0 auto;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; }
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+    }
   }
 </style>
 
 <div class="theme-intro">
   <div class="label">C 端主题与动效方向</div>
   <h2>哪一种更像你想要的面试训练产品？</h2>
-  <p class="subtitle">三套方案保留现有排版、页面结构和业务状态，只改变颜色、材质、字体层级与动效语言。点击卡片即可选择。</p>
+  <p class="subtitle">
+    三套方案保留现有排版、页面结构和业务状态，只改变颜色、材质、字体层级与动效语言。点击卡片即可选择。
+  </p>
 </div>
 
 <div class="cards theme-grid">
@@ -362,7 +551,9 @@
       <div class="mini-app">
         <div class="mini-header">
           <div class="mini-brand"><i></i><span>面试训练 Agent</span></div>
-          <div class="mini-nav"><span>今天</span><span>刷题</span><span>学习</span><span>模拟面试</span></div>
+          <div class="mini-nav">
+            <span>今天</span><span>刷题</span><span>学习</span><span>模拟面试</span>
+          </div>
           <div class="mini-actions"><span>搜索</span><i></i></div>
         </div>
         <div class="mini-main">
@@ -376,16 +567,28 @@
             <span class="mini-cta">开始训练 <b>→</b></span>
           </div>
           <div class="mini-support">
-            <div class="mini-panel"><strong>本周训练节奏</strong><small>已完成 4 次 · 连续 3 天</small><div class="mini-progress-row"><span class="mini-progress"><i></i></span><small>64%</small></div></div>
-            <div class="mini-panel"><strong>下一学习节点</strong><small>RAG 检索质量评估</small></div>
+            <div class="mini-panel">
+              <strong>本周训练节奏</strong><small>已完成 4 次 · 连续 3 天</small>
+              <div class="mini-progress-row">
+                <span class="mini-progress"><i></i></span><small>64%</small>
+              </div>
+            </div>
+            <div class="mini-panel">
+              <strong>下一学习节点</strong><small>RAG 检索质量评估</small>
+            </div>
           </div>
         </div>
       </div>
     </div>
     <div class="card-body">
       <h3>瓷白 × 靛蓝「清醒教练」 <span class="recommendation">推荐</span></h3>
-      <p>明亮、专注、有亲和力。去掉当前偏杂的珊瑚/紫色竞争关系，用靛蓝建立品牌，海玻璃绿表达完成，杏橙只留给主行动。</p>
-      <div class="motion-stack"><span>Motion for React 13.1</span><span>共享布局</span><span>页面转场</span><span>CSS 微交互</span></div>
+      <p>
+        明亮、专注、有亲和力。去掉当前偏杂的珊瑚/紫色竞争关系，用靛蓝建立品牌，海玻璃绿表达完成，杏橙只留给主行动。
+      </p>
+      <div class="motion-stack">
+        <span>Motion for React 13.1</span><span>共享布局</span><span>页面转场</span
+        ><span>CSS 微交互</span>
+      </div>
     </div>
   </div>
 
@@ -394,7 +597,9 @@
       <div class="mini-app">
         <div class="mini-header">
           <div class="mini-brand"><i></i><span>面试训练 Agent</span></div>
-          <div class="mini-nav"><span>今天</span><span>刷题</span><span>学习</span><span>模拟面试</span></div>
+          <div class="mini-nav">
+            <span>今天</span><span>刷题</span><span>学习</span><span>模拟面试</span>
+          </div>
           <div class="mini-actions"><span>搜索</span><i></i></div>
         </div>
         <div class="mini-main">
@@ -402,22 +607,36 @@
           <h3 class="mini-title">稳定推进，每次只解决一个问题</h3>
           <p class="mini-lead">信息密度更克制，强调可读性、秩序感和长期训练的可靠感。</p>
           <div class="mini-task">
-            <div class="mini-meta"><span>今日训练 · 约 18 分钟</span><span>依据 3 条表现证据</span></div>
+            <div class="mini-meta">
+              <span>今日训练 · 约 18 分钟</span><span>依据 3 条表现证据</span>
+            </div>
             <h4>Agent 记忆与上下文工程：回答如何避免“失忆”</h4>
             <p>从问题、作答、反馈到复练，所有状态变化采用细腻而低干扰的自然过渡。</p>
             <span class="mini-cta">开始训练 <b>→</b></span>
           </div>
           <div class="mini-support">
-            <div class="mini-panel"><strong>本周训练节奏</strong><small>已完成 4 次 · 连续 3 天</small><div class="mini-progress-row"><span class="mini-progress"><i></i></span><small>64%</small></div></div>
-            <div class="mini-panel"><strong>下一学习节点</strong><small>RAG 检索质量评估</small></div>
+            <div class="mini-panel">
+              <strong>本周训练节奏</strong><small>已完成 4 次 · 连续 3 天</small>
+              <div class="mini-progress-row">
+                <span class="mini-progress"><i></i></span><small>64%</small>
+              </div>
+            </div>
+            <div class="mini-panel">
+              <strong>下一学习节点</strong><small>RAG 检索质量评估</small>
+            </div>
           </div>
         </div>
       </div>
     </div>
     <div class="card-body">
       <h3>雾蓝 × 石墨「训练仪表」</h3>
-      <p>最稳妥、最专业，也最接近效率工具。动效轻、信息清楚，适合希望降低视觉存在感、把注意力完全留给训练内容的方向。</p>
-      <div class="motion-stack"><span>AutoAnimate 0.10</span><span>列表变化</span><span>CSS 状态过渡</span><span>依赖最轻</span></div>
+      <p>
+        最稳妥、最专业，也最接近效率工具。动效轻、信息清楚，适合希望降低视觉存在感、把注意力完全留给训练内容的方向。
+      </p>
+      <div class="motion-stack">
+        <span>AutoAnimate 0.10</span><span>列表变化</span><span>CSS 状态过渡</span
+        ><span>依赖最轻</span>
+      </div>
     </div>
   </div>
 
@@ -426,35 +645,57 @@
       <div class="mini-app">
         <div class="mini-header">
           <div class="mini-brand"><i></i><span>面试训练 Agent</span></div>
-          <div class="mini-nav"><span>今天</span><span>刷题</span><span>学习</span><span>模拟面试</span></div>
+          <div class="mini-nav">
+            <span>今天</span><span>刷题</span><span>学习</span><span>模拟面试</span>
+          </div>
           <div class="mini-actions"><span>搜索</span><i></i></div>
         </div>
         <div class="mini-main">
           <div class="mini-eyebrow"><i></i><span>夜练专注模式</span></div>
           <h3 class="mini-title">把注意力收回到这一次回答</h3>
-          <p class="mini-lead">更沉浸、更有记忆点，适合夜间训练与模拟面试，但作为默认主题会更有个性。</p>
+          <p class="mini-lead">
+            更沉浸、更有记忆点，适合夜间训练与模拟面试，但作为默认主题会更有个性。
+          </p>
           <div class="mini-task">
-            <div class="mini-meta"><span>今日训练 · 约 18 分钟</span><span>Agent 正在陪练</span></div>
+            <div class="mini-meta">
+              <span>今日训练 · 约 18 分钟</span><span>Agent 正在陪练</span>
+            </div>
             <h4>Agent 记忆与上下文工程：回答如何避免“失忆”</h4>
             <p>用一次完整的入场、聚焦、提交和反馈节奏，营造训练舱式的连续感。</p>
             <span class="mini-cta">进入训练 <b>→</b></span>
           </div>
           <div class="mini-support">
-            <div class="mini-panel"><strong>本周训练节奏</strong><small>已完成 4 次 · 连续 3 天</small><div class="mini-progress-row"><span class="mini-progress"><i></i></span><small>64%</small></div></div>
-            <div class="mini-panel"><strong>下一学习节点</strong><small>RAG 检索质量评估</small></div>
+            <div class="mini-panel">
+              <strong>本周训练节奏</strong><small>已完成 4 次 · 连续 3 天</small>
+              <div class="mini-progress-row">
+                <span class="mini-progress"><i></i></span><small>64%</small>
+              </div>
+            </div>
+            <div class="mini-panel">
+              <strong>下一学习节点</strong><small>RAG 检索质量评估</small>
+            </div>
           </div>
         </div>
       </div>
     </div>
     <div class="card-body">
       <h3>深莓 × 冰蓝「夜练训练舱」</h3>
-      <p>沉浸感和品牌辨识度最高，避开常见的纯黑霓虹科技风，用深莓、冰蓝和琥珀营造更温和的夜间专注体验。</p>
-      <div class="motion-stack"><span>GSAP 3.15</span><span>@gsap/react</span><span>编排式入场</span><span>局部使用</span></div>
+      <p>
+        沉浸感和品牌辨识度最高，避开常见的纯黑霓虹科技风，用深莓、冰蓝和琥珀营造更温和的夜间专注体验。
+      </p>
+      <div class="motion-stack">
+        <span>GSAP 3.15</span><span>@gsap/react</span><span>编排式入场</span><span>局部使用</span>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="library-note">
   <strong>动效库建议</strong>
-  <p>默认推荐 Motion for React 作为唯一主库：足够覆盖路由进入、卡片共享布局、展开收起和手势反馈；React Bits 只作为灵感来源，不整套搬入。GSAP 更适合一处标志性首屏编排，不建议全站铺开。所有方案都会保留 reduced-motion 降级。</p>
+  <p>
+    默认推荐 Motion for React
+    作为唯一主库：足够覆盖路由进入、卡片共享布局、展开收起和手势反馈；React Bits
+    只作为灵感来源，不整套搬入。GSAP 更适合一处标志性首屏编排，不建议全站铺开。所有方案都会保留
+    reduced-motion 降级。
+  </p>
 </div>

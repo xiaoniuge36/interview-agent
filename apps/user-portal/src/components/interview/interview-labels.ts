@@ -27,4 +27,3 @@ export function interviewSpeakerLabel(role: InterviewTurnRole): string {
       return '训练助手';
   }
 }
-

@@ -1,7 +1,17 @@
 import { spawn } from 'node:child_process';
 
+import {
+  commandInvocation,
+  delay,
+  formatOutput,
+  pipeOutput,
+  stopChildProcess,
+} from '../lib/process.mjs';
+
 const HEALTH_RETRY_DELAY_MS = 250;
 const REQUEST_TIMEOUT_MS = 1_000;
+
+export { commandInvocation, formatOutput };
 
 export function runCommand(command, args, options = {}) {
   const label = options.label ?? command;
@@ -41,26 +51,8 @@ export function startService(service, options = {}) {
   return child;
 }
 
-export function commandInvocation(command, args) {
-  if (process.platform !== 'win32' || !command.endsWith('.cmd')) return { command, args };
-  return {
-    command: process.env.ComSpec ?? 'cmd.exe',
-    args: ['/d', '/s', '/c', [command, ...args].join(' ')],
-  };
-}
-
-export async function stopService(child) {
-  if (!child.pid || child.exitCode !== null) return;
-  if (process.platform === 'win32') {
-    await runCommand('taskkill', ['/pid', String(child.pid), '/t', '/f'], {
-      label: `E2E process ${child.pid} cleanup`,
-      stdio: 'ignore',
-    }).catch(() => undefined);
-    return;
-  }
-  const exited = onceExit(child);
-  child.kill('SIGTERM');
-  await Promise.race([exited, delay(REQUEST_TIMEOUT_MS)]);
+export function stopService(child) {
+  return stopChildProcess(child, { gracePeriodMs: REQUEST_TIMEOUT_MS });
 }
 
 export async function waitForHttp(url, { timeoutMs }) {
@@ -97,41 +89,6 @@ function commandOptions(options) {
     stdio: options.stdio ?? ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   };
-}
-
-function pipeOutput(stream, label) {
-  let pending = '';
-  stream?.on('data', (chunk) => {
-    const output = pending + String(chunk);
-    const lastNewline = output.lastIndexOf('\n');
-    if (lastNewline === -1) {
-      pending = output;
-      return;
-    }
-    process.stdout.write(formatOutput(label, output.slice(0, lastNewline + 1)));
-    pending = output.slice(lastNewline + 1);
-  });
-  stream?.once('end', () => {
-    if (pending) process.stdout.write(formatOutput(label, pending));
-  });
-}
-
-export function formatOutput(label, output) {
-  const text = String(output).replace(/\r\n/gu, '\n');
-  if (!text) return '';
-  const hasTrailingNewline = text.endsWith('\n');
-  const lines = text.split('\n');
-  if (hasTrailingNewline) lines.pop();
-  const prefixed = lines.map((line) => `[${label}] ${line}`).join('\n');
-  return hasTrailingNewline ? `${prefixed}\n` : prefixed;
-}
-
-function onceExit(child) {
-  return new Promise((resolve) => child.once('close', resolve));
-}
-
-function delay(milliseconds) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function messageFor(error) {

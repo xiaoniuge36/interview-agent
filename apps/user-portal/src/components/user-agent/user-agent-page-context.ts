@@ -1,15 +1,7 @@
-import {
-  userAgentQuickActions,
-  type UserAgentQuickAction,
-} from './user-agent-quick-actions';
+import { userAgentQuickActions, type UserAgentQuickAction } from './user-agent-quick-actions';
 
 export type UserAgentPageContextId =
-  | 'training-overview'
-  | 'practice'
-  | 'reports'
-  | 'profile'
-  | 'settings'
-  | 'interview';
+  'training-overview' | 'practice' | 'reports' | 'profile' | 'settings' | 'interview';
 
 export type UserAgentPageContext = {
   id: UserAgentPageContextId;

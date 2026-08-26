@@ -64,10 +64,14 @@ function RoleTemplatePicker({
     <section className="role-template-picker" aria-labelledby="role-template-heading">
       <div className="role-template-heading">
         <div>
-          <span className="eyebrow" id="role-template-heading">岗位模板库</span>
+          <span className="eyebrow" id="role-template-heading">
+            岗位模板库
+          </span>
           <p>先选择接近的岗位方向，系统会自动填充训练用 JD、公司背景和表达重点。</p>
         </div>
-        <span className="role-template-count">{ROLE_TITLE_OPTIONS.length} 个岗位 · 6 个岗位族群</span>
+        <span className="role-template-count">
+          {ROLE_TITLE_OPTIONS.length} 个岗位 · 6 个岗位族群
+        </span>
       </div>
       <div className="role-template-groups">
         {ROLE_GROUPS.map((group) => (

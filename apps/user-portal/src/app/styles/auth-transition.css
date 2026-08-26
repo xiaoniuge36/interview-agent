@@ -1,3 +1,4 @@
+/* 会话确认/恢复过渡屏：主题感知（六主题 CSS 变量），动画统一尊重 reduced-motion 与 data-motion。 */
 .auth-bootstrap {
   position: relative;
   isolation: isolate;
@@ -5,14 +6,8 @@
   min-block-size: 100svh;
   place-items: center;
   overflow: hidden;
-  padding: 32px;
-  background:
-    radial-gradient(
-      circle at 50% 0%,
-      color-mix(in srgb, var(--primary) 12%, transparent),
-      transparent 38%
-    ),
-    var(--canvas);
+  padding: 28px;
+  background: var(--theme-canvas);
 }
 
 .auth-bootstrap::before,
@@ -23,218 +18,261 @@
   pointer-events: none;
 }
 
+/* 主色氛围光晕 */
 .auth-bootstrap::before {
   top: 50%;
   left: 50%;
-  width: min(680px, 100vw);
+  width: min(640px, 92vw);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
-  filter: blur(84px);
-  transform: translate(-50%, -45%);
+  background: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+  filter: blur(96px);
+  opacity: 0.7;
+  transform: translate(-50%, -46%);
 }
 
+/* 主题网格底纹 */
 .auth-bootstrap::after {
   inset: 0;
-  opacity: 0.38;
   background-image:
-    linear-gradient(color-mix(in srgb, var(--outline) 50%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--outline) 50%, transparent) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: radial-gradient(circle at center, #000 0%, transparent 66%);
+    linear-gradient(var(--theme-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--theme-grid-color) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 70%);
 }
 
 .auth-transition-card {
   position: relative;
-  width: min(520px, 100%);
+  width: min(480px, 100%);
   overflow: hidden;
-  padding: 34px 40px 28px;
-  border: 1px solid color-mix(in srgb, var(--outline) 86%, transparent);
-  border-radius: 28px;
-  background: linear-gradient(
-    150deg,
-    color-mix(in srgb, var(--surface) 98%, transparent),
-    color-mix(in srgb, var(--surface-subtle) 92%, transparent)
-  );
-  box-shadow:
-    0 24px 72px rgba(15, 23, 42, 0.12),
-    0 2px 8px rgba(15, 23, 42, 0.04);
+  padding: 30px 34px 26px;
+  border: var(--theme-border-width) solid var(--theme-line);
+  border-radius: var(--theme-radius-panel);
+  background: var(--theme-surface-raised);
+  box-shadow: var(--theme-shadow-raised);
+  backdrop-filter: blur(var(--theme-panel-blur));
 }
 
+/* 角落同心圆：与登录页 access 视觉呼应 */
 .auth-transition-card::before {
   position: absolute;
-  top: -54px;
-  right: -54px;
-  width: 146px;
-  height: 146px;
-  border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  top: -64px;
+  right: -64px;
+  width: 150px;
+  height: 150px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 26%, transparent);
   border-radius: 50%;
   box-shadow:
-    0 0 0 24px color-mix(in srgb, var(--primary) 5%, transparent),
-    0 0 0 48px color-mix(in srgb, var(--primary) 3%, transparent);
+    0 0 0 26px color-mix(in srgb, var(--theme-primary) 6%, transparent),
+    0 0 0 52px color-mix(in srgb, var(--theme-primary) 3%, transparent);
   content: '';
+  pointer-events: none;
 }
 
 .auth-transition-brand {
   position: relative;
   z-index: 1;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
 }
 
-.auth-transition-brand > span:last-child {
+.auth-transition-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+}
+
+.auth-transition-mark .brand-mark {
+  border-radius: var(--theme-radius-control);
+  background: var(--theme-primary);
+  color: var(--theme-on-primary);
+  border-color: color-mix(in srgb, var(--theme-primary) 45%, var(--theme-line));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--theme-primary) 30%, transparent);
+}
+
+/* 环绕扫描环：会话握手的信号语言 */
+.auth-transition-orbit {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 260deg,
+    color-mix(in srgb, var(--theme-primary) 85%, transparent) 320deg,
+    transparent 360deg
+  );
+  mask-image: radial-gradient(circle, transparent 58%, #000 62%, #000 70%, transparent 74%);
+  animation: auth-transition-orbit-spin 2.4s linear infinite;
+}
+
+.auth-transition-brand > span:nth-child(2) {
   display: grid;
   gap: 2px;
   text-align: left;
 }
 
 .auth-transition-brand strong {
-  color: var(--ink);
+  color: var(--theme-ink);
   font-size: 14px;
   letter-spacing: -0.02em;
 }
 
-.auth-transition-brand small,
-.auth-transition-step-content small,
-.auth-transition-hint {
-  color: var(--text-subtle);
+.auth-transition-brand small {
+  color: var(--theme-text-muted);
   font-size: 11px;
+}
+
+.auth-transition-signal {
+  margin-left: auto;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 32%, var(--theme-line));
+  border-radius: var(--theme-radius-control);
+  background: color-mix(in srgb, var(--theme-primary) 8%, transparent);
+  color: var(--theme-primary);
+  font-family: var(--font-tech);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  animation: auth-transition-signal-blink 2.2s ease-in-out infinite;
 }
 
 .auth-transition-copy {
   position: relative;
   z-index: 1;
   display: grid;
-  margin-top: 28px;
+  margin-top: 30px;
 }
 
 .auth-transition-copy > span {
-  color: var(--primary-strong);
+  color: var(--theme-primary);
+  font-family: var(--font-tech);
   font-size: 11px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: 0.1em;
 }
 
 .auth-transition-copy h1 {
   margin: 8px 0 9px;
-  color: var(--ink);
-  font-size: clamp(25px, 5vw, 32px);
+  color: var(--theme-ink);
+  font-family: var(--theme-display-family);
+  font-size: clamp(26px, 5.2vw, 33px);
   letter-spacing: -0.045em;
-  line-height: 1.18;
+  line-height: 1.16;
 }
 
 .auth-transition-copy p {
-  max-width: 360px;
+  max-width: 350px;
   margin: 0;
-  color: var(--text-muted);
+  color: var(--theme-text-muted);
   font-size: 13px;
   line-height: 1.7;
 }
 
-.auth-transition-steps {
+/* 信号扫描进度轨：循环彗尾表达“握手进行中” */
+.auth-transition-track {
   position: relative;
   z-index: 1;
-  display: grid;
-  gap: 14px;
-  margin: 30px 0 20px;
-  padding: 0;
-  list-style: none;
+  height: 3px;
+  margin-top: 26px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-line) 72%, transparent);
 }
 
-.auth-transition-steps::before {
+.auth-transition-track i {
   position: absolute;
-  top: 20px;
-  bottom: 20px;
-  left: 18px;
-  width: 1px;
-  background: color-mix(in srgb, var(--outline-strong) 72%, transparent);
-  content: '';
+  inset: 0;
+  width: 38%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--theme-primary) 65%, transparent),
+    var(--theme-primary)
+  );
+  animation: auth-transition-track-sweep 1.6s var(--ease-out, ease) infinite;
 }
 
-.auth-transition-step {
+.entering .auth-transition-track i {
+  animation-duration: 1.05s;
+}
+
+.auth-transition-status {
   position: relative;
-  display: grid;
-  grid-template-columns: 37px minmax(0, 1fr);
+  z-index: 1;
+  display: flex;
   align-items: center;
   gap: 11px;
-  min-height: 40px;
+  margin-top: 20px;
+  padding-top: 17px;
+  border-top: 1px solid color-mix(in srgb, var(--theme-line) 82%, transparent);
 }
 
-.auth-transition-step-marker {
-  display: grid;
-  z-index: 1;
-  width: 37px;
-  height: 37px;
-  place-items: center;
-  border: 1px solid var(--outline-strong);
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--text-subtle);
-  font-size: 12px;
-  font-weight: 750;
-  transition:
-    border-color 180ms var(--ease-out),
-    background 180ms var(--ease-out),
-    color 180ms var(--ease-out),
-    box-shadow 180ms var(--ease-out);
+.auth-transition-status > span {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--theme-primary);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--theme-primary) 18%, transparent);
+  animation: auth-transition-status-pulse 1.45s ease-in-out infinite;
 }
 
-.auth-transition-step-content {
+.entering .auth-transition-status > span {
+  background: var(--theme-success);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--theme-success) 20%, transparent);
+}
+
+.auth-transition-status > div {
   display: grid;
   gap: 2px;
 }
 
-.auth-transition-step-content strong {
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  transition: color 180ms var(--ease-out);
+.auth-transition-status strong {
+  color: var(--theme-ink);
+  font-size: 12px;
 }
 
-.auth-transition-step-content small {
-  line-height: 1.45;
+.auth-transition-status small {
+  color: var(--theme-text-muted);
+  font-size: 11px;
 }
 
-.auth-transition-step[data-state='current'] .auth-transition-step-marker {
-  border-color: color-mix(in srgb, var(--primary) 50%, var(--outline));
-  background: var(--primary);
-  color: #fff;
-  box-shadow: 0 0 0 5px var(--primary-glow);
-  animation: auth-transition-pulse 1.8s var(--ease-out) infinite;
+@keyframes auth-transition-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.auth-transition-step[data-state='current'] .auth-transition-step-content strong {
-  color: var(--ink);
-}
-
-.auth-transition-step[data-state='completed'] .auth-transition-step-marker {
-  border-color: color-mix(in srgb, var(--success) 68%, var(--outline));
-  background: var(--success);
-  color: #fff;
-}
-
-.auth-transition-step[data-state='completed'] .auth-transition-step-content strong {
-  color: var(--ink);
-}
-
-.auth-transition-hint {
-  position: relative;
-  z-index: 1;
-  margin: 0;
-  padding-top: 17px;
-  border-top: 1px solid color-mix(in srgb, var(--outline) 74%, transparent);
-  line-height: 1.5;
-}
-
-@keyframes auth-transition-pulse {
+@keyframes auth-transition-signal-blink {
   0%,
   100% {
-    box-shadow: 0 0 0 5px var(--primary-glow);
+    opacity: 1;
   }
   50% {
-    box-shadow: 0 0 0 9px color-mix(in srgb, var(--primary-glow) 55%, transparent);
+    opacity: 0.55;
+  }
+}
+
+@keyframes auth-transition-track-sweep {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes auth-transition-status-pulse {
+  50% {
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--theme-primary) 9%, transparent);
   }
 }
 
@@ -244,21 +282,35 @@
   }
 
   .auth-transition-card {
-    padding: 28px 24px 24px;
-    border-radius: 24px;
+    padding: 26px 22px 22px;
+  }
+
+  .auth-transition-signal {
+    display: none;
   }
 
   .auth-transition-copy h1 {
-    font-size: 26px;
+    font-size: 25px;
   }
 }
 
+html[data-motion='off'] .auth-transition-orbit,
+html[data-motion='off'] .auth-transition-signal,
+html[data-motion='off'] .auth-transition-track i,
+html[data-motion='off'] .auth-transition-status > span {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .auth-transition-step-marker {
-    transition: none;
+  .auth-transition-orbit,
+  .auth-transition-signal,
+  .auth-transition-track i,
+  .auth-transition-status > span {
+    animation: none;
   }
 
-  .auth-transition-step[data-state='current'] .auth-transition-step-marker {
-    animation: none;
+  .auth-transition-track i {
+    width: 100%;
+    background: color-mix(in srgb, var(--theme-primary) 42%, transparent);
   }
 }

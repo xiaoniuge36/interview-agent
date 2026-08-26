@@ -59,7 +59,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
 }
 
@@ -134,7 +134,7 @@
   gap: 8px;
   color: var(--text-muted);
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .settings-actions {

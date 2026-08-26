@@ -13,8 +13,14 @@ export function listModelCredentials(): Promise<ModelCredentialView[]> {
   return apiRequest({ path: '/model-credentials', schema: ModelCredentialListSchema });
 }
 
-export function createModelCredential(input: CreateModelCredentialInput): Promise<ModelCredentialView> {
-  return sendCredential('/model-credentials', 'POST', CreateModelCredentialInputSchema.parse(input));
+export function createModelCredential(
+  input: CreateModelCredentialInput,
+): Promise<ModelCredentialView> {
+  return sendCredential(
+    '/model-credentials',
+    'POST',
+    CreateModelCredentialInputSchema.parse(input),
+  );
 }
 
 export function updateModelCredential(
@@ -29,7 +35,11 @@ export function updateModelCredential(
 }
 
 export function testModelCredential(credentialId: string): Promise<ModelCredentialView> {
-  return apiRequest({ path: `/model-credentials/${credentialId}/test`, schema: ModelCredentialViewSchema, init: { method: 'POST' } });
+  return apiRequest({
+    path: `/model-credentials/${credentialId}/test`,
+    schema: ModelCredentialViewSchema,
+    init: { method: 'POST' },
+  });
 }
 
 export function removeModelCredential(credentialId: string): Promise<void> {

@@ -31,14 +31,14 @@ GET /admin/audit-logs/query   GET /admin/audit-logs/export
 
 共同参数为 `keyword`、`page`、`pageSize`。资源专属条件为：
 
-| 资源 | 额外筛选 |
-| --- | --- |
-| 导入任务 | `status` |
-| 正式题库 | `status`、`difficulty` |
-| 候选题 | `status`、`importTaskId` |
-| 模型 | `status` |
-| Agent 运行 | `status` |
-| 审计日志 | `result` |
+| 资源       | 额外筛选                 |
+| ---------- | ------------------------ |
+| 导入任务   | `status`                 |
+| 正式题库   | `status`、`difficulty`   |
+| 候选题     | `status`、`importTaskId` |
+| 模型       | `status`                 |
+| Agent 运行 | `status`                 |
+| 审计日志   | `result`                 |
 
 `export` 使用相同筛选条件、同一权限与租户范围，不使用页面分页。服务端生成 UTF-8 BOM CSV，最大 10,000 行，转义 CSV 字段和 Excel 公式前缀，并记录审计日志。
 

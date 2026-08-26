@@ -41,7 +41,7 @@
   color: color-mix(in srgb, var(--success) 72%, var(--agent-text));
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -99,7 +99,7 @@
   margin-top: 7px;
   color: color-mix(in srgb, var(--success) 74%, var(--agent-text));
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, var(--success) 42%, transparent);
   text-underline-offset: 4px;
@@ -155,7 +155,7 @@
   margin-top: 7px;
   color: color-mix(in srgb, var(--success) 70%, var(--agent-text));
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .question-hub-supporting-content {

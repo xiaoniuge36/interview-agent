@@ -49,7 +49,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .interview-restart-dialog h2,
@@ -99,7 +99,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
 }
 
@@ -125,7 +125,7 @@
   background: var(--primary);
   color: var(--surface);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .interview-context {
@@ -235,7 +235,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.06em;
 }
 
@@ -372,7 +372,7 @@
 .interview-review-return-evidence > span {
   color: var(--success-strong, var(--primary-strong));
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -478,5 +478,16 @@
 
   .score-row:hover {
     transform: none;
+  }
+}
+
+/* 窄屏塌缩（原 responsive.css @1180，随路由级 CSS 拆分迁入以保持层叠次序）。 */
+@media (max-width: 1180px) {
+  .interview {
+    grid-template-columns: 1fr;
+  }
+
+  .interview > aside {
+    grid-template-columns: 1fr;
   }
 }

@@ -19,13 +19,35 @@ export function MarkdownImportForm({ onChanged, onCompleted }: MarkdownImportFor
     <Card className="admin-form-card" variant="borderless">
       <Form layout="vertical" onFinish={() => void form.submit()} requiredMark={false}>
         <Form.Item label="资料标题" required>
-          <Input placeholder="例如：支付系统面试笔记" value={form.title} onChange={(event) => form.setTitle(event.target.value)} />
+          <Input
+            placeholder="例如：支付系统面试笔记"
+            value={form.title}
+            onChange={(event) => form.setTitle(event.target.value)}
+          />
         </Form.Item>
         <Form.Item label="Markdown 内容" required>
-          <Input.TextArea rows={10} value={form.markdown} onChange={(event) => form.setMarkdown(event.target.value)} />
+          <Input.TextArea
+            rows={10}
+            value={form.markdown}
+            onChange={(event) => form.setMarkdown(event.target.value)}
+          />
         </Form.Item>
-        {form.message ? <Alert className="admin-form-message" message={form.message} showIcon type={form.messageType} /> : null}
-        <Button data-page-agent-not-interactive="true" htmlType="submit" loading={form.isSubmitting} type="primary">导入并生成候选题</Button>
+        {form.message ? (
+          <Alert
+            className="admin-form-message"
+            title={form.message}
+            showIcon
+            type={form.messageType}
+          />
+        ) : null}
+        <Button
+          data-page-agent-not-interactive="true"
+          htmlType="submit"
+          loading={form.isSubmitting}
+          type="primary"
+        >
+          导入并生成候选题
+        </Button>
       </Form>
     </Card>
   );

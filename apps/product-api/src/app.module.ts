@@ -9,6 +9,7 @@ import { localEnvironmentFiles } from './common/config/environment-files';
 import { ContextMiddleware } from './common/context/context.middleware';
 import { PrismaModule } from './common/database/prisma.module';
 import { RequestLoggingInterceptor } from './common/logging/request-logging.interceptor';
+import { RedisThrottlerStorage } from './common/redis/redis-throttler.storage';
 import { RedisModule } from './common/redis/redis.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AgentRuntimeModule } from './modules/agent-runtime/agent-runtime.module';
@@ -35,13 +36,17 @@ const localEnvFiles = localEnvironmentFiles(process.cwd(), process.env.E2E_PRESE
       validate: validateEnvironment,
     }),
     ThrottlerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService<Environment, true>) => [
-        {
-          ttl: config.get('API_THROTTLE_TTL_MS', { infer: true }),
-          limit: config.get('API_THROTTLE_LIMIT', { infer: true }),
-        },
-      ],
+      imports: [RedisModule],
+      inject: [ConfigService, RedisThrottlerStorage],
+      useFactory: (config: ConfigService<Environment, true>, storage: RedisThrottlerStorage) => ({
+        throttlers: [
+          {
+            ttl: config.get('API_THROTTLE_TTL_MS', { infer: true }),
+            limit: config.get('API_THROTTLE_LIMIT', { infer: true }),
+          },
+        ],
+        storage,
+      }),
     }),
     PrismaModule,
     RedisModule,

@@ -110,11 +110,7 @@ function RecommendationCard({
         <p>{recommendation.reason}</p>
       </div>
       <button type="button" onClick={onStart} disabled={busy}>
-        <ActionLabel
-          label="采用这组题开始练习"
-          busy={busy}
-          busyLabel="正在创建题单…"
-        />
+        <ActionLabel label="采用这组题开始练习" busy={busy} busyLabel="正在创建题单…" />
       </button>
       <Link className="agent-self-picker-link" href="/questions">
         自己组一轮

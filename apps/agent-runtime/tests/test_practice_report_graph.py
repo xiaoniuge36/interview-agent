@@ -1,3 +1,6 @@
+import asyncio
+import logging
+
 import pytest
 from app.model_gateway import ModelGatewayError, ModelGatewayRequest
 from app.schemas.practice_report import PracticeReportRequest
@@ -21,6 +24,12 @@ class FakeGateway:
         if isinstance(response, Exception):
             raise response
         return response
+
+
+class BlockingGateway:
+    async def complete(self, _request: ModelGatewayRequest) -> str:
+        await asyncio.Event().wait()
+        raise AssertionError("blocked gateway resumed")
 
 
 def valid_request() -> PracticeReportRequest:
@@ -93,7 +102,10 @@ async def test_graph_repairs_one_invalid_model_response() -> None:
 
 
 @pytest.mark.anyio
-async def test_graph_uses_deterministic_fallback_after_failed_repair() -> None:
+async def test_graph_uses_deterministic_fallback_after_failed_repair(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.WARNING, logger="agent_runtime.practice_report_graph")
     gateway = FakeGateway(["not-json", "still-not-json"])
 
     result = await run_practice_report_graph(create_practice_report_graph(gateway), valid_request())
@@ -102,16 +114,39 @@ async def test_graph_uses_deterministic_fallback_after_failed_repair() -> None:
     assert result.overall_score == 72
     assert result.weaknesses == ["Capacity planning"]
     assert result.source_ids == []
+    events = [record.__dict__.get("event") for record in caplog.records]
+    assert "practice_report_generation_failed" in events
+    assert "practice_report_fallback_used" in events
+    log_output = " ".join(
+        str(value) for record in caplog.records for value in record.__dict__.values()
+    )
+    assert "signed-runtime-grant" not in log_output
 
 
 @pytest.mark.anyio
-async def test_graph_does_not_fallback_after_a_blocked_provider_endpoint() -> None:
+async def test_graph_fails_fast_without_fallback_after_a_blocked_provider_endpoint() -> None:
+    checkpointer = InMemorySaver()
     gateway = FakeGateway([ModelGatewayError("MODEL_PROVIDER_ENDPOINT_BLOCKED", retryable=False)])
+    graph = create_practice_report_graph(gateway, checkpointer)
+    request = valid_request()
 
     with pytest.raises(PracticeReportGraphError, match="MODEL_PROVIDER_ENDPOINT_BLOCKED"):
-        await run_practice_report_graph(create_practice_report_graph(gateway), valid_request())
+        await run_practice_report_graph(graph, request)
 
     assert len(gateway.requests) == 1
+    stored = await checkpointer.aget_tuple(
+        {"configurable": {"thread_id": practice_report_thread_id(request)}}
+    )
+    assert stored is not None
+    assert "decision" not in stored.checkpoint["channel_values"]
+
+
+@pytest.mark.anyio
+async def test_graph_times_out_the_whole_run() -> None:
+    graph = create_practice_report_graph(BlockingGateway())
+
+    with pytest.raises(PracticeReportGraphError, match="MODEL_PROVIDER_TIMEOUT"):
+        await run_practice_report_graph(graph, valid_request(), timeout_seconds=0.05)
 
 
 @pytest.mark.anyio
@@ -134,6 +169,19 @@ async def test_checkpoint_reuses_completed_report_without_repeating_model_call()
     assert grant is not None
     assert grant not in repr(stored.checkpoint["channel_values"])
     assert "raw_decision" not in stored.checkpoint["channel_values"]
+
+
+@pytest.mark.anyio
+async def test_graph_without_checkpointer_recomputes_each_invocation() -> None:
+    gateway = FakeGateway([valid_decision(), valid_decision()])
+    graph = create_practice_report_graph(gateway)
+    request = valid_request()
+
+    first = await run_practice_report_graph(graph, request)
+    second = await run_practice_report_graph(graph, request)
+
+    assert first == second
+    assert len(gateway.requests) == 2
 
 
 @pytest.mark.anyio

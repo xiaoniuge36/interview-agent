@@ -1,5 +1,8 @@
 import type { PageAgentTool } from '@page-agent/core';
 import { ProfilePayloadSchema } from '@interview-agent/contracts';
+// 必须使用 zod/v4：@page-agent/core 的 PageAgentTool.inputSchema 以 zod/v4 的
+// ZodType 定型（其运行时依赖 v4 的 JSON Schema 能力）。仓库其余代码统一用 'zod'（v3 API）；
+// zod/v4 的使用仅收敛在本文件与 admin-console 的 admin-agent-tools.ts。
 import { z } from 'zod/v4';
 import type { NavigationId } from '@/components/shell/navigation';
 import { apiRequest } from '@/lib/api';

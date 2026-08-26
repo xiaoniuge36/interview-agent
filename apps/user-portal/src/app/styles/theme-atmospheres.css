@@ -102,28 +102,54 @@ html[data-motion='off'] .theme-atmosphere * {
 }
 
 @keyframes theme-orbit-drift {
-  from { transform: translate3d(0, 0, 0) rotate(-5deg); }
-  to { transform: translate3d(-4%, 5%, 0) rotate(5deg); }
+  from {
+    transform: translate3d(0, 0, 0) rotate(-5deg);
+  }
+  to {
+    transform: translate3d(-4%, 5%, 0) rotate(5deg);
+  }
 }
 
 @keyframes theme-particle-drift {
-  from { transform: translate3d(0, 0, 0) scale(0.98); }
-  to { transform: translate3d(3%, -4%, 0) scale(1.04); }
+  from {
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+  to {
+    transform: translate3d(3%, -4%, 0) scale(1.04);
+  }
 }
 
 @keyframes terminal-scan {
-  0%, 100% { clip-path: inset(0 0 96% 0); opacity: 0.35; }
-  50% { clip-path: inset(48% 0 48% 0); opacity: 0.88; }
+  0%,
+  100% {
+    clip-path: inset(0 0 96% 0);
+    opacity: 0.35;
+  }
+  50% {
+    clip-path: inset(48% 0 48% 0);
+    opacity: 0.88;
+  }
 }
 
 @keyframes constructivist-shift {
-  from { transform: translate3d(0, 0, 0) rotate(11deg); }
-  to { transform: translate3d(-5%, 4%, 0) rotate(17deg); }
+  from {
+    transform: translate3d(0, 0, 0) rotate(11deg);
+  }
+  to {
+    transform: translate3d(-5%, 4%, 0) rotate(17deg);
+  }
 }
 
 @media (max-width: 820px) {
-  .theme-atmosphere-orbit { right: -34%; width: 88vw; }
-  .theme-atmosphere-particles { width: 84vw; height: 84vw; opacity: 0.38; }
+  .theme-atmosphere-orbit {
+    right: -34%;
+    width: 88vw;
+  }
+  .theme-atmosphere-particles {
+    width: 84vw;
+    height: 84vw;
+    opacity: 0.38;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

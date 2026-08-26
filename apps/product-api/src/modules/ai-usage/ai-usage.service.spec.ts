@@ -16,7 +16,7 @@ const context: ProductRequestContext = {
 
 describe('AiUsageService', () => {
   it('limits summary aggregates and recent activity to the current tenant and user', async () => {
-    const { service, store, policy } = createService();
+    const { service, store, policy, prisma } = createService();
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-07-17T12:00:00.000Z'));
     try {
@@ -39,6 +39,7 @@ describe('AiUsageService', () => {
         where: expect.objectContaining({ tenantId: 'tenant-1', userId: 'user-1' }),
       }),
     );
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
   });
 
   it('checks access before querying private AI usage data', async () => {
@@ -56,9 +57,12 @@ describe('AiUsageService', () => {
 
 function createService(policyOverride: { assert?: jest.Mock } = {}) {
   const store = usageStore();
-  const prisma = { aiInvocation: store };
+  const prisma = {
+    aiInvocation: store,
+    $queryRaw: jest.fn().mockResolvedValue([]),
+  };
   const policy = { assert: policyOverride.assert ?? jest.fn() };
-  return { service: new AiUsageService(prisma as never, policy as never), store, policy };
+  return { service: new AiUsageService(prisma as never, policy as never), store, policy, prisma };
 }
 
 function usageStore() {
@@ -68,11 +72,7 @@ function usageStore() {
   return {
     aggregate: jest.fn().mockResolvedValue({ _avg: { latencyMs: 320 }, _sum: { totalTokens: 42 } }),
     groupBy,
-    findMany: jest
-      .fn()
-      .mockResolvedValueOnce([record])
-      .mockResolvedValueOnce([record])
-      .mockResolvedValueOnce([record]),
+    findMany: jest.fn().mockResolvedValueOnce([record]).mockResolvedValueOnce([record]),
   };
 }
 

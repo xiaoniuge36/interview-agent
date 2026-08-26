@@ -51,7 +51,7 @@
   background: rgba(255, 255, 255, 0.08);
   color: white;
   font-size: 11px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .practice-feedback-header button:hover {
@@ -84,7 +84,7 @@
 .practice-answer-review-title > span {
   color: var(--ink);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .practice-answer-review-title small,
@@ -97,7 +97,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
 }
 
@@ -118,7 +118,7 @@
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .practice-answer-review-block :is(p, h3, blockquote, pre, ul, ol) {
@@ -174,7 +174,7 @@
   color: #83d7c3;
   font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
@@ -194,7 +194,7 @@
   background: var(--surface);
   color: var(--primary-strong);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .practice-answer-review-toggle:hover {
@@ -225,7 +225,7 @@
   min-width: 38px;
   color: var(--primary-strong);
   font-size: 9px;
-  font-weight: 850;
+  font-weight: 700;
 }
 
 .practice-feedback-stage .practice-solution-content > p,

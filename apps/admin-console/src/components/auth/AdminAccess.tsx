@@ -136,7 +136,7 @@ function AdminCredentialsForm(props: AdminCredentialsFormProps) {
         setCredentials={props.setCredentials}
       />
       {props.error ? (
-        <Alert className="admin-access-error" message={props.error} showIcon type="error" />
+        <Alert className="admin-access-error" title={props.error} showIcon type="error" />
       ) : null}
       <Button
         block
@@ -214,7 +214,7 @@ function FederatedAdminAccess({ error }: { error: string | null }) {
           <div className="eyebrow">Secure Access</div>
           <h1>登录 Interview Agent 治理后台</h1>
           {error ? (
-            <Alert message={error} showIcon type="error" />
+            <Alert title={error} showIcon type="error" />
           ) : (
             <p>使用组织身份登录。系统会在登录后校验后台角色。</p>
           )}

@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PracticeRagRecommendationService } from './practice-rag-recommendation.service';
 
@@ -69,6 +70,22 @@ test('returns visible retrieved questions and source evidence when hybrid retrie
       }),
     }),
   );
+});
+
+test('logs a warning and falls back to null when retrieval fails', async () => {
+  const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  const retrieval = {
+    search: jest.fn().mockRejectedValue(new Error('vector store unavailable')),
+  };
+  const service = new PracticeRagRecommendationService(
+    { question: { findMany: jest.fn() } } as never,
+    { get: jest.fn().mockReturnValue(true) } as never,
+    retrieval as never,
+  );
+
+  await expect(service.enhance(context, rules, [])).resolves.toBeNull();
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining('Error'));
+  warn.mockRestore();
 });
 
 function retrievalHits() {

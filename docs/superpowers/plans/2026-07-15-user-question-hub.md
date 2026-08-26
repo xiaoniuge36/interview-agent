@@ -26,6 +26,7 @@
 ## Task 1：契约与持久化
 
 **Files:**
+
 - Create: `packages/contracts/src/schemas/question-catalog.ts`
 - Create: `packages/contracts/src/question-catalog.test.ts`
 - Modify: `packages/contracts/src/schemas/practice.ts`
@@ -72,6 +73,7 @@ Run: `pnpm --filter @interview-agent/contracts test -- question-catalog.test.ts`
 ## Task 2：题库目录 API
 
 **Files:**
+
 - Create: `apps/product-api/src/modules/question-catalog/question-catalog.module.ts`
 - Create: `apps/product-api/src/modules/question-catalog/question-catalog.controller.ts`
 - Create: `apps/product-api/src/modules/question-catalog/question-catalog.service.ts`
@@ -83,9 +85,11 @@ Run: `pnpm --filter @interview-agent/contracts test -- question-catalog.test.ts`
 覆盖 public/current tenant published、关键词、category 隐藏标签、type、difficulty、分页和空结果。
 
 ```ts
-expect(prisma.question.findMany).toHaveBeenCalledWith(expect.objectContaining({
-  where: expect.objectContaining({ status: 'published', OR: expect.any(Array) }),
-}));
+expect(prisma.question.findMany).toHaveBeenCalledWith(
+  expect.objectContaining({
+    where: expect.objectContaining({ status: 'published', OR: expect.any(Array) }),
+  }),
+);
 ```
 
 - [ ] **Step 2：运行 RED**
@@ -105,6 +109,7 @@ Expected: PASS。
 ## Task 3：推荐题单与最近练习
 
 **Files:**
+
 - Create: `apps/product-api/src/modules/practice/practice-recommendation.service.ts`
 - Create: `apps/product-api/src/modules/practice/practice-recommendation.service.spec.ts`
 - Modify: `apps/product-api/src/modules/practice/practice-query.service.ts`
@@ -133,6 +138,7 @@ Expected: PASS。
 ## Task 4：真实模型逐题评价
 
 **Files:**
+
 - Create: `apps/product-api/src/modules/practice/practice-model-evaluator.ts`
 - Create: `apps/product-api/src/modules/practice/practice-model-evaluator.spec.ts`
 - Modify: `apps/product-api/src/modules/practice/practice-command.service.ts`
@@ -171,6 +177,7 @@ Expected: PASS。
 ## Task 5：前端数据客户端与纯状态模型
 
 **Files:**
+
 - Create: `apps/user-portal/src/lib/question-catalog-api.ts`
 - Modify: `apps/user-portal/src/lib/practice-api.ts`
 - Create: `apps/user-portal/src/components/questions/question-picker-model.ts`
@@ -199,6 +206,7 @@ Expected: PASS。
 ## Task 6：首页题库大厅
 
 **Files:**
+
 - Create: `apps/user-portal/src/components/home/question-hub/QuestionHubPage.tsx`
 - Create: `apps/user-portal/src/components/home/question-hub/QuestionSearchBar.tsx`
 - Create: `apps/user-portal/src/components/home/question-hub/QuestionTopicGrid.tsx`
@@ -224,6 +232,7 @@ Expected: PASS。
 ## Task 7：独立选题页
 
 **Files:**
+
 - Create: `apps/user-portal/src/app/(app)/questions/page.tsx`
 - Create: `apps/user-portal/src/components/questions/QuestionPickerPage.tsx`
 - Create: `apps/user-portal/src/components/questions/QuestionFilterPanel.tsx`
@@ -247,6 +256,7 @@ URL 保留 query/category/type/difficulty/sort/page；改变筛选时回到第�
 ## Task 8：单题播放器与真实反馈 UI
 
 **Files:**
+
 - Create: `apps/user-portal/src/components/practice/player/PracticePlayer.tsx`
 - Create: `apps/user-portal/src/components/practice/player/PracticeQuestionNav.tsx`
 - Create: `apps/user-portal/src/components/practice/player/PracticeQuestionStage.tsx`
@@ -276,6 +286,7 @@ URL 保留 query/category/type/difficulty/sort/page；改变筛选时回到第�
 ## Task 9：验证与交付
 
 **Files:**
+
 - Modify only if verification reveals task-scoped defects.
 
 - [ ] **Step 1：生成并验证 Prisma Client**

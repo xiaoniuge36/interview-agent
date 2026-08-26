@@ -1,8 +1,5 @@
 import type { AdminView } from '@/components/admin-navigation';
-import {
-  adminAgentQuickActions,
-  type AdminAgentQuickAction,
-} from './admin-agent-quick-actions';
+import { adminAgentQuickActions, type AdminAgentQuickAction } from './admin-agent-quick-actions';
 
 export type AdminAgentPageContextId =
   | 'operations-overview'
@@ -49,7 +46,8 @@ const IMPORT_ACTIONS: AdminAgentQuickAction[] = [
     id: 'pending-imports',
     title: '查看待处理批次',
     description: '定位尚未完成审核的资料导入',
-    prompt: '查询待审核的导入批次，列出批次名称、候选题数量和待审核数量，并说明下一步人工处理入口。',
+    prompt:
+      '查询待审核的导入批次，列出批次名称、候选题数量和待审核数量，并说明下一步人工处理入口。',
   },
   {
     id: 'import-progress',
@@ -160,7 +158,8 @@ function importContext() {
     title: '资料导入',
     description: '查看导入进度并定位后续审核入口',
     quickActions: IMPORT_ACTIONS,
-    runtimeInstructions: '当前在资料导入中心。只查询批次和解释进度，不启动导入、删除批次或改变资料状态。',
+    runtimeInstructions:
+      '当前在资料导入中心。只查询批次和解释进度，不启动导入、删除批次或改变资料状态。',
   });
 }
 
@@ -190,7 +189,8 @@ function modelGovernanceContext(role: string | undefined) {
     title: '模型治理',
     description: '查看模型策略和运行数据的人工治理入口',
     quickActions: withAiUsage([adminAgentQuickActions[2]!], role),
-    runtimeInstructions: '当前在模型治理页面。只解释连接、策略和用量，不读取凭证，不修改模型、预算或路由。',
+    runtimeInstructions:
+      '当前在模型治理页面。只解释连接、策略和用量，不读取凭证，不修改模型、预算或路由。',
   });
 }
 
@@ -220,7 +220,8 @@ function accountGovernanceContext() {
     title: '账号管理',
     description: '说明账号角色和人工治理入口',
     quickActions: ACCOUNT_ACTIONS,
-    runtimeInstructions: '当前在账号管理页面。只解释角色和审计线索，不查看敏感资料，不创建、禁用或修改账号。',
+    runtimeInstructions:
+      '当前在账号管理页面。只解释角色和审计线索，不查看敏感资料，不创建、禁用或修改账号。',
   });
 }
 
@@ -230,7 +231,8 @@ function overviewContext() {
     title: '运营总览',
     description: '从积压审核、运行状态和关键指标开始',
     quickActions: adminAgentQuickActions,
-    runtimeInstructions: '当前在治理总览。优先查询运营指标、待办和只读状态，不执行审核、发布、导出或账号修改。',
+    runtimeInstructions:
+      '当前在治理总览。优先查询运营指标、待办和只读状态，不执行审核、发布、导出或账号修改。',
   });
 }
 

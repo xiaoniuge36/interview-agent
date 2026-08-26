@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
-  InterviewSession,
   InterviewSessionStatus,
+  InterviewSessionSummary,
   RecentPracticeSummary,
 } from '@interview-agent/contracts';
 import { selectTrainingContinuation } from './training-continuation';
@@ -80,7 +80,7 @@ function interview(
   id: string,
   status: InterviewSessionStatus,
   updatedAt: string,
-): InterviewSession {
+): InterviewSessionSummary {
   return {
     id,
     tenantId: 'tenant-1',
@@ -91,7 +91,8 @@ function interview(
     eventSequence: 1,
     workflowRunId: `run-${id}`,
     title: '前端工程师模拟面试',
-    turns: [],
+    turnCount: 0,
+    candidateTurnCount: 0,
     createdAt: '2026-07-23T09:00:00.000Z',
     updatedAt,
   };

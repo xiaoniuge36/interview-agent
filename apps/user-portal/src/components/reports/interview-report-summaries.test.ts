@@ -1,4 +1,4 @@
-import type { InterviewReport, InterviewSession } from '@interview-agent/contracts';
+import type { InterviewReport, InterviewSessionSummary } from '@interview-agent/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import {
   INTERVIEW_REPORT_SUMMARY_LIMIT,
@@ -41,7 +41,7 @@ function interview(index: number) {
     id: `interview-${index}`,
     status: 'report_ready',
     updatedAt: new Date(Date.UTC(2026, 6, index + 1)).toISOString(),
-  } as InterviewSession;
+  } as InterviewSessionSummary;
 }
 
 function report(sessionId: string) {

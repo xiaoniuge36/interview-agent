@@ -33,6 +33,48 @@ describe('UserPageAgentConversationService ownership', () => {
   });
 });
 
+describe('UserPageAgentConversationService message window', () => {
+  it('loads only the latest bounded messages and returns them ascending', async () => {
+    const prisma = createPrisma();
+    prisma.userAgentConversation.findFirst.mockResolvedValue({
+      id: 'conversation-1',
+      title: '长对话',
+      createdAt: new Date('2026-07-27T00:00:00.000Z'),
+      updatedAt: new Date('2026-07-27T00:05:00.000Z'),
+      _count: { messages: 500 },
+      messages: [
+        {
+          id: 'message-new',
+          role: 'assistant',
+          content: '最新回复',
+          tokenCount: null,
+          createdAt: new Date('2026-07-27T00:05:00.000Z'),
+        },
+        {
+          id: 'message-old',
+          role: 'user',
+          content: '较早提问',
+          tokenCount: null,
+          createdAt: new Date('2026-07-27T00:04:00.000Z'),
+        },
+      ],
+    });
+    const service = new UserPageAgentConversationService(prisma as never);
+
+    const result = await service.get(context, 'conversation-1');
+
+    expect(prisma.userAgentConversation.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          messages: { orderBy: { createdAt: 'desc' }, take: 200 },
+        }),
+      }),
+    );
+    expect(result.messageCount).toBe(500);
+    expect(result.messages.map((message) => message.id)).toEqual(['message-old', 'message-new']);
+  });
+});
+
 describe('UserPageAgentConversationService automatic titles', () => {
   it('updates the default title from the first user message', async () => {
     const prisma = createPrisma();

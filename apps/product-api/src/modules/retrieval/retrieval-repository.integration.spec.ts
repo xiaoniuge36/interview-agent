@@ -6,7 +6,9 @@ const describeDatabase = process.env.RUN_DATABASE_INTEGRATION === 'true' ? descr
 const suffix = randomUUID();
 const tenantA = `retrieval-a-${suffix}`;
 const tenantB = `retrieval-b-${suffix}`;
-const assetId = `retrieval-asset-${suffix}`;
+// KnowledgeAsset.id 是全局主键（另有 @@unique([tenantId, id])），
+// 跨租户 fixture 必须使用各自独立的 asset id。
+const assetIdFor = (tenantId: string) => `retrieval-asset-${suffix}-${tenantId}`;
 const prisma = new PrismaService();
 const repository = new RetrievalRepository(prisma);
 
@@ -54,10 +56,10 @@ async function seedChunks() {
   });
   await prisma.knowledgeAsset.createMany({
     data: [tenantA, tenantB].map((tenantId) => ({
-      id: assetId,
+      id: assetIdFor(tenantId),
       tenantId,
       sourceType: 'fixture',
-      uri: `fixture://${assetId}`,
+      uri: `fixture://${assetIdFor(tenantId)}`,
       title: 'Retrieval source',
       status: 'published',
       metadata: {},
@@ -70,7 +72,7 @@ async function seedChunks() {
         entityType: 'knowledge',
         entityId: 'chunk-a',
         content: 'Event sourcing makes state transitions replayable.',
-        metadata: { assetId, fixture: true },
+        metadata: { assetId: assetIdFor(tenantId), fixture: true },
         embeddingVersion: 'v1',
         vector: vector(),
       }),

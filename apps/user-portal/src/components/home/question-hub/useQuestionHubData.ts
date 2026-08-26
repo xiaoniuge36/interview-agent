@@ -15,7 +15,7 @@ import {
   createExclusiveHomeRecommendationStartRunner,
   startHomeRecommendation,
 } from './home-recommendation-start';
-import { createLatestHomeQueryRequest } from './home-query-request';
+import { createLatestRequestRunner } from '@interview-agent/api-client';
 import { selectTrainingContinuation, type TrainingContinuation } from './training-continuation';
 
 export function useQuestionHubData() {
@@ -68,9 +68,9 @@ function useQuestionHubQueries() {
 
 function createHomeQueryRequests() {
   return {
-    catalog: createLatestHomeQueryRequest(),
-    recommendations: createLatestHomeQueryRequest(),
-    continuation: createLatestHomeQueryRequest(),
+    catalog: createLatestRequestRunner(),
+    recommendations: createLatestRequestRunner(),
+    continuation: createLatestRequestRunner(),
   };
 }
 

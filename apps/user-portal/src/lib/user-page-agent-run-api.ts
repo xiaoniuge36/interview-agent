@@ -1,107 +1,47 @@
-import { z } from 'zod';
+import {
+  PageAgentRunSchema,
+  PageAgentRunStatusSchema,
+  type PageAgentRun,
+} from '@interview-agent/contracts';
+import {
+  createPageAgentRunRequests,
+  type PageAgentCompleteRunInput,
+  type PageAgentCreateRunInput,
+  type PageAgentHeartbeatRunInput,
+} from '@interview-agent/page-agent-client';
 import { apiRequest } from './api';
 
-export const UserAgentRunStatusSchema = z.enum([
-  'running',
-  'waiting_confirmation',
-  'succeeded',
-  'failed',
-  'cancelled',
-  'interrupted',
-]);
-export const UserAgentRunSchema = z.object({
-  id: z.string(),
-  conversationId: z.string(),
-  retryOfRunId: z.string().nullable(),
-  prompt: z.string(),
-  status: UserAgentRunStatusSchema,
-  currentStep: z.string().nullable(),
-  tokenCount: z.number().int().nonnegative(),
-  traceId: z.string(),
-  errorCode: z.string().nullable(),
-  errorSummary: z.string().nullable(),
-  startedAt: z.string().datetime(),
-  finishedAt: z.string().datetime().nullable(),
-  heartbeatAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
+const runRequests = createPageAgentRunRequests('/user/page-agent');
 
-export type UserAgentRun = z.infer<typeof UserAgentRunSchema>;
-export type UserAgentHeartbeatRunInput = {
-  status: 'running' | 'waiting_confirmation';
-  currentStep?: string;
-  tokenCount?: number;
-};
-export type UserAgentCompleteRunInput = {
-  status: 'succeeded' | 'failed' | 'cancelled';
-  currentStep?: string;
-  tokenCount?: number;
-  errorCode?: string;
-  errorSummary?: string;
-};
-export type UserAgentCreateRunInput = {
-  prompt: string;
-  clientRequestId: string;
-  retryOfRunId?: string;
-};
+export const UserAgentRunStatusSchema = PageAgentRunStatusSchema;
+export const UserAgentRunSchema = PageAgentRunSchema;
 
-const conversationRunsPath = (conversationId: string) =>
-  `/user/page-agent/conversations/${encodeURIComponent(conversationId)}/runs`;
-const runPath = (runId: string) => `/user/page-agent/runs/${encodeURIComponent(runId)}`;
+export type UserAgentRun = PageAgentRun;
+export type UserAgentHeartbeatRunInput = PageAgentHeartbeatRunInput;
+export type UserAgentCompleteRunInput = PageAgentCompleteRunInput;
+export type UserAgentCreateRunInput = PageAgentCreateRunInput;
 
-export function createUserAgentLatestRunRequest(conversationId: string) {
-  return {
-    path: `${conversationRunsPath(conversationId)}/latest`,
-    schema: UserAgentRunSchema.nullable(),
-  };
-}
-
-export function createUserAgentRunHistoryRequest(conversationId: string) {
-  return { path: conversationRunsPath(conversationId), schema: UserAgentRunSchema.array() };
-}
-
-export function createUserAgentRunRequest(conversationId: string, input: UserAgentCreateRunInput) {
-  return {
-    path: conversationRunsPath(conversationId),
-    schema: UserAgentRunSchema,
-    init: { method: 'POST', body: JSON.stringify(input) },
-  };
-}
-
-export function createUserAgentHeartbeatRunRequest(
-  runId: string,
-  input: UserAgentHeartbeatRunInput,
-) {
-  return {
-    path: `${runPath(runId)}/heartbeat`,
-    schema: UserAgentRunSchema,
-    init: { method: 'PATCH', body: JSON.stringify(input) },
-  };
-}
-
-export function createUserAgentCompleteRunRequest(runId: string, input: UserAgentCompleteRunInput) {
-  return {
-    path: `${runPath(runId)}/complete`,
-    schema: UserAgentRunSchema,
-    init: { method: 'POST', body: JSON.stringify(input) },
-  };
-}
+export const createUserAgentLatestRunRequest = runRequests.latest;
+export const createUserAgentRunHistoryRequest = runRequests.history;
+export const createUserAgentRunRequest = runRequests.create;
+export const createUserAgentHeartbeatRunRequest = runRequests.heartbeat;
+export const createUserAgentCompleteRunRequest = runRequests.complete;
 
 export function getUserAgentRunHistory(conversationId: string, signal?: AbortSignal) {
   return apiRequest({
-    ...createUserAgentRunHistoryRequest(conversationId),
+    ...runRequests.history(conversationId),
     ...(signal ? { init: { signal } } : {}),
   });
 }
 
 export function createUserAgentRun(conversationId: string, input: UserAgentCreateRunInput) {
-  return apiRequest(createUserAgentRunRequest(conversationId, input));
+  return apiRequest(runRequests.create(conversationId, input));
 }
 
 export function heartbeatUserAgentRun(runId: string, input: UserAgentHeartbeatRunInput) {
-  return apiRequest(createUserAgentHeartbeatRunRequest(runId, input));
+  return apiRequest(runRequests.heartbeat(runId, input));
 }
 
 export function completeUserAgentRun(runId: string, input: UserAgentCompleteRunInput) {
-  return apiRequest(createUserAgentCompleteRunRequest(runId, input));
+  return apiRequest(runRequests.complete(runId, input));
 }

@@ -7,7 +7,7 @@ import type {
   AiUsageTrendPoint,
   ModelProvider,
 } from '@interview-agent/contracts';
-import type { AiUsageTimeRange, GroupRow, InvocationRow } from './ai-usage-metrics';
+import type { AiUsageTimeRange, GroupRow, TrendAggregateRow } from './ai-usage-metrics';
 
 const ISO_DATE_LENGTH = 10;
 const MODEL_BREAKDOWN_LIMIT = 20;
@@ -42,7 +42,10 @@ export function failureBreakdown(groups: GroupRow[]): AiUsageFailureBreakdown[] 
     .slice(0, FAILURE_BREAKDOWN_LIMIT);
 }
 
-export function trendMetrics(range: AiUsageTimeRange, rows: InvocationRow[]): AiUsageTrendPoint[] {
+export function trendMetrics(
+  range: AiUsageTimeRange,
+  rows: TrendAggregateRow[],
+): AiUsageTrendPoint[] {
   const buckets = trendBuckets(range);
   for (const row of rows) addTrendRow(buckets, row);
   return [...buckets.values()];
@@ -76,18 +79,14 @@ function addOperationGroup(
   buckets.set(operation, current);
 }
 
-function addTrendRow(buckets: Map<string, AiUsageTrendPoint>, row: InvocationRow): void {
-  const bucket = buckets.get(utcDate(row.createdAt));
+function addTrendRow(buckets: Map<string, AiUsageTrendPoint>, row: TrendAggregateRow): void {
+  const bucket = buckets.get(utcDate(row.day));
   if (!bucket) return;
-  bucket.invocations += 1;
-  incrementTrendStatus(bucket, row.status);
+  bucket.invocations += Number(row.invocations);
+  bucket.succeeded += Number(row.succeeded);
+  bucket.failed += Number(row.failed);
+  bucket.cancelled += Number(row.cancelled);
   bucket.totalTokens = addTokens(bucket.totalTokens, row.totalTokens);
-}
-
-function incrementTrendStatus(bucket: AiUsageTrendPoint, status: AiInvocationStatus): void {
-  if (status === 'succeeded') bucket.succeeded += 1;
-  if (status === 'failed') bucket.failed += 1;
-  if (status === 'cancelled') bucket.cancelled += 1;
 }
 
 function addStatus(

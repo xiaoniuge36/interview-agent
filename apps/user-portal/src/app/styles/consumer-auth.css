@@ -20,12 +20,8 @@
 }
 
 .access-story {
-  position: relative;
-  isolation: isolate;
   grid-area: story;
-  min-height: 100vh;
   gap: 20px;
-  overflow: hidden;
   padding: clamp(28px, 4.5vw, 64px);
   background: transparent;
   color: var(--theme-ink);
@@ -36,18 +32,12 @@
   z-index: 1;
 }
 
-.access-story::before,
-.access-story::after {
-  display: none;
-}
-
 .access-story .theme-atmosphere {
   inset: 0;
   opacity: 0.72;
 }
 
 .access-brand {
-  gap: 11px;
   color: var(--theme-ink);
 }
 
@@ -62,7 +52,7 @@
 .access-brand strong {
   font-family: var(--theme-display-family);
   font-size: 15px;
-  font-weight: 850;
+  font-weight: 700;
 }
 
 .access-brand small {
@@ -76,7 +66,8 @@
 
 .access-kicker {
   padding: 8px 12px;
-  border: var(--theme-border-width) solid color-mix(in srgb, var(--theme-primary) 54%, var(--theme-line));
+  border: var(--theme-border-width) solid
+    color-mix(in srgb, var(--theme-primary) 54%, var(--theme-line));
   border-radius: var(--theme-radius-control);
   background: var(--primary-soft);
   color: var(--theme-primary);
@@ -90,7 +81,7 @@
   color: var(--theme-ink);
   font-family: var(--theme-display-family);
   font-size: clamp(44px, 5.7vw, 76px);
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1.02;
   letter-spacing: -0.072em;
   text-wrap: balance;
@@ -124,7 +115,12 @@
 .access-training-preview::before {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(115deg, transparent 28%, color-mix(in srgb, var(--theme-primary) 9%, transparent), transparent 72%);
+  background-image: linear-gradient(
+    115deg,
+    transparent 28%,
+    color-mix(in srgb, var(--theme-primary) 9%, transparent),
+    transparent 72%
+  );
   transform: translateX(-70%);
   animation: access-preview-scan 8s ease-in-out infinite;
   content: '';
@@ -163,7 +159,7 @@
   color: color-mix(in srgb, var(--theme-nav-ink) 68%, transparent);
   font-family: var(--font-tech);
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .access-training-preview > strong {
@@ -194,9 +190,11 @@
   background: var(--theme-primary);
   color: var(--theme-on-primary);
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 700;
   text-decoration: none;
-  transition: transform 180ms var(--ease-out), box-shadow 180ms ease;
+  transition:
+    transform 180ms var(--ease-out),
+    box-shadow 180ms ease;
 }
 
 .access-preview-action:hover {
@@ -214,7 +212,7 @@
   gap: 14px;
   color: color-mix(in srgb, var(--theme-nav-ink) 62%, transparent);
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .access-training-days {
@@ -253,7 +251,7 @@
 .federated-access h1 {
   font-family: var(--theme-display-family);
   font-size: 31px;
-  font-weight: 850;
+  font-weight: 700;
 }
 
 .access-tabs {
@@ -288,9 +286,19 @@ html[data-theme='playground'] .access-training-preview {
 }
 
 @keyframes access-preview-scan {
-  0%, 62%, 100% { transform: translateX(-75%); opacity: 0; }
-  72% { opacity: 1; }
-  92% { transform: translateX(85%); opacity: 0; }
+  0%,
+  62%,
+  100% {
+    transform: translateX(-75%);
+    opacity: 0;
+  }
+  72% {
+    opacity: 1;
+  }
+  92% {
+    transform: translateX(85%);
+    opacity: 0;
+  }
 }
 
 @media (max-width: 860px) {

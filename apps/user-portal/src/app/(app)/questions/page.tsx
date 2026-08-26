@@ -1,3 +1,5 @@
+import '../../styles/question-picker.css';
+import '../../styles/consumer-theme-surfaces.css';
 import { Suspense } from 'react';
 import { QuestionPickerPage } from '@/components/questions/QuestionPickerPage';
 import { RouteLoadingState } from '@/components/shell/RouteLoadingState';

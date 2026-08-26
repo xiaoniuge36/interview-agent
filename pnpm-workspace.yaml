@@ -1,3 +1,38 @@
 packages:
   - apps/*
   - packages/*
+
+# 跨包共享依赖的统一版本目录（防止版本漂移）；各 package.json 以 "catalog:" 引用。
+# 升级时只改这里，然后运行 pnpm install。
+catalog:
+  '@prisma/client': 6.19.3
+  '@types/node': ^22.17.0
+  prisma: 6.19.3
+  typescript: ^5.9.3
+  vitest: 3.2.4
+  zod: 3.25.76
+
+# 安全钉版：修复传递依赖的已知漏洞版本。
+# 升级/移除前先运行 pnpm security:audit:node 确认无回归。
+overrides:
+  postcss: 8.5.24
+  qs: 6.15.3
+  sharp: 0.35.3
+  # GHSA-5p4m-2wfm-xmqj / CVE-2026-59870：!!omap 二次方 CPU（@nestjs/swagger 传递依赖）
+  'js-yaml@>=4.0.0 <4.3.1': '4.3.1'
+  # GHSA-2v37-7h3g-55p8：size=0 时自定义生成器死循环（next>postcss 传递依赖）
+  'nanoid@<3.3.18': '3.3.18'
+  # GHSA-ggr8-5vv4-36mx：递归对象合并栈耗尽（prisma>@prisma/config 传递依赖）
+  'deepmerge-ts@<8.0.0': '8.0.0'
+
+# 允许执行安装脚本（postinstall 等）的依赖白名单；pnpm 10 默认阻止构建脚本。
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - esbuild
+  - prisma
+  - sharp
+
+# 纯遥测脚本，无需执行。
+ignoredBuiltDependencies:
+  - '@scarf/scarf'

@@ -1,3 +1,9 @@
+# 更新节奏：五个生态统一在每周一凌晨（Asia/Shanghai）错峰触发，
+# minor/patch 按生态分组合并成单个 PR，major 单独开 PR 并需要人工评审。
+# 评审要求：所有 Dependabot PR 必须通过完整 CI 质量门禁后由 Code Owner 合并；
+# 若升级涉及根 package.json 的 pnpm.overrides 固定版本（postcss/qs/sharp 等安全钉板），
+# 需要先确认对应 CVE 修复已随上游发布、可以移除或更新钉板，再调整 overrides，
+# 不允许仅为解决版本冲突而删除 overrides。
 version: 2
 
 updates:

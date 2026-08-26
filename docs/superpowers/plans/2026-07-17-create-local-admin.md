@@ -13,27 +13,28 @@
 ### Task 1: 定义共享创建契约与租户选项
 
 **Files:**
+
 - Modify: packages/contracts/src/schemas/admin.ts
 - Modify: packages/contracts/src/contracts.test.ts
 
 - [ ] **Step 1: 先写失败的合约测试**
 
-    assert.deepEqual(
-      CreateLocalAdminInputSchema.parse({
-        name: 'Admin One',
-        email: 'ADMIN.ONE@example.com',
-        password: 'initial-password',
-        role: 'admin',
-        tenantSlug: 'demo',
-      }),
-      {
-        name: 'Admin One',
-        email: 'admin.one@example.com',
-        password: 'initial-password',
-        role: 'admin',
-        tenantSlug: 'demo',
-      },
-    );
+  assert.deepEqual(
+  CreateLocalAdminInputSchema.parse({
+  name: 'Admin One',
+  email: 'ADMIN.ONE@example.com',
+  password: 'initial-password',
+  role: 'admin',
+  tenantSlug: 'demo',
+  }),
+  {
+  name: 'Admin One',
+  email: 'admin.one@example.com',
+  password: 'initial-password',
+  role: 'admin',
+  tenantSlug: 'demo',
+  },
+  );
 
 同时断言 platform_admin 不接受 tenantSlug、admin 缺少 tenantSlug 会被拒绝。
 
@@ -45,28 +46,28 @@ Expected: 测试因 CreateLocalAdminInputSchema 尚不存在而失败。
 
 - [ ] **Step 3: 实现最小共享契约**
 
-    export const TenantOptionSchema = z.object({
-      id: z.string().min(1),
-      name: z.string().min(1).max(CONTRACT_LIMITS.shortText),
-      slug: z.string().min(1).max(CONTRACT_LIMITS.shortText),
-    });
+  export const TenantOptionSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  slug: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  });
 
-    export const CreateLocalAdminInputSchema = z
-      .object({
-        name: z.string().trim().min(2).max(80),
-        email: z.string().trim().email().max(320).transform((value) => value.toLowerCase()),
-        password: z.string().min(1),
-        role: z.enum(['admin', 'platform_admin']),
-        tenantSlug: z.string().trim().min(1).max(CONTRACT_LIMITS.shortText).optional(),
-      })
-      .superRefine((input, context) => {
-        if (input.role === 'admin' && !input.tenantSlug) {
-          context.addIssue({ code: z.ZodIssueCode.custom, path: ['tenantSlug'], message: '请选择租户。' });
-        }
-        if (input.role === 'platform_admin' && input.tenantSlug) {
-          context.addIssue({ code: z.ZodIssueCode.custom, path: ['tenantSlug'], message: '平台管理员固定归入系统租户。' });
-        }
-      });
+  export const CreateLocalAdminInputSchema = z
+  .object({
+  name: z.string().trim().min(2).max(80),
+  email: z.string().trim().email().max(320).transform((value) => value.toLowerCase()),
+  password: z.string().min(1),
+  role: z.enum(['admin', 'platform_admin']),
+  tenantSlug: z.string().trim().min(1).max(CONTRACT_LIMITS.shortText).optional(),
+  })
+  .superRefine((input, context) => {
+  if (input.role === 'admin' && !input.tenantSlug) {
+  context.addIssue({ code: z.ZodIssueCode.custom, path: ['tenantSlug'], message: '请选择租户。' });
+  }
+  if (input.role === 'platform_admin' && input.tenantSlug) {
+  context.addIssue({ code: z.ZodIssueCode.custom, path: ['tenantSlug'], message: '平台管理员固定归入系统租户。' });
+  }
+  });
 
 导出 TenantOption、CreateLocalAdminInput 类型。
 
@@ -79,6 +80,7 @@ Expected: 合约包测试通过。
 ### Task 2: 实现创建事务与管理接口
 
 **Files:**
+
 - Modify: apps/product-api/src/modules/admin/account-governance.service.ts
 - Modify: apps/product-api/src/modules/admin/account-governance.helpers.ts
 - Modify: apps/product-api/src/modules/admin/admin.controller.ts
@@ -165,6 +167,7 @@ Expected: 创建、权限、审计、重复邮箱和 controller 输入解析测�
 ### Task 3: 在现有账号管理页接入创建弹窗
 
 **Files:**
+
 - Modify: apps/admin-console/src/lib/account-api.ts
 - Modify: apps/admin-console/src/lib/account-api.test.ts
 - Create: apps/admin-console/src/components/dashboard/CreateLocalAdminModal.tsx
@@ -232,6 +235,7 @@ Expected: 创建请求与账号管理组件测试通过。
 ### Task 4: 集成验证
 
 **Files:**
+
 - Verify only: packages/contracts
 - Verify only: apps/product-api
 - Verify only: apps/admin-console

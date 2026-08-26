@@ -60,16 +60,16 @@ ConfigProvider (中文 locale / 高密度 token)
 
 ## 页面映射
 
-| 模块 | 主要 Ant Design 组件 | 关键要求 |
-| --- | --- | --- |
-| 总览 | `Alert`、`Statistic`、`Card`、`Table/List`、`Tag` | 仅保留治理待办、关键指标和最近运行，紧凑呈现。 |
-| 资料导入 | `Card`、`Table`、`Input.Search`、`Select`、`Pagination`、`Drawer`、`Form` | 导入成功关闭抽屉并调用既有 `onChanged()`。 |
-| 题库管理 | `Card`、`Table`、`Input.Search`、`Select`、`Tag`、`Pagination` | 只浏览正式题库；筛选状态、难度与关键词保留。 |
-| 审核工作台 | `Card`、`Table`、`Drawer`、`Form`、`Descriptions`、`Alert` | 行内“审核”打开详情；编辑、审核与发布门禁不变。 |
-| 模型治理 | `Table`、`Select`、`Tag`、`Pagination` | 保持只读的路由、预算与 Schema 信息。 |
-| 运行观测 | `Table`、`Tag`、`Pagination` | 保留阶段、Trace、延迟、Schema、降级语义。 |
-| 审计日志 | `Table`、`Tag`、`Typography.Text` | 保留动作、资源、操作者、结果、Trace 与时间。 |
-| 管理员访问 | `Layout`、`Card`、`Form`、`Input`、`Button`、`Alert` | 保留本地 / OIDC 流程与角色校验。 |
+| 模块       | 主要 Ant Design 组件                                                      | 关键要求                                       |
+| ---------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
+| 总览       | `Alert`、`Statistic`、`Card`、`Table/List`、`Tag`                         | 仅保留治理待办、关键指标和最近运行，紧凑呈现。 |
+| 资料导入   | `Card`、`Table`、`Input.Search`、`Select`、`Pagination`、`Drawer`、`Form` | 导入成功关闭抽屉并调用既有 `onChanged()`。     |
+| 题库管理   | `Card`、`Table`、`Input.Search`、`Select`、`Tag`、`Pagination`            | 只浏览正式题库；筛选状态、难度与关键词保留。   |
+| 审核工作台 | `Card`、`Table`、`Drawer`、`Form`、`Descriptions`、`Alert`                | 行内“审核”打开详情；编辑、审核与发布门禁不变。 |
+| 模型治理   | `Table`、`Select`、`Tag`、`Pagination`                                    | 保持只读的路由、预算与 Schema 信息。           |
+| 运行观测   | `Table`、`Tag`、`Pagination`                                              | 保留阶段、Trace、延迟、Schema、降级语义。      |
+| 审计日志   | `Table`、`Tag`、`Typography.Text`                                         | 保留动作、资源、操作者、结果、Trace 与时间。   |
+| 管理员访问 | `Layout`、`Card`、`Form`、`Input`、`Button`、`Alert`                      | 保留本地 / OIDC 流程与角色校验。               |
 
 ## 视觉与可用性
 

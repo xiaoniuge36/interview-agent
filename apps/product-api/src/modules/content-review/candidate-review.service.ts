@@ -14,7 +14,7 @@ import {
   type PublishCandidateQuestionInput,
   type UpdateCandidateQuestionInput,
 } from '@interview-agent/contracts';
-import { AuditService, jsonValue } from '../../common/audit/audit.service';
+import { AuditService, jsonValue, type AuditEventInput } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
@@ -87,30 +87,22 @@ export class CandidateReviewService {
         where: { tenantId: context.tenantId, id: { in: input.candidateIds } },
       });
       assertBatchReviewable(candidates, input.candidateIds);
-      for (const candidate of candidates) {
-        const updated = await transaction.candidateQuestion.update({
-          where: { id: candidate.id },
-          data: {
-            status: input.status,
-            reviewNotes: input.reviewNotes,
-            revision: { increment: 1 },
-          },
-        });
-        await this.audit.record(
-          context,
-          {
-            action: 'candidate:review',
-            resourceType: 'CandidateQuestion',
-            resourceId: candidate.id,
-            stateTransition: {
-              from: candidate.status,
-              to: updated.status,
-              version: updated.revision,
-            },
-          },
-          transaction,
-        );
-      }
+      await transaction.candidateQuestion.updateMany({
+        where: {
+          tenantId: context.tenantId,
+          id: { in: candidates.map((candidate) => candidate.id) },
+        },
+        data: {
+          status: input.status,
+          reviewNotes: input.reviewNotes,
+          revision: { increment: 1 },
+        },
+      });
+      await this.audit.recordMany(
+        context,
+        batchReviewAuditEvents(candidates, input.status),
+        transaction,
+      );
       return BatchCandidateReviewResultSchema.parse({ updatedCount: candidates.length });
     });
   }
@@ -161,6 +153,22 @@ function candidateUpdateData(
   if (input.reviewNotes !== undefined) data.reviewNotes = input.reviewNotes;
   if (input.status !== undefined) data.status = input.status;
   return data;
+}
+
+function batchReviewAuditEvents(
+  candidates: Array<{ id: string; status: string; revision: number }>,
+  status: string,
+): AuditEventInput[] {
+  return candidates.map((candidate) => ({
+    action: 'candidate:review',
+    resourceType: 'CandidateQuestion',
+    resourceId: candidate.id,
+    stateTransition: {
+      from: candidate.status,
+      to: status,
+      version: candidate.revision + 1,
+    },
+  }));
 }
 
 function assertBatchReviewable(

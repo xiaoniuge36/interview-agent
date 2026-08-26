@@ -49,7 +49,7 @@
   color: var(--text-muted);
   font-family: var(--font-tech);
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: 0.08em;
   white-space: nowrap;
 }
@@ -64,7 +64,9 @@
 }
 
 @keyframes chinese-ticker-scroll {
-  to { transform: translate3d(-50%, 0, 0); }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 .consumer-reveal-character {
@@ -98,7 +100,9 @@
   opacity: 0.055;
   color: #ffffff;
   mask-image: radial-gradient(circle at 82% 42%, #000 0 18%, transparent 62%);
-  transition: opacity 320ms var(--ease-out), transform 520ms var(--ease-out);
+  transition:
+    opacity 320ms var(--ease-out),
+    transform 520ms var(--ease-out);
   pointer-events: none;
 }
 
@@ -131,7 +135,9 @@
   place-items: center;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.16);
-  transition: transform 220ms var(--ease-out), background 220ms var(--ease-out);
+  transition:
+    transform 220ms var(--ease-out),
+    background 220ms var(--ease-out);
 }
 
 button:hover .consumer-action-arrow,
@@ -145,12 +151,17 @@ a:hover .consumer-action-arrow {
   height: 8px;
   border-radius: 50%;
   background: currentColor;
-  box-shadow: -12px 0 0 currentColor, 12px 0 0 currentColor;
+  box-shadow:
+    -12px 0 0 currentColor,
+    12px 0 0 currentColor;
   animation: consumer-action-busy 800ms ease-in-out infinite alternate;
 }
 
 @keyframes consumer-action-busy {
-  to { opacity: 0.28; transform: scale(0.78); }
+  to {
+    opacity: 0.28;
+    transform: scale(0.78);
+  }
 }
 
 html[data-motion='off'] .consumer-reveal-character,
@@ -190,7 +201,9 @@ html[data-motion='off'] .chinese-ticker-queue[aria-hidden='true'] {
     animation: none;
   }
   .consumer-signal-field,
-  .consumer-action-arrow { transition: none; }
+  .consumer-action-arrow {
+    transition: none;
+  }
 
   .chinese-ticker {
     mask-image: none;

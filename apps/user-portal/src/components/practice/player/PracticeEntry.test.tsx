@@ -23,7 +23,7 @@ describe('PracticeEntry', () => {
     const stylesheet = readFileSync(resolve('src/app/styles/consumer-practice.css'), 'utf8');
 
     expect(stylesheet).toMatch(
-      /@media \(min-width: 1181px\) \{[\s\S]*?\.question-filter-fields \{ padding-right: 8px; \}/,
+      /@media \(min-width: 1181px\) \{[\s\S]*?\.question-filter-fields \{\s*padding-right: 8px;\s*\}/,
     );
   });
 });

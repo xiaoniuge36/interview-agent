@@ -1,27 +1,61 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Skeleton } from 'antd';
+import dynamic from 'next/dynamic';
+import { useCallback, useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { useAuth } from '@interview-agent/auth-client';
 import {
   adminViewHash,
   adminViewLocationFromHash,
+  getAdminNavigationItem,
   resolveAdminViewForRole,
   type AdminView,
   type AdminViewLocation,
   type AdminViewParams,
 } from '@/components/admin-navigation';
 import { useAdminWorkspace } from '@/components/admin-workspace-context';
+import { AdminSectionBoundary } from '@/components/AdminSectionBoundary';
 import { AdminShell } from '@/components/AdminShell';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { AdminOverview } from './AdminOverview';
-import { AccountManagement } from './AccountManagement';
-import { AuditLogPanel } from './AuditLogPanel';
-import { ImportCenter } from './ImportCenter';
-import { ModelGovernance } from './ModelGovernance';
-import { QuestionReviewPanels } from './QuestionReviewPanels';
-import { RuntimeObservability } from './RuntimeObservability';
-import { PlatformAnalytics } from './PlatformAnalytics';
-import { TrainingContentWorkbench } from './TrainingContentWorkbench';
+
+const SECTION_SKELETON_ROWS = 6;
+
+function sectionFallback() {
+  return <Skeleton active paragraph={{ rows: SECTION_SKELETON_ROWS }} title />;
+}
+
+/** 重视图按需拆包：仅在对应 Tab 首次激活时加载对应 chunk。 */
+function dynamicSection<TProps extends object>(
+  loader: () => Promise<{ default: ComponentType<TProps> } | ComponentType<TProps>>,
+) {
+  return dynamic(loader, { ssr: false, loading: sectionFallback });
+}
+
+const ImportCenter = dynamicSection(() =>
+  import('./ImportCenter').then((module) => module.ImportCenter),
+);
+const QuestionReviewPanels = dynamicSection(() =>
+  import('./QuestionReviewPanels').then((module) => module.QuestionReviewPanels),
+);
+const TrainingContentWorkbench = dynamicSection(() =>
+  import('./TrainingContentWorkbench').then((module) => module.TrainingContentWorkbench),
+);
+const ModelGovernance = dynamicSection(() =>
+  import('./ModelGovernance').then((module) => module.ModelGovernance),
+);
+const RuntimeObservability = dynamicSection(() =>
+  import('./RuntimeObservability').then((module) => module.RuntimeObservability),
+);
+const AuditLogPanel = dynamicSection(() =>
+  import('./AuditLogPanel').then((module) => module.AuditLogPanel),
+);
+const PlatformAnalytics = dynamicSection(() =>
+  import('./PlatformAnalytics').then((module) => module.PlatformAnalytics),
+);
+const AccountManagement = dynamicSection(() =>
+  import('./AccountManagement').then((module) => module.AccountManagement),
+);
 
 export function AdminDashboard() {
   const { state, isRefreshing, lastUpdatedAt, reload } = useAdminDashboard();
@@ -166,7 +200,11 @@ type DashboardViewProps = {
 function DashboardView({ active, children, view }: DashboardViewProps) {
   return (
     <div className="console-view" hidden={!active} id={`admin-view-${view}`}>
-      {children}
+      {active ? (
+        <AdminSectionBoundary section={getAdminNavigationItem(view).label}>
+          {children}
+        </AdminSectionBoundary>
+      ) : null}
     </div>
   );
 }

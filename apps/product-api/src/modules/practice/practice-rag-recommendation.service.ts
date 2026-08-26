@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { PracticeRecommendationEvidence } from '@interview-agent/contracts';
 import type { Environment } from '../../common/config/environment';
@@ -22,6 +22,8 @@ export type HybridRecommendationSelection = RuleRecommendationSelection & {
 
 @Injectable()
 export class PracticeRagRecommendationService {
+  private readonly logger = new Logger(PracticeRagRecommendationService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService<Environment, true>,
@@ -63,7 +65,10 @@ export class PracticeRagRecommendationService {
           detail: '来自当前租户可见题库的混合检索命中。',
         })),
       };
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `RAG recommendation enhancement failed; falling back to rules: ${errorCategory(error)}`,
+      );
       return null;
     }
   }
@@ -89,4 +94,8 @@ function recommendationQuery(context: RecommendationContext) {
   return [context.role, context.weakTag, context.focusTag, 'interview question']
     .filter((value): value is string => Boolean(value?.trim()))
     .join(' ');
+}
+
+function errorCategory(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error;
 }

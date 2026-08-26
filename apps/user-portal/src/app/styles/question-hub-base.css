@@ -28,7 +28,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -106,7 +106,7 @@
   padding: 0 20px;
   background: var(--primary);
   color: var(--surface);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .question-search-form button {
@@ -182,7 +182,7 @@
 .question-section-heading > a {
   color: var(--primary-strong);
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .question-topic-grid {
@@ -225,7 +225,7 @@
   color: var(--primary-strong);
   font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .question-topic-card[data-category='ai_agent'] .question-topic-glyph {
@@ -263,5 +263,5 @@
   right: 14px;
   color: var(--text-subtle);
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 700;
 }

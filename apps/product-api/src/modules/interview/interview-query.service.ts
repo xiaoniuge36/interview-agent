@@ -5,12 +5,13 @@ import {
   InterviewListSchema,
   type InterviewReport,
   type InterviewSession,
+  type InterviewSessionSummary,
 } from '@interview-agent/contracts';
 import type { Observable } from 'rxjs';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
-import { mapReport, mapSession } from './interview.mapper';
+import { mapReport, mapSession, mapSessionSummary } from './interview.mapper';
 import { InterviewEventBus } from './realtime/interview-event.bus';
 
 const INTERVIEW_LIST_LIMIT = 200;
@@ -23,15 +24,21 @@ export class InterviewQueryService {
     private readonly events: InterviewEventBus,
   ) {}
 
-  async list(context: ProductRequestContext): Promise<InterviewSession[]> {
+  async list(context: ProductRequestContext): Promise<InterviewSessionSummary[]> {
     this.assertRead(context);
     const records = await this.prisma.interviewSession.findMany({
       where: ownerScope(context),
-      include: { turns: orderedTurns() },
+      include: { _count: { select: { turns: true } } },
       orderBy: { updatedAt: 'desc' },
       take: INTERVIEW_LIST_LIMIT,
     });
-    return InterviewListSchema.parse(records.map(mapSession));
+    const candidateCounts = await this.candidateTurnCounts(
+      context.tenantId,
+      records.map((record) => record.id),
+    );
+    return InterviewListSchema.parse(
+      records.map((record) => mapSessionSummary(record, candidateCounts.get(record.id) ?? 0)),
+    );
   }
 
   async get(context: ProductRequestContext, sessionId: string): Promise<InterviewSession> {
@@ -69,6 +76,19 @@ export class InterviewQueryService {
       tenantId: context.tenantId,
       ownerId: context.actor.id,
     });
+  }
+
+  private async candidateTurnCounts(
+    tenantId: string,
+    sessionIds: string[],
+  ): Promise<Map<string, number>> {
+    if (sessionIds.length === 0) return new Map();
+    const rows = await this.prisma.interviewTurn.groupBy({
+      by: ['sessionId'],
+      where: { tenantId, sessionId: { in: sessionIds }, role: 'candidate' },
+      _count: { _all: true },
+    });
+    return new Map(rows.map((row) => [row.sessionId, row._count._all]));
   }
 
   private async requireOwnedSession(

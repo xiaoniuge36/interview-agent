@@ -10,6 +10,7 @@ import type {
   AiInvocationView,
   ModelProvider,
 } from '@interview-agent/contracts';
+import { Prisma } from '@prisma/client';
 import type { PrismaService } from '../../common/database/prisma.service';
 import {
   failureBreakdown,
@@ -48,6 +49,14 @@ export type InvocationRow = {
   errorCode: string | null;
   createdAt: Date;
 };
+export type TrendAggregateRow = {
+  day: Date;
+  invocations: number;
+  succeeded: number;
+  failed: number;
+  cancelled: number;
+  totalTokens: number | null;
+};
 
 type AnalyticsStore = {
   aggregate: (
@@ -69,7 +78,6 @@ type AggregatedRows = {
 type RecentRows = {
   recent: InvocationRow[];
   recentFailures: InvocationRow[];
-  trendRows: InvocationRow[];
 };
 
 export type AiUsageMetrics = {
@@ -90,9 +98,10 @@ export async function loadAiUsageMetrics(
   const range = aiUsageRange(input.period, input.now ?? new Date());
   const where = invocationWhere(input.filters, range);
   const store = analyticsStore(prisma);
-  const [groups, records] = await Promise.all([
+  const [groups, records, trendRows] = await Promise.all([
     aggregatedRows(store, where),
     recentRows(store, where),
+    trendAggregateRows(prisma, where),
   ]);
   return {
     range,
@@ -106,7 +115,7 @@ export async function loadAiUsageMetrics(
       failures: failureBreakdown(groups.failureGroups as GroupRow[]),
       recent: records.recent.map(toInvocationView),
       recentFailures: records.recentFailures.map(toInvocationView),
-      trend: trendMetrics(range, records.trendRows),
+      trend: trendMetrics(range, trendRows),
       guardrailFailures: guardrailFailures(groups.failureGroups as GroupRow[]),
     },
   };
@@ -151,7 +160,7 @@ async function aggregatedRows(
 }
 
 async function recentRows(store: AnalyticsStore, where: InvocationWhere): Promise<RecentRows> {
-  const [recent, recentFailures, trendRows] = await Promise.all([
+  const [recent, recentFailures] = await Promise.all([
     store.findMany({
       where,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -162,9 +171,38 @@ async function recentRows(store: AnalyticsStore, where: InvocationWhere): Promis
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: RECENT_INVOCATION_LIMIT,
     }),
-    store.findMany({ where, select: { createdAt: true, status: true, totalTokens: true } }),
   ]);
-  return { recent, recentFailures, trendRows };
+  return { recent, recentFailures };
+}
+
+function trendAggregateRows(
+  prisma: PrismaService,
+  where: InvocationWhere,
+): Promise<TrendAggregateRow[]> {
+  return prisma.$queryRaw<TrendAggregateRow[]>(Prisma.sql`
+    SELECT
+      date_trunc('day', "createdAt") AS day,
+      COUNT(*)::int AS invocations,
+      COUNT(*) FILTER (WHERE "status" = 'succeeded')::int AS succeeded,
+      COUNT(*) FILTER (WHERE "status" = 'failed')::int AS failed,
+      COUNT(*) FILTER (WHERE "status" = 'cancelled')::int AS cancelled,
+      SUM("totalTokens")::int AS "totalTokens"
+    FROM "AiInvocation"
+    WHERE "createdAt" >= ${where.createdAt.gte} AND "createdAt" < ${where.createdAt.lt}
+    ${trendFilterConditions(where)}
+    GROUP BY 1
+  `);
+}
+
+function trendFilterConditions(where: InvocationWhere): Prisma.Sql {
+  const conditions: Prisma.Sql[] = [];
+  if (where.tenantId) conditions.push(Prisma.sql`AND "tenantId" = ${where.tenantId}`);
+  if (where.userId) conditions.push(Prisma.sql`AND "userId" = ${where.userId}`);
+  if (where.provider) conditions.push(Prisma.sql`AND "provider" = ${where.provider}`);
+  if (where.operation) {
+    conditions.push(Prisma.sql`AND "operation" = ${where.operation}::"AiInvocationOperation"`);
+  }
+  return conditions.length > 0 ? Prisma.join(conditions, ' ') : Prisma.empty;
 }
 
 function failedWhere(where: InvocationWhere) {

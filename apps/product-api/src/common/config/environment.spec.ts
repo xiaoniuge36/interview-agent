@@ -32,6 +32,18 @@ describe('production environment guardrails', () => {
       validateEnvironment(production({ CREDENTIAL_ENCRYPTION_KEY_CURRENT: `${VALID_KEY}!` })),
     ).toThrow('凭证加密主密钥必须是 32 字节 base64 值');
   });
+
+  it('defaults REDIS_REQUIRED to true in production and rejects an explicit opt-out', () => {
+    expect(validateEnvironment(production()).REDIS_REQUIRED).toBe(true);
+    expect(() => validateEnvironment(production({ REDIS_REQUIRED: 'false' }))).toThrow(
+      '生产环境必须启用 Redis',
+    );
+  });
+
+  it('keeps REDIS_REQUIRED optional outside production', () => {
+    expect(validateEnvironment(development()).REDIS_REQUIRED).toBe(false);
+    expect(validateEnvironment(development({ REDIS_REQUIRED: 'true' })).REDIS_REQUIRED).toBe(true);
+  });
 });
 
 describe('production OIDC client guardrails', () => {
@@ -68,6 +80,18 @@ describe('production OIDC client guardrails', () => {
     ).toThrow('生产环境 OIDC 必须配置管理端 client id');
   });
 });
+
+function development(overrides: Record<string, unknown> = {}) {
+  return {
+    NODE_ENV: 'development',
+    DATABASE_URL: 'postgresql://user:password@localhost:5432/interview_agent',
+    REDIS_URL: 'redis://localhost:6379',
+    AGENT_RUNTIME_URL: 'http://localhost:8100',
+    INTERNAL_AGENT_TOKEN: 'development-internal-agent-token',
+    CREDENTIAL_ENCRYPTION_KEY: VALID_KEY,
+    ...overrides,
+  };
+}
 
 function production(overrides: Record<string, unknown> = {}) {
   return {

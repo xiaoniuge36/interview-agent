@@ -19,21 +19,21 @@
 
 ## 文件结构与职责
 
-| 文件 | 职责 |
-| --- | --- |
-| `apps/admin-console/package.json` | 声明 Ant Design 与图标库。 |
-| `pnpm-lock.yaml` | 锁定新增依赖树。 |
-| `src/components/AdminProviders.tsx` | 将中文 locale 与高密度 AntD theme 接入认证 Provider。 |
-| `src/components/admin-theme.ts`（新建） | 唯一维护 Admin 端 `ConfigProvider` token。 |
-| `src/components/admin-navigation.ts` | 保持 Hash 视图并导出 `Menu` 所需导航分组。 |
-| `src/components/AdminShell.tsx`、`src/components/admin-shell/*` | 真实 `Layout/Sider/Header/Menu/Breadcrumb` 壳。 |
-| `src/components/dashboard/AdminTableControls.tsx` | 受控 AntD 搜索、筛选和分页。 |
-| `src/components/dashboard/AdminDrawer.tsx` | 对既有 props 的 AntD `Drawer` 适配器。 |
-| `src/components/dashboard/SectionState.tsx` | `Spin/Empty/Result/Alert` 状态映射。 |
-| `src/components/dashboard/*` | 各模块的高密度 `Card/Table/Form/Drawer` 页面。 |
-| `src/components/auth/AdminAccess.tsx` | 管理员本地 / OIDC 访问页的 AntD 表单与状态。 |
-| `src/app/styles/antd-admin.css`（新建） | 仅保留壳、密度、响应式和少量业务布局 CSS。 |
-| `src/app/globals.css` | 先加载 AntD reset，再加载后台覆盖样式。 |
+| 文件                                                            | 职责                                                  |
+| --------------------------------------------------------------- | ----------------------------------------------------- |
+| `apps/admin-console/package.json`                               | 声明 Ant Design 与图标库。                            |
+| `pnpm-lock.yaml`                                                | 锁定新增依赖树。                                      |
+| `src/components/AdminProviders.tsx`                             | 将中文 locale 与高密度 AntD theme 接入认证 Provider。 |
+| `src/components/admin-theme.ts`（新建）                         | 唯一维护 Admin 端 `ConfigProvider` token。            |
+| `src/components/admin-navigation.ts`                            | 保持 Hash 视图并导出 `Menu` 所需导航分组。            |
+| `src/components/AdminShell.tsx`、`src/components/admin-shell/*` | 真实 `Layout/Sider/Header/Menu/Breadcrumb` 壳。       |
+| `src/components/dashboard/AdminTableControls.tsx`               | 受控 AntD 搜索、筛选和分页。                          |
+| `src/components/dashboard/AdminDrawer.tsx`                      | 对既有 props 的 AntD `Drawer` 适配器。                |
+| `src/components/dashboard/SectionState.tsx`                     | `Spin/Empty/Result/Alert` 状态映射。                  |
+| `src/components/dashboard/*`                                    | 各模块的高密度 `Card/Table/Form/Drawer` 页面。        |
+| `src/components/auth/AdminAccess.tsx`                           | 管理员本地 / OIDC 访问页的 AntD 表单与状态。          |
+| `src/app/styles/antd-admin.css`（新建）                         | 仅保留壳、密度、响应式和少量业务布局 CSS。            |
+| `src/app/globals.css`                                           | 先加载 AntD reset，再加载后台覆盖样式。               |
 
 ### Task 1: 安装依赖并接入主题 Provider
 
@@ -152,9 +152,9 @@ it('groups every hash view once for the management menu', () => {
   expect(ADMIN_NAV_GROUPS.flatMap((group) => group.items.map((item) => item.id))).toEqual(
     expect.arrayContaining([...ADMIN_VIEW_IDS]),
   );
-  expect(new Set(ADMIN_NAV_GROUPS.flatMap((group) => group.items.map((item) => item.id))).size).toBe(
-    ADMIN_VIEW_IDS.length,
-  );
+  expect(
+    new Set(ADMIN_NAV_GROUPS.flatMap((group) => group.items.map((item) => item.id))).size,
+  ).toBe(ADMIN_VIEW_IDS.length);
 });
 ```
 
@@ -180,9 +180,21 @@ export type AdminNavigationGroup = {
 };
 
 export const ADMIN_NAV_GROUPS: readonly AdminNavigationGroup[] = [
-  { key: 'overview', label: '运营总览', items: ADMIN_NAV_ITEMS.filter((item) => item.id === 'overview') },
-  { key: 'content', label: '内容治理', items: ADMIN_NAV_ITEMS.filter((item) => ['imports', 'questions', 'content'].includes(item.id)) },
-  { key: 'observability', label: '系统观测', items: ADMIN_NAV_ITEMS.filter((item) => ['models', 'runtime', 'audit'].includes(item.id)) },
+  {
+    key: 'overview',
+    label: '运营总览',
+    items: ADMIN_NAV_ITEMS.filter((item) => item.id === 'overview'),
+  },
+  {
+    key: 'content',
+    label: '内容治理',
+    items: ADMIN_NAV_ITEMS.filter((item) => ['imports', 'questions', 'content'].includes(item.id)),
+  },
+  {
+    key: 'observability',
+    label: '系统观测',
+    items: ADMIN_NAV_ITEMS.filter((item) => ['models', 'runtime', 'audit'].includes(item.id)),
+  },
 ];
 ```
 
@@ -197,7 +209,13 @@ const { Content, Sider } = Layout;
 
 return (
   <Layout className="admin-layout-shell" hasSider>
-    <Sider breakpoint="lg" collapsed={sidebar.collapsed} collapsible collapsedWidth={64} trigger={null}>
+    <Sider
+      breakpoint="lg"
+      collapsed={sidebar.collapsed}
+      collapsible
+      collapsedWidth={64}
+      trigger={null}
+    >
       <AdminSidebar {...sidebarProps} />
     </Sider>
     <Layout>
@@ -290,7 +308,12 @@ export function AdminDrawer({ children, description, onClose, open, title }: Adm
       onClose={onClose}
       open={open}
       size="large"
-      title={<><div>{title}</div>{description ? <Typography.Text type="secondary">{description}</Typography.Text> : null}</>}
+      title={
+        <>
+          <div>{title}</div>
+          {description ? <Typography.Text type="secondary">{description}</Typography.Text> : null}
+        </>
+      }
     >
       {children}
     </Drawer>
@@ -344,8 +367,23 @@ Use the following branches while preserving existing text and request IDs:
 
 ```tsx
 if (state.status === 'loading') return <Spin tip={loadingMessage ?? '正在加载数据'} />;
-if (state.status === 'forbidden') return <Result status="403" title={title} subTitle={description} />;
-return <Alert type="error" showIcon message="数据加载失败" description={<>{error.message}{error.requestId ? <Typography.Text code>requestId: {error.requestId}</Typography.Text> : null}</>} />;
+if (state.status === 'forbidden')
+  return <Result status="403" title={title} subTitle={description} />;
+return (
+  <Alert
+    type="error"
+    showIcon
+    message="数据加载失败"
+    description={
+      <>
+        {error.message}
+        {error.requestId ? (
+          <Typography.Text code>requestId: {error.requestId}</Typography.Text>
+        ) : null}
+      </>
+    }
+  />
+);
 ```
 
 Use `<Empty description="暂无数据" />` only in pages that receive a ready but empty data array; do not turn `forbidden` into an empty state.
@@ -388,7 +426,11 @@ Use `Alert` for pending/healthy queue, `Statistic` inside compact `Card`s, and `
   showIcon
   type={pending > 0 ? 'warning' : 'success'}
   message={pending > 0 ? `有 ${pending} 道候选题待审核` : '治理队列健康'}
-  action={<Button size="small" onClick={() => onNavigate(pending > 0 ? 'content' : 'runtime')}>查看</Button>}
+  action={
+    <Button size="small" onClick={() => onNavigate(pending > 0 ? 'content' : 'runtime')}>
+      查看
+    </Button>
+  }
 />
 ```
 
@@ -398,7 +440,13 @@ Replace each custom statistic article with:
 
 ```tsx
 <Col key={item.key} xs={12} sm={8} xl={4}>
-  <Card size="small"><Statistic title={item.label} value={state.data.stats[item.key]} suffix={suffixFor(item.unit)} /></Card>
+  <Card size="small">
+    <Statistic
+      title={item.label}
+      value={state.data.stats[item.key]}
+      suffix={suffixFor(item.unit)}
+    />
+  </Card>
 </Col>
 ```
 
@@ -498,9 +546,15 @@ Keep `useMarkdownImport` as the only mutation owner. Its rendered fields must st
     <Input value={form.title} onChange={(event) => form.setTitle(event.target.value)} />
   </Form.Item>
   <Form.Item label="Markdown 内容" required>
-    <Input.TextArea rows={10} value={form.markdown} onChange={(event) => form.setMarkdown(event.target.value)} />
+    <Input.TextArea
+      rows={10}
+      value={form.markdown}
+      onChange={(event) => form.setMarkdown(event.target.value)}
+    />
   </Form.Item>
-  <Button htmlType="submit" type="primary" loading={form.isSubmitting}>导入并生成候选题</Button>
+  <Button htmlType="submit" type="primary" loading={form.isSubmitting}>
+    导入并生成候选题
+  </Button>
 </Form>
 ```
 
@@ -532,7 +586,11 @@ Keep `CandidateEditor` as the owner of detail fetching and `updateCandidate`/`pu
 Each queue uses `Table` with `pagination={false}`, `size="middle"`, a stable `rowKey`, and `scroll={{ x: 760 }}`. The candidate action is exactly:
 
 ```tsx
-render: (_, candidate) => <Button type="link" size="small" onClick={() => props.onReview(candidate.id)}>审核</Button>
+render: (_, candidate) => (
+  <Button type="link" size="small" onClick={() => props.onReview(candidate.id)}>
+    审核
+  </Button>
+);
 ```
 
 Do not add `rowSelection`, double-click opening, or implicit first-row selection.
@@ -602,7 +660,12 @@ Keep `filterQuestions`, `status`, `difficulty`, `query`, `setPage(1)` on every f
 Use `Typography.Text copyable={{ text: value }}` only for trace ids and do not mutate the displayed value. Status mappings are:
 
 ```tsx
-const runColor = { running: 'processing', succeeded: 'success', failed: 'error', fallback: 'warning' } as const;
+const runColor = {
+  running: 'processing',
+  succeeded: 'success',
+  failed: 'error',
+  fallback: 'warning',
+} as const;
 const resultColor = { success: 'success', failure: 'error' } as const;
 ```
 
@@ -670,10 +733,29 @@ Keep `AdminAccess` authentication branching and `useLocalAdminSignIn` as state o
 
 ```tsx
 <Form layout="vertical" onFinish={() => void access.submit()} requiredMark={false}>
-  <Form.Item label="邮箱" required><Input autoComplete="username" type="email" value={access.credentials.email} onChange={(event) => access.setCredentials((current) => ({ ...current, email: event.target.value }))} /></Form.Item>
-  <Form.Item label="密码" required><Input.Password autoComplete="current-password" value={access.credentials.password} onChange={(event) => access.setCredentials((current) => ({ ...current, password: event.target.value }))} /></Form.Item>
+  <Form.Item label="邮箱" required>
+    <Input
+      autoComplete="username"
+      type="email"
+      value={access.credentials.email}
+      onChange={(event) =>
+        access.setCredentials((current) => ({ ...current, email: event.target.value }))
+      }
+    />
+  </Form.Item>
+  <Form.Item label="密码" required>
+    <Input.Password
+      autoComplete="current-password"
+      value={access.credentials.password}
+      onChange={(event) =>
+        access.setCredentials((current) => ({ ...current, password: event.target.value }))
+      }
+    />
+  </Form.Item>
   {error ? <Alert type="error" showIcon message={error} /> : null}
-  <Button block htmlType="submit" type="primary" loading={access.isSubmitting}>安全登录</Button>
+  <Button block htmlType="submit" type="primary" loading={access.isSubmitting}>
+    安全登录
+  </Button>
 </Form>
 ```
 
@@ -707,17 +789,46 @@ Expected: PASS.
 Create `antd-admin.css` with the base rules:
 
 ```css
-.admin-layout-shell { min-height: 100vh; background: #f5f5f5; }
-.admin-layout-content { min-width: 0; padding: 16px 20px 28px; }
-.admin-page { display: grid; gap: 12px; max-width: 1680px; margin: 0 auto; }
-.admin-dense-card > .ant-card-body { padding: 14px 16px; }
-.admin-table-card .ant-table-wrapper { overflow: hidden; }
-.admin-table-card .ant-table-thead > tr > th { white-space: nowrap; }
-.admin-table-card .ant-table-tbody > tr > td { vertical-align: middle; }
-.admin-table-toolbar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; }
+.admin-layout-shell {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+.admin-layout-content {
+  min-width: 0;
+  padding: 16px 20px 28px;
+}
+.admin-page {
+  display: grid;
+  gap: 12px;
+  max-width: 1680px;
+  margin: 0 auto;
+}
+.admin-dense-card > .ant-card-body {
+  padding: 14px 16px;
+}
+.admin-table-card .ant-table-wrapper {
+  overflow: hidden;
+}
+.admin-table-card .ant-table-thead > tr > th {
+  white-space: nowrap;
+}
+.admin-table-card .ant-table-tbody > tr > td {
+  vertical-align: middle;
+}
+.admin-table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
 @media (max-width: 768px) {
-  .admin-layout-content { padding: 12px; }
-  .admin-table-toolbar { align-items: stretch; flex-direction: column; }
+  .admin-layout-content {
+    padding: 12px;
+  }
+  .admin-table-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 ```
 

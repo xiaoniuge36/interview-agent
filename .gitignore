@@ -22,9 +22,12 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
+# pytest 遗留的临时目录（Windows 下可能因权限异常无法删除）
+apps/agent-runtime/.pytest-*/
 
 /uploads/
 /minio-data/
+.index-tmp/
 .audit-current.json
 .coverage
 .mypy_cache/

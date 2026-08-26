@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { createLatestRequestRunner } from '@interview-agent/api-client';
 import type { JobIntentPayload, ProfilePayload } from '@interview-agent/contracts';
 import { loadWorkspaceData, type WorkspaceData } from '../lib/workspace-api';
 
@@ -8,12 +9,6 @@ type WorkspaceState = {
   status: 'idle' | 'loading' | 'ready' | 'error';
   data: WorkspaceData | null;
   error: Error | null;
-};
-
-type LatestWorkspaceHandlers<T> = {
-  load: () => Promise<T>;
-  onSuccess: (value: T) => void;
-  onError: (reason: unknown) => void;
 };
 
 const IDLE_STATE: WorkspaceState = {
@@ -33,7 +28,7 @@ export function useWorkspaceData(options: { loadOnMount?: boolean } = {}) {
     options.loadOnMount === false ? IDLE_STATE : INITIAL_STATE,
   );
   const [loadWorkspace] = useState(() => createWorkspaceLoader());
-  const [request] = useState(createLatestWorkspaceRequest);
+  const [request] = useState(createLatestRequestRunner);
   const reload = useCallback(async () => {
     setState(INITIAL_STATE);
     await request.run({
@@ -53,27 +48,6 @@ export function useWorkspaceData(options: { loadOnMount?: boolean } = {}) {
     setState((current) => updateData(current, { job }));
   }, []);
   return { state, reload, updateProfile, addJob };
-}
-
-export function createLatestWorkspaceRequest() {
-  let latestSequence = 0;
-  const invalidate = () => {
-    latestSequence += 1;
-  };
-  const run = async <T>(handlers: LatestWorkspaceHandlers<T>): Promise<boolean> => {
-    const sequence = ++latestSequence;
-    try {
-      const value = await handlers.load();
-      if (sequence !== latestSequence) return false;
-      handlers.onSuccess(value);
-      return true;
-    } catch (reason) {
-      if (sequence !== latestSequence) return false;
-      handlers.onError(reason);
-      return false;
-    }
-  };
-  return { invalidate, run };
 }
 
 export function createWorkspaceLoader(

@@ -1,6 +1,6 @@
 import type {
-  InterviewSession,
   InterviewSessionStatus,
+  InterviewSessionSummary,
   RecentPracticeSummary,
 } from '@interview-agent/contracts';
 import { interviewStageLabel } from '@/components/interview/interview-labels';
@@ -27,7 +27,7 @@ const ACTIVE_INTERVIEW_STATUSES = new Set<InterviewSessionStatus>([
 
 export function selectTrainingContinuation(
   recentPractice: RecentPracticeSummary | null,
-  interviews: InterviewSession[],
+  interviews: InterviewSessionSummary[],
 ): TrainingContinuation | null {
   const practice = recentPractice ? practiceContinuation(recentPractice) : null;
   const activeInterview = latestActiveInterview(interviews);
@@ -37,8 +37,10 @@ export function selectTrainingContinuation(
   return Date.parse(practice.updatedAt) >= Date.parse(interview.updatedAt) ? practice : interview;
 }
 
-function latestActiveInterview(interviews: InterviewSession[]): InterviewSession | null {
-  return interviews.reduce<InterviewSession | null>((latest, interview) => {
+function latestActiveInterview(
+  interviews: InterviewSessionSummary[],
+): InterviewSessionSummary | null {
+  return interviews.reduce<InterviewSessionSummary | null>((latest, interview) => {
     if (!ACTIVE_INTERVIEW_STATUSES.has(interview.status)) return latest;
     if (!latest || Date.parse(interview.updatedAt) > Date.parse(latest.updatedAt)) return interview;
     return latest;
@@ -61,8 +63,8 @@ function practiceContinuation(practice: RecentPracticeSummary): TrainingContinua
   };
 }
 
-function interviewContinuation(interview: InterviewSession): TrainingContinuation {
-  const answered = interview.turns.filter((turn) => turn.role === 'candidate').length;
+function interviewContinuation(interview: InterviewSessionSummary): TrainingContinuation {
+  const answered = interview.candidateTurnCount;
   return {
     kind: 'interview',
     id: interview.id,

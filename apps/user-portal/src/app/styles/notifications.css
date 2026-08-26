@@ -41,7 +41,7 @@
   border-radius: 11px;
   background: var(--primary-soft);
   color: var(--primary-strong);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .operation-notification.success .operation-notification-icon {

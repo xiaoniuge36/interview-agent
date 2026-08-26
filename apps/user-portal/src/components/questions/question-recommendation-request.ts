@@ -1,4 +1,4 @@
-import { createLatestQuestionRequestRunner } from './latest-question-request';
+import { createLatestRequestRunner } from '@interview-agent/api-client';
 
 type RecommendationRequestHandlers<T> = {
   load: () => Promise<T[]>;
@@ -8,7 +8,7 @@ type RecommendationRequestHandlers<T> = {
 };
 
 export function createLatestQuestionRecommendationRequest<T>() {
-  const runner = createLatestQuestionRequestRunner();
+  const runner = createLatestRequestRunner();
   const load = (handlers: RecommendationRequestHandlers<T>) =>
     runner.run({
       load: handlers.load,

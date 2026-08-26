@@ -20,12 +20,14 @@
 ### Task 1: 前后台场景规则及单元测试
 
 **Files:**
+
 - Create: `apps/user-portal/src/components/user-agent/user-agent-page-context.ts`
 - Create: `apps/user-portal/src/components/user-agent/user-agent-page-context.test.ts`
 - Create: `apps/admin-console/src/components/admin-agent/admin-agent-page-context.ts`
 - Create: `apps/admin-console/src/components/admin-agent/admin-agent-page-context.test.ts`
 
 **Interfaces:**
+
 - `resolveUserAgentPageContext(pathname: string): UserAgentPageContext`
 - `resolveAdminAgentPageContext(view: AdminView, role?: string): AdminAgentPageContext`
 - 两个 context 都包含 `id`、`title`、`description`、`quickActions`、`runtimeInstructions`。
@@ -34,8 +36,9 @@
 
 ```ts
 expect(resolveUserAgentPageContext('/practice/session-1').id).toBe('practice');
-expect(resolveUserAgentPageContext('/reports').quickActions.map(({ id }) => id))
-  .toContain('review-weaknesses');
+expect(resolveUserAgentPageContext('/reports').quickActions.map(({ id }) => id)).toContain(
+  'review-weaknesses',
+);
 expect(resolveUserAgentPageContext('/unrecognized').id).toBe('training-overview');
 ```
 
@@ -43,10 +46,12 @@ expect(resolveUserAgentPageContext('/unrecognized').id).toBe('training-overview'
 
 ```ts
 expect(resolveAdminAgentPageContext('content', 'admin').id).toBe('review-workbench');
-expect(resolveAdminAgentPageContext('runtime', 'admin').quickActions.map(({ id }) => id))
-  .toContain('runtime-failures');
-expect(resolveAdminAgentPageContext('analytics', 'admin').quickActions.map(({ id }) => id))
-  .not.toContain('ai-usage');
+expect(resolveAdminAgentPageContext('runtime', 'admin').quickActions.map(({ id }) => id)).toContain(
+  'runtime-failures',
+);
+expect(
+  resolveAdminAgentPageContext('analytics', 'admin').quickActions.map(({ id }) => id),
+).not.toContain('ai-usage');
 ```
 
 - [ ] **Step 3: 运行聚焦测试并确认因模块缺失失败。**
@@ -68,6 +73,7 @@ Expected: PASS。
 ### Task 2: 前台场景化快捷入口与运行时上下文
 
 **Files:**
+
 - Modify: `apps/user-portal/src/components/user-agent/UserAgentWidget.tsx`
 - Modify: `apps/user-portal/src/components/user-agent/UserAgentDrawer.tsx`
 - Modify: `apps/user-portal/src/components/user-agent/user-agent-runtime.ts`
@@ -76,6 +82,7 @@ Expected: PASS。
 - Modify: `apps/user-portal/src/components/user-agent/user-agent-runtime.test.ts`
 
 **Interfaces:**
+
 - Widget uses `usePathname()` and `resolveUserAgentPageContext(pathname)`.
 - Drawer receives `pageContext: UserAgentPageContext` and renders its title, description and actions for empty conversations.
 - `useUserAgentRuntime` receives `pageContext: string`; `createUserAgentRuntime` includes it in system instructions.
@@ -83,8 +90,9 @@ Expected: PASS。
 - [ ] **Step 1: 追加失败的 runtime 测试。**
 
 ```ts
-expect(buildUserAgentInstructions('会话内容', '当前在练习空间，只提供解题指导。'))
-  .toContain('当前在练习空间，只提供解题指导。');
+expect(buildUserAgentInstructions('会话内容', '当前在练习空间，只提供解题指导。')).toContain(
+  '当前在练习空间，只提供解题指导。',
+);
 expect(buildUserAgentInstructions(undefined, '当前在复盘中心。')).toContain('未经用户确认');
 ```
 
@@ -107,6 +115,7 @@ Expected: PASS。
 ### Task 3: 后台场景化快捷入口与运行时上下文
 
 **Files:**
+
 - Modify: `apps/admin-console/src/components/AdminShell.tsx`
 - Modify: `apps/admin-console/src/components/admin-agent/AdminAgentWidget.tsx`
 - Modify: `apps/admin-console/src/components/admin-agent/AdminAgentDrawer.tsx`
@@ -116,6 +125,7 @@ Expected: PASS。
 - Modify: `apps/admin-console/src/components/admin-agent/admin-agent-runtime-context.test.ts`
 
 **Interfaces:**
+
 - `AdminShell` passes its existing `activeView` to `AdminAgentWidget`.
 - Widget resolves `AdminAgentPageContext` from `activeView` and authenticated role.
 - Drawer receives the context; `QuickActionIcon` accepts generic action identifiers and has a safe fallback icon.
@@ -124,9 +134,12 @@ Expected: PASS。
 - [ ] **Step 1: 追加失败的后台 runtime 测试。**
 
 ```ts
-expect(buildAdminAgentInstructions(undefined, '当前在审核工作台，只解释和定位。'))
-  .toContain('当前在审核工作台，只解释和定位。');
-expect(buildAdminAgentInstructions(undefined, '当前在审核工作台。')).toContain('审核、发布、停用账号');
+expect(buildAdminAgentInstructions(undefined, '当前在审核工作台，只解释和定位。')).toContain(
+  '当前在审核工作台，只解释和定位。',
+);
+expect(buildAdminAgentInstructions(undefined, '当前在审核工作台。')).toContain(
+  '审核、发布、停用账号',
+);
 ```
 
 - [ ] **Step 2: 运行聚焦测试并确认导出函数不存在。**
@@ -148,6 +161,7 @@ Expected: PASS。
 ### Task 4: 集成质量验证
 
 **Files:**
+
 - Modify only when test or type failures identify an in-scope integration defect.
 
 - [ ] **Step 1: 运行两个前端包的 lint 和 typecheck。**

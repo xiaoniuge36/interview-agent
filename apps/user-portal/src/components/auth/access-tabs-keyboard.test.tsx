@@ -11,11 +11,15 @@ let AccessTabsComponent: ComponentType<{
 }>;
 let resolveTabKey: (mode: AccessMode, key: string) => AccessMode | null;
 
+const MODULE_IMPORT_TIMEOUT_MS = 60_000;
+
+// turbo 并行跑全仓测试时 Vite transform 会明显变慢，
+// 动态 import 需要比默认 10s 更宽裕的 hook 超时。
 beforeAll(async () => {
   const accessModule = await import('./LocalAccessScreen');
   AccessTabsComponent = accessModule.AccessTabs;
   resolveTabKey = accessModule.resolveAccessTabKey;
-});
+}, MODULE_IMPORT_TIMEOUT_MS);
 
 describe('access tabs keyboard navigation', () => {
   it.each([

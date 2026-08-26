@@ -11,17 +11,19 @@ describe('resolveAdminAgentPageContext', () => {
   });
 
   it('uses observability actions in the runtime view', () => {
-    expect(resolveAdminAgentPageContext('runtime', 'admin').quickActions.map((action) => action.id)).toContain(
-      'runtime-failures',
-    );
+    expect(
+      resolveAdminAgentPageContext('runtime', 'admin').quickActions.map((action) => action.id),
+    ).toContain('runtime-failures');
   });
 
   it('hides platform-only AI usage from non-platform administrators', () => {
-    expect(resolveAdminAgentPageContext('analytics', 'admin').quickActions.map((action) => action.id)).not.toContain(
-      'ai-usage',
-    );
     expect(
-      resolveAdminAgentPageContext('analytics', 'platform_admin').quickActions.map((action) => action.id),
+      resolveAdminAgentPageContext('analytics', 'admin').quickActions.map((action) => action.id),
+    ).not.toContain('ai-usage');
+    expect(
+      resolveAdminAgentPageContext('analytics', 'platform_admin').quickActions.map(
+        (action) => action.id,
+      ),
     ).toContain('ai-usage');
   });
 });

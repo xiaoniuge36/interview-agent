@@ -105,7 +105,10 @@ function ReadyCandidateQueue({
   );
 }
 
-type CandidateQueueToolbarProps = Pick<ReadyCandidateQueueProps, 'exportList' | 'importTaskId' | 'isExporting' | 'list' | 'onClearImportTask'> & {
+type CandidateQueueToolbarProps = Pick<
+  ReadyCandidateQueueProps,
+  'exportList' | 'importTaskId' | 'isExporting' | 'list' | 'onClearImportTask'
+> & {
   total: number;
 };
 

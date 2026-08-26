@@ -91,7 +91,12 @@ describe('CandidateReviewService platform access', () => {
 
 function candidateDatabase() {
   const transaction = {
-    candidateQuestion: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+    candidateQuestion: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+    },
     question: { findFirst: jest.fn(), findUnique: jest.fn(), create: jest.fn() },
   };
   return {
@@ -151,14 +156,12 @@ type BatchReviewService = {
 
 async function expectBatchReview() {
   const database = candidateDatabase();
-  const audit = { record: jest.fn().mockResolvedValue({}) };
+  const audit = { record: jest.fn(), recordMany: jest.fn().mockResolvedValue({ count: 2 }) };
   database.transaction.candidateQuestion.findMany.mockResolvedValue([
     candidateRecord({ id: 'candidate-1', importTaskId: 'import-1', revision: 1 }),
     candidateRecord({ id: 'candidate-2', importTaskId: 'import-1', revision: 3 }),
   ]);
-  database.transaction.candidateQuestion.update
-    .mockResolvedValueOnce(candidateRecord({ id: 'candidate-1', status: 'approved', revision: 2 }))
-    .mockResolvedValueOnce(candidateRecord({ id: 'candidate-2', status: 'approved', revision: 4 }));
+  database.transaction.candidateQuestion.updateMany.mockResolvedValue({ count: 2 });
   const service = candidateService(
     database,
     audit as unknown as AuditService,
@@ -172,11 +175,25 @@ async function expectBatchReview() {
     }),
   ).resolves.toEqual({ updatedCount: 2 });
 
-  expect(database.transaction.candidateQuestion.update).toHaveBeenCalledWith({
-    where: { id: 'candidate-1' },
+  expect(database.transaction.candidateQuestion.updateMany).toHaveBeenCalledWith({
+    where: { tenantId: context.tenantId, id: { in: ['candidate-1', 'candidate-2'] } },
     data: { status: 'approved', reviewNotes: '内容准确。', revision: { increment: 1 } },
   });
-  expect(audit.record).toHaveBeenCalledTimes(2);
+  expect(audit.recordMany).toHaveBeenCalledWith(
+    context,
+    [
+      expect.objectContaining({
+        resourceId: 'candidate-1',
+        stateTransition: { from: 'pending', to: 'approved', version: 2 },
+      }),
+      expect.objectContaining({
+        resourceId: 'candidate-2',
+        stateTransition: { from: 'pending', to: 'approved', version: 4 },
+      }),
+    ],
+    database.transaction,
+  );
+  expect(audit.record).not.toHaveBeenCalled();
 }
 
 async function expectMixedSourceBatchRejected() {
@@ -194,7 +211,7 @@ async function expectMixedSourceBatchRejected() {
       reviewNotes: null,
     }),
   ).rejects.toBeInstanceOf(BadRequestException);
-  expect(database.transaction.candidateQuestion.update).not.toHaveBeenCalled();
+  expect(database.transaction.candidateQuestion.updateMany).not.toHaveBeenCalled();
 }
 
 async function expectPublishedBatchRejected() {
@@ -224,7 +241,7 @@ async function expectPublishedBatchRejected() {
     code: 'CANDIDATE_ALREADY_PUBLISHED',
     message: '候选题已发布到题库，不能再编辑。',
   });
-  expect(database.transaction.candidateQuestion.update).not.toHaveBeenCalled();
+  expect(database.transaction.candidateQuestion.updateMany).not.toHaveBeenCalled();
 }
 
 function publishedQuestion() {
@@ -270,7 +287,10 @@ function candidateRecord(overrides: Record<string, unknown> = {}) {
 
 function candidateService(
   database: ReturnType<typeof candidateDatabase>,
-  audit: AuditService = { record: jest.fn().mockResolvedValue({}) } as unknown as AuditService,
+  audit: AuditService = {
+    record: jest.fn().mockResolvedValue({}),
+    recordMany: jest.fn().mockResolvedValue({ count: 0 }),
+  } as unknown as AuditService,
 ) {
   const infrastructure = new CandidateReviewInfrastructure(
     database as unknown as PrismaService,

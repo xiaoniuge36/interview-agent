@@ -59,7 +59,7 @@
   padding: 0 17px;
   color: #d8e5f5;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .practice-entry-actions a:first-child {
   border-color: #58d5ba;
@@ -108,7 +108,7 @@
   color: #2b66cf;
   font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 850;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -138,7 +138,7 @@
   color: #2b66cf;
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 850;
+  font-weight: 700;
 }
 .practice-entry-guide li div {
   display: grid;
@@ -173,7 +173,7 @@
   border-radius: 50%;
   background: #d6f4eb;
   color: #087b67;
-  font-weight: 900;
+  font-weight: 700;
 }
 .practice-entry-note p {
   margin: 0;
@@ -211,7 +211,7 @@
   background: #1d5de1;
   color: #fff;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .practice-player-state a {
   display: block;
@@ -251,7 +251,7 @@
   background: #fff;
   color: #245bbd;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .practice-completion-page > header button {
   border-color: #1d5de1;
@@ -279,7 +279,7 @@
   background: #fff;
   color: #245bbd;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .practice-completion-message {
   text-align: center;

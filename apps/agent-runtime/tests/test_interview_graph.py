@@ -1,3 +1,6 @@
+import asyncio
+import logging
+
 import pytest
 from app.model_gateway import ModelGatewayError, ModelGatewayRequest
 from app.schemas.interview import NextInterviewRequest
@@ -8,6 +11,8 @@ from app.workflows.interview_graph import (
     run_interview_graph,
 )
 from langgraph.checkpoint.memory import InMemorySaver
+
+VALID_DECISION = '{"stage":"jd_core","content":"请展开关键技术取舍。","shouldFinish":false}'
 
 
 class FakeGateway:
@@ -23,6 +28,20 @@ class FakeGateway:
         if isinstance(response, Exception):
             raise response
         return response
+
+
+class BlockingGateway:
+    async def complete(self, _request: ModelGatewayRequest) -> str:
+        await asyncio.Event().wait()
+        raise AssertionError("blocked gateway resumed")
+
+
+class SleepRecorder:
+    def __init__(self) -> None:
+        self.delays: list[float] = []
+
+    async def __call__(self, delay: float) -> None:
+        self.delays.append(delay)
 
 
 def request_with_grant(tenant_id: str = "tenant-a") -> NextInterviewRequest:
@@ -62,9 +81,7 @@ def request_with_retrieval() -> NextInterviewRequest:
 
 @pytest.mark.anyio
 async def test_graph_uses_gateway_when_grant_is_present() -> None:
-    gateway = FakeGateway(
-        ['{"stage":"jd_core","content":"请展开关键技术取舍。","shouldFinish":false}']
-    )
+    gateway = FakeGateway([VALID_DECISION])
     graph = create_interview_graph(gateway)
 
     result = await run_interview_graph(graph, request_with_grant())
@@ -115,14 +132,15 @@ async def test_graph_rejects_source_id_outside_retrieval_context() -> None:
 
 
 @pytest.mark.anyio
-async def test_graph_retries_transient_gateway_failure() -> None:
+async def test_graph_retries_transient_gateway_failure_with_backoff() -> None:
     gateway = FakeGateway(
         [
             ModelGatewayError("MODEL_PROVIDER_UNAVAILABLE", retryable=True),
-            '{"stage":"jd_core","content":"请展开关键技术取舍。","shouldFinish":false}',
+            VALID_DECISION,
         ]
     )
-    graph = create_interview_graph(gateway)
+    retry_sleep = SleepRecorder()
+    graph = create_interview_graph(gateway, retry_sleep=retry_sleep)
 
     result = await run_interview_graph(graph, request_with_grant())
 
@@ -131,6 +149,46 @@ async def test_graph_retries_transient_gateway_failure() -> None:
         "signed-runtime-grant.payload-signature",
         "signed-runtime-grant.payload-signature",
     ]
+    assert len(retry_sleep.delays) == 1
+    assert 0.25 <= retry_sleep.delays[0] <= 0.5
+
+
+@pytest.mark.anyio
+async def test_graph_honours_capped_retry_after_from_rate_limits() -> None:
+    gateway = FakeGateway(
+        [
+            ModelGatewayError(
+                "MODEL_PROVIDER_RATE_LIMITED", retryable=True, retry_after_seconds=3.0
+            ),
+            VALID_DECISION,
+        ]
+    )
+    retry_sleep = SleepRecorder()
+
+    await run_interview_graph(
+        create_interview_graph(gateway, retry_sleep=retry_sleep), request_with_grant()
+    )
+
+    assert retry_sleep.delays == [3.0]
+
+
+@pytest.mark.anyio
+async def test_graph_caps_an_excessive_retry_after_hint() -> None:
+    gateway = FakeGateway(
+        [
+            ModelGatewayError(
+                "MODEL_PROVIDER_RATE_LIMITED", retryable=True, retry_after_seconds=99.0
+            ),
+            VALID_DECISION,
+        ]
+    )
+    retry_sleep = SleepRecorder()
+
+    await run_interview_graph(
+        create_interview_graph(gateway, retry_sleep=retry_sleep), request_with_grant()
+    )
+
+    assert retry_sleep.delays == [10.0]
 
 
 @pytest.mark.anyio
@@ -145,17 +203,55 @@ async def test_graph_does_not_retry_a_blocked_provider_endpoint() -> None:
 
 @pytest.mark.anyio
 async def test_graph_stops_after_transient_gateway_retry_limit() -> None:
+    retry_sleep = SleepRecorder()
     graph = create_interview_graph(
         FakeGateway(
             [
                 ModelGatewayError("MODEL_PROVIDER_UNAVAILABLE", retryable=True),
                 ModelGatewayError("MODEL_PROVIDER_UNAVAILABLE", retryable=True),
             ]
-        )
+        ),
+        retry_sleep=retry_sleep,
     )
 
     with pytest.raises(InterviewGraphError, match="MODEL_PROVIDER_UNAVAILABLE"):
         await run_interview_graph(graph, request_with_grant())
+
+    assert len(retry_sleep.delays) == 1
+
+
+@pytest.mark.anyio
+async def test_graph_times_out_the_whole_run() -> None:
+    graph = create_interview_graph(BlockingGateway())
+
+    with pytest.raises(InterviewGraphError, match="MODEL_PROVIDER_TIMEOUT"):
+        await run_interview_graph(graph, request_with_grant(), timeout_seconds=0.05)
+
+
+@pytest.mark.anyio
+async def test_graph_logs_structured_failure_without_sensitive_content(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.WARNING, logger="agent_runtime.interview_graph")
+    request = request_with_grant()
+
+    with pytest.raises(InterviewGraphError, match="MODEL_PROVIDER_RESPONSE_INVALID"):
+        await run_interview_graph(create_interview_graph(FakeGateway(["not-json"])), request)
+
+    events = [
+        record
+        for record in caplog.records
+        if record.__dict__.get("event") == "interview_decision_invalid"
+    ]
+    assert events
+    fields = events[-1].__dict__
+    assert fields["code"] == "MODEL_PROVIDER_RESPONSE_INVALID"
+    assert fields["session_id"] == "interview-test-0001"
+    log_output = " ".join(
+        str(value) for record in caplog.records for value in record.__dict__.values()
+    )
+    assert "signed-runtime-grant" not in log_output
+    assert "not-json" not in log_output
 
 
 @pytest.mark.anyio
@@ -181,10 +277,7 @@ def test_thread_id_is_tenant_scoped() -> None:
 async def test_checkpoint_excludes_grant_and_raw_provider_response() -> None:
     checkpointer = InMemorySaver()
     request = request_with_grant()
-    graph = create_interview_graph(
-        FakeGateway(['{"stage":"jd_core","content":"请展开关键技术取舍。","shouldFinish":false}']),
-        checkpointer,
-    )
+    graph = create_interview_graph(FakeGateway([VALID_DECISION]), checkpointer)
 
     await run_interview_graph(graph, request)
     stored = await checkpointer.aget_tuple(

@@ -20,21 +20,22 @@
 
 ## File Structure
 
-| 路径 | 职责 |
-| --- | --- |
-| `packages/contracts/src/schemas/model-credential.ts` | 用户模型连接的请求、脱敏响应和 Provider schema。 |
-| `apps/product-api/prisma/schema/identity.prisma` | `UserModelCredential` 与 Tenant/User 关系。 |
-| `apps/product-api/src/modules/model-credential/*` | 加密、CRUD、测试连接、访问控制和 Provider 调用。 |
-| `apps/product-api/src/modules/agent-runtime/*` | 以真实模型客户端替换生产生成路径，保留可控 fallback。 |
-| `apps/user-portal/src/app/(app)/settings/page.tsx` | 设置路由。 |
-| `apps/user-portal/src/components/settings/*` | 模型连接表、对话框、设置状态与表单。 |
-| `apps/user-portal/src/components/home/*` | Agent 首页信息层级。 |
-| `apps/user-portal/src/components/profile/*` | Agent 档案与真实资料编辑。 |
-| `apps/user-portal/src/app/styles/*` | 设计令牌、布局、表单、移动端样式。 |
+| 路径                                                 | 职责                                                  |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| `packages/contracts/src/schemas/model-credential.ts` | 用户模型连接的请求、脱敏响应和 Provider schema。      |
+| `apps/product-api/prisma/schema/identity.prisma`     | `UserModelCredential` 与 Tenant/User 关系。           |
+| `apps/product-api/src/modules/model-credential/*`    | 加密、CRUD、测试连接、访问控制和 Provider 调用。      |
+| `apps/product-api/src/modules/agent-runtime/*`       | 以真实模型客户端替换生产生成路径，保留可控 fallback。 |
+| `apps/user-portal/src/app/(app)/settings/page.tsx`   | 设置路由。                                            |
+| `apps/user-portal/src/components/settings/*`         | 模型连接表、对话框、设置状态与表单。                  |
+| `apps/user-portal/src/components/home/*`             | Agent 首页信息层级。                                  |
+| `apps/user-portal/src/components/profile/*`          | Agent 档案与真实资料编辑。                            |
+| `apps/user-portal/src/app/styles/*`                  | 设计令牌、布局、表单、移动端样式。                    |
 
 ## Task 1: 凭证合同、权限、数据模型与加密基元
 
 **Files:**
+
 - Create: `packages/contracts/src/schemas/model-credential.ts`
 - Modify: `packages/contracts/src/index.ts`, `packages/contracts/src/schemas/context.ts`
 - Modify: `apps/product-api/prisma/schema/identity.prisma`, `apps/product-api/prisma/schema/migrations/<timestamp>_user_model_credentials/migration.sql`
@@ -42,14 +43,26 @@
 - Test: `packages/contracts/src/model-credential.test.ts`, `apps/product-api/src/modules/model-credential/credential-crypto.service.spec.ts`
 
 **Interfaces:**
+
 - Produces `CreateModelCredentialInputSchema`, `UpdateModelCredentialInputSchema`, `ModelCredentialViewSchema`, `ModelCredentialListSchema`.
 - Produces `CredentialCryptoService.encrypt(secret)` and `CredentialCryptoService.decrypt(record)`; both operate on `Buffer` and never log input.
 
 - [ ] **Step 1: 写失败合同与加密测试**
 
 ```ts
-expect(CreateModelCredentialInputSchema.safeParse({ provider: 'openai', model: 'gpt-4.1' }).success).toBe(false);
-expect(ModelCredentialViewSchema.parse({ id: 'c1', provider: 'openai', model: 'gpt-4.1', keyHint: '••••7K9m', status: 'verified', isDefault: true })).not.toHaveProperty('apiKey');
+expect(
+  CreateModelCredentialInputSchema.safeParse({ provider: 'openai', model: 'gpt-4.1' }).success,
+).toBe(false);
+expect(
+  ModelCredentialViewSchema.parse({
+    id: 'c1',
+    provider: 'openai',
+    model: 'gpt-4.1',
+    keyHint: '••••7K9m',
+    status: 'verified',
+    isDefault: true,
+  }),
+).not.toHaveProperty('apiKey');
 expect(crypto.decrypt(crypto.encrypt('sk-secret'))).toBe('sk-secret');
 ```
 
@@ -78,6 +91,7 @@ Expected: PASS；随机 IV 每次不同，明文不在持久化结构中。
 ## Task 2: 用户模型连接 API 与连接测试
 
 **Files:**
+
 - Create: `apps/product-api/src/modules/model-credential/model-credential.controller.ts`
 - Create: `apps/product-api/src/modules/model-credential/model-credential.service.ts`
 - Create: `apps/product-api/src/modules/model-credential/model-provider.client.ts`
@@ -86,6 +100,7 @@ Expected: PASS；随机 IV 每次不同，明文不在持久化结构中。
 - Test: `apps/product-api/src/modules/model-credential/model-credential.service.spec.ts`, `apps/product-api/src/modules/model-credential/model-provider.client.spec.ts`
 
 **Interfaces:**
+
 - Consumes Task 1 schemas and `CredentialCryptoService`.
 - Produces authenticated `/model-credentials` GET/POST/PATCH/DELETE、`/model-credentials/:id/test` POST 和 `resolveDefault(context)`。
 
@@ -93,15 +108,27 @@ Expected: PASS；随机 IV 每次不同，明文不在持久化结构中。
 
 ```ts
 await expect(service.get(otherUserContext, credential.id)).rejects.toThrow(NotFoundException);
-expect(await service.list(ownerContext)).toEqual([expect.objectContaining({ keyHint: '••••7K9m' })]);
+expect(await service.list(ownerContext)).toEqual([
+  expect.objectContaining({ keyHint: '••••7K9m' }),
+]);
 expect(JSON.stringify(await service.list(ownerContext))).not.toContain('sk-real-secret');
 ```
 
 - [ ] **Step 2: 写失败 Provider 请求测试**
 
 ```ts
-await client.test({ provider: 'openai', baseUrl: 'https://api.openai.com/v1', apiKey: 'sk-test', model: 'gpt-4.1' });
-expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/chat/completions'), expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer sk-test' }) }));
+await client.test({
+  provider: 'openai',
+  baseUrl: 'https://api.openai.com/v1',
+  apiKey: 'sk-test',
+  model: 'gpt-4.1',
+});
+expect(fetch).toHaveBeenCalledWith(
+  expect.stringContaining('/chat/completions'),
+  expect.objectContaining({
+    headers: expect.objectContaining({ Authorization: 'Bearer sk-test' }),
+  }),
+);
 ```
 
 - [ ] **Step 3: 实现 CRUD、默认项事务和 Provider 健康检查**
@@ -117,20 +144,26 @@ Expected: PASS；用户不能跨租户访问，任何 API 读取响应均不可�
 ## Task 3: 真实面试模型调用与安全降级
 
 **Files:**
+
 - Create: `apps/product-api/src/modules/agent-runtime/user-model-runtime.client.ts`
 - Modify: `apps/product-api/src/modules/agent-runtime/agent-runtime.client.ts`, `apps/product-api/src/modules/agent-runtime/agent-runtime.module.ts`
 - Modify: `apps/product-api/src/modules/interview/interview-command.service.ts`
 - Test: `apps/product-api/src/modules/agent-runtime/user-model-runtime.client.spec.ts`, `apps/product-api/src/modules/interview/interview-command.service.spec.ts`
 
 **Interfaces:**
+
 - Consumes `ModelCredentialService.resolveDefault(context)` and `ModelProviderClient.complete(input)`.
 - Produces existing `AgentNextResult` so interview persistence and SSE remain unchanged.
 
 - [ ] **Step 1: 写失败的真实调用选择测试**
 
 ```ts
-await expect(client.next({ session, commandId: 'cmd-1', traceId: 'trace-1234' })).rejects.toMatchObject({ code: 'MODEL_CONNECTION_REQUIRED' });
-expect(provider.complete).toHaveBeenCalledWith(expect.objectContaining({ responseSchema: AgentRuntimeNextResponseSchema }));
+await expect(
+  client.next({ session, commandId: 'cmd-1', traceId: 'trace-1234' }),
+).rejects.toMatchObject({ code: 'MODEL_CONNECTION_REQUIRED' });
+expect(provider.complete).toHaveBeenCalledWith(
+  expect.objectContaining({ responseSchema: AgentRuntimeNextResponseSchema }),
+);
 ```
 
 - [ ] **Step 2: 实现 Provider 适配**
@@ -156,6 +189,7 @@ Expected: PASS；真实模型输出可沿用现有会话、事件与报告持久
 ## Task 4: 设置中心与 C 端 API 连接状态
 
 **Files:**
+
 - Create: `apps/user-portal/src/app/(app)/settings/page.tsx`
 - Create: `apps/user-portal/src/components/settings/ModelConnectionsPanel.tsx`
 - Create: `apps/user-portal/src/components/settings/ModelConnectionDialog.tsx`
@@ -165,13 +199,16 @@ Expected: PASS；真实模型输出可沿用现有会话、事件与报告持久
 - Test: `apps/user-portal/src/components/settings/model-connection-form.test.ts`, `apps/user-portal/src/lib/model-credentials-api.test.ts`
 
 **Interfaces:**
+
 - Consumes Task 1 `ModelCredential*` contracts and Task 2 endpoints.
 - Produces a fully working model connection CRUD/test/default UI; forms never persist plaintext API key after the write request resolves.
 
 - [ ] **Step 1: 写表单验证与脱敏 API 失败测试**
 
 ```ts
-expect(validateModelConnection({ provider: 'openai', model: '', apiKey: '' })).toEqual(expect.objectContaining({ model: expect.any(String), apiKey: expect.any(String) }));
+expect(validateModelConnection({ provider: 'openai', model: '', apiKey: '' })).toEqual(
+  expect.objectContaining({ model: expect.any(String), apiKey: expect.any(String) }),
+);
 expect(await listModelCredentials()).toEqual([expect.objectContaining({ keyHint: '••••7K9m' })]);
 ```
 
@@ -192,6 +229,7 @@ Expected: PASS；界面没有 API Key 明文回填或 LocalStorage 写入。
 ## Task 5: Agent 首页与档案重设计
 
 **Files:**
+
 - Modify: `apps/user-portal/src/components/home/HomePageContent.tsx`, `apps/user-portal/src/components/home/HeroSection.tsx`
 - Create: `apps/user-portal/src/components/home/AgentMemoryPanel.tsx`, `apps/user-portal/src/components/home/NextActionCard.tsx`
 - Modify: `apps/user-portal/src/components/profile/ProfilePageContent.tsx`, `apps/user-portal/src/components/profile/ProfilePanel.tsx`
@@ -200,14 +238,19 @@ Expected: PASS；界面没有 API Key 明文回填或 LocalStorage 写入。
 - Test: `apps/user-portal/src/components/home/home-next-action.test.ts`, `apps/user-portal/src/components/profile/agent-memory-summary.test.ts`
 
 **Interfaces:**
+
 - Consumes existing workspace profile/job/interview data and credential summary from Task 4.
 - Produces next action selection and Agent memory UI without changing profile/job API payloads.
 
 - [ ] **Step 1: 写失败状态选择测试**
 
 ```ts
-expect(resolveNextAction({ hasCredential: false, hasProfile: true, hasJob: true, activeSession: null })).toMatchObject({ href: '/settings?tab=models', label: '连接 AI 模型' });
-expect(resolveNextAction({ hasCredential: true, hasProfile: true, hasJob: true, activeSession })).toMatchObject({ href: '/interview', label: '继续模拟' });
+expect(
+  resolveNextAction({ hasCredential: false, hasProfile: true, hasJob: true, activeSession: null }),
+).toMatchObject({ href: '/settings?tab=models', label: '连接 AI 模型' });
+expect(
+  resolveNextAction({ hasCredential: true, hasProfile: true, hasJob: true, activeSession }),
+).toMatchObject({ href: '/interview', label: '继续模拟' });
 ```
 
 - [ ] **Step 2: 实施主页与档案组件**
@@ -217,8 +260,21 @@ expect(resolveNextAction({ hasCredential: true, hasProfile: true, hasJob: true, 
 - [ ] **Step 3: 提炼视觉令牌与响应式规则**
 
 ```css
-:root { --surface: #f7f8fa; --ink: #111827; --primary: #2f6bff; --signal: #6ee7c8; --sidebar: #0b1220; }
-@media (max-width: 860px) { .app-sidebar { transform: translateX(-100%); } .agent-grid { grid-template-columns: 1fr; } }
+:root {
+  --surface: #f7f8fa;
+  --ink: #111827;
+  --primary: #2f6bff;
+  --signal: #6ee7c8;
+  --sidebar: #0b1220;
+}
+@media (max-width: 860px) {
+  .app-sidebar {
+    transform: translateX(-100%);
+  }
+  .agent-grid {
+    grid-template-columns: 1fr;
+  }
+}
 ```
 
 - [ ] **Step 4: 运行通过测试与构建**
@@ -230,6 +286,7 @@ Expected: PASS；主页、档案、设置在窄屏无横向溢出。
 ## Task 6: 整合验证、视觉验收与安全复核
 
 **Files:**
+
 - Modify: `README.md`, `.env.example`
 - Create: `docs/verification/2026-07-15-user-agent-workspace.md`
 

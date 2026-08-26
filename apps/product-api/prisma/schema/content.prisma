@@ -167,6 +167,8 @@ model PracticeSessionItem {
   @@index([tenantId, sessionId, status])
   @@index([tenantId, questionId])
   @@index([questionTenantId, questionId])
+  @@index([tenantId, questionId, createdAt])
+  @@index([tenantId, updatedAt])
 }
 
 model EvaluationResult {
@@ -185,6 +187,7 @@ model EvaluationResult {
 
   @@unique([tenantId, sessionItemId])
   @@index([tenantId, createdAt])
+  @@index([tenantId, score, createdAt])
 }
 
 model PracticeReport {
@@ -227,6 +230,7 @@ model MasteryProfile {
 
   @@unique([tenantId, userId, tag])
   @@index([tenantId, userId, updatedAt])
+  @@index([tenantId, userId, score])
 }
 
 model ModelProfile {

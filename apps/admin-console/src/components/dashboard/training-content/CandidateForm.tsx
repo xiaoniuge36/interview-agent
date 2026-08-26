@@ -113,12 +113,42 @@ function CandidateReviewFields({
   );
 }
 
-function ReviewStatusButtons({ detail, change, disabled }: { detail: CandidateQuestionDetail; change: ChangeDetail; disabled: boolean }) {
+function ReviewStatusButtons({
+  detail,
+  change,
+  disabled,
+}: {
+  detail: CandidateQuestionDetail;
+  change: ChangeDetail;
+  disabled: boolean;
+}) {
   return (
     <Space wrap>
-      <Button data-page-agent-not-interactive="true" disabled={disabled} type={detail.status === 'approved' ? 'primary' : 'default'} onClick={() => change('status', 'approved')}>通过</Button>
-      <Button data-page-agent-not-interactive="true" disabled={disabled} type={detail.status === 'needs_edit' ? 'primary' : 'default'} onClick={() => change('status', 'needs_edit')}>需修改</Button>
-      <Button danger data-page-agent-not-interactive="true" disabled={disabled} type={detail.status === 'rejected' ? 'primary' : 'default'} onClick={() => change('status', 'rejected')}>驳回</Button>
+      <Button
+        data-page-agent-not-interactive="true"
+        disabled={disabled}
+        type={detail.status === 'approved' ? 'primary' : 'default'}
+        onClick={() => change('status', 'approved')}
+      >
+        通过
+      </Button>
+      <Button
+        data-page-agent-not-interactive="true"
+        disabled={disabled}
+        type={detail.status === 'needs_edit' ? 'primary' : 'default'}
+        onClick={() => change('status', 'needs_edit')}
+      >
+        需修改
+      </Button>
+      <Button
+        danger
+        data-page-agent-not-interactive="true"
+        disabled={disabled}
+        type={detail.status === 'rejected' ? 'primary' : 'default'}
+        onClick={() => change('status', 'rejected')}
+      >
+        驳回
+      </Button>
     </Space>
   );
 }
@@ -143,7 +173,12 @@ function CandidateActions(props: CandidateFormProps) {
   const publishDisabled = props.saving || hasPublished || !canPublish;
   return (
     <Space className="admin-form-actions" wrap>
-      <Button data-page-agent-not-interactive="true" disabled={props.saving || hasPublished} loading={props.saving} onClick={props.onSave}>
+      <Button
+        data-page-agent-not-interactive="true"
+        disabled={props.saving || hasPublished}
+        loading={props.saving}
+        onClick={props.onSave}
+      >
         保存审核
       </Button>
       <Popconfirm
@@ -154,7 +189,12 @@ function CandidateActions(props: CandidateFormProps) {
         title={PUBLISH_CONFIRMATION.title}
         onConfirm={props.onPublish}
       >
-        <Button data-page-agent-not-interactive="true" disabled={publishDisabled} loading={props.saving} type="primary">
+        <Button
+          data-page-agent-not-interactive="true"
+          disabled={publishDisabled}
+          loading={props.saving}
+          type="primary"
+        >
           {hasPublished ? '已发布到题库' : '保存并发布到题库'}
         </Button>
       </Popconfirm>

@@ -9,11 +9,7 @@ const DEFAULT_TICKER_ITEMS = [
   '训练复盘',
 ] as const;
 
-export function ChineseTicker({
-  items = DEFAULT_TICKER_ITEMS,
-}: {
-  items?: readonly string[];
-}) {
+export function ChineseTicker({ items = DEFAULT_TICKER_ITEMS }: { items?: readonly string[] }) {
   return (
     <div className="chinese-ticker" aria-label="训练主题滚动字幕">
       <div className="chinese-ticker-track">

@@ -32,7 +32,7 @@ import {
 } from './practice-continuation';
 import { practiceReturnOriginFromValues } from './practice-return-origin';
 import { useLearningPracticeEvidence } from './useLearningPracticeEvidence';
-import { createLatestPracticeSessionRequest } from './practice-session-request';
+import { createLatestRequestRunner } from '@interview-agent/api-client';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import {
   setActionError,
@@ -106,7 +106,7 @@ export function usePracticePlayer() {
 
 function usePracticeSessionLoader(sessionId: string | null) {
   const [state, setState] = useState<PlayerState>(INITIAL_STATE);
-  const [request] = useState(createLatestPracticeSessionRequest);
+  const [request] = useState(createLatestRequestRunner);
   const reload = useCallback(() => {
     if (!sessionId) {
       request.invalidate();

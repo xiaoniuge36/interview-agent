@@ -50,10 +50,7 @@ test('practice sessions accept only a source-bound interview review mode', () =>
     }),
     { mode: 'interview_review', sourceInterviewSessionId: 'interview-1' },
   );
-  assert.equal(
-    CreatePracticeSessionSchema.safeParse({ mode: 'interview_review' }).success,
-    false,
-  );
+  assert.equal(CreatePracticeSessionSchema.safeParse({ mode: 'interview_review' }).success, false);
   assert.equal(
     CreatePracticeSessionSchema.safeParse({
       mode: 'smart',
@@ -90,11 +87,19 @@ export const CreatePracticeSessionSchema = z
   })
   .superRefine((value, context) => {
     if (value.mode === 'interview_review' && !value.sourceInterviewSessionId)
-      context.addIssue({ code: z.ZodIssueCode.custom, path: ['sourceInterviewSessionId'], message: 'required' });
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sourceInterviewSessionId'],
+        message: 'required',
+      });
     if (value.mode !== 'interview_review' && value.sourceInterviewSessionId)
       context.addIssue({ code: z.ZodIssueCode.custom, path: ['mode'], message: 'invalid source' });
     if (value.mode === 'interview_review' && value.questionIds)
-      context.addIssue({ code: z.ZodIssueCode.custom, path: ['questionIds'], message: 'not allowed' });
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['questionIds'],
+        message: 'not allowed',
+      });
   });
 ```
 
@@ -272,18 +277,22 @@ export function createInterviewReviewRequest(sourceInterviewSessionId: string) {
 ```
 
 ```tsx
-{focus.length ? (
-  <section className="interview-review-action" aria-label="面试专项回练">
-    <p>将围绕本次面试中得分较低的阶段组题，不会复制你的面试回答。</p>
-    {confirmed ? (
-      <button disabled={starting} type="button" onClick={() => onStart(sessionId)}>
-        {starting ? '正在组题…' : '开始专项回练'}
-      </button>
-    ) : (
-      <button type="button" onClick={() => setConfirmed(true)}>查看并确认回练</button>
-    )}
-  </section>
-) : null}
+{
+  focus.length ? (
+    <section className="interview-review-action" aria-label="面试专项回练">
+      <p>将围绕本次面试中得分较低的阶段组题，不会复制你的面试回答。</p>
+      {confirmed ? (
+        <button disabled={starting} type="button" onClick={() => onStart(sessionId)}>
+          {starting ? '正在组题…' : '开始专项回练'}
+        </button>
+      ) : (
+        <button type="button" onClick={() => setConfirmed(true)}>
+          查看并确认回练
+        </button>
+      )}
+    </section>
+  ) : null;
+}
 ```
 
 The hook calls `createPracticeSession(createInterviewReviewRequest(sessionId))`; on success it notifies

@@ -2,13 +2,13 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Req } from '@nestjs/
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
 import {
-  AdminPageAgentAppendMessagesSchema,
-  AdminPageAgentCompleteRunSchema,
-  AdminPageAgentCreateConversationSchema,
-  AdminPageAgentCreateRunSchema,
-  AdminPageAgentHeartbeatRunSchema,
-  AdminPageAgentRenameConversationSchema,
-} from './admin-page-agent.schemas';
+  PageAgentAppendMessagesSchema,
+  PageAgentCompleteRunSchema,
+  PageAgentCreateConversationSchema,
+  PageAgentCreateRunSchema,
+  PageAgentHeartbeatRunSchema,
+  PageAgentRenameConversationSchema,
+} from '../page-agent-core/page-agent.schemas';
 import { AdminPageAgentConversationService } from './admin-page-agent-conversation.service';
 import { AdminPageAgentRunService } from './admin-page-agent-run.service';
 import { AdminPageAgentService } from './admin-page-agent.service';
@@ -39,7 +39,7 @@ export class AdminPageAgentController {
 
   @Post('conversations')
   createConversation(@Req() request: ProductRequest, @Body() body: unknown) {
-    const input = AdminPageAgentCreateConversationSchema.parse(body ?? {});
+    const input = PageAgentCreateConversationSchema.parse(body ?? {});
     return this.conversations.create(request.context, input.title);
   }
 
@@ -54,7 +54,7 @@ export class AdminPageAgentController {
     @Param('conversationId') conversationId: string,
     @Body() body: unknown,
   ) {
-    const input = AdminPageAgentRenameConversationSchema.parse(body);
+    const input = PageAgentRenameConversationSchema.parse(body);
     return this.conversations.rename(request.context, conversationId, input.title);
   }
 
@@ -72,7 +72,7 @@ export class AdminPageAgentController {
     @Param('conversationId') conversationId: string,
     @Body() body: unknown,
   ) {
-    const input = AdminPageAgentAppendMessagesSchema.parse(body);
+    const input = PageAgentAppendMessagesSchema.parse(body);
     return this.conversations.appendMessages(request.context, conversationId, input.messages);
   }
 
@@ -92,7 +92,7 @@ export class AdminPageAgentController {
     @Param('conversationId') conversationId: string,
     @Body() body: unknown,
   ) {
-    const input = AdminPageAgentCreateRunSchema.parse(body);
+    const input = PageAgentCreateRunSchema.parse(body);
     return this.runs.create(request.context, conversationId, input);
   }
 
@@ -102,7 +102,7 @@ export class AdminPageAgentController {
     @Param('runId') runId: string,
     @Body() body: unknown,
   ) {
-    const input = AdminPageAgentHeartbeatRunSchema.parse(body);
+    const input = PageAgentHeartbeatRunSchema.parse(body);
     return this.runs.heartbeat(request.context, runId, input);
   }
 
@@ -112,7 +112,7 @@ export class AdminPageAgentController {
     @Param('runId') runId: string,
     @Body() body: unknown,
   ) {
-    const input = AdminPageAgentCompleteRunSchema.parse(body);
+    const input = PageAgentCompleteRunSchema.parse(body);
     return this.runs.complete(request.context, runId, input);
   }
 }
