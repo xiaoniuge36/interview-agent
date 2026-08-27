@@ -13,12 +13,12 @@ const CATEGORIES: RoleCategory[] = [
   'generic',
 ];
 
-const EXPANDED_MIN_QUESTIONS = 15;
+const EXPANDED_MIN_QUESTIONS = 20;
 const GENERALIST_CATEGORIES = CATEGORIES.filter((category) => category !== 'ai_agent');
 
 describe('PUBLIC_PRACTICE_QUESTIONS', () => {
-  it('为每个岗位类别提供至少十五道可用题目，支撑多元岗位完整训练', () => {
-    expect(PUBLIC_PRACTICE_QUESTIONS).toHaveLength(156);
+  it('为每个岗位类别提供至少二十道可用题目，支撑多元岗位完整训练', () => {
+    expect(PUBLIC_PRACTICE_QUESTIONS).toHaveLength(192);
     GENERALIST_CATEGORIES.forEach((category) => {
       const questions = PUBLIC_PRACTICE_QUESTIONS.filter((question) =>
         question.tags.includes(practiceCategoryTagFor(category)),
@@ -28,10 +28,10 @@ describe('PUBLIC_PRACTICE_QUESTIONS', () => {
   });
 
 
-  it('包含三十九道单选题、八道多选题且题目 ID 唯一', () => {
+  it('包含六十九道单选题、八道多选题且题目 ID 唯一', () => {
     expect(
       PUBLIC_PRACTICE_QUESTIONS.filter((question) => question.type === 'single_choice'),
-    ).toHaveLength(39);
+    ).toHaveLength(69);
     expect(
       PUBLIC_PRACTICE_QUESTIONS.filter((question) => question.type === 'multiple_choice'),
     ).toHaveLength(8);
@@ -74,10 +74,34 @@ describe('PUBLIC_PRACTICE_QUESTIONS 多元题型', () => {
       const questions = PUBLIC_PRACTICE_QUESTIONS.filter((question) =>
         question.tags.includes(practiceCategoryTagFor(category)),
       );
-      expect(new Set(questions.map((question) => question.type)).size).toBeGreaterThanOrEqual(3);
+      expect(new Set(questions.map((question) => question.type)).size).toBeGreaterThanOrEqual(4);
       expect(new Set(questions.map((question) => question.difficulty)).size).toBeGreaterThanOrEqual(
         2,
       );
     });
+  });
+
+  it('每个非 AI 类别都提供可快速自测的选择题，且选项与答案完整', () => {
+    GENERALIST_CATEGORIES.forEach((category) => {
+      const choices = PUBLIC_PRACTICE_QUESTIONS.filter(
+        (question) =>
+          question.tags.includes(practiceCategoryTagFor(category)) &&
+          question.type === 'single_choice',
+      );
+      expect(choices.length).toBeGreaterThanOrEqual(5);
+      choices.forEach((question) => {
+        const optionIds = new Set((question.options ?? []).map((option) => option.id));
+        expect(optionIds.size).toBeGreaterThanOrEqual(2);
+        question.correctOptionIds?.forEach((id) => expect(optionIds.has(id)).toBe(true));
+      });
+    });
+  });
+
+  it('工程方向覆盖系统设计与手撕代码实战题', () => {
+    const engineering = PUBLIC_PRACTICE_QUESTIONS.filter((question) =>
+      question.tags.includes(practiceCategoryTagFor('engineering')),
+    );
+    expect(engineering.some((question) => question.type === 'system_design')).toBe(true);
+    expect(engineering.some((question) => question.type === 'coding')).toBe(true);
   });
 });

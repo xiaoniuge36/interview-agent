@@ -1,10 +1,27 @@
-import { buildPublicPracticeQuestions } from './public-practice-question-builders';
+import {
+  buildPublicChoiceQuestions,
+  buildPublicPracticeQuestions,
+} from './public-practice-question-builders';
 import { PUBLIC_AGENT_CHOICE_QUESTIONS } from './public-agent-choice-questions';
 import { PUBLIC_AGENT_OPEN_QUESTIONS } from './public-agent-open-questions';
+import {
+  BUSINESS_CHOICE_INPUTS,
+  GENERIC_CHOICE_INPUTS,
+  GROWTH_CHOICE_INPUTS,
+} from './public-practice-choice-questions-career';
+import {
+  DATA_CHOICE_INPUTS,
+  ENGINEERING_CHOICE_INPUTS,
+  PRODUCT_DESIGN_CHOICE_INPUTS,
+} from './public-practice-choice-questions-core';
 import {
   BUSINESS_DELIVERY_QUESTION_INPUTS,
   GENERIC_QUESTION_INPUTS,
 } from './public-practice-questions-business';
+import {
+  DATA_HANDS_ON_INPUTS,
+  ENGINEERING_HANDS_ON_INPUTS,
+} from './public-practice-questions-hands-on-bank';
 import {
   BUSINESS_DELIVERY_BANK_INPUTS,
   GENERIC_BANK_INPUTS,
@@ -238,6 +255,16 @@ export const PUBLIC_PRACTICE_QUESTIONS = [
   ...buildPublicPracticeQuestions('growth_operations', GROWTH_OPERATIONS_BANK_INPUTS),
   ...buildPublicPracticeQuestions('business_delivery', BUSINESS_DELIVERY_BANK_INPUTS),
   ...buildPublicPracticeQuestions('generic', GENERIC_BANK_INPUTS),
+  // 概念选择题：非 AI 方向的快速自测客观题。
+  ...buildPublicChoiceQuestions('engineering', ENGINEERING_CHOICE_INPUTS),
+  ...buildPublicChoiceQuestions('data', DATA_CHOICE_INPUTS),
+  ...buildPublicChoiceQuestions('product_design', PRODUCT_DESIGN_CHOICE_INPUTS),
+  ...buildPublicChoiceQuestions('growth_operations', GROWTH_CHOICE_INPUTS),
+  ...buildPublicChoiceQuestions('business_delivery', BUSINESS_CHOICE_INPUTS),
+  ...buildPublicChoiceQuestions('generic', GENERIC_CHOICE_INPUTS),
+  // 实战题：系统设计与手撕代码。
+  ...buildPublicPracticeQuestions('engineering', ENGINEERING_HANDS_ON_INPUTS),
+  ...buildPublicPracticeQuestions('data', DATA_HANDS_ON_INPUTS),
   ...PUBLIC_AGENT_CHOICE_QUESTIONS,
   ...PUBLIC_AGENT_OPEN_QUESTIONS,
 ];
