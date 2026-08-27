@@ -36,6 +36,7 @@ export function questionCatalogPath(input: Partial<QuestionCatalogQuery>) {
   append(params, 'query', input.query);
   append(params, 'category', input.category);
   if (input.tags?.length) append(params, 'tags', input.tags.join(','));
+  append(params, 'company', input.company);
   append(params, 'type', input.type);
   append(params, 'difficulty', input.difficulty);
   append(params, 'sort', input.sort);

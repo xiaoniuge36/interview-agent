@@ -18,6 +18,27 @@ export function splitTags(value: string) {
     .filter(Boolean);
 }
 
+const COMPANY_TAG_PREFIX = 'company:';
+
+/** 从混合 tags 中拆出能力标签与公司名（company: 前缀是 C 端公司筛选的存储约定）。 */
+export function splitCompanyTags(tags: string[]) {
+  const plain: string[] = [];
+  const companies: string[] = [];
+  tags.forEach((tag) => {
+    if (tag.startsWith(COMPANY_TAG_PREFIX)) {
+      const company = tag.slice(COMPANY_TAG_PREFIX.length).trim();
+      if (company) companies.push(company);
+      return;
+    }
+    plain.push(tag);
+  });
+  return { plain, companies };
+}
+
+export function mergeCompanyTags(plain: string[], companies: string[]) {
+  return [...plain, ...companies.map((company) => `${COMPANY_TAG_PREFIX}${company}`)];
+}
+
 export function statusLabel(status: CandidateReview['status']) {
   return {
     pending: '待审核',

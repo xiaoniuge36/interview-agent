@@ -79,6 +79,7 @@ function question(id: string): CatalogQuestion {
     type: 'system_design',
     difficulty: 'medium',
     tags: ['Agent', 'Reliability'],
+    companies: [],
     sourceRefs: [],
     status: 'published',
   };

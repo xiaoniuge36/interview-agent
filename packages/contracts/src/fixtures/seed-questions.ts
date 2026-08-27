@@ -9,7 +9,7 @@ export const seedQuestions: Question[] = [
     stem: '请说明 Agent 面试从 warmup 到 report_ready 的状态设计、持久化、失败恢复和审计方式。',
     type: 'system_design',
     difficulty: 'hard',
-    tags: ['LangGraph', '状态机', '可观测性'],
+    tags: ['LangGraph', '状态机', '可观测性', 'company:字节跳动'],
     answer: '核心是显式阶段、checkpoint、幂等事件、结构化输出校验和 Product API 事实源。',
     rubric: [
       { point: '显式阶段', score: 3, description: '能列出面试阶段和状态转移条件。' },
@@ -32,7 +32,7 @@ export const seedQuestions: Question[] = [
     stem: '用户资料、公共题库和后台资料混合检索时，如何避免越权召回？',
     type: 'short_answer',
     difficulty: 'medium',
-    tags: ['RAG', '权限', 'pgvector'],
+    tags: ['RAG', '权限', 'pgvector', 'company:腾讯'],
     answer: '权限过滤必须在召回前约束数据作用域，召回后保留 sourceRefs 和 retrieval logs。',
     rubric: [
       { point: '召回前过滤', score: 4, description: '明确 tenant、owner、scope 过滤前置。' },

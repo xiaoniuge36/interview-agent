@@ -1,6 +1,8 @@
 import type { Prisma, Question } from '@prisma/client';
 import type { QuestionCatalogCategory, QuestionCatalogQuery } from '@interview-agent/contracts';
 import {
+  companiesFromTags,
+  companyTagFor,
   practiceCategoryTagFor,
   visiblePracticeTags,
 } from '../practice/practice-question-categories';
@@ -54,6 +56,7 @@ type CatalogItemRecord = Prisma.QuestionGetPayload<{
 export function catalogWhere(tenantId: string, query: QuestionCatalogQuery) {
   const requiredTags = [
     ...(query.category ? [practiceCategoryTagFor(query.category)] : []),
+    ...(query.company ? [companyTagFor(query.company)] : []),
     ...(query.tags ?? []),
   ];
   const keyword = query.query?.trim();
@@ -86,6 +89,7 @@ export function mapCatalogItem(record: CatalogItemRecord) {
     type: record.type,
     difficulty: record.difficulty,
     tags: visiblePracticeTags(record.tags),
+    companies: companiesFromTags(record.tags),
     options: record.options,
     sourceRefs: record.sourceRefs,
     status: record.status,
@@ -108,6 +112,10 @@ export function catalogFacets(records: FacetRecord[]) {
     ),
     tags: counted(
       records.flatMap((record) => visiblePracticeTags(record.tags)),
+      (value) => value,
+    ),
+    companies: counted(
+      records.flatMap((record) => companiesFromTags(record.tags)),
       (value) => value,
     ),
   };

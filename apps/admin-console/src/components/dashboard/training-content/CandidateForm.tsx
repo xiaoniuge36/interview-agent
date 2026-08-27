@@ -3,7 +3,12 @@ import type { CandidateQuestionDetail } from '@interview-agent/contracts';
 import * as React from 'react';
 import { useMemo } from 'react';
 import type { CandidateFormProps } from './types';
-import { canPublishCandidate, splitTags } from './training-utils';
+import {
+  canPublishCandidate,
+  mergeCompanyTags,
+  splitCompanyTags,
+  splitTags,
+} from './training-utils';
 
 export const PUBLISH_CONFIRMATION = {
   title: '确认发布到题库？',
@@ -20,6 +25,9 @@ export function CandidateForm(props: CandidateFormProps) {
         change={form.change}
         disabled={readOnly}
         tags={form.tags}
+        companies={form.companies}
+        changeTags={form.changeTags}
+        changeCompanies={form.changeCompanies}
       />
       <CandidateReviewFields detail={props.detail} change={form.change} disabled={readOnly} />
       <RubricList detail={props.detail} />
@@ -29,14 +37,24 @@ export function CandidateForm(props: CandidateFormProps) {
 }
 
 function useCandidateForm(props: CandidateFormProps) {
-  const tags = useMemo(() => props.detail.tags.join(', '), [props.detail.tags]);
+  const parts = useMemo(() => splitCompanyTags(props.detail.tags), [props.detail.tags]);
   const change = <K extends keyof CandidateQuestionDetail>(
     key: K,
     value: CandidateQuestionDetail[K],
   ) => {
     props.onChange({ ...props.detail, [key]: value });
   };
-  return { tags, change };
+  const changeTags = (value: string) =>
+    change('tags', mergeCompanyTags(splitTags(value), parts.companies));
+  const changeCompanies = (value: string) =>
+    change('tags', mergeCompanyTags(parts.plain, splitTags(value)));
+  return {
+    tags: parts.plain.join(', '),
+    companies: parts.companies.join(', '),
+    change,
+    changeTags,
+    changeCompanies,
+  };
 }
 
 type ChangeDetail = <K extends keyof CandidateQuestionDetail>(
@@ -46,7 +64,10 @@ type ChangeDetail = <K extends keyof CandidateQuestionDetail>(
 type CandidateContentFieldsProps = {
   detail: CandidateQuestionDetail;
   tags: string;
+  companies: string;
   change: ChangeDetail;
+  changeTags: (value: string) => void;
+  changeCompanies: (value: string) => void;
   disabled: boolean;
 };
 
@@ -76,11 +97,22 @@ function CandidateContentFields(props: CandidateContentFieldsProps) {
           onChange={(event) => props.change('answer', event.target.value)}
         />
       </Form.Item>
-      <Form.Item label="标签（以逗号分隔）">
+      <Form.Item label="能力标签（以逗号分隔）">
         <Input
           disabled={props.disabled}
           value={props.tags}
-          onChange={(event) => props.change('tags', splitTags(event.target.value))}
+          onChange={(event) => props.changeTags(event.target.value)}
+        />
+      </Form.Item>
+      <Form.Item
+        extra="发布后 C 端题库可按公司筛选，例如：字节跳动, 阿里巴巴"
+        label="目标公司（以逗号分隔，可选）"
+      >
+        <Input
+          disabled={props.disabled}
+          placeholder="字节跳动, 阿里巴巴"
+          value={props.companies}
+          onChange={(event) => props.changeCompanies(event.target.value)}
         />
       </Form.Item>
     </>

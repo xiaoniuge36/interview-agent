@@ -42,14 +42,16 @@ export function catalogQueryFromString(
   learningQuery: { tags: string[]; type: 'single_choice' } | null,
 ): QuestionCatalogQuery {
   const params = new URLSearchParams(value);
+  const param = (key: string) => params.get(key) || undefined;
   const parsed = QuestionCatalogQuerySchema.safeParse({
-    query: params.get('query') || undefined,
-    category: params.get('category') || undefined,
-    tags: params.get('tags') || undefined,
-    type: params.get('type') || undefined,
-    difficulty: params.get('difficulty') || undefined,
-    sort: params.get('sort') || undefined,
-    page: params.get('page') || undefined,
+    query: param('query'),
+    category: param('category'),
+    tags: param('tags'),
+    company: param('company'),
+    type: param('type'),
+    difficulty: param('difficulty'),
+    sort: param('sort'),
+    page: param('page'),
   });
   const query = parsed.success ? parsed.data : QuestionCatalogQuerySchema.parse({});
   return learningQuery ? { ...query, ...learningQuery, page: 1 } : query;

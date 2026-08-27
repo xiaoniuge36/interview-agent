@@ -4,6 +4,7 @@ import { CountUp } from '@/components/motion/CountUp';
 import type { CatalogQuestion } from './useQuestionPicker';
 
 const MAX_VISIBLE_TAGS = 4;
+const MAX_VISIBLE_COMPANIES = 3;
 const QUESTION_CARD_ANIMATION_STEPS = 10;
 
 type QuestionCatalogListProps = {
@@ -75,6 +76,11 @@ function QuestionCatalogCard({
         <div className="question-card-meta">
           <span>{typeLabel(question.type)}</span>
           <span>{difficultyLabel(question.difficulty)}</span>
+          {question.companies.slice(0, MAX_VISIBLE_COMPANIES).map((company) => (
+            <span key={company} className="question-card-company">
+              {company}
+            </span>
+          ))}
         </div>
         <h2>{question.title}</h2>
         <p>{question.stem}</p>

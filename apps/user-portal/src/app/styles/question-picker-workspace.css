@@ -92,10 +92,15 @@
 .question-filter-fields label {
   color: var(--text-muted);
 }
-.question-tag-filters {
+.question-tag-filters,
+.question-company-filters {
   gap: 6px;
 }
-.question-tag-filters button {
+.chip-filter-title {
+  color: var(--text-subtle);
+}
+.question-tag-filters button,
+.question-company-filters button {
   border-color: var(--outline);
   border-radius: 7px;
   background: var(--surface);
@@ -105,6 +110,11 @@
   border-color: color-mix(in srgb, var(--primary) 42%, var(--outline));
   background: var(--primary-soft);
   color: var(--primary-strong);
+}
+.question-company-filters button.active {
+  border-color: color-mix(in srgb, var(--warning, #d9930d) 46%, var(--outline));
+  background: color-mix(in srgb, var(--warning, #d9930d) 13%, var(--surface));
+  color: color-mix(in srgb, var(--warning, #d9930d) 72%, var(--ink));
 }
 
 .question-picker-layout {
@@ -172,6 +182,12 @@ html[data-motion='on'] .question-catalog-card {
   content: '·';
   margin-right: 7px;
   color: var(--text-subtle);
+}
+.question-card-meta span.question-card-company {
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: color-mix(in srgb, var(--warning, #d9930d) 14%, var(--surface));
+  color: color-mix(in srgb, var(--warning, #d9930d) 74%, var(--ink));
 }
 .question-card-content h2 {
   color: var(--ink);

@@ -114,13 +114,23 @@
   padding: 0 10px;
   font-size: 12px;
 }
-.question-tag-filters {
+.question-tag-filters,
+.question-company-filters {
   display: flex;
+  align-items: center;
   gap: 7px;
   overflow-x: auto;
   padding-bottom: 2px;
 }
-.question-tag-filters button {
+.chip-filter-title {
+  flex: 0 0 auto;
+  color: #8b97aa;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.question-tag-filters button,
+.question-company-filters button {
   flex: 0 0 auto;
   border: 1px solid #dae2ed;
   border-radius: 999px;
@@ -130,7 +140,8 @@
   font-size: 10px;
   font-weight: 700;
 }
-.question-tag-filters button span {
+.question-tag-filters button span,
+.question-company-filters button span {
   margin-left: 5px;
   color: #9ba6b6;
 }
@@ -138,6 +149,15 @@
   border-color: #8cabed;
   background: #edf3ff;
   color: #1c58c8;
+}
+.question-company-filters button.active {
+  border-color: #e4b76a;
+  background: #fdf4e3;
+  color: #9a6a14;
+}
+.question-card-meta span.question-card-company {
+  background: #fdf1dd;
+  color: #9a6a14;
 }
 
 .question-picker-layout {

@@ -36,6 +36,7 @@ export const QuestionCatalogQuerySchema = z.object({
   query: z.string().trim().max(CONTRACT_LIMITS.shortText).optional(),
   category: QuestionCatalogCategorySchema.optional(),
   tags: StringListSchema,
+  company: z.string().trim().min(1).max(CONTRACT_LIMITS.shortText).optional(),
   type: QuestionTypeSchema.optional(),
   difficulty: QuestionDifficultySchema.optional(),
   sort: QuestionCatalogSortSchema.default('recommended'),
@@ -48,7 +49,13 @@ export const QuestionCatalogQuerySchema = z.object({
     .default(CATALOG_PAGE_SIZE_DEFAULT),
 });
 
-export const QuestionCatalogItemSchema = CandidateQuestionSchema;
+/** 目录条目在共享题目结构上追加公司归属（来自 company: 前缀标签，普通 tags 中不再出现）。 */
+export const QuestionCatalogItemSchema = CandidateQuestionSchema.extend({
+  companies: z
+    .array(z.string().min(1).max(CONTRACT_LIMITS.shortText))
+    .max(CONTRACT_LIMITS.tags)
+    .default([]),
+});
 export const QuestionCatalogFacetSchema = z.object({
   value: z.string().min(1).max(CONTRACT_LIMITS.shortText),
   label: z.string().min(1).max(CONTRACT_LIMITS.shortText),
@@ -59,6 +66,7 @@ export const QuestionCatalogFacetsSchema = z.object({
   difficulties: z.array(QuestionCatalogFacetSchema).max(CONTRACT_LIMITS.list),
   types: z.array(QuestionCatalogFacetSchema).max(CONTRACT_LIMITS.list),
   tags: z.array(QuestionCatalogFacetSchema).max(CONTRACT_LIMITS.mediumList),
+  companies: z.array(QuestionCatalogFacetSchema).max(CONTRACT_LIMITS.mediumList).default([]),
 });
 export const QuestionCatalogResponseSchema = z.object({
   items: z.array(QuestionCatalogItemSchema).max(CATALOG_PAGE_SIZE_MAX),

@@ -66,3 +66,22 @@ describe('CandidateForm', () => {
     expect(markup).toMatch(/<button[^>]*disabled[^>]*><span>保存审核/);
   });
 });
+
+describe('CandidateForm company tags', () => {
+  it('splits company: tags into a dedicated company field', () => {
+    const markup = renderToStaticMarkup(
+      createElement(CandidateForm, {
+        detail: { ...detail, tags: ['架构', 'company:字节跳动', 'company:腾讯'] },
+        onChange: () => undefined,
+        onPublish: () => undefined,
+        onSave: () => undefined,
+        saving: false,
+      }),
+    );
+
+    expect(markup).toContain('目标公司');
+    expect(markup).toContain('value="字节跳动, 腾讯"');
+    expect(markup).toContain('value="架构"');
+    expect(markup).not.toContain('value="架构, company:字节跳动');
+  });
+});

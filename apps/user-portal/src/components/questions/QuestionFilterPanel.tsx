@@ -46,8 +46,19 @@ export function QuestionFilterPanel({ query, facets, onChange }: QuestionFilterP
     <section className="question-filter-panel" aria-label="题库筛选">
       <QuestionSearch query={query.query} onChange={onChange} />
       <QuestionFilterFields query={query} onChange={onChange} />
-      <TagFilters
-        tags={facets?.tags ?? []}
+      <ChipFilters
+        title="目标公司"
+        allLabel="全部公司"
+        className="question-company-filters"
+        options={facets?.companies ?? []}
+        active={query.company ?? ''}
+        onChange={(value) => onChange('company', value)}
+      />
+      <ChipFilters
+        title="能力标签"
+        allLabel="全部标签"
+        className="question-tag-filters"
+        options={facets?.tags ?? []}
         active={query.tags?.[0] ?? ''}
         onChange={(value) => onChange('tags', value)}
       />
@@ -140,30 +151,37 @@ function FilterSelect({
   );
 }
 
-function TagFilters({
-  tags,
+function ChipFilters({
+  title,
+  allLabel,
+  className,
+  options,
   active,
   onChange,
 }: {
-  tags: QuestionCatalogResponse['facets']['tags'];
+  title: string;
+  allLabel: string;
+  className: string;
+  options: QuestionCatalogResponse['facets']['tags'];
   active: string;
   onChange: (value: string) => void;
 }) {
-  if (!tags.length) return null;
+  if (!options.length) return null;
   return (
-    <div className="question-tag-filters" aria-label="能力标签">
+    <div className={className} aria-label={title}>
+      <span className="chip-filter-title">{title}</span>
       <button className={!active ? 'active' : ''} type="button" onClick={() => onChange('')}>
-        全部标签
+        {allLabel}
       </button>
-      {tags.slice(0, MAX_TAG_FILTERS).map((tag) => (
+      {options.slice(0, MAX_TAG_FILTERS).map((option) => (
         <button
-          key={tag.value}
-          className={active === tag.value ? 'active' : ''}
+          key={option.value}
+          className={active === option.value ? 'active' : ''}
           type="button"
-          onClick={() => onChange(tag.value)}
+          onClick={() => onChange(option.value)}
         >
-          {tag.label}
-          <span>{tag.count}</span>
+          {option.label}
+          <span>{option.count}</span>
         </button>
       ))}
     </div>
