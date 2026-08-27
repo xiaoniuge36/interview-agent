@@ -16,6 +16,28 @@
   color: #ffffff;
 }
 
+/* 点击后立即出现的扫光进度条：dev 编译阻塞在服务端响应之前，骨架屏出不来，
+   必须靠客户端反馈告诉用户“点击已生效，正在打开”。 */
+.sidebar-nav a.pending::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, currentColor 50%, transparent);
+  animation: nav-pending-sweep 860ms var(--ease-out, ease-out) infinite;
+}
+
+@keyframes nav-pending-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
 /* 路由切换骨架屏：结构化占位（页头 + 指标条 + 内容网格），shimmer 扫光主题感知。 */
 .route-loading-state {
   align-content: start;
@@ -219,6 +241,11 @@ html[data-motion='off'] .route-loading-card::after {
   opacity: 0;
 }
 
+html[data-motion='off'] .sidebar-nav a.pending::after {
+  animation: none;
+  transform: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .route-view,
   .sidebar-nav a,
@@ -241,5 +268,10 @@ html[data-motion='off'] .route-loading-card::after {
     animation: none;
     transform: none;
     opacity: 0;
+  }
+
+  .sidebar-nav a.pending::after {
+    animation: none;
+    transform: none;
   }
 }

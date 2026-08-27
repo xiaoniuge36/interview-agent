@@ -28,7 +28,7 @@ import {
 import { warmNavigationInteraction, warmNavigationRoutes } from './navigation-prefetch';
 
 const MOBILE_NAVIGATION: NavigationId[] = ['home', 'questions', 'learn', 'interview', 'reports'];
-const MOBILE_PENDING_TIMEOUT_MS = 4000;
+const MOBILE_PENDING_TIMEOUT_MS = 8000;
 const MOBILE_PREFETCH_TIMEOUT_MS = 1200;
 const MOBILE_PREFETCH_FALLBACK_DELAY_MS = 120;
 const MOBILE_PENDING_STATUS_ID = 'mobile-navigation-pending-status';

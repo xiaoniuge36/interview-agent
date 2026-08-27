@@ -42,6 +42,20 @@
     color: #ffffff;
   }
 
+  /* 路由编译/加载期间的呼吸反馈，避免用户以为没点上。 */
+  .mobile-bottom-nav a.pending {
+    animation: mobile-nav-pending-pulse 860ms ease-in-out infinite alternate;
+  }
+
+  @keyframes mobile-nav-pending-pulse {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0.55;
+    }
+  }
+
   .page-stage {
     padding-bottom: 82px;
   }
@@ -51,4 +65,12 @@
   .mobile-bottom-nav {
     backdrop-filter: none;
   }
+
+  .mobile-bottom-nav a.pending {
+    animation: none;
+  }
+}
+
+html[data-motion='off'] .mobile-bottom-nav a.pending {
+  animation: none;
 }

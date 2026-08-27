@@ -16,7 +16,8 @@ import {
 } from './navigation';
 import { warmNavigationRoutes } from './navigation-prefetch';
 
-const NAV_PENDING_TIMEOUT_MS = 4000;
+// dev 首次进入某路由要现场编译，4s 内 pending 被清会造成“没点上”的错觉，放宽到 8s。
+const NAV_PENDING_TIMEOUT_MS = 8000;
 const NAV_PREFETCH_TIMEOUT_MS = 1200;
 const NAV_PREFETCH_FALLBACK_DELAY_MS = 120;
 const SIDEBAR_PENDING_STATUS_ID = 'sidebar-navigation-pending-status';
