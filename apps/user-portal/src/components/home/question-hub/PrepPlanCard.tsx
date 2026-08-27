@@ -17,6 +17,7 @@ import {
   collectTrainingDayKeys,
   computeTrainingStreak,
   countdownDays,
+  localDayKey,
   pickCountdownIntent,
   pickWeakFocus,
   recentActivity,
@@ -26,6 +27,7 @@ type PrepPlanData = {
   practices: PracticeHistoryItem[];
   interviews: InterviewSessionSummary[];
   jobs: JobIntentPayload[];
+  jobsFailed: boolean;
   learningUpdatedAt: string | null;
   mastery: MasteryProfile[];
 };
@@ -39,7 +41,12 @@ export function PrepPlanCard() {
   const streak = computeTrainingStreak(days, today);
   return (
     <section className="prep-plan motion-rise" aria-label="备考计划">
-      <CountdownPanel jobs={plan.data.jobs} today={today} onSaved={plan.applyJobUpdate} />
+      <CountdownPanel
+        jobs={plan.data.jobs}
+        jobsFailed={plan.data.jobsFailed}
+        today={today}
+        onSaved={plan.applyJobUpdate}
+      />
       <DailyTasksPanel
         tasks={buildDailyTasks({ ...plan.data, today })}
         weakFocus={pickWeakFocus(plan.data.mastery)}
@@ -138,6 +145,7 @@ async function loadPrepPlanData(): Promise<PrepPlanData | null> {
     practices: practices.status === 'fulfilled' ? practices.value : [],
     interviews: interviews.status === 'fulfilled' ? interviews.value : [],
     jobs: jobs.status === 'fulfilled' ? jobs.value : [],
+    jobsFailed: jobs.status === 'rejected',
     learningUpdatedAt:
       learning.status === 'fulfilled' ? (learning.value.progress?.updatedAt ?? null) : null,
     mastery: mastery.status === 'fulfilled' ? mastery.value : [],
@@ -146,14 +154,27 @@ async function loadPrepPlanData(): Promise<PrepPlanData | null> {
 
 function CountdownPanel({
   jobs,
+  jobsFailed,
   today,
   onSaved,
 }: {
   jobs: JobIntentPayload[];
+  jobsFailed: boolean;
   today: Date;
   onSaved: (job: JobIntentPayload) => void;
 }) {
   const intent = useMemo(() => pickCountdownIntent(jobs), [jobs]);
+  // 拉取失败与「确实没有意向」是两回事：失败时不要误导用户去重新填写。
+  if (!intent && jobsFailed) {
+    return (
+      <div className="prep-plan-countdown" data-state="empty">
+        <header>
+          <strong>面试倒计时</strong>
+        </header>
+        <p>岗位意向暂时读取失败，稍后刷新即可恢复。</p>
+      </div>
+    );
+  }
   if (!intent) {
     return (
       <div className="prep-plan-countdown" data-state="empty">
@@ -205,7 +226,8 @@ function ScheduleEditor({
   intent: JobIntentPayload;
   onSaved: (job: JobIntentPayload) => void;
 }) {
-  const initial = intent.intent.interviewDate?.slice(0, 'yyyy-mm-dd'.length) ?? '';
+  // 用本地日历日回显：ISO 存储是 UTC，直接截取日期段在 UTC+10 以上时区会显示成前一天。
+  const initial = intent.intent.interviewDate ? localDayKey(intent.intent.interviewDate) : '';
   const [value, setValue] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

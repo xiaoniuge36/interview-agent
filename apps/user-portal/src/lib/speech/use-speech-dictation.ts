@@ -8,6 +8,7 @@ import {
   splitRecognitionResults,
   type SpeechRecognitionLike,
 } from './speech-dictation';
+import { onNarrationStart } from './speech-narration';
 
 type UseSpeechDictationOptions = {
   onFinal: (transcript: string) => void;
@@ -43,6 +44,11 @@ export function useSpeechDictation(options: UseSpeechDictationOptions) {
     recognitionRef.current?.stop();
   }, []);
 
+  // abort 丢弃识别中的结果：提交答案等场景下，迟到的 final 不应再写入草稿。
+  const abort = useCallback(() => {
+    recognitionRef.current?.abort();
+  }, []);
+
   const toggle = useCallback(() => {
     const recognition = recognitionRef.current;
     if (!recognition) return;
@@ -52,10 +58,10 @@ export function useSpeechDictation(options: UseSpeechDictationOptions) {
     }
     try {
       recognition.start();
-      dispatch({ type: 'start' });
     } catch {
-      // start() 在已启动时会抛 InvalidStateError；保持监听状态即可。
+      // start() 在已启动时会抛 InvalidStateError；引擎确实在跑，照常同步状态。
     }
+    dispatch({ type: 'start' });
   }, []);
 
   return {
@@ -65,6 +71,7 @@ export function useSpeechDictation(options: UseSpeechDictationOptions) {
     error: state.error,
     toggle,
     stop,
+    abort,
   };
 }
 
@@ -73,8 +80,14 @@ function wireRecognition(
   dispatch: (event: Parameters<typeof dictationReducer>[1]) => void,
   onFinal: (transcript: string) => void,
 ) {
+  // 记录已消费的 final 序号，规避移动端 continuous 模式重复投递同一句 final。
+  let consumedFinals = -1;
   recognition.onresult = (event) => {
-    const { finalTranscript, interimTranscript } = splitRecognitionResults(event);
+    const { finalTranscript, interimTranscript, lastFinalIndex } = splitRecognitionResults(
+      event,
+      consumedFinals,
+    );
+    consumedFinals = lastFinalIndex;
     if (finalTranscript) {
       onFinal(finalTranscript);
       dispatch({ type: 'final' });
@@ -82,8 +95,20 @@ function wireRecognition(
     if (interimTranscript) dispatch({ type: 'interim', transcript: interimTranscript });
   };
   recognition.onerror = (event) => dispatch({ type: 'error', code: event.error });
-  recognition.onend = () => dispatch({ type: 'end' });
+  recognition.onend = () => {
+    consumedFinals = -1;
+    dispatch({ type: 'end' });
+  };
+  const onHidden = () => {
+    // 切到后台时停止采集，避免环境音持续写进草稿。
+    if (document.visibilityState === 'hidden') recognition.stop();
+  };
+  document.addEventListener('visibilitychange', onHidden);
+  // 朗读开始时暂停听写，避免扬声器里的面试官声音被回录进回答。
+  const offNarration = onNarrationStart(() => recognition.stop());
   return () => {
+    document.removeEventListener('visibilitychange', onHidden);
+    offNarration();
     recognition.onresult = null;
     recognition.onerror = null;
     recognition.onend = null;

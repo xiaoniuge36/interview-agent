@@ -113,6 +113,15 @@ describe('recentActivity', () => {
     expect(activity.at(-1)).toMatchObject({ active: true, isToday: true });
     expect(activity[0]!.active).toBe(false);
   });
+
+  it('produces seven distinct consecutive calendar keys (DST-safe stepping)', () => {
+    // 日历日推进而非减固定 24h：DST 秋季回拨日 25 小时，按毫秒回退会产生重复 key。
+    const activity = recentActivity(new Set(), TODAY);
+    const keys = activity.map((day) => day.key);
+    expect(new Set(keys).size).toBe(7);
+    expect(keys.at(-1)).toBe(localDayKey(TODAY));
+    expect(keys[0]).toBe('2026-08-21');
+  });
 });
 
 describe('countdownDays', () => {
@@ -174,6 +183,34 @@ describe('buildDailyTasks', () => {
       today: TODAY,
     });
     expect(tasks.find((task) => task.id === 'review')?.done).toBe(true);
+  });
+});
+
+describe('buildDailyTasks field conventions', () => {
+  it('uses reportedAt for review-mode practices, consistent with the practice task', () => {
+    const tasks = buildDailyTasks({
+      practices: [
+        practice({
+          mode: 'weakness_review',
+          reportedAt: isoDaysAgo(0),
+          updatedAt: isoDaysAgo(3),
+        }),
+      ],
+      interviews: [],
+      learningUpdatedAt: null,
+      today: TODAY,
+    });
+    expect(tasks.find((task) => task.id === 'review')?.done).toBe(true);
+  });
+
+  it('links the learning task to the /learn route', () => {
+    const tasks = buildDailyTasks({
+      practices: [],
+      interviews: [],
+      learningUpdatedAt: null,
+      today: TODAY,
+    });
+    expect(tasks.find((task) => task.id === 'learning')?.href).toBe('/learn');
   });
 });
 

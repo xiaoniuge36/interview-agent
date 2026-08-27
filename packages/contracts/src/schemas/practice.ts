@@ -241,10 +241,12 @@ export const StarMaterialSchema = z.object({
   answer: z.string().min(1).max(CONTRACT_LIMITS.longText),
   improvedAnswer: z.string().max(CONTRACT_LIMITS.longText).nullable(),
   score: z.number().min(0).max(CONTRACT_LIMITS.percentage),
+  // nullish 与 PracticeEvaluationSchema 对称：历史评估记录该字段可能为 null。
   dimensionScores: z
     .array(PracticeDimensionScoreSchema)
     .max(PRACTICE_EVALUATION_DIMENSIONS.length)
-    .default([]),
+    .nullish()
+    .transform((value) => value ?? []),
   evaluatedAt: z.string().datetime(),
 });
 

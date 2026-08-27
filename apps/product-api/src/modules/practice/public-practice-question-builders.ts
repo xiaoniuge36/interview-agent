@@ -70,6 +70,12 @@ export function buildPublicChoiceQuestions(
   category: RoleCategory,
   inputs: PublicChoiceQuestionInput[],
 ): Question[] {
+  const oversized = inputs.find((input) => input.options.length > CHOICE_OPTION_IDS.length);
+  if (oversized) {
+    throw new Error(
+      `选择题 ${oversized.suffix} 有 ${oversized.options.length} 个选项，超过上限 ${CHOICE_OPTION_IDS.length}`,
+    );
+  }
   return inputs.map((input) => ({
     id: `q-practice-${input.suffix}`,
     tenantId: 'public',

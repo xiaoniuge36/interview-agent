@@ -62,14 +62,18 @@ describe('PracticeQueryService mistake book', () => {
     const service = new PracticeQueryService({} as PrismaService, policy, mistakes as never);
     const requestContext = context();
 
-    await service.mistakes(requestContext, { page: 1, pageSize: 20 });
+    await service.mistakes(requestContext, { sort: 'recent', page: 1, pageSize: 20 });
     await service.reviewMistake(requestContext, 'evaluation-1');
 
     expect(policy.assert).toHaveBeenCalledWith(requestContext.actor, 'practice:read', {
       tenantId: 'tenant-a',
       ownerId: 'user-a',
     });
-    expect(mistakes.list).toHaveBeenCalledWith(requestContext, { page: 1, pageSize: 20 });
+    expect(mistakes.list).toHaveBeenCalledWith(requestContext, {
+      sort: 'recent',
+      page: 1,
+      pageSize: 20,
+    });
     expect(mistakes.startReview).toHaveBeenCalledWith(requestContext, 'evaluation-1');
   });
 });

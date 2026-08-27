@@ -43,6 +43,18 @@ export async function verifyModelConnection(user: LocalUser, apiKey: string): Pr
   });
 }
 
+/**
+ * 固定题目组合（第 2 题为 model-recovery 用例断言的「质量保障」题）：
+ * 智能组卷按 updatedAt 排序取题，题库扩充后选题会漂移，硬编码标题的用例会脆断。
+ */
+const PRACTICE_FIXTURE_QUESTION_IDS = [
+  'q-practice-engineering-boundary',
+  'q-practice-engineering-quality',
+  'q-practice-engineering-performance',
+  'q-practice-engineering-stability',
+  'q-practice-engineering-delivery',
+];
+
 export async function createPracticeFixture(user: LocalUser): Promise<PracticeSession> {
   const job = await request<{ intent: { id: string } }>('/job-intents', {
     method: 'POST',
@@ -55,7 +67,12 @@ export async function createPracticeFixture(user: LocalUser): Promise<PracticeSe
   return request<PracticeSession>('/practices', {
     method: 'POST',
     token: user.accessToken,
-    body: { jobIntentId: job.intent.id, mode: 'smart', title: 'E2E 智能训练' },
+    body: {
+      jobIntentId: job.intent.id,
+      mode: 'smart',
+      title: 'E2E 智能训练',
+      questionIds: PRACTICE_FIXTURE_QUESTION_IDS,
+    },
   });
 }
 

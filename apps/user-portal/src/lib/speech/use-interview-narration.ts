@@ -24,7 +24,6 @@ export function useInterviewNarration(turns: readonly InterviewTurn[]): Intervie
   const [supported, setSupported] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const spokenRef = useRef(new Set<string>());
-  const previousCountRef = useRef(0);
 
   useEffect(() => {
     setSupported(narrationSupported());
@@ -32,9 +31,7 @@ export function useInterviewNarration(turns: readonly InterviewTurn[]): Intervie
   }, []);
 
   useEffect(() => {
-    const previousCount = previousCountRef.current;
-    previousCountRef.current = turns.length;
-    const next = nextNarrationTurn(turns, previousCount, spokenRef.current);
+    const next = nextNarrationTurn(turns, spokenRef.current);
     // 关闭状态也要标记已读，避免开启开关的瞬间补读旧消息。
     interviewerTurnIds(turns).forEach((id) => spokenRef.current.add(id));
     if (next && enabled) speakText(next.content);

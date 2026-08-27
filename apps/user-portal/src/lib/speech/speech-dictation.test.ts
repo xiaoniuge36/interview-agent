@@ -21,6 +21,15 @@ describe('appendTranscript', () => {
   it('ignores blank recognition results', () => {
     expect(appendTranscript('原稿', '   ')).toBe('原稿');
   });
+
+  it('inserts a space between latin words to avoid gluing', () => {
+    expect(appendTranscript('我用了 React', 'and Redux')).toBe('我用了 React and Redux');
+  });
+
+  it('keeps CJK joining seamless on either side', () => {
+    expect(appendTranscript('方案用了 Redis', '然后做了压测')).toBe('方案用了 Redis然后做了压测');
+    expect(appendTranscript('背景是大促。', 'QPS 翻了三倍')).toBe('背景是大促。QPS 翻了三倍');
+  });
 });
 
 describe('dictationReducer', () => {
@@ -52,14 +61,41 @@ describe('dictationReducer', () => {
 
 describe('splitRecognitionResults', () => {
   it('separates final and interim transcripts from the result index', () => {
-    const outcome = splitRecognitionResults({
-      resultIndex: 1,
-      results: [
-        { isFinal: true, 0: { transcript: '已经处理过' } },
-        { isFinal: true, 0: { transcript: '我先说结论' } },
-        { isFinal: false, 0: { transcript: '然后展开' } },
-      ],
+    const outcome = splitRecognitionResults(
+      {
+        resultIndex: 1,
+        results: [
+          { isFinal: true, 0: { transcript: '已经处理过' } },
+          { isFinal: true, 0: { transcript: '我先说结论' } },
+          { isFinal: false, 0: { transcript: '然后展开' } },
+        ],
+      },
+      0,
+    );
+    expect(outcome).toEqual({
+      finalTranscript: '我先说结论',
+      interimTranscript: '然后展开',
+      lastFinalIndex: 1,
     });
-    expect(outcome).toEqual({ finalTranscript: '我先说结论', interimTranscript: '然后展开' });
+  });
+
+  it('skips finals already consumed even when replayed from index zero', () => {
+    // Android/iOS 的 continuous 实现会把已投递过的 final 再次带在事件里。
+    const replayedEvent = {
+      resultIndex: 0,
+      results: [
+        { isFinal: true, 0: { transcript: '第一句' } },
+        { isFinal: true, 0: { transcript: '第二句' } },
+        { isFinal: false, 0: { transcript: '第三句进行中' } },
+      ],
+    };
+    const outcome = splitRecognitionResults(replayedEvent, 0);
+    expect(outcome).toEqual({
+      finalTranscript: '第二句',
+      interimTranscript: '第三句进行中',
+      lastFinalIndex: 1,
+    });
+    // 全部消费过时不再产出 final。
+    expect(splitRecognitionResults(replayedEvent, 1).finalTranscript).toBe('');
   });
 });

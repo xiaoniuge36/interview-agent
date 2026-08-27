@@ -30,7 +30,9 @@ export function GrowthOverview({ records }: { records: TrainingRecord[] }) {
   const trend = buildTrendPoints(records);
   const fallbackProfiles = selectRadarProfiles(mastery.profiles);
   if (mastery.status === 'loading') return null;
-  if (!axes.length && !fallbackProfiles.length && !trend.length) return null;
+  const masteryFailed = mastery.status === 'error';
+  if (!axes.length && !fallbackProfiles.length && !trend.length && !masteryFailed) return null;
+  if (masteryFailed && !trend.length) return null;
   return (
     <section className="growth-overview motion-rise" aria-label="成长概览">
       <article className="growth-overview-card">
@@ -38,11 +40,7 @@ export function GrowthOverview({ records }: { records: TrainingRecord[] }) {
           <strong>能力雷达</strong>
           <span>来自练习与面试的证据加权</span>
         </header>
-        {axes.length ? (
-          <CapabilityRadar axes={axes} />
-        ) : (
-          <MasteryFallback profiles={fallbackProfiles} />
-        )}
+        <RadarSlot axes={axes} fallbackProfiles={fallbackProfiles} failed={masteryFailed} />
       </article>
       <article className="growth-overview-card">
         <header>
@@ -55,10 +53,27 @@ export function GrowthOverview({ records }: { records: TrainingRecord[] }) {
   );
 }
 
+function RadarSlot({
+  axes,
+  fallbackProfiles,
+  failed,
+}: {
+  axes: RadarAxis[];
+  fallbackProfiles: MasteryProfile[];
+  failed: boolean;
+}) {
+  // 拉取失败与「训练还不够」是两回事，失败时不要用引导文案误导用户。
+  if (failed) {
+    return <p className="growth-overview-empty">掌握度暂时读取失败，稍后刷新即可恢复。</p>;
+  }
+  if (axes.length) return <CapabilityRadar axes={axes} />;
+  return <MasteryFallback profiles={fallbackProfiles} />;
+}
+
 function useMasteryProfiles() {
   const [state, setState] = useState<{
     profiles: MasteryProfile[];
-    status: 'loading' | 'ready';
+    status: 'loading' | 'ready' | 'error';
   }>({ profiles: [], status: 'loading' });
   useEffect(() => {
     let active = true;
@@ -67,7 +82,7 @@ function useMasteryProfiles() {
         if (active) setState({ profiles, status: 'ready' });
       })
       .catch(() => {
-        if (active) setState({ profiles: [], status: 'ready' });
+        if (active) setState({ profiles: [], status: 'error' });
       });
     return () => {
       active = false;

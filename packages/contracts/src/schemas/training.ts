@@ -39,7 +39,8 @@ export const QuestionRecordSchema = z.object({
   stem: z.string().min(1).max(CONTRACT_LIMITS.longText),
   type: QuestionTypeSchema,
   difficulty: QuestionDifficultySchema,
-  tags: z.array(z.string().max(CONTRACT_LIMITS.shortText)).max(CONTRACT_LIMITS.tags),
+  // tag 必须非空：空串会流入题库目录 facets（value 要求 min(1)）导致接口 500。
+  tags: z.array(z.string().trim().min(1).max(CONTRACT_LIMITS.shortText)).max(CONTRACT_LIMITS.tags),
   answer: z.string().min(1).max(CONTRACT_LIMITS.longText),
   rubric: z.array(RubricPointSchema).max(CONTRACT_LIMITS.list),
   options: z.array(QuestionOptionSchema).max(MAX_QUESTION_OPTIONS).optional(),

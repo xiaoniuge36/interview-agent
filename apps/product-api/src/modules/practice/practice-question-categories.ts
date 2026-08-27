@@ -12,7 +12,8 @@ export function isPracticeCategoryTag(tag: string): boolean {
 }
 
 export function companyTagFor(company: string): string {
-  return `${COMPANY_TAG_PREFIX}${company}`;
+  // 与 companiesFromTags 的 trim 对称：facet 展示值须能反查回同一个存储 tag。
+  return `${COMPANY_TAG_PREFIX}${company.trim()}`;
 }
 
 export function isCompanyTag(tag: string): boolean {
@@ -26,7 +27,12 @@ export function companiesFromTags(tags: string[]): string[] {
     .filter(Boolean);
 }
 
-/** 面向用户与 AI prompt 的能力标签：机器约定前缀（role:/company:）不外显。 */
+/**
+ * 面向用户与 AI prompt 的能力标签：机器约定前缀（role:/company:）不外显。
+ * 空白 tag 一并过滤——它会击穿目录 facets 的 value min(1) 校验。
+ */
 export function visiblePracticeTags(tags: string[]): string[] {
-  return tags.filter((tag) => !isPracticeCategoryTag(tag) && !isCompanyTag(tag));
+  return tags.filter(
+    (tag) => tag.trim().length > 0 && !isPracticeCategoryTag(tag) && !isCompanyTag(tag),
+  );
 }

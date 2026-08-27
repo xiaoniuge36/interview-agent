@@ -36,7 +36,14 @@ export function splitCompanyTags(tags: string[]) {
 }
 
 export function mergeCompanyTags(plain: string[], companies: string[]) {
-  return [...plain, ...companies.map((company) => `${COMPANY_TAG_PREFIX}${company}`)];
+  // 管理员在公司输入框里手滑带上前缀时剥掉，避免产生 company:company:xx 的死标签。
+  const normalized = companies
+    .map((company) =>
+      company.startsWith(COMPANY_TAG_PREFIX) ? company.slice(COMPANY_TAG_PREFIX.length) : company,
+    )
+    .map((company) => company.trim())
+    .filter(Boolean);
+  return [...plain, ...normalized.map((company) => `${COMPANY_TAG_PREFIX}${company}`)];
 }
 
 export function statusLabel(status: CandidateReview['status']) {

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { StarMaterial } from '@interview-agent/contracts';
 import { listStarMaterials } from '@/lib/practice-api';
 import {
@@ -53,13 +53,16 @@ export function StarMaterialLibraryContent({ materials }: { materials: StarMater
 
 function useStarMaterials(onTotalChange?: (total: number) => void) {
   const [state, setState] = useState<LibraryState>({ status: 'loading' });
+  // ref 化回调：父组件传内联函数时不应触发重新拉取。
+  const onTotalChangeRef = useRef(onTotalChange);
+  onTotalChangeRef.current = onTotalChange;
   useEffect(() => {
     let active = true;
     listStarMaterials()
       .then((materials) => {
         if (!active) return;
         setState({ status: 'ready', materials });
-        onTotalChange?.(materials.length);
+        onTotalChangeRef.current?.(materials.length);
       })
       .catch(() => {
         if (active) setState({ status: 'error' });
@@ -67,7 +70,7 @@ function useStarMaterials(onTotalChange?: (total: number) => void) {
     return () => {
       active = false;
     };
-  }, [onTotalChange]);
+  }, []);
   return state;
 }
 
@@ -126,16 +129,35 @@ function DimensionChips({ material }: { material: StarMaterial }) {
 }
 
 function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  function copy() {
-    void navigator.clipboard?.writeText(text).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
-    });
+  const [feedback, setFeedback] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const timerRef = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    },
+    [],
+  );
+  function showFeedback(next: 'copied' | 'failed') {
+    setFeedback(next);
+    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => setFeedback('idle'), COPY_FEEDBACK_MS);
   }
+  function copy() {
+    // 非安全上下文（HTTP）下 clipboard 不存在；权限被拒时 writeText 会 reject。
+    if (!navigator.clipboard) {
+      showFeedback('failed');
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => showFeedback('copied'),
+      () => showFeedback('failed'),
+    );
+  }
+  const label =
+    feedback === 'copied' ? '已复制到剪贴板' : feedback === 'failed' ? '复制失败' : '复制素材';
   return (
     <button type="button" className="star-material-copy" onClick={copy}>
-      {copied ? '已复制到剪贴板' : '复制素材'}
+      {label}
     </button>
   );
 }

@@ -40,6 +40,9 @@ describe('question catalog company tags', () => {
     expect(item.companies).toEqual(['字节跳动']);
   });
 
+});
+
+describe('question catalog facets', () => {
   it('catalogFacets 输出公司维度且 tags 维度不泄漏 company: 标签', () => {
     const facets = catalogFacets([
       facetRecord(['缓存', 'company:字节跳动']),
@@ -51,6 +54,11 @@ describe('question catalog company tags', () => {
       { value: '腾讯', label: '腾讯', count: 1 },
     ]);
     expect(facets.tags.map((facet) => facet.value)).toEqual(['缓存', '索引']);
+  });
+
+  it('catalogFacets 过滤空白标签，避免空 value 击穿契约校验', () => {
+    const facets = catalogFacets([facetRecord(['缓存', '', '  '])]);
+    expect(facets.tags.map((facet) => facet.value)).toEqual(['缓存']);
   });
 
   it('catalogFacets 标签种类超过契约上限时按热度截断，保证响应可通过校验', () => {

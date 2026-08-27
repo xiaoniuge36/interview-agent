@@ -41,6 +41,11 @@ export function localDayKey(value: string | Date): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
+/** 按日历日前后移动：交给 Date 构造器规范化，DST 时区下减固定毫秒会跳日或重日。 */
+function shiftCalendarDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
 export function collectTrainingDayKeys(
   practices: readonly PracticeHistoryItem[],
   interviews: readonly InterviewSessionSummary[],
@@ -54,18 +59,18 @@ export function collectTrainingDayKeys(
 /** 今天有训练则从今天连续回数；今天还没练则从昨天回数（今天仍可续上）。 */
 export function computeTrainingStreak(days: ReadonlySet<string>, today: Date): TrainingStreak {
   const trainedToday = days.has(localDayKey(today));
-  let cursor = trainedToday ? today : new Date(today.getTime() - DAY_MS);
+  let cursor = trainedToday ? today : shiftCalendarDays(today, -1);
   let current = 0;
   while (days.has(localDayKey(cursor))) {
     current += 1;
-    cursor = new Date(cursor.getTime() - DAY_MS);
+    cursor = shiftCalendarDays(cursor, -1);
   }
   return { current, trainedToday };
 }
 
 export function recentActivity(days: ReadonlySet<string>, today: Date): DayActivity[] {
   return Array.from({ length: WEEK_SPAN }, (_, index) => {
-    const date = new Date(today.getTime() - (WEEK_SPAN - 1 - index) * DAY_MS);
+    const date = shiftCalendarDays(today, -(WEEK_SPAN - 1 - index));
     const key = localDayKey(date);
     return {
       key,
@@ -132,13 +137,14 @@ export function buildDailyTasks(input: {
     input.interviews.some((interview) => localDayKey(interview.updatedAt) === todayKey) ||
     input.practices.some(
       (practice) =>
-        REVIEW_MODES.has(practice.mode) && localDayKey(practice.updatedAt) === todayKey,
+        REVIEW_MODES.has(practice.mode) &&
+        localDayKey(practice.reportedAt ?? practice.updatedAt) === todayKey,
     );
   const learnedToday =
     input.learningUpdatedAt !== null && localDayKey(input.learningUpdatedAt) === todayKey;
   return [
     { id: 'practice', label: '完成一轮刷题训练', done: practicedToday, href: '/questions' },
     { id: 'review', label: '模拟面试或弱项复练', done: reviewedToday, href: '/interview' },
-    { id: 'learning', label: '学习中心学一节课', done: learnedToday, href: '/learning' },
+    { id: 'learning', label: '学习中心学一节课', done: learnedToday, href: '/learn' },
   ];
 }

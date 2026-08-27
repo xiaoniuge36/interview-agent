@@ -12,8 +12,10 @@ type DictationButtonProps = {
 export function DictationButton({ onTranscript, disabled = false }: DictationButtonProps) {
   const dictation = useSpeechDictation({ onFinal: onTranscript });
   useEffect(() => {
-    if (disabled) dictation.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stop 引用稳定，仅需响应 disabled。
+    // 提交等场景触发 disabled 时用 abort 丢弃识别中的结果：
+    // stop() 之后引擎仍会补投最后的 final，会污染已提交的回答或下一题草稿。
+    if (disabled) dictation.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- abort 引用稳定，仅需响应 disabled。
   }, [disabled]);
   if (!dictation.supported) return null;
   return (

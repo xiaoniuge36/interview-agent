@@ -60,3 +60,31 @@ describe('matchJdWithMastery', () => {
     expect(result.covered).toHaveLength(2);
   });
 });
+
+describe('matchJdWithMastery 词边界', () => {
+  it('ASCII 标签按词边界匹配，不再被更长的词误命中', () => {
+    const jd = '要求：精通 JavaScript 与 Google Cloud，了解 Django。';
+    const result = matchJdWithMastery(jd, [profile('Java', 90), profile('Go', 85)]);
+
+    expect(result.covered).toEqual([]);
+    expect(result.gaps).toEqual([]);
+  });
+
+  it('词边界匹配仍命中真实出现的 ASCII 标签', () => {
+    const jd = '技术栈：Java、Go语言，构建 C++ 服务与 Node.js 网关。';
+    const result = matchJdWithMastery(jd, [
+      profile('Java', 90),
+      profile('Go', 85),
+      profile('C++', 80),
+      profile('Node.js', 75),
+    ]);
+
+    expect(result.covered.map((item) => item.tag)).toEqual(['Java', 'Go', 'C++', 'Node.js']);
+  });
+
+  it('中文标签保持子串匹配', () => {
+    const result = matchJdWithMastery('负责高并发系统设计与调优', [profile('系统设计', 88)]);
+
+    expect(result.covered.map((item) => item.tag)).toEqual(['系统设计']);
+  });
+});

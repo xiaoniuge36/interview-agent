@@ -65,27 +65,46 @@ export function dictationReducer(state: DictationState, event: DictationEvent): 
   }
 }
 
-/** 语音段落拼接：识别结果直接续写在既有草稿后，草稿为空时避免多余前导空白。 */
+const CJK_BOUNDARY = /[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]$/;
+const CJK_LEADING = /^[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/;
+
+/**
+ * 语音段落拼接：中文之间直接续写；任一侧是英文/数字时补一个空格，
+ * 避免中英混说时出现 "用了Reactand Redux" 式的单词粘连。
+ */
 export function appendTranscript(base: string, transcript: string): string {
   const addition = transcript.trim();
   if (!addition) return base;
   if (!base.trim()) return addition;
-  return `${base.replace(/\s+$/, '')}${addition}`;
+  const trimmedBase = base.replace(/\s+$/, '');
+  const joiner = CJK_BOUNDARY.test(trimmedBase) || CJK_LEADING.test(addition) ? '' : ' ';
+  return `${trimmedBase}${joiner}${addition}`;
 }
 
-/** 拆分一次识别事件里的增量结果：final 直接入稿，interim 仅作预览。 */
-export function splitRecognitionResults(event: SpeechRecognitionEventLike): {
-  finalTranscript: string;
-  interimTranscript: string;
-} {
+/**
+ * 拆分一次识别事件里的增量结果：final 直接入稿，interim 仅作预览。
+ * consumedFinals 记录已消费的 final 序号——Android/iOS 的 continuous 实现会在
+ * 后续事件里重复携带已投递过的 final，仅按 resultIndex 切片会重复拼接同一句话。
+ */
+export function splitRecognitionResults(
+  event: SpeechRecognitionEventLike,
+  consumedFinals: number = -1,
+): { finalTranscript: string; interimTranscript: string; lastFinalIndex: number } {
   let finalTranscript = '';
   let interimTranscript = '';
+  let lastFinalIndex = consumedFinals;
   for (let index = event.resultIndex; index < event.results.length; index += 1) {
     const result = event.results[index]!;
-    if (result.isFinal) finalTranscript += result[0].transcript;
-    else interimTranscript += result[0].transcript;
+    if (result.isFinal) {
+      if (index > consumedFinals) {
+        finalTranscript += result[0].transcript;
+        lastFinalIndex = Math.max(lastFinalIndex, index);
+      }
+    } else {
+      interimTranscript += result[0].transcript;
+    }
   }
-  return { finalTranscript, interimTranscript };
+  return { finalTranscript, interimTranscript, lastFinalIndex };
 }
 
 function dictationErrorMessage(code: string): string {
