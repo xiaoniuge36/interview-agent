@@ -12,7 +12,10 @@ type JobIntentPanelProps = {
 export function JobIntentPanel(props: JobIntentPanelProps) {
   const controller = useJobIntentForm(props);
   return (
-    <form className="panel stack agent-form-panel job-intent-panel" onSubmit={controller.submit}>
+    <form
+      className="panel stack agent-form-panel job-intent-panel motion-rise"
+      onSubmit={controller.submit}
+    >
       <div className="job-intent-heading">
         <div className="eyebrow">给 Agent 的面试任务书</div>
         <h2 className="h2">目标 JD 与训练重点</h2>

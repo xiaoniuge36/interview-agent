@@ -164,6 +164,144 @@ a:hover .consumer-action-arrow {
   }
 }
 
+/* === 通用动效工具层 =========================================
+   入场（rise/stagger）、悬停抬升（lift）、进度绘制（draw-x）、
+   环境漂移（drift）。全部只动 transform/opacity，并在
+   data-motion='off' 与 prefers-reduced-motion 下回退为静态。 */
+
+.motion-rise {
+  --rise-delay: 0ms;
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  animation: motion-rise-in 560ms var(--ease-out) both;
+  animation-delay: var(--rise-delay);
+}
+
+.motion-stagger > * {
+  opacity: 0;
+  transform: translate3d(0, 12px, 0);
+  animation: motion-rise-in 480ms var(--ease-out) both;
+}
+
+.motion-stagger > *:nth-child(1) {
+  animation-delay: 30ms;
+}
+.motion-stagger > *:nth-child(2) {
+  animation-delay: 90ms;
+}
+.motion-stagger > *:nth-child(3) {
+  animation-delay: 150ms;
+}
+.motion-stagger > *:nth-child(4) {
+  animation-delay: 210ms;
+}
+.motion-stagger > *:nth-child(5) {
+  animation-delay: 270ms;
+}
+.motion-stagger > *:nth-child(6) {
+  animation-delay: 330ms;
+}
+.motion-stagger > *:nth-child(7) {
+  animation-delay: 390ms;
+}
+.motion-stagger > *:nth-child(8) {
+  animation-delay: 450ms;
+}
+.motion-stagger > *:nth-child(n + 9) {
+  animation-delay: 500ms;
+}
+
+@keyframes motion-rise-in {
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* 悬停抬升 + 按压回馈：贴合硬边阴影的版式，位移小、时长短。 */
+.motion-lift {
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.motion-lift:hover {
+  transform: translate3d(0, -3px, 0);
+}
+
+.motion-lift:active {
+  transform: translate3d(0, -1px, 0) scale(0.99);
+  transition-duration: 70ms;
+}
+
+/* 进度条绘制：外层保持布局，内层填充条加本类；延迟可随宿主入场时机调整。 */
+.motion-draw-x {
+  transform: scaleX(var(--draw-scale, 1));
+  transform-origin: left center;
+  animation: motion-draw-x 760ms var(--ease-out) both;
+  animation-delay: var(--draw-delay, 220ms);
+}
+
+@keyframes motion-draw-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* 装饰元素的缓慢环境漂移（透明度低的背景弧线等）。 */
+.motion-drift {
+  animation: motion-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes motion-drift {
+  to {
+    transform: translate3d(0, -16px, 0) rotate(2.2deg);
+  }
+}
+
+/* 成功确认的一次性弹跳（保存、完成等瞬间反馈）。 */
+.motion-pop {
+  animation: motion-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes motion-pop {
+  0% {
+    transform: scale(0.86);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+html[data-motion='off'] .motion-rise,
+html[data-motion='off'] .motion-stagger > *,
+html[data-motion='off'] .motion-pop {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+html[data-motion='off'] .motion-draw-x {
+  animation: none;
+}
+
+html[data-motion='off'] .motion-lift,
+html[data-motion='off'] .motion-lift:hover,
+html[data-motion='off'] .motion-lift:active {
+  transform: none;
+  transition: none;
+}
+
+html[data-motion='off'] .motion-drift {
+  animation: none;
+}
+
 html[data-motion='off'] .consumer-reveal-character,
 html[data-motion='off'] .consumer-action-pulse,
 html[data-motion='off'] .staggered-title-segment {
@@ -192,6 +330,26 @@ html[data-motion='off'] .chinese-ticker-queue[aria-hidden='true'] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .motion-rise,
+  .motion-stagger > *,
+  .motion-pop {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .motion-draw-x,
+  .motion-drift {
+    animation: none;
+  }
+
+  .motion-lift,
+  .motion-lift:hover,
+  .motion-lift:active {
+    transform: none;
+    transition: none;
+  }
+
   .consumer-reveal-character,
   .consumer-action-pulse,
   .staggered-title-segment {

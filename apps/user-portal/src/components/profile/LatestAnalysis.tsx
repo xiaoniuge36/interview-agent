@@ -1,15 +1,23 @@
+import type { CSSProperties } from 'react';
 import type { JobIntentPayload, ProfilePayload } from '@interview-agent/contracts';
+import { CountUp } from '@/components/motion/CountUp';
 
 type LatestAnalysisProps = {
   job: JobIntentPayload | undefined;
   profile: ProfilePayload;
 };
 
+const PREVIEW_RISE_DELAY = { '--rise-delay': '150ms' } as CSSProperties;
+
 export function LatestAnalysis({ job, profile }: LatestAnalysisProps) {
   const insights = job?.profile?.interviewFocus ??
     profile.snapshot?.weaknesses ?? ['保存个人画像或目标岗位后，这里会展示训练重点'];
   return (
-    <aside className="job-training-preview" aria-labelledby="job-training-preview-title">
+    <aside
+      className="job-training-preview motion-rise"
+      style={PREVIEW_RISE_DELAY}
+      aria-labelledby="job-training-preview-title"
+    >
       <div className="job-training-preview-heading">
         <span className="eyebrow">训练重点预览</span>
         <h2 id="job-training-preview-title">这份 JD 会怎样改变下一场面试</h2>
@@ -58,7 +66,9 @@ function SkillWeights({ job }: { job: JobIntentPayload }) {
       {job.profile?.skillWeights.map((item) => (
         <div className="score-row" key={item.skill}>
           <span>{item.skill}</span>
-          <strong>{item.weight}</strong>
+          <strong>
+            <CountUp value={item.weight} />
+          </strong>
         </div>
       ))}
     </div>

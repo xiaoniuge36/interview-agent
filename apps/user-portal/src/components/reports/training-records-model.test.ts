@@ -4,8 +4,10 @@ import {
   buildTrainingRecords,
   filterTrainingRecords,
   formatTrainingRecordDate,
+  paginateTrainingRecords,
   searchTrainingRecords,
   summarizeTrainingRecords,
+  trainingRecordActionLabel,
 } from './training-records-model';
 
 const practices = [
@@ -78,6 +80,26 @@ describe('training records model', () => {
       reviewed: 2,
     });
   });
+});
+
+it('paginates merged records and clamps out-of-range pages', () => {
+  const records = buildTrainingRecords(practices, interviews);
+
+  const first = paginateTrainingRecords(records, 1, 1);
+  expect(first.items.map((record) => record.id)).toEqual(['practice-newer']);
+  expect(first).toMatchObject({ page: 1, totalPages: 2, total: 2 });
+  expect(paginateTrainingRecords(records, 9, 1)).toMatchObject({ page: 2, totalPages: 2 });
+  expect(paginateTrainingRecords(records, 0, 1).items[0]?.id).toBe('practice-newer');
+  expect(paginateTrainingRecords([], 3)).toMatchObject({ page: 1, totalPages: 1, total: 0 });
+});
+
+it('maps each training status to the next user action', () => {
+  expect(trainingRecordActionLabel('in_progress')).toBe('继续训练');
+  expect(trainingRecordActionLabel('waiting_user')).toBe('继续训练');
+  expect(trainingRecordActionLabel('running')).toBe('继续训练');
+  expect(trainingRecordActionLabel('generating_report')).toBe('查看进度');
+  expect(trainingRecordActionLabel('report_ready')).toBe('查看复盘');
+  expect(trainingRecordActionLabel('cancelled')).toBe('查看记录');
 });
 
 it('adds persisted interview scores, weakest stages, and the previous-score trend', () => {

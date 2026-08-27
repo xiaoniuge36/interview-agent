@@ -21,23 +21,23 @@ it('accepts exactly one lower-case mistake-book origin and maps it to a fixed re
 });
 
 it('accepts one verified learning origin and returns only to its fixed course anchor', () => {
-  const origin = practiceReturnOriginFromValues(['learn'], ['01-agent基础与上下文工程'], ['react']);
+  const origin = practiceReturnOriginFromValues(['learn'], ['学习路线-01-agent基础与上下文工程'], ['react']);
 
   expect(origin).toMatchObject({
     status: 'ready',
-    courseSlug: '01-agent基础与上下文工程',
+    courseSlug: '学习路线-01-agent基础与上下文工程',
     topicLabel: 'ReAct',
   });
   expect(practiceReturnHref(origin)).toBe(
-    '/learn?doc=01-agent%E5%9F%BA%E7%A1%80%E4%B8%8E%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B#learning-course-actions',
+    '/learn?doc=%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF-01-agent%E5%9F%BA%E7%A1%80%E4%B8%8E%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B#learning-course-actions',
   );
 });
 
 it.each([
-  { origins: ['learn'], courses: ['01-agent基础与上下文工程'], topics: ['ReAct'] },
+  { origins: ['learn'], courses: ['学习路线-01-agent基础与上下文工程'], topics: ['ReAct'] },
   {
     origins: ['learn'],
-    courses: ['01-agent基础与上下文工程', '01-agent基础与上下文工程'],
+    courses: ['学习路线-01-agent基础与上下文工程', '学习路线-01-agent基础与上下文工程'],
     topics: ['react'],
   },
   { origins: ['learn'], courses: ['//evil.example'], topics: ['react'] },

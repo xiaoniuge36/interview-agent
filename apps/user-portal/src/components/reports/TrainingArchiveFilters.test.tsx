@@ -19,6 +19,23 @@ describe('TrainingArchiveFilters', () => {
 
     expect(markup).toContain('aria-label="清除搜索条件"');
   });
+
+  it('hides tab counts until the archive is loaded, then shows one per category', () => {
+    expect(renderFilters('')).not.toContain('</i>');
+
+    const markup = renderToStaticMarkup(
+      createElement(TrainingArchiveFilters, {
+        filter: 'all',
+        query: '',
+        counts: { total: 12, practice: 9, interview: 3 },
+        onChange: vi.fn(),
+        onQueryChange: vi.fn(),
+      }),
+    );
+    expect(markup).toContain('>12</i>');
+    expect(markup).toContain('>9</i>');
+    expect(markup).toContain('>3</i>');
+  });
 });
 
 function renderFilters(query: string) {

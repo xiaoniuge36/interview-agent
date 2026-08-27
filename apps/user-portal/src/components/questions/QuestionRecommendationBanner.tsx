@@ -1,6 +1,9 @@
+import type { CSSProperties } from 'react';
 import type { PracticeRecommendation } from '@interview-agent/contracts';
 import Link from 'next/link';
 import { RecommendationSources } from './RecommendationSources';
+
+const BANNER_RISE_DELAY = { '--rise-delay': '120ms' } as CSSProperties;
 
 type QuestionRecommendationBannerProps = {
   agentHandoff: boolean;
@@ -27,7 +30,11 @@ export function QuestionRecommendationBanner(props: QuestionRecommendationBanner
     onOpenSelfPicker,
   } = props;
   return (
-    <section className="question-agent-banner" aria-labelledby="question-agent-heading">
+    <section
+      className="question-agent-banner motion-rise"
+      style={BANNER_RISE_DELAY}
+      aria-labelledby="question-agent-heading"
+    >
       <span className="question-agent-mark" aria-hidden="true">
         <SparkIcon />
       </span>

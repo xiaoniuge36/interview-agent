@@ -258,6 +258,40 @@
   color: var(--ink);
 }
 
+/* === 动效：评价逐段揭示 =========================================
+   评分生成或复盘打开时，总评 → 评分维度 → 优先补强 → 追问依次上浮；
+   数字由 CountUp 同步滚动到最终分。 */
+
+html[data-motion='on'] .practice-evaluation-result > * {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  animation: motion-rise-in 420ms var(--ease-out) both;
+}
+
+html[data-motion='on'] .practice-evaluation-result > *:nth-child(1) {
+  animation-delay: 40ms;
+}
+
+html[data-motion='on'] .practice-evaluation-result > *:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+html[data-motion='on'] .practice-evaluation-result > *:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+html[data-motion='on'] .practice-evaluation-result > *:nth-child(n + 4) {
+  animation-delay: 400ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion='on'] .practice-evaluation-result > * {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
 @media (max-width: 760px) {
   .practice-evaluation-summary,
   .practice-evaluation-rubrics > div {

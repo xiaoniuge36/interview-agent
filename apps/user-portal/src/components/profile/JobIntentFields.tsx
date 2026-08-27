@@ -73,7 +73,7 @@ function RoleTemplatePicker({
           {ROLE_TITLE_OPTIONS.length} 个岗位 · 6 个岗位族群
         </span>
       </div>
-      <div className="role-template-groups">
+      <div className="role-template-groups motion-stagger">
         {ROLE_GROUPS.map((group) => (
           <div className="role-template-group" key={group.group}>
             <strong>{group.group}</strong>

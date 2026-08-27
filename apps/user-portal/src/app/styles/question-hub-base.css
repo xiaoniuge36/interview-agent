@@ -265,3 +265,88 @@
   font-size: 10px;
   font-weight: 700;
 }
+
+/* === 动效：大厅入场与卡片反馈 =========================================
+   专题卡在分区标题（约 140ms 起）之后逐张浮现；悬停位移由基础
+   transition 提供，这里补按压回缩与发现标签的悬停反馈。 */
+
+.question-topic-grid > .question-topic-card {
+  opacity: 0;
+  transform: translate3d(0, 12px, 0);
+  animation: motion-rise-in 460ms var(--ease-out) both;
+}
+
+.question-topic-grid > .question-topic-card:nth-child(1) {
+  animation-delay: 220ms;
+}
+.question-topic-grid > .question-topic-card:nth-child(2) {
+  animation-delay: 280ms;
+}
+.question-topic-grid > .question-topic-card:nth-child(3) {
+  animation-delay: 340ms;
+}
+.question-topic-grid > .question-topic-card:nth-child(4) {
+  animation-delay: 400ms;
+}
+.question-topic-grid > .question-topic-card:nth-child(5) {
+  animation-delay: 460ms;
+}
+.question-topic-grid > .question-topic-card:nth-child(n + 6) {
+  animation-delay: 520ms;
+}
+
+.question-topic-card:active {
+  transform: translateY(0) scale(0.985);
+  transition-duration: 80ms;
+}
+
+.question-discovery-tags a {
+  transition:
+    border-color 160ms var(--ease-out),
+    background 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+.question-discovery-tags a:hover {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--outline));
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+  color: var(--ink);
+  transform: translateY(-2px);
+}
+
+.question-discovery-tags a:active {
+  transform: translateY(0) scale(0.96);
+  transition-duration: 80ms;
+}
+
+html[data-motion='off'] .question-topic-grid > .question-topic-card {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+html[data-motion='off'] .question-topic-card:active,
+html[data-motion='off'] .question-discovery-tags a:hover,
+html[data-motion='off'] .question-discovery-tags a:active {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .question-topic-grid > .question-topic-card {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .question-topic-card,
+  .question-discovery-tags a {
+    transition: none;
+  }
+
+  .question-topic-card:active,
+  .question-discovery-tags a:hover,
+  .question-discovery-tags a:active {
+    transform: none;
+  }
+}

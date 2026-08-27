@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { ActionLabel } from '@/components/consumer/ActionLabel';
 import { SignalField } from '@/components/consumer/SignalField';
@@ -48,7 +49,7 @@ export function PracticeEntry() {
             </Link>
             <Link href="/home">返回题库大厅</Link>
           </div>
-          <div className="practice-entry-facts" aria-label="练习说明">
+          <div className="practice-entry-facts motion-stagger" aria-label="练习说明">
             <span>
               <strong>1–10</strong> 每轮题目
             </span>
@@ -77,7 +78,7 @@ function PracticeEntryModes() {
         </div>
         <p>自由刷题、完整模拟和弱项复盘，三条路径都回到真实面试表达。</p>
       </header>
-      <div className="practice-mode-grid">
+      <div className="practice-mode-grid motion-stagger">
         {PRACTICE_MODES.map((mode, index) => (
           <Link className="practice-mode-card" href={mode.href} key={mode.href}>
             <span>{mode.kicker}</span>
@@ -96,7 +97,11 @@ function PracticeEntryModes() {
 
 function PracticeEntryGuide() {
   return (
-    <aside className="practice-entry-guide" aria-labelledby="practice-entry-guide-heading">
+    <aside
+      className="practice-entry-guide motion-rise"
+      style={{ '--rise-delay': '180ms' } as CSSProperties}
+      aria-labelledby="practice-entry-guide-heading"
+    >
       <header>
         <span>本轮流程</span>
         <strong id="practice-entry-guide-heading">从选题到复盘，保持一个节奏</strong>

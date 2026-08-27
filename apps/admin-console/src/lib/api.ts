@@ -11,7 +11,7 @@ import {
 import type { ZodType } from 'zod';
 import { authClient } from './auth';
 
-const DEFAULT_API_BASE = 'http://localhost:3001/api';
+const DEFAULT_API_BASE = 'http://localhost:7101/api';
 const API_BASE = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE);
 const HTTP_UNAUTHORIZED = 401;
 const ADMIN_API_ERROR_EVENT = 'admin-api-error';

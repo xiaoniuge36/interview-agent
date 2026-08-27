@@ -65,7 +65,7 @@ function SignalList({ title, items, empty }: { title: string; items: string[]; e
   return (
     <section className="profile-memory-signals">
       <h3>{title}</h3>
-      <ul>
+      <ul className="motion-stagger">
         {signals.map((item) => (
           <li key={item}>{item}</li>
         ))}
@@ -86,7 +86,7 @@ function MemoryList({
   return (
     <section className={`profile-memory-list ${tone}`}>
       <h3>{title}</h3>
-      <ul>
+      <ul className="motion-stagger">
         {items.map((item) => (
           <li key={item}>{item}</li>
         ))}

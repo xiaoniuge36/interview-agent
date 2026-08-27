@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseLearningProgress } from '@/lib/learning/learning-progress';
 import { persistLearningPracticeEvidence } from './practice-learning-evidence';
 
-const courseSlug = '01-agent基础与上下文工程';
+const courseSlug = '学习路线-01-agent基础与上下文工程';
 const origin = {
   status: 'ready' as const,
   courseSlug,

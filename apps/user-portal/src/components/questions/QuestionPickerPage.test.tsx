@@ -6,7 +6,7 @@ import { focusLearningVerificationWorkspace, QuestionPickerPage } from './Questi
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 
 const searchParamsState = vi.hoisted(() => ({
-  value: new URLSearchParams('source=learn&course=01-agent基础与上下文工程&topic=react'),
+  value: new URLSearchParams('source=learn&course=学习路线-01-agent基础与上下文工程&topic=react'),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -62,7 +62,7 @@ describe('QuestionPickerPage learning verification', () => {
 
   it('shows a safe no-match state instead of a generic catalog for a known unmapped course', () => {
     searchParamsState.value = new URLSearchParams(
-      'source=learn&course=04-memory-planning与multi-agent',
+      'source=learn&course=学习路线-04-memory-planning与multi-agent',
     );
 
     const markup = renderToStaticMarkup(<QuestionPickerPage />);

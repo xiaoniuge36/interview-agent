@@ -1,6 +1,6 @@
 import { BrowserAuthClient, parseAuthMode } from '@interview-agent/auth-client';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:7101/api';
 
 export const authClient = new BrowserAuthClient({
   mode: parseAuthMode(process.env.NEXT_PUBLIC_ADMIN_AUTH_MODE, 'local'),

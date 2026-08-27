@@ -24,7 +24,7 @@ export function PracticeRoundCompletionBar({ player }: { player: PracticePlayer 
   };
 
   return (
-    <section className="practice-round-actions practice-round-completion-step">
+    <section className="practice-round-actions practice-round-completion-step motion-rise">
       <CompletionSummary pendingCount={pendingCount} submitting={submitting} />
       <div>
         <button

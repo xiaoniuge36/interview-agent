@@ -10,7 +10,7 @@ export function ProfilePageContent() {
       {(data) => (
         <div className="workspace page-workspace profile-page-workspace">
           <ProfilePageIntro />
-          <div className="profile-agent-layout">
+          <div className="profile-agent-layout motion-stagger">
             <ProfilePanel profile={data.profile} onChanged={data.updateProfile} />
             <ProfileMemoryRail profile={data.profile} />
           </div>

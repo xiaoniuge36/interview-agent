@@ -164,7 +164,7 @@ function DocumentGroup({
         <strong>{title}</strong>
         <span>{count}</span>
       </header>
-      <nav ref={navigationRef} className="learning-document-list">
+      <nav ref={navigationRef} className="learning-document-list motion-stagger">
         {children}
       </nav>
     </section>
@@ -194,7 +194,10 @@ function DocumentLink({
     >
       <span className="learning-document-spine" aria-hidden="true" />
       {document.kind === 'course' ? (
-        <span className="learning-course-index" aria-hidden="true">
+        <span
+          className={completed ? 'learning-course-index motion-pop' : 'learning-course-index'}
+          aria-hidden="true"
+        >
           {completed ? '✓' : String(document.order ?? '').padStart(2, '0')}
         </span>
       ) : null}

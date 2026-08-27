@@ -365,3 +365,85 @@
     margin-left: 0;
   }
 }
+
+/* === 动效：流式内容与操作反馈 =========================================
+   消息/事件在挂载时渐入上移一次（流式追加只播一次）；状态点 800ms 交替脉冲；
+   核心按钮 200ms 颜色过渡 + 按压回缩。只动 transform/opacity/颜色。 */
+
+.turn,
+.event-row {
+  animation: interview-entry-rise 280ms var(--ease-out) both;
+}
+
+@keyframes interview-entry-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+}
+
+.interview-page .chip .status-dot {
+  animation: interview-status-pulse 800ms ease-in-out infinite alternate;
+}
+
+@keyframes interview-status-pulse {
+  to {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+
+.interview-answer-composer .button,
+.interview-toolbar-controls .button {
+  transition:
+    background 200ms var(--ease-out),
+    border-color 200ms var(--ease-out),
+    color 200ms var(--ease-out),
+    opacity 200ms var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+
+.interview-answer-composer .button:active:not(:disabled),
+.interview-toolbar-controls .button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+
+html[data-motion='off'] .turn,
+html[data-motion='off'] .event-row {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+html[data-motion='off'] .interview-page .chip .status-dot {
+  animation: none;
+}
+
+html[data-motion='off'] .interview-answer-composer .button:active:not(:disabled),
+html[data-motion='off'] .interview-toolbar-controls .button:active:not(:disabled) {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turn,
+  .event-row {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .interview-page .chip .status-dot {
+    animation: none;
+  }
+
+  .interview-answer-composer .button,
+  .interview-toolbar-controls .button {
+    transition: none;
+  }
+
+  .interview-answer-composer .button:active:not(:disabled),
+  .interview-toolbar-controls .button:active:not(:disabled) {
+    transform: none;
+  }
+}

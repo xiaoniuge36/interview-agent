@@ -28,6 +28,10 @@
   font-weight: 400;
 }
 
+.settings-add-button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+
 .settings-tabs {
   display: flex;
   gap: 32px;
@@ -137,6 +141,30 @@
 
 .text-button.danger {
   color: var(--danger);
+}
+
+/* “已生效”徽章按行错开弹出，时机落在分区卡浮现之后
+   （行序：header 之后第 2~4 个子元素）。 */
+.behavior-preferences .behavior-row:nth-child(2) .chip.motion-pop {
+  animation-delay: 320ms;
+}
+
+.behavior-preferences .behavior-row:nth-child(3) .chip.motion-pop {
+  animation-delay: 400ms;
+}
+
+.behavior-preferences .behavior-row:nth-child(4) .chip.motion-pop {
+  animation-delay: 480ms;
+}
+
+html[data-motion='off'] .settings-add-button:active:not(:disabled) {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-add-button:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 @media (max-width: 760px) {

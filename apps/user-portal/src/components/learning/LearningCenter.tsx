@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import {
   findLearningReviewHeading,
   TERTIARY_HEADING_DEPTH,
@@ -13,6 +14,9 @@ type LearningCenterProps = {
   activeDocument: LearningDocument | null;
   openedCourseSlug: string | null;
 };
+
+const READING_DESK_RISE_DELAY = { '--rise-delay': '100ms' } as CSSProperties;
+const OUTLINE_RISE_DELAY = { '--rise-delay': '180ms' } as CSSProperties;
 
 export function LearningCenter({
   documents,
@@ -36,7 +40,7 @@ export function LearningCenter({
       <div className="learning-center">
         <LearningCenterHero />
         <LearningLibraryRail documents={navigationItems} activeSlug={activeDocument.slug} />
-        <section className="learning-reading-desk">
+        <section className="learning-reading-desk motion-rise" style={READING_DESK_RISE_DELAY}>
           <DocumentHeader document={activeDocument} />
           <CourseBrief document={activeDocument} />
           <LearningArticle document={activeDocument} />
@@ -56,7 +60,7 @@ export function LearningCenter({
 
 function LearningCenterHero() {
   return (
-    <header className="learning-center-hero">
+    <header className="learning-center-hero motion-rise">
       <span>学习中心</span>
       <h1>把知识，练成面试时说得清的能力。</h1>
       <p>沿着完整路线阅读、动手和自测；每一课都能回到对应题目继续验证。</p>
@@ -96,7 +100,11 @@ function CourseBrief({ document }: { document: LearningDocument }) {
 
 function DocumentOutline({ document }: { document: LearningDocument }) {
   return (
-    <aside className="learning-outline" aria-label="当前文档章节">
+    <aside
+      className="learning-outline motion-rise"
+      style={OUTLINE_RISE_DELAY}
+      aria-label="当前文档章节"
+    >
       <strong>本课目录</strong>
       {document.headings.length ? (
         <nav>

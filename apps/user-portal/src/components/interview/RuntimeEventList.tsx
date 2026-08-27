@@ -1,4 +1,7 @@
+import type { CSSProperties } from 'react';
 import type { AiOperationPhase, AgentStreamEvent } from '@interview-agent/contracts';
+
+const PROGRESS_RISE_DELAY = { '--rise-delay': '120ms' } as CSSProperties;
 
 const ISO_TIME_START_INDEX = 11;
 const ISO_TIME_END_INDEX = 16;
@@ -35,7 +38,7 @@ export function RuntimeEventList({
   sourceCount = 0,
 }: RuntimeEventListProps) {
   return (
-    <section className="panel stack compact">
+    <section className="panel stack compact motion-rise" style={PROGRESS_RISE_DELAY}>
       <div className="eyebrow">本轮进度</div>
       {phase ? (
         <p className="interview-runtime-status" role="status">

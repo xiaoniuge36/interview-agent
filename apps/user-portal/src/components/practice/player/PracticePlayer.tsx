@@ -153,6 +153,7 @@ function PracticeAnswerStep(
   return (
     <>
       <PracticeQuestionStage
+        key={item.id}
         item={item}
         draft={draft}
         busy={player.busy}
@@ -187,6 +188,7 @@ function PracticeFeedbackStep(props: PracticeSessionContentProps) {
   return (
     <>
       <PracticeCoachPanel
+        key={item.id}
         sessionId={player.sessionId!}
         item={item}
         draft={props.draft}
@@ -267,7 +269,7 @@ function PlayerMessage({ message }: { message: string }) {
 
 function PlayerState({ title, copy }: { title: string; copy: string }) {
   return (
-    <div className="practice-player-state">
+    <div className="practice-player-state motion-rise">
       <strong>{title}</strong>
       <p>{copy}</p>
     </div>
@@ -276,7 +278,7 @@ function PlayerState({ title, copy }: { title: string; copy: string }) {
 
 function PlayerError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="practice-player-state">
+    <div className="practice-player-state motion-rise">
       <strong>练习没有加载成功</strong>
       <p>{message}</p>
       <button type="button" onClick={onRetry}>

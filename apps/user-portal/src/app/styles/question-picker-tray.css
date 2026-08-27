@@ -308,3 +308,97 @@
     font-size: 11px;
   }
 }
+
+/* === 动效：题单托盘反馈 =========================================
+   计数在加减题时弹跳（motion-pop 由 key 重挂载触发）；新加入的
+   题目行上浮入场；操作按钮补悬停与按压反馈。 */
+
+.selected-question-count {
+  display: inline-block;
+  min-width: 1ch;
+  color: var(--primary-strong);
+  font-style: normal;
+  text-align: center;
+}
+
+.selected-question-list > div:not(.selected-question-empty) {
+  animation: selected-question-in 300ms var(--ease-out) both;
+}
+
+@keyframes selected-question-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-8px, 0, 0);
+  }
+}
+
+.selected-question-list > div > button {
+  transition:
+    color 140ms var(--ease-out),
+    transform 140ms var(--ease-out);
+}
+
+.selected-question-list > div > button:hover {
+  color: var(--danger);
+  transform: scale(1.12);
+}
+
+.selected-question-compose,
+.selected-question-tray footer button {
+  transition:
+    background 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    opacity 180ms var(--ease-out);
+}
+
+.selected-question-compose:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--primary) 46%, var(--outline));
+  background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+}
+
+.selected-question-tray footer button:hover:not(:disabled) {
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--primary) 26%, transparent);
+  transform: translateY(-1px);
+}
+
+.selected-question-compose:active:not(:disabled),
+.selected-question-tray footer button:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 70ms;
+}
+
+html[data-motion='off'] .selected-question-list > div:not(.selected-question-empty) {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+html[data-motion='off'] .selected-question-list > div > button:hover,
+html[data-motion='off'] .selected-question-compose:active:not(:disabled),
+html[data-motion='off'] .selected-question-tray footer button:hover:not(:disabled),
+html[data-motion='off'] .selected-question-tray footer button:active:not(:disabled) {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selected-question-list > div:not(.selected-question-empty) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .selected-question-list > div > button,
+  .selected-question-compose,
+  .selected-question-tray footer button {
+    transition: none;
+  }
+
+  .selected-question-list > div > button:hover,
+  .selected-question-compose:active:not(:disabled),
+  .selected-question-tray footer button:hover:not(:disabled),
+  .selected-question-tray footer button:active:not(:disabled) {
+    transform: none;
+  }
+}

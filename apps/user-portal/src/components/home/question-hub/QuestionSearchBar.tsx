@@ -1,8 +1,10 @@
 'use client';
 
-import { FormEvent } from 'react';
+import { FormEvent, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useGlobalSearch } from '../../search/GlobalSearchProvider';
+
+const SEARCH_RISE_DELAY = { '--rise-delay': '60ms' } as CSSProperties;
 
 export function QuestionSearchBar({
   total,
@@ -20,7 +22,10 @@ export function QuestionSearchBar({
 
   return (
     <section
-      className={compact ? 'question-search-hero compact' : 'question-search-hero'}
+      className={
+        compact ? 'question-search-hero compact motion-rise' : 'question-search-hero motion-rise'
+      }
+      style={SEARCH_RISE_DELAY}
       aria-labelledby="question-hub-heading"
     >
       <div className="question-search-copy">
@@ -45,13 +50,19 @@ export function QuestionSearchBar({
           <kbd>Ctrl K</kbd>
         </button>
       </form>
-      <div className="question-search-meta">
-        <span>{total === undefined ? '正在同步题库' : `${total} 道已发布题目`}</span>
-        <span aria-hidden="true">·</span>
-        <Link href="/questions?difficulty=intro">从入门题开始</Link>
-        <Link href="/questions?type=behavioral">练行为面试</Link>
-      </div>
+      <SearchMeta total={total} />
     </section>
+  );
+}
+
+function SearchMeta({ total }: { total: number | undefined }) {
+  return (
+    <div className="question-search-meta">
+      <span>{total === undefined ? '正在同步题库' : `${total} 道已发布题目`}</span>
+      <span aria-hidden="true">·</span>
+      <Link href="/questions?difficulty=intro">从入门题开始</Link>
+      <Link href="/questions?type=behavioral">练行为面试</Link>
+    </div>
   );
 }
 

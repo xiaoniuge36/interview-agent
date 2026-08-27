@@ -178,4 +178,71 @@
   background: #edf9f6;
   color: #2f685d;
   font-size: 11px;
+  animation: practice-message-in 260ms var(--ease-out) both;
+}
+
+@keyframes practice-message-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+/* === 动效：题目导航与进度 =========================================
+   导航项状态（待作答/已保存/已评价/当前）颜色平滑过渡 + 按压回缩；
+   顶部进度条数值变化时平滑推进（仅 Chromium 支持，其余浏览器直接跳变）。 */
+
+.practice-nav-items button {
+  transition:
+    background 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out),
+    color 180ms var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.practice-nav-items button > span {
+  transition:
+    background 220ms var(--ease-out),
+    color 220ms var(--ease-out);
+}
+
+.practice-nav-items button:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 70ms;
+}
+
+.practice-player-progress progress::-webkit-progress-value {
+  transition: inline-size 420ms var(--ease-out);
+}
+
+html[data-motion='off'] .practice-player-message {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+html[data-motion='off'] .practice-nav-items button:active:not(:disabled) {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .practice-player-message {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .practice-nav-items button,
+  .practice-nav-items button > span {
+    transition: none;
+  }
+
+  .practice-nav-items button:active:not(:disabled) {
+    transform: none;
+  }
+
+  .practice-player-progress progress::-webkit-progress-value {
+    transition: none;
+  }
 }

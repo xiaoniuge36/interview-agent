@@ -1,3 +1,4 @@
+import { CountUp } from '@/components/motion/CountUp';
 import { summarizeTrainingRecords } from './training-records-model';
 import { WeaknessReviewAction } from './WeaknessReviewAction';
 
@@ -25,7 +26,9 @@ function SummaryFact({ label, value }: { label: string; value: number }) {
   return (
     <div>
       <dt>{label}</dt>
-      <dd>{value}</dd>
+      <dd>
+        <CountUp value={value} />
+      </dd>
     </div>
   );
 }

@@ -11,15 +11,20 @@ import {
   mistakeBookReviewPracticeHref,
   MISTAKE_BOOK_RETURN_ANCHOR_ID,
 } from '@/components/practice/player/practice-return-origin';
+import { ArchivePagination } from './ArchivePagination';
 
 const REVIEW_MINUTES_PER_QUESTION = 8;
+/* 错题本独占一个分区，单页 8 条在压缩行高后约一屏半，翻页成本可控。 */
+const MISTAKE_BOOK_PAGE_SIZE = 8;
 const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium' });
 
 type MistakeState =
-  { status: 'loading' } | { status: 'ready'; book: MistakeBookData } | { status: 'error' };
+  | { status: 'loading' }
+  | { status: 'ready'; book: MistakeBookData; refreshing: boolean }
+  | { status: 'error' };
 
-export function MistakeBook() {
-  const source = useMistakeBookData();
+export function MistakeBook({ onTotalChange }: { onTotalChange?: (total: number) => void }) {
+  const source = useMistakeBookData(onTotalChange);
   const review = useMistakeReview();
   const returnedFromReview = useMistakeBookReturnFocus(source.state.status);
   if (source.state.status === 'loading')
@@ -32,22 +37,29 @@ export function MistakeBook() {
   return (
     <MistakeBookContent
       book={source.state.book}
+      refreshing={source.state.refreshing}
       startingId={review.startingId}
       onStart={(mistakeId) => void review.start(mistakeId)}
+      onPage={source.changePage}
       returnedFromReview={returnedFromReview}
     />
   );
 }
 
-function useMistakeBookData() {
+function useMistakeBookData(onTotalChange?: (total: number) => void) {
   const [state, setState] = useState<MistakeState>({ status: 'loading' });
+  const [page, setPage] = useState(1);
   const [request, setRequest] = useState(0);
   useEffect(() => {
     let active = true;
-    setState({ status: 'loading' });
-    void listPracticeMistakes()
+    setState((current) =>
+      current.status === 'ready' ? { ...current, refreshing: true } : { status: 'loading' },
+    );
+    void listPracticeMistakes({ page, pageSize: MISTAKE_BOOK_PAGE_SIZE })
       .then((book) => {
-        if (active) setState({ status: 'ready', book });
+        if (!active) return;
+        setState({ status: 'ready', book, refreshing: false });
+        onTotalChange?.(book.total);
       })
       .catch(() => {
         if (active) setState({ status: 'error' });
@@ -55,8 +67,12 @@ function useMistakeBookData() {
     return () => {
       active = false;
     };
-  }, [request]);
-  return { state, reload: () => setRequest((value) => value + 1) };
+  }, [request, page, onTotalChange]);
+  const changePage = (next: number) => {
+    setPage(next);
+    document.getElementById(MISTAKE_BOOK_RETURN_ANCHOR_ID)?.scrollIntoView({ block: 'start' });
+  };
+  return { state, changePage, reload: () => setRequest((value) => value + 1) };
 }
 
 function useMistakeReview() {
@@ -100,38 +116,28 @@ export function mistakeBookReviewHref(sessionId: string) {
 
 export function MistakeBookContent({
   book,
+  refreshing = false,
   startingId,
   onStart,
+  onPage,
   returnedFromReview = false,
 }: {
   book: MistakeBookData;
+  refreshing?: boolean;
   startingId: string | null;
   onStart: (mistakeId: string) => void;
+  onPage?: (page: number) => void;
   returnedFromReview?: boolean;
 }) {
-  if (!book.items.length) {
-    return (
-      <section className="mistake-book mistake-book-empty" aria-labelledby="mistake-book-heading">
-        <span>错题证据</span>
-        <h2 id="mistake-book-heading">还没有需要复练的错题</h2>
-        <p>完成带 AI 评价的练习后，低分题目会连同证据一起沉淀在这里。</p>
-        <Link href="/questions">去自主选题</Link>
-      </section>
-    );
-  }
+  if (!book.items.length) return <MistakeBookEmpty />;
   return (
-    <section className="mistake-book" aria-labelledby="mistake-book-heading">
-      <header>
-        <div>
-          <span>错题证据</span>
-          <h2 id={MISTAKE_BOOK_RETURN_ANCHOR_ID} tabIndex={-1}>
-            从低分原因开始复练
-          </h2>
-          {returnedFromReview ? <p role="status">已回到错题本，已刷新复练状态。</p> : null}
-        </div>
-        <p>{book.total} 条低分评价 · 历史下架题仍可回看</p>
-      </header>
-      <div className="mistake-book-list">
+    <section
+      className="mistake-book motion-rise"
+      aria-labelledby="mistake-book-heading"
+      aria-busy={refreshing}
+    >
+      <MistakeBookHeader total={book.total} returnedFromReview={returnedFromReview} />
+      <div className="mistake-book-list motion-stagger">
         {book.items.map((item) => (
           <MistakeBookRow
             key={item.id}
@@ -141,7 +147,51 @@ export function MistakeBookContent({
           />
         ))}
       </div>
+      {onPage ? (
+        <ArchivePagination
+          page={book.page}
+          totalPages={book.totalPages}
+          total={book.total}
+          label="错题本分页"
+          onPage={onPage}
+        />
+      ) : null}
     </section>
+  );
+}
+
+function MistakeBookEmpty() {
+  return (
+    <section
+      className="mistake-book mistake-book-empty motion-rise"
+      aria-labelledby="mistake-book-heading"
+    >
+      <span className="motion-pop">错题证据</span>
+      <h2 id="mistake-book-heading">还没有需要复练的错题</h2>
+      <p>完成带 AI 评价的练习后，低分题目会连同证据一起沉淀在这里。</p>
+      <Link href="/questions">去自主选题</Link>
+    </section>
+  );
+}
+
+function MistakeBookHeader({
+  total,
+  returnedFromReview,
+}: {
+  total: number;
+  returnedFromReview: boolean;
+}) {
+  return (
+    <header>
+      <div>
+        <span>错题证据</span>
+        <h2 id={MISTAKE_BOOK_RETURN_ANCHOR_ID} tabIndex={-1}>
+          从低分原因开始复练
+        </h2>
+        {returnedFromReview ? <p role="status">已回到错题本，已刷新复练状态。</p> : null}
+      </div>
+      <p>{total} 条低分评价 · 历史下架题仍可回看</p>
+    </header>
   );
 }
 
@@ -162,8 +212,8 @@ function MistakeBookRow({
       </div>
       <div className="mistake-book-main">
         <small>{DATE_FORMATTER.format(new Date(item.evaluatedAt))} · 低分评价</small>
-        <h3>{item.questionSnapshot.title}</h3>
-        <p>{item.feedback}</p>
+        <h3 title={item.questionSnapshot.title}>{item.questionSnapshot.title}</h3>
+        <p title={item.feedback}>{item.feedback}</p>
         <MistakeEvidence item={item} />
       </div>
       <div className="mistake-book-action">
@@ -194,7 +244,9 @@ function MistakeEvidence({ item }: { item: MistakeBookItem }) {
           <i>低分评价</i>
         )}
       </div>
-      {item.missingPoints.length ? <p>待补：{item.missingPoints.join('、')}</p> : null}
+      {item.missingPoints.length ? (
+        <p title={item.missingPoints.join('、')}>待补：{item.missingPoints.join('、')}</p>
+      ) : null}
     </div>
   );
 }

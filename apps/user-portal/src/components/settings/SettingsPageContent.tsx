@@ -19,7 +19,7 @@ export function SettingsPageContent() {
   const [tab, setTab] = useState<SettingsTab>('models');
   const [createRequest, setCreateRequest] = useState(0);
   return (
-    <div className="workspace page-workspace settings-workspace">
+    <div className="workspace page-workspace settings-workspace motion-stagger">
       <SettingsHeader
         showAdd={tab === 'models'}
         onAdd={() => setCreateRequest((value) => value + 1)}
@@ -142,7 +142,7 @@ function UsageRule({ title, copy }: { title: string; copy: string }) {
         <strong>{title}</strong>
         <span>{copy}</span>
       </div>
-      <span className="chip success">已生效</span>
+      <span className="chip success motion-pop">已生效</span>
     </div>
   );
 }

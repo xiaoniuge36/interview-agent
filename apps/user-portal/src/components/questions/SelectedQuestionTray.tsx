@@ -77,7 +77,11 @@ function SelectionHeader({
       <div>
         <span>本轮题单</span>
         <h2 id="selected-question-heading">
-          已选 {selectedCount} / {MAX_QUESTIONS} 题
+          已选{' '}
+          <em key={selectedCount} className="selected-question-count motion-pop">
+            {selectedCount}
+          </em>{' '}
+          / {MAX_QUESTIONS} 题
         </h2>
       </div>
       {selectedCount ? (

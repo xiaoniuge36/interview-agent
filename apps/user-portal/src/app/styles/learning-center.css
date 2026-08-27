@@ -88,6 +88,16 @@
   width: 4px;
   border-radius: 999px;
   background: var(--outline-strong);
+  transform-origin: center;
+  transition:
+    background 150ms var(--ease-out),
+    transform 150ms var(--ease-out);
+}
+
+/* 悬停时左侧加速条提亮并轻微拉伸，与整行 2px 位移同步。 */
+.learning-document-link:hover .learning-document-spine {
+  background: var(--primary);
+  transform: scaleY(1.12);
 }
 
 .learning-document-link.active .learning-document-spine {
@@ -225,6 +235,20 @@
   margin: 6px 0;
   color: var(--text-muted);
   line-height: 1.65;
+}
+
+html[data-motion='off'] .learning-document-link:hover .learning-document-spine {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learning-document-spine {
+    transition: none;
+  }
+
+  .learning-document-link:hover .learning-document-spine {
+    transform: none;
+  }
 }
 
 @media (max-width: 1180px) {

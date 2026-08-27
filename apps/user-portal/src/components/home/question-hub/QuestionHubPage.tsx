@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@interview-agent/auth-client';
 import { AgentRecommendationRail } from './AgentRecommendationRail';
@@ -8,6 +9,7 @@ import { QuestionTopicGrid } from './QuestionTopicGrid';
 import { useQuestionHubData } from './useQuestionHubData';
 
 const DISCOVERY_TAG_LIMIT = 8;
+const DISCOVERY_RISE_DELAY = { '--rise-delay': '260ms' } as CSSProperties;
 
 export function QuestionHubPage() {
   const auth = useAuth();
@@ -56,12 +58,16 @@ function QuestionDiscovery({
 }) {
   const tags = catalog?.facets.tags.slice(0, DISCOVERY_TAG_LIMIT) ?? [];
   return (
-    <section className="question-discovery" aria-labelledby="question-discovery-heading">
+    <section
+      className="question-discovery motion-rise"
+      style={DISCOVERY_RISE_DELAY}
+      aria-labelledby="question-discovery-heading"
+    >
       <div>
         <span>快速发现</span>
         <h2 id="question-discovery-heading">从高频能力点开始</h2>
       </div>
-      <div className="question-discovery-tags">
+      <div className="question-discovery-tags motion-stagger">
         {tags.length ? (
           tags.map((tag) => (
             <Link key={tag.value} href={`/questions?tags=${encodeURIComponent(tag.value)}`}>

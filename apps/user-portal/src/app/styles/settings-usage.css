@@ -72,6 +72,28 @@
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 700;
+  transition:
+    background 200ms var(--ease-out),
+    color 200ms var(--ease-out),
+    transform 120ms var(--ease-out);
+}
+
+.ai-usage-periods button:active {
+  transform: scale(0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-usage-periods button {
+    transition: none;
+  }
+
+  .ai-usage-periods button:active {
+    transform: none;
+  }
+}
+
+html[data-motion='off'] .ai-usage-periods button:active {
+  transform: none;
 }
 
 .ai-usage-periods button.active {

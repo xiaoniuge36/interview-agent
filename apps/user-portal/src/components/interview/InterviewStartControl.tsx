@@ -30,6 +30,11 @@ export function InterviewStartControl(props: InterviewStartControlProps) {
         onClick={activate}
       >
         {props.control.label}
+        {props.control.action === 'start' && !props.control.disabled ? (
+          <span className="consumer-action-arrow" aria-hidden="true">
+            →
+          </span>
+        ) : null}
       </button>
       {confirming ? (
         <InterviewRestartDialog

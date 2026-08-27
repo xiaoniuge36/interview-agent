@@ -1,5 +1,6 @@
 import type { QuestionCatalogResponse } from '@interview-agent/contracts';
 import type { CSSProperties } from 'react';
+import { CountUp } from '@/components/motion/CountUp';
 import type { CatalogQuestion } from './useQuestionPicker';
 
 const MAX_VISIBLE_TAGS = 4;
@@ -23,7 +24,9 @@ export function QuestionCatalogList(props: QuestionCatalogListProps) {
   return (
     <section className="question-catalog-results" aria-busy={loading}>
       <div className="question-result-summary">
-        <span>找到 {catalog.total} 道题</span>
+        <span>
+          找到 <CountUp value={catalog.total} durationMs={520} /> 道题
+        </span>
         {loading ? <small>正在更新结果…</small> : null}
       </div>
       <div className="question-catalog-list">

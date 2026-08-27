@@ -28,7 +28,7 @@ export function ProfilePanel({ profile, onChanged }: ProfilePanelProps) {
           {controller.busy ? '正在更新 Agent 记忆…' : '保存并更新 Agent 记忆'}
         </button>
         <span id="profile-status" className="profile-form-status" aria-live="polite">
-          <i aria-hidden="true" />
+          <i key={controller.message} className="motion-pop" aria-hidden="true" />
           {controller.message}
         </span>
       </div>

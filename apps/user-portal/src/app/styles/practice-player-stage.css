@@ -211,3 +211,100 @@
   font-family: var(--font-mono);
   font-size: 9px;
 }
+
+/* === 动效：作答舞台 =========================================
+   换题/换步骤时舞台卡上浮入场（组件按题目 key 重挂载触发一次）；
+   保存徽标在变为已保存时弹跳确认；核心按钮补状态过渡与按压回缩。 */
+
+.practice-question-stage,
+.practice-feedback-stage {
+  animation: practice-stage-in 320ms var(--ease-out) both;
+}
+
+@keyframes practice-stage-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+.practice-answer-actions > span {
+  transition: color 200ms var(--ease-out);
+}
+
+html[data-motion='on'] .practice-answer-actions > span[data-saved='true'] {
+  animation: motion-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.practice-answer-actions button,
+.practice-round-actions button,
+.practice-feedback-actions button {
+  transition:
+    background 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out),
+    color 180ms var(--ease-out),
+    opacity 180ms var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.practice-answer-actions button:active:not(:disabled),
+.practice-round-actions button:active:not(:disabled),
+.practice-feedback-actions button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+  transition-duration: 70ms;
+}
+
+.practice-choice-editor label {
+  transition:
+    border-color 160ms var(--ease-out),
+    background 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.practice-choice-editor > div label:active {
+  transform: scale(0.99);
+}
+
+html[data-motion='off'] .practice-question-stage,
+html[data-motion='off'] .practice-feedback-stage {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+html[data-motion='off'] .practice-answer-actions button:active:not(:disabled),
+html[data-motion='off'] .practice-round-actions button:active:not(:disabled),
+html[data-motion='off'] .practice-feedback-actions button:active:not(:disabled),
+html[data-motion='off'] .practice-choice-editor > div label:active {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .practice-question-stage,
+  .practice-feedback-stage {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  html[data-motion='on'] .practice-answer-actions > span[data-saved='true'] {
+    animation: none;
+  }
+
+  .practice-answer-actions > span,
+  .practice-answer-actions button,
+  .practice-round-actions button,
+  .practice-feedback-actions button,
+  .practice-choice-editor label {
+    transition: none;
+  }
+
+  .practice-answer-actions button:active:not(:disabled),
+  .practice-round-actions button:active:not(:disabled),
+  .practice-feedback-actions button:active:not(:disabled),
+  .practice-choice-editor > div label:active {
+    transform: none;
+  }
+}

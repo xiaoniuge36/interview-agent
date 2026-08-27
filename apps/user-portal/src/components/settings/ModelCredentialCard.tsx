@@ -27,7 +27,7 @@ export function ModelCredentialCard(props: ModelCredentialCardProps) {
   const { busy, message, remove, test } = useCredentialActions(props);
   const needsTest = credential.status !== 'verified';
   return (
-    <article className="credential-card" data-status={credential.status}>
+    <article className="credential-card motion-lift" data-status={credential.status}>
       <CredentialHeader credential={credential} onEdit={onEdit} busy={busy} />
       <CredentialFacts credential={credential} />
       <CredentialActions

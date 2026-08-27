@@ -29,7 +29,7 @@ test('starts every E2E service with its isolated endpoint', () => {
 
 test('does not reuse the developer environment ports', () => {
   for (const service of serviceCommands(environment)) {
-    assert.doesNotMatch(service.args.join(' '), /\b3000\b|\b3001\b|\b3002\b|\b8000\b/);
+    assert.doesNotMatch(service.args.join(' '), /\b7100\b|\b7101\b|\b7102\b|\b7103\b/);
   }
 });
 

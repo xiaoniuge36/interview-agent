@@ -1,12 +1,17 @@
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import type { TrainingContinuation } from './training-continuation';
 import { ActionLabel } from '@/components/consumer/ActionLabel';
 import { SignalField } from '@/components/consumer/SignalField';
 
+const CONTINUATION_RISE_DELAY = { '--rise-delay': '160ms' } as CSSProperties;
+const PROGRESS_DRAW_DELAY = '520ms';
+
 export function TrainingContinuationCard({ continuation }: { continuation: TrainingContinuation }) {
   return (
     <section
-      className="recent-practice-card"
+      className="recent-practice-card motion-rise"
+      style={CONTINUATION_RISE_DELAY}
       data-kind={continuation.kind}
       aria-labelledby="training-continuation-heading"
     >
@@ -31,7 +36,15 @@ function ContinuationState({ continuation }: { continuation: TrainingContinuatio
         className="recent-practice-progress"
         aria-label={`练习进度 ${continuation.progressPercent}%`}
       >
-        <span style={{ width: `${continuation.progressPercent}%` }} />
+        <span
+          className="motion-draw-x"
+          style={
+            {
+              width: `${continuation.progressPercent}%`,
+              '--draw-delay': PROGRESS_DRAW_DELAY,
+            } as CSSProperties
+          }
+        />
       </div>
     );
   }

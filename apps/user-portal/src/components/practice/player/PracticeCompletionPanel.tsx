@@ -1,9 +1,13 @@
+import type { CSSProperties } from 'react';
 import type { MasteryProfile, PracticeReport, PracticeSession } from '@interview-agent/contracts';
 import Link from 'next/link';
 import { PracticeReportPanel } from '../PracticeReportPanel';
 import { hasReviewableWeakness } from '@/lib/weakness-review';
 import { PracticeEvidenceStrip } from './PracticeEvidenceStrip';
 import { practiceReturnHref, type PracticeReturnOrigin } from './practice-return-origin';
+
+const EVIDENCE_RISE_DELAY = { '--rise-delay': '140ms' } as CSSProperties;
+const REVIEW_LIST_RISE_DELAY = { '--rise-delay': '240ms' } as CSSProperties;
 
 type PracticeCompletionPanelProps = {
   session: PracticeSession;
@@ -75,7 +79,11 @@ function CompletionEvidence({
   returnToMistakeBook: boolean;
 }) {
   return (
-    <section className="practice-completion-evidence" aria-label="本轮训练证据">
+    <section
+      className="practice-completion-evidence motion-rise"
+      style={EVIDENCE_RISE_DELAY}
+      aria-label="本轮训练证据"
+    >
       <PracticeEvidenceStrip session={session} reportAvailable={reportAvailable} />
       <div className="practice-completion-next-step">
         <span>下一步</span>
@@ -111,14 +119,15 @@ function CompletedQuestionList({
 }) {
   return (
     <section
-      className="practice-completion-review-list"
+      className="practice-completion-review-list motion-rise"
+      style={REVIEW_LIST_RISE_DELAY}
       aria-labelledby="practice-completion-review-heading"
     >
       <div>
         <span>逐题回看</span>
         <h2 id="practice-completion-review-heading">回到每道题的回答与反馈</h2>
       </div>
-      <div>
+      <div className="motion-stagger">
         {session.items.map((item) => (
           <button key={item.id} type="button" onClick={() => onReviewItem(item.id)}>
             <span>{item.sequence}</span>
@@ -143,7 +152,7 @@ function CompletionHeader(
   },
 ) {
   return (
-    <header>
+    <header className="motion-rise">
       <span>{props.aiCompleted ? 'AI review complete' : 'Self-study complete'}</span>
       <h1>{completionTitle(props.aiCompleted, props.reportAvailable)}</h1>
       <p>{completionDescription(props.aiCompleted, props.reportAvailable)}</p>

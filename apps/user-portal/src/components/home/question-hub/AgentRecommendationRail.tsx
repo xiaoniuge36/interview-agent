@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { PracticeRecommendation } from '@interview-agent/contracts';
 import Link from 'next/link';
 import { HomeWelcome } from './HomeWelcome';
@@ -7,6 +8,9 @@ import { ActionLabel } from '@/components/consumer/ActionLabel';
 import { SignalField } from '@/components/consumer/SignalField';
 import { ChineseTicker } from '@/components/consumer/ChineseTicker';
 import { ThemeAtmosphere } from '@/components/theme/ThemeAtmosphere';
+
+const RAIL_CARD_RISE_DELAY = { '--rise-delay': '160ms' } as CSSProperties;
+const RAIL_NOTE_RISE_DELAY = { '--rise-delay': '280ms' } as CSSProperties;
 
 type AgentRecommendationRailProps = {
   displayName?: string | null | undefined;
@@ -25,17 +29,17 @@ export function AgentRecommendationRail(props: AgentRecommendationRailProps) {
   return (
     <section className="home-training-plan" aria-labelledby="home-training-plan-heading">
       <ThemeAtmosphere context="home" />
-      <header className="home-training-plan-header">
+      <header className="home-training-plan-header motion-rise">
         <HomeWelcome displayName={displayName} continuation={continuation ?? null} />
       </header>
       <ChineseTicker />
       <RailPrimaryContent {...props} />
       {actionError ? (
-        <p className="agent-action-error" role="alert">
+        <p className="agent-action-error motion-pop" role="alert">
           {actionError}
         </p>
       ) : null}
-      <footer className="agent-rail-note">
+      <footer className="agent-rail-note motion-rise" style={RAIL_NOTE_RISE_DELAY}>
         <strong>推荐如何变化？</strong>
         <p>修改档案、目标岗位或完成一次 AI 评价后，下次进入会自动重新计算。</p>
         <Link href="/profile">
@@ -62,7 +66,7 @@ function RailPrimaryContent(props: AgentRecommendationRailProps) {
   if (error) return <RailError message={error} onRetry={onRetry} />;
   if (loading)
     return (
-      <div className="agent-rail-empty">
+      <div className="agent-rail-empty motion-rise" style={RAIL_CARD_RISE_DELAY}>
         <span className="agent-thinking" aria-hidden="true">
           <i />
           <i />
@@ -76,7 +80,7 @@ function RailPrimaryContent(props: AgentRecommendationRailProps) {
       </div>
     );
   return (
-    <div className="agent-rail-empty">
+    <div className="agent-rail-empty motion-rise" style={RAIL_CARD_RISE_DELAY}>
       <strong>本次没有需要优先补强的新题</strong>
       <p>你可以从公共题库自由组合题单；完成新一轮评价后，Agent 会再次计算。</p>
       <Link className="agent-self-picker-link" href="/questions">
@@ -96,7 +100,7 @@ function RecommendationCard({
   onStart: () => void;
 }) {
   return (
-    <article className="agent-recommendation-card">
+    <article className="agent-recommendation-card motion-rise" style={RAIL_CARD_RISE_DELAY}>
       <SignalField />
       <div className="agent-recommendation-meta">
         <span>{sourceLabel(recommendation.source)}</span>
@@ -121,7 +125,7 @@ function RecommendationCard({
 
 function RailError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="agent-rail-error" role="status">
+    <div className="agent-rail-error motion-rise" style={RAIL_CARD_RISE_DELAY} role="status">
       <strong>推荐没有打断你的训练</strong>
       <p>{message}</p>
       <button type="button" onClick={onRetry}>

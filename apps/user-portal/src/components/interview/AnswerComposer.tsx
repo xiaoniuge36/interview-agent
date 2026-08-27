@@ -46,12 +46,22 @@ export function AnswerComposer({ controller }: AnswerComposerProps) {
           disabled={!controller.canAnswer || !controller.state.draft.trim()}
         >
           {controller.state.busy ? 'AI 面试官正在准备下一题…' : '提交回答并继续'}
+          <SubmitArrow busy={controller.state.busy} />
         </button>
         <span className="muted-text small-text" role="status">
           {controller.state.notice}
         </span>
       </div>
     </form>
+  );
+}
+
+function SubmitArrow({ busy }: { busy: boolean }) {
+  if (busy) return null;
+  return (
+    <span className="consumer-action-arrow" aria-hidden="true">
+      →
+    </span>
   );
 }
 

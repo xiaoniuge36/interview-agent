@@ -210,6 +210,20 @@
   border: 1px solid color-mix(in srgb, var(--accent, #635bff) 28%, transparent);
   border-radius: 14px;
   background: color-mix(in srgb, var(--accent, #635bff) 7%, transparent);
+  animation: practice-stream-in 300ms var(--ease-out) both;
+}
+
+@keyframes practice-stream-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+}
+
+html[data-motion='off'] .practice-ai-stream {
+  animation: none;
+  opacity: 1;
+  transform: none;
 }
 
 .practice-ai-stream-status {
@@ -295,6 +309,16 @@
 
 @media (prefers-reduced-motion: reduce) {
   .practice-report-operation span {
+    animation: none;
+  }
+
+  .practice-ai-stream {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .practice-ai-stream-status span {
     animation: none;
   }
 }

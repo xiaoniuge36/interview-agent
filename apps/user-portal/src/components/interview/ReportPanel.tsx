@@ -1,6 +1,9 @@
+import type { CSSProperties } from 'react';
 import type { InterviewReport, InterviewSessionStatus } from '@interview-agent/contracts';
 import { interviewStageLabel } from './interview-labels';
 import { InterviewReviewPracticeAction } from './InterviewReviewPracticeAction';
+
+const REPORT_RISE_DELAY = { '--rise-delay': '200ms' } as CSSProperties;
 
 type ReportPanelProps = {
   report: InterviewReport | null;
@@ -22,7 +25,12 @@ export function ReportPanel({
   reviewStarting = false,
 }: ReportPanelProps) {
   return (
-    <section id="interview-report" className="panel report-card stack compact" tabIndex={-1}>
+    <section
+      id="interview-report"
+      className="panel report-card stack compact motion-rise"
+      style={REPORT_RISE_DELAY}
+      tabIndex={-1}
+    >
       <div className="eyebrow">本轮复盘</div>
       {report ? (
         <ReportContent

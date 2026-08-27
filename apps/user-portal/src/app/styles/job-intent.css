@@ -121,6 +121,27 @@
   transform: translateX(3px);
 }
 
+.job-submit-actions .button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
+
+/* 模板 chip：悬停上浮已由基础样式提供，这里补按压回缩。 */
+.role-template-groups .role-chip:active {
+  transform: translateY(0) scale(0.96);
+}
+
+html[data-motion='off'] .job-submit-actions .button:active:not(:disabled),
+html[data-motion='off'] .role-template-groups .role-chip:active {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .job-submit-actions .button:active:not(:disabled),
+  .role-template-groups .role-chip:active {
+    transform: none;
+  }
+}
+
 .job-submit-status {
   display: inline-flex;
   max-width: 100%;

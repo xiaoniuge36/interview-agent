@@ -38,10 +38,10 @@ Web / Admin ──HTTP/SSE──> Product API ──内部 HTTP──> Agent Run
 ```text
 interview-agent/
 ├─ apps/
-│  ├─ user-portal/            # Next.js 用户端，默认端口 3000
-│  ├─ admin-console/          # Next.js 治理后台，默认端口 3002
-│  ├─ product-api/            # NestJS Product API，默认端口 3001
-│  └─ agent-runtime/          # FastAPI Agent Runtime，默认端口 8000
+│  ├─ user-portal/            # Next.js 用户端，默认端口 7100
+│  ├─ admin-console/          # Next.js 治理后台，默认端口 7102
+│  ├─ product-api/            # NestJS Product API，默认端口 7101
+│  └─ agent-runtime/          # FastAPI Agent Runtime，默认端口 7103
 ├─ packages/
 │  ├─ auth-client/            # Web/Admin 共用的 development/OIDC 认证客户端
 │  └─ contracts/              # TypeScript/Zod 契约与 Runtime Schema 生成源
@@ -112,11 +112,11 @@ docker compose --env-file .env -f infra/docker/docker-compose.yml ps
 
 | 服务          | 地址                             |
 | ------------- | -------------------------------- |
-| Web           | `http://localhost:3000`          |
-| Product API   | `http://localhost:3001/api`      |
-| Swagger       | `http://localhost:3001/api/docs` |
-| Admin         | `http://localhost:3002`          |
-| Agent Runtime | `http://localhost:8000`          |
+| Web           | `http://localhost:7100`          |
+| Product API   | `http://localhost:7101/api`      |
+| Swagger       | `http://localhost:7101/api/docs` |
+| Admin         | `http://localhost:7102`          |
+| Agent Runtime | `http://localhost:7103`          |
 | Phoenix       | `http://localhost:6006`          |
 | MinIO Console | `http://localhost:9001`          |
 

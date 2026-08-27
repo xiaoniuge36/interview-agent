@@ -1,4 +1,5 @@
 import type { PracticeSession } from '@interview-agent/contracts';
+import { CountUp } from '@/components/motion/CountUp';
 
 type PracticeEvaluation = NonNullable<PracticeSession['items'][number]['evaluation']>;
 
@@ -18,7 +19,9 @@ export function PracticeEvaluationResult({ evaluation }: { evaluation: PracticeE
     <div className="practice-evaluation-result">
       <header className="practice-evaluation-summary" data-tone={verdict.tone}>
         <div className="practice-evaluation-score" aria-label={`本题得分 ${score} 分`}>
-          <strong>{score}</strong>
+          <strong>
+            <CountUp value={score} durationMs={880} />
+          </strong>
           <span>/ 100</span>
         </div>
         <div>

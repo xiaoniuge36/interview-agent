@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 import type {
   AiUsagePeriod,
   AiUsageSummary as AiUsageSummaryData,
 } from '@interview-agent/contracts';
+import { CountUp } from '@/components/motion/CountUp';
 import { getAiUsageSummary } from '../../lib/ai-usage-api';
 import { createLatestRequestRunner } from '@interview-agent/api-client';
 
@@ -63,15 +64,23 @@ export function AiUsageSummaryContent({ summary }: { summary: AiUsageSummaryData
   return (
     <div className="ai-usage-content">
       <div className="ai-usage-metrics">
-        <Metric label="调用次数" value={formatNumber(summary.totals.invocations)} />
+        <Metric
+          label="调用次数"
+          value={<CountUp value={summary.totals.invocations} format={formatNumber} />}
+        />
         <Metric label="成功率" value={`${summary.totals.successRate}%`} />
-        <Metric label="平均耗时" value={`${summary.totals.averageLatencyMs} ms`} />
+        <Metric
+          label="平均耗时"
+          value={<CountUp value={summary.totals.averageLatencyMs} format={(ms) => `${ms} ms`} />}
+        />
         <Metric
           label="返回 token"
           value={
-            summary.totals.totalTokens === null
-              ? '未提供'
-              : formatNumber(summary.totals.totalTokens)
+            summary.totals.totalTokens === null ? (
+              '未提供'
+            ) : (
+              <CountUp value={summary.totals.totalTokens} format={formatNumber} />
+            )
           }
         />
       </div>
@@ -133,7 +142,7 @@ function RecentInvocations({ summary }: { summary: AiUsageSummaryData }) {
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
       <span>{label}</span>

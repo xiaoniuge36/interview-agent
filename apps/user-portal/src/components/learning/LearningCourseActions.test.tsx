@@ -38,7 +38,7 @@ function registerVerificationStartTest() {
     const markup = renderToStaticMarkup(
       <LearningCourseActions
         course={{
-          slug: '01-agent基础与上下文工程',
+          slug: '学习路线-01-agent基础与上下文工程',
           sourceName: '学习路线/01-Agent基础与上下文工程.md',
           title: 'Agent 基础与上下文工程',
           kind: 'course',
@@ -53,7 +53,7 @@ function registerVerificationStartTest() {
     );
 
     expect(markup).toContain(
-      'href="/questions?source=learn&amp;course=01-agent%E5%9F%BA%E7%A1%80%E4%B8%8E%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B&amp;topic=react"',
+      'href="/questions?source=learn&amp;course=%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF-01-agent%E5%9F%BA%E7%A1%80%E4%B8%8E%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B&amp;topic=react"',
     );
     expect(markup).toContain('进入题库验证 · ReAct');
   });
@@ -71,7 +71,7 @@ function registerLocalVerificationRecordTest() {
     const markup = renderToStaticMarkup(
       <LearningCourseActions
         course={{
-          slug: '01-agent基础与上下文工程',
+          slug: '学习路线-01-agent基础与上下文工程',
           sourceName: '学习路径/01-Agent基础与上下文工程.md',
           title: 'Agent 基础与上下文工程',
           kind: 'course',

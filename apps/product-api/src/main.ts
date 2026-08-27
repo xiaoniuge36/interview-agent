@@ -8,7 +8,7 @@ import type { Environment } from './common/config/environment';
 import { HttpExceptionFilter } from './common/errors/http-exception.filter';
 import { startTelemetry } from './common/telemetry/telemetry';
 
-const DEVELOPMENT_ORIGINS = ['http://localhost:3000', 'http://localhost:3002'];
+const DEVELOPMENT_ORIGINS = ['http://localhost:7100', 'http://localhost:7102'];
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

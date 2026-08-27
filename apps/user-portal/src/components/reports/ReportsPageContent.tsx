@@ -8,51 +8,101 @@ import {
   buildTrainingRecords,
   filterTrainingRecords,
   formatTrainingRecordDate,
+  paginateTrainingRecords,
   searchTrainingRecords,
   summarizeTrainingRecords,
+  trainingRecordActionLabel,
   trainingRecordStatusLabel,
   type TrainingRecord,
   type TrainingRecordFilter,
+  type TrainingRecordPage,
 } from './training-records-model';
+import { ArchivePagination } from './ArchivePagination';
+import {
+  ArchiveSectionSwitcher,
+  useArchiveSection,
+  type ArchiveSectionCounts,
+} from './ArchiveSectionSwitcher';
 import { TrainingArchiveFilters } from './TrainingArchiveFilters';
 import { MistakeBook } from './MistakeBook';
 import { TrainingArchiveSummary } from './TrainingArchiveSummary';
 import { loadInterviewReportSummaries } from './interview-report-summaries';
+
+const ARCHIVE_LIST_ANCHOR_ID = 'training-archive-list';
 
 type ArchiveState = {
   records: TrainingRecord[];
   status: 'loading' | 'ready' | 'partial' | 'error';
 };
 
+/** 训练记录与错题本是两条业务线：拆成互斥分区，避免两块长列表堆叠在一条滚动流里。 */
 export function ReportsPageContent() {
-  const [filter, setFilter] = useState<TrainingRecordFilter>('all');
-  const [query, setQuery] = useState('');
   const archive = useTrainingArchive();
+  const view = useArchiveNavigation();
+  const { section, changeSection } = useArchiveSection();
+  const [mistakeTotal, setMistakeTotal] = useState<number | null>(null);
   const records = useMemo(
-    () => searchTrainingRecords(filterTrainingRecords(archive.records, filter), query),
-    [archive.records, filter, query],
+    () => searchTrainingRecords(filterTrainingRecords(archive.records, view.filter), view.query),
+    [archive.records, view.filter, view.query],
   );
   const summary = useMemo(() => summarizeTrainingRecords(records), [records]);
+  const counts = useMemo(() => summarizeTrainingRecords(archive.records), [archive.records]);
+  const pagination = useMemo(
+    () => paginateTrainingRecords(records, view.page),
+    [records, view.page],
+  );
+  const sectionCounts: ArchiveSectionCounts = {
+    ...(archive.status === 'loading' ? {} : { records: counts.total }),
+    ...(mistakeTotal === null ? {} : { mistakes: mistakeTotal }),
+  };
 
   return (
     <div className="workspace page-workspace training-archive">
       <ArchiveIntro />
-      <TrainingArchiveFilters
-        filter={filter}
-        query={query}
-        onChange={setFilter}
-        onQueryChange={setQuery}
-      />
-      <MistakeBook />
-      <ArchiveDelivery
-        state={archive}
-        records={records}
-        summary={summary}
-        filter={filter}
-        query={query}
-      />
+      <ArchiveSectionSwitcher section={section} counts={sectionCounts} onChange={changeSection} />
+      {/* 两个分区都保持挂载：计数徽标即时可用，筛选与翻页状态在切换后不丢失。 */}
+      <div className="training-archive-panel" hidden={section !== 'records'}>
+        <TrainingArchiveFilters
+          filter={view.filter}
+          query={view.query}
+          counts={archive.status === 'loading' ? undefined : counts}
+          onChange={view.changeFilter}
+          onQueryChange={view.changeQuery}
+        />
+        <ArchiveDelivery
+          state={archive}
+          pagination={pagination}
+          summary={summary}
+          filter={view.filter}
+          query={view.query}
+          onPage={view.changePage}
+        />
+      </div>
+      <div className="training-archive-panel" hidden={section !== 'mistakes'}>
+        <MistakeBook onTotalChange={setMistakeTotal} />
+      </div>
     </div>
   );
+}
+
+/** 筛选或搜索一旦变化就回到第 1 页；翻页后滚回列表顶部，避免停留在页尾。 */
+function useArchiveNavigation() {
+  const [filter, setFilter] = useState<TrainingRecordFilter>('all');
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const changeFilter = useCallback((next: TrainingRecordFilter) => {
+    setFilter(next);
+    setPage(1);
+  }, []);
+  const changeQuery = useCallback((next: string) => {
+    setQuery(next);
+    setPage(1);
+  }, []);
+  const changePage = useCallback((next: number) => {
+    setPage(next);
+    document.getElementById(ARCHIVE_LIST_ANCHOR_ID)?.scrollIntoView({ block: 'start' });
+  }, []);
+  return { filter, query, page, changeFilter, changeQuery, changePage };
 }
 
 function useTrainingArchive() {
@@ -92,7 +142,7 @@ async function loadTrainingArchive(): Promise<ArchiveState> {
 
 function ArchiveIntro() {
   return (
-    <header className="page-intro training-archive-intro">
+    <header className="page-intro training-archive-intro motion-rise">
       <div>
         <div className="eyebrow">训练证据 · 回看与再练</div>
         <h1 className="h2">训练档案</h1>
@@ -114,16 +164,18 @@ function ArchiveIntro() {
 
 function ArchiveDelivery({
   state,
-  records,
+  pagination,
   summary,
   filter,
   query,
+  onPage,
 }: {
   state: ReturnType<typeof useTrainingArchive>;
-  records: TrainingRecord[];
+  pagination: TrainingRecordPage;
   summary: ReturnType<typeof summarizeTrainingRecords>;
   filter: TrainingRecordFilter;
   query: string;
+  onPage: (page: number) => void;
 }) {
   if (state.status === 'loading')
     return <ArchiveState title="正在整理训练记录" copy="刷题和面试记录正在同步。" />;
@@ -136,28 +188,44 @@ function ArchiveDelivery({
       />
     );
   }
-  if (!records.length) return <ArchiveEmpty filter={filter} query={query} />;
+  if (!pagination.total) return <ArchiveEmpty filter={filter} query={query} />;
   return (
-    <section className="training-archive-list" aria-label="训练记录列表">
+    <section
+      className="training-archive-list motion-stagger"
+      id={ARCHIVE_LIST_ANCHOR_ID}
+      aria-label="训练记录列表"
+    >
       <TrainingArchiveSummary summary={summary} />
-      {state.status === 'partial' ? (
-        <p className="training-archive-partial" role="status">
-          部分记录暂时未能读取，其余历史已为你保留。
-          <button type="button" onClick={state.reload}>
-            重新读取
-          </button>
-        </p>
-      ) : null}
-      {records.map((record) => (
+      <ArchivePartialNotice state={state} />
+      {pagination.items.map((record) => (
         <ArchiveRecord key={`${record.kind}-${record.id}`} record={record} />
       ))}
+      <ArchivePagination
+        page={pagination.page}
+        totalPages={pagination.totalPages}
+        total={pagination.total}
+        label="训练记录分页"
+        onPage={onPage}
+      />
     </section>
+  );
+}
+
+function ArchivePartialNotice({ state }: { state: ReturnType<typeof useTrainingArchive> }) {
+  if (state.status !== 'partial') return null;
+  return (
+    <p className="training-archive-partial" role="status">
+      部分记录暂时未能读取，其余历史已为你保留。
+      <button type="button" onClick={state.reload}>
+        重新读取
+      </button>
+    </p>
   );
 }
 
 function ArchiveRecord({ record }: { record: TrainingRecord }) {
   return (
-    <Link className="training-archive-record" href={record.href}>
+    <Link className="training-archive-record motion-lift" href={record.href}>
       <span className="training-archive-record-mark" data-kind={record.kind} aria-hidden="true">
         {record.kind === 'practice' ? '题' : '面'}
       </span>
@@ -182,7 +250,7 @@ function ArchiveRecord({ record }: { record: TrainingRecord }) {
           {record.score !== null ? 'AI 复盘得分' : trainingRecordStatusLabel(record.status)}
         </small>
         {record.trend ? <TrainingScoreTrend trend={record.trend} /> : null}
-        <em>查看记录 →</em>
+        <em>{trainingRecordActionLabel(record.status)} →</em>
       </span>
     </Link>
   );
@@ -215,7 +283,7 @@ function ArchiveEmpty({ filter, query }: { filter: TrainingRecordFilter; query: 
   return (
     <section className="training-archive-empty">
       <span>训练从第一条证据开始</span>
-      <h2>这里会成为你的错题本</h2>
+      <h2>这里会沉淀每一轮训练</h2>
       <p>{copy}</p>
       <Link className="button" href={filter === 'interview' ? '/interview' : '/questions'}>
         {filter === 'interview' ? '开始模拟面试' : '去选择题目'}

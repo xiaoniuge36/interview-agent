@@ -470,9 +470,40 @@
   text-align: left;
 }
 
+.practice-completion-review-list button {
+  transition:
+    border-color 160ms var(--ease-out),
+    background 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
 .practice-completion-review-list button:hover {
   border-color: color-mix(in srgb, var(--primary) 48%, var(--outline));
   background: color-mix(in srgb, var(--primary-soft) 66%, var(--surface));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ink) 8%, transparent);
+  transform: translateY(-2px);
+}
+
+.practice-completion-review-list button:active {
+  transform: translateY(0) scale(0.99);
+  transition-duration: 70ms;
+}
+
+html[data-motion='off'] .practice-completion-review-list button:hover,
+html[data-motion='off'] .practice-completion-review-list button:active {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .practice-completion-review-list button {
+    transition: none;
+  }
+
+  .practice-completion-review-list button:hover,
+  .practice-completion-review-list button:active {
+    transform: none;
+  }
 }
 
 .practice-completion-review-list button > span {

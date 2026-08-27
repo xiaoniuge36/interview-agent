@@ -115,11 +115,20 @@
 }
 
 .mistake-book-main h3 {
+  overflow: hidden;
   color: var(--ink);
   font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* 反馈全文很长，折叠到两行保持列表可扫读；完整内容通过 title 悬浮可见。 */
 .mistake-book-main > p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   color: var(--text-muted);
   font-size: 12px;
   line-height: 1.55;
@@ -150,6 +159,11 @@
 }
 
 .mistake-evidence > p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
   color: var(--text-muted);
   font-size: 11px;
 }

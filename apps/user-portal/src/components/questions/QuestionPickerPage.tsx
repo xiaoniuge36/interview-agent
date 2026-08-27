@@ -52,7 +52,7 @@ export function QuestionPickerPage() {
 function QuestionPickerHeader({ verification }: { verification: LearningVerification }) {
   const learningReady = verification.status === 'ready';
   return (
-    <header className="question-picker-header">
+    <header className="question-picker-header motion-rise">
       <div>
         <Link href="/home">题库大厅</Link>
         <span>{learningReady ? '学习验证' : '训练入口'}</span>
@@ -128,7 +128,7 @@ function LearningVerificationContext({
 }) {
   return (
     <section
-      className="learning-question-context"
+      className="learning-question-context motion-rise"
       aria-labelledby="learning-question-context-heading"
     >
       <div>

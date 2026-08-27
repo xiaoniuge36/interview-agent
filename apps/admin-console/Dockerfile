@@ -20,13 +20,13 @@ COPY packages/contracts packages/contracts
 COPY packages/auth-client packages/auth-client
 COPY apps/admin-console apps/admin-console
 
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:3001/api
+ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:7101/api
 ARG NEXT_PUBLIC_APP_NAME="Interview Agent"
 ARG NEXT_PUBLIC_ADMIN_AUTH_MODE=local
 ARG NEXT_PUBLIC_OIDC_AUTHORITY=https://identity.example.com/
 ARG NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID=interview-agent-admin
-ARG NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI=http://localhost:3002/auth/callback
-ARG NEXT_PUBLIC_ADMIN_OIDC_POST_LOGOUT_REDIRECT_URI=http://localhost:3002
+ARG NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI=http://localhost:7102/auth/callback
+ARG NEXT_PUBLIC_ADMIN_OIDC_POST_LOGOUT_REDIRECT_URI=http://localhost:7102
 ARG NEXT_PUBLIC_OIDC_SCOPE="openid profile email"
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 ENV NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME}

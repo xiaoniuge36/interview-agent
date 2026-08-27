@@ -18,32 +18,32 @@ const services = [
   {
     label: 'USER',
     packageName: '@interview-agent/user-portal',
-    port: 3000,
-    url: 'http://localhost:3000',
+    port: 7100,
+    url: 'http://localhost:7100',
     hotReload: 'Next.js Fast Refresh',
   },
   {
     label: 'ADMIN',
     packageName: '@interview-agent/admin-console',
-    port: 3002,
-    url: 'http://localhost:3002',
+    port: 7102,
+    url: 'http://localhost:7102',
     hotReload: 'Next.js Fast Refresh',
   },
   {
     label: 'API',
     packageName: '@interview-agent/product-api',
-    port: 3001,
-    url: 'http://localhost:3001/api',
+    port: 7101,
+    url: 'http://localhost:7101/api',
     hotReload: 'Node.js source watcher + ts-node',
   },
   {
     label: 'AGENT',
     packageName: '@interview-agent/agent-runtime',
-    port: 8000,
-    url: 'http://localhost:8000',
+    port: 7103,
+    url: 'http://localhost:7103',
     hotReload: 'Uvicorn reload',
     health: {
-      url: 'http://127.0.0.1:8000/health',
+      url: 'http://127.0.0.1:7103/health',
       expectedHealth: { status: 'ok', service: 'agent-runtime' },
     },
   },
@@ -65,10 +65,10 @@ function printHelp() {
   --help     显示帮助
 
 默认启动：
-  用户端 http://localhost:3000
-  后台端 http://localhost:3002
-  Product API http://localhost:3001/api
-  Agent Runtime http://localhost:8000
+  用户端 http://localhost:7100
+  后台端 http://localhost:7102
+  Product API http://localhost:7101/api
+  Agent Runtime http://localhost:7103
 
 按 Ctrl+C 会同时停止所有开发服务。`);
 }

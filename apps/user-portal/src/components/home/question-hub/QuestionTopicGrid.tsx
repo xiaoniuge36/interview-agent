@@ -1,12 +1,15 @@
+import type { CSSProperties } from 'react';
 import type { QuestionCatalogResponse } from '@interview-agent/contracts';
 import Link from 'next/link';
 import { QUESTION_TOPICS } from '../../search/global-search-model';
+
+const HEADING_RISE_DELAY = { '--rise-delay': '140ms' } as CSSProperties;
 
 export function QuestionTopicGrid({ catalog }: { catalog: QuestionCatalogResponse | null }) {
   const counts = new Map(catalog?.facets.categories.map((item) => [item.value, item.count]));
   return (
     <section className="question-topic-section" aria-labelledby="question-topic-heading">
-      <div className="question-section-heading">
+      <div className="question-section-heading motion-rise" style={HEADING_RISE_DELAY}>
         <div>
           <span>按方向进入</span>
           <h2 id="question-topic-heading">题库专题</h2>

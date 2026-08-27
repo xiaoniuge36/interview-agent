@@ -15,7 +15,7 @@ export function InterviewConsole({ jobs, controller }: InterviewConsoleProps) {
   const reportRecoveryRequired =
     controller.state.session?.status === 'report_ready' && controller.state.report === null;
   return (
-    <div className="panel stack">
+    <div className="panel stack motion-rise">
       <header className="row-between">
         <div>
           <div className="eyebrow">模拟面试</div>

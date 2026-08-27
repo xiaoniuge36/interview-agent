@@ -7,8 +7,18 @@ import { interviewStageLabel } from '@/components/interview/interview-labels';
 
 const ACTIONABLE_INTERVIEW_SCORE = 70;
 const INTERVIEW_SIGNAL_LIMIT = 2;
+const ACTIVE_STATUSES = new Set(['created', 'in_progress', 'running', 'waiting_user']);
+const REPORTING_STATUSES = new Set(['submitted', 'generating_report']);
+
+export const TRAINING_ARCHIVE_PAGE_SIZE = 10;
 
 export type TrainingRecordFilter = 'all' | 'practice' | 'interview';
+export type TrainingRecordPage = {
+  items: TrainingRecord[];
+  page: number;
+  totalPages: number;
+  total: number;
+};
 export type TrainingRecord = {
   id: string;
   kind: Exclude<TrainingRecordFilter, 'all'>;
@@ -43,6 +53,18 @@ export function searchTrainingRecords(records: TrainingRecord[], query: string) 
   const keyword = query.trim().toLocaleLowerCase('zh-CN');
   if (!keyword) return records;
   return records.filter((record) => trainingRecordSearchText(record).includes(keyword));
+}
+
+export function paginateTrainingRecords(
+  records: TrainingRecord[],
+  page: number,
+  pageSize = TRAINING_ARCHIVE_PAGE_SIZE,
+): TrainingRecordPage {
+  const total = records.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const current = Math.min(Math.max(1, Math.trunc(page)), totalPages);
+  const start = (current - 1) * pageSize;
+  return { items: records.slice(start, start + pageSize), page: current, totalPages, total };
 }
 
 export function formatTrainingRecordDate(value: string) {
@@ -81,9 +103,19 @@ function trainingRecordSearchText(record: TrainingRecord) {
 
 export function trainingRecordStatusLabel(status: string) {
   if (status === 'report_ready') return '复盘已完成';
-  if (status === 'in_progress' || status === 'waiting_user') return '进行中';
-  if (status === 'submitted' || status === 'generating_report') return '报告生成中';
+  if (ACTIVE_STATUSES.has(status)) return '进行中';
+  if (REPORTING_STATUSES.has(status)) return '报告生成中';
+  if (status === 'failed') return '已中断';
+  if (status === 'cancelled') return '已取消';
   return '已保存';
+}
+
+/** 档案不仅用于回看：进行中的训练要能一键回到现场继续。 */
+export function trainingRecordActionLabel(status: string) {
+  if (ACTIVE_STATUSES.has(status)) return '继续训练';
+  if (REPORTING_STATUSES.has(status)) return '查看进度';
+  if (status === 'report_ready') return '查看复盘';
+  return '查看记录';
 }
 
 function practiceRecord(item: PracticeHistoryItem): TrainingRecord {

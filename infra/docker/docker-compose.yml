@@ -190,7 +190,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://phoenix:4317
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
     ports:
-      - '127.0.0.1:${RUNTIME_HOST_PORT:-8000}:8000'
+      - '127.0.0.1:${RUNTIME_HOST_PORT:-7103}:8000'
     depends_on:
       postgres:
         condition: service_healthy
@@ -211,7 +211,7 @@ services:
       API_HOST: 0.0.0.0
       API_PORT: 3001
       API_BODY_LIMIT: ${API_BODY_LIMIT:-1mb}
-      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:3000,http://localhost:3002}
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:7100,http://localhost:7102}
       API_SWAGGER_ENABLED: ${API_SWAGGER_ENABLED:-true}
       API_THROTTLE_TTL_MS: ${API_THROTTLE_TTL_MS:-60000}
       API_THROTTLE_LIMIT: ${API_THROTTLE_LIMIT:-120}
@@ -257,7 +257,7 @@ services:
       phoenix:
         condition: service_started
     ports:
-      - '127.0.0.1:${API_HOST_PORT:-3001}:3001'
+      - '127.0.0.1:${API_HOST_PORT:-7101}:3001'
     networks:
       - edge
       - backend
@@ -269,14 +269,14 @@ services:
       dockerfile: apps/user-portal/Dockerfile
       target: runtime
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3001/api}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:7101/api}
         NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Interview Agent}
         NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-development}
         NEXT_PUBLIC_USER_AUTH_MODE: ${NEXT_PUBLIC_USER_AUTH_MODE:-local}
         NEXT_PUBLIC_OIDC_AUTHORITY: ${NEXT_PUBLIC_OIDC_AUTHORITY:-https://identity.example.com/}
         NEXT_PUBLIC_OIDC_CLIENT_ID: ${NEXT_PUBLIC_OIDC_CLIENT_ID:-interview-agent-web}
-        NEXT_PUBLIC_OIDC_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_REDIRECT_URI:-http://localhost:3000/auth/callback}
-        NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI:-http://localhost:3000}
+        NEXT_PUBLIC_OIDC_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_REDIRECT_URI:-http://localhost:7100/auth/callback}
+        NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI:-http://localhost:7100}
         NEXT_PUBLIC_OIDC_SCOPE: ${NEXT_PUBLIC_OIDC_SCOPE:-openid profile email}
     image: interview-agent/web:${IMAGE_TAG:-local}
     environment:
@@ -287,7 +287,7 @@ services:
       api:
         condition: service_healthy
     ports:
-      - '127.0.0.1:${WEB_HOST_PORT:-3000}:3000'
+      - '127.0.0.1:${WEB_HOST_PORT:-7100}:3000'
     tmpfs:
       - /tmp
       - /app/apps/user-portal/.next/cache:uid=1000,gid=1000,mode=0755
@@ -301,13 +301,13 @@ services:
       dockerfile: apps/admin-console/Dockerfile
       target: runtime
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3001/api}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:7101/api}
         NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Interview Agent}
         NEXT_PUBLIC_ADMIN_AUTH_MODE: ${NEXT_PUBLIC_ADMIN_AUTH_MODE:-local}
         NEXT_PUBLIC_OIDC_AUTHORITY: ${NEXT_PUBLIC_OIDC_AUTHORITY:-https://identity.example.com/}
         NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID: ${NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID:-interview-agent-admin}
-        NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI: ${NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI:-http://localhost:3002/auth/callback}
-        NEXT_PUBLIC_ADMIN_OIDC_POST_LOGOUT_REDIRECT_URI: ${NEXT_PUBLIC_ADMIN_OIDC_POST_LOGOUT_REDIRECT_URI:-http://localhost:3002}
+        NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI: ${NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI:-http://localhost:7102/auth/callback}
+        NEXT_PUBLIC_ADMIN_OIDC_POST_LOGOUT_REDIRECT_URI: ${NEXT_PUBLIC_ADMIN_OIDC_POST_LOGOUT_REDIRECT_URI:-http://localhost:7102}
         NEXT_PUBLIC_OIDC_SCOPE: ${NEXT_PUBLIC_OIDC_SCOPE:-openid profile email}
     image: interview-agent/admin:${IMAGE_TAG:-local}
     environment:
@@ -318,7 +318,7 @@ services:
       api:
         condition: service_healthy
     ports:
-      - '127.0.0.1:${ADMIN_HOST_PORT:-3002}:3002'
+      - '127.0.0.1:${ADMIN_HOST_PORT:-7102}:3002'
     tmpfs:
       - /tmp
       - /app/apps/admin-console/.next/cache:uid=1000,gid=1000,mode=0755

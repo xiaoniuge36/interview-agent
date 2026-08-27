@@ -30,6 +30,27 @@ describe('MistakeBookContent', () => {
     expect(markup).toContain('1 题 · 约 8 分钟');
     expect(markup).toContain('开始这题复练');
   });
+
+  it('pages through a long mistake list without hiding the total evidence', () => {
+    const paged = { ...book(true), page: 2, pageSize: 8, total: 17, totalPages: 3 };
+
+    const markup = renderToStaticMarkup(
+      createElement(MistakeBookContent, {
+        book: paged,
+        startingId: null,
+        onStart: () => undefined,
+        onPage: () => undefined,
+      }),
+    );
+
+    expect(markup).toContain('共 17 条 · 第 2 / 3 页');
+    expect(markup).toContain('上一页');
+    expect(markup).toContain('下一页');
+  });
+
+  it('keeps the pager out of static renders that cannot change pages', () => {
+    expect(render(book(true))).not.toContain('上一页');
+  });
 });
 
 it('opens a created mistake review with the only permitted return origin', () => {
