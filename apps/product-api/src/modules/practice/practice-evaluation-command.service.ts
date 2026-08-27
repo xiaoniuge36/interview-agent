@@ -192,6 +192,8 @@ function evaluationUpdate(draft: EvaluationDraft) {
     feedback: draft.feedback,
     missingPoints: draft.missingPoints,
     rubricScores: jsonValue(draft.rubricScores),
+    dimensionScores: jsonValue(draft.dimensionScores),
+    improvedAnswer: draft.improvedAnswer,
     followUpQuestion: draft.followUpQuestion,
   };
 }

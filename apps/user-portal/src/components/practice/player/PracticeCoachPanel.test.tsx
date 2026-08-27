@@ -105,6 +105,11 @@ function item(evaluated = false): PracticeSession['items'][number] {
             { point: '边界判断', score: 86 },
             { point: '异常恢复', score: 68 },
           ],
+          dimensionScores: [
+            { dimension: 'structure' as const, score: 84, comment: '先结论后展开，结构完整。' },
+            { dimension: 'clarity' as const, score: 70, comment: '补一个具体数字更有说服力。' },
+          ],
+          improvedAnswer: '示范：先做本地缓存兜底，再逐级降级到静态页。',
           followUpQuestion: '如果缓存回源持续失败，你会如何降级？',
           createdAt: '2026-07-23T00:00:00.000Z',
         }

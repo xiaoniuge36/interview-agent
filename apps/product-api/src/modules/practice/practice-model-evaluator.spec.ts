@@ -52,6 +52,8 @@ describe('PracticeModelEvaluator', () => {
       feedback: '职责边界清晰，但失败恢复需要展开。',
       missingPoints: ['失败恢复'],
       rubricScores: [{ point: '失败恢复', score: 55 }],
+      dimensionScores: [{ dimension: 'structure', score: 84, comment: '结构完整。' }],
+      improvedAnswer: '示范：先给结论，再按情境-任务-行动-结果展开。',
       followUpQuestion: '支付成功但库存扣减失败时如何补偿？',
     });
   });
@@ -138,6 +140,8 @@ function createEvaluator(
         feedback: '职责边界清晰，但失败恢复需要展开。',
         missingPoints: ['失败恢复'],
         rubricScores: [{ point: '失败恢复', score: 55 }],
+        dimensionScores: [{ dimension: 'structure', score: 84, comment: '结构完整。' }],
+        improvedAnswer: '示范：先给结论，再按情境-任务-行动-结果展开。',
         followUpQuestion: '支付成功但库存扣减失败时如何补偿？',
       }),
     ),

@@ -143,6 +143,8 @@ function evaluationRecord() {
     feedback: '回答较完整。',
     missingPoints: ['失败恢复'],
     rubricScores: [{ point: '边界', score: 85 }],
+    dimensionScores: [{ dimension: 'structure', score: 82, comment: '结构完整。' }],
+    improvedAnswer: '示范：先给结论，再展开边界与补偿。',
     followUpQuestion: '失败后如何补偿？',
     createdAt: new Date('2026-07-15T00:00:00.000Z'),
   };

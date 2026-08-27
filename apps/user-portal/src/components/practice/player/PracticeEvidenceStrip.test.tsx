@@ -81,6 +81,8 @@ function session(status: PracticeSession['status']): PracticeSession {
           feedback: '回答完整。',
           missingPoints: [],
           rubricScores: [],
+          dimensionScores: [],
+          improvedAnswer: null,
           followUpQuestion: null,
           createdAt: '2026-07-22T00:02:00.000Z',
         },

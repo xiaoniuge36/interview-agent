@@ -1,5 +1,6 @@
 import type { PracticeSession } from '@interview-agent/contracts';
 import { CountUp } from '@/components/motion/CountUp';
+import { DIMENSION_LABELS, orderedDimensionScores } from './evaluation-dimensions';
 
 type PracticeEvaluation = NonNullable<PracticeSession['items'][number]['evaluation']>;
 
@@ -30,8 +31,10 @@ export function PracticeEvaluationResult({ evaluation }: { evaluation: PracticeE
           <p>{evaluation.feedback}</p>
         </div>
       </header>
+      <DimensionScores scores={evaluation.dimensionScores} />
       <RubricScores scores={evaluation.rubricScores} />
       <MissingPoints points={evaluation.missingPoints} />
+      <ImprovedAnswer answer={evaluation.improvedAnswer} />
       {evaluation.followUpQuestion ? (
         <blockquote>
           <span>Agent 追问</span>
@@ -40,6 +43,51 @@ export function PracticeEvaluationResult({ evaluation }: { evaluation: PracticeE
         </blockquote>
       ) : null}
     </div>
+  );
+}
+
+function DimensionScores({ scores }: { scores: PracticeEvaluation['dimensionScores'] }) {
+  const ordered = orderedDimensionScores(scores);
+  if (!ordered.length) return null;
+  return (
+    <section className="practice-evaluation-dimensions">
+      <header>
+        <strong>表达力四维</strong>
+        <span>项目经历类题目按 STAR 结构评估</span>
+      </header>
+      <div>
+        {ordered.map((entry) => {
+          const value = Math.round(entry.score);
+          return (
+            <article key={entry.dimension} data-dimension={entry.dimension}>
+              <div>
+                <strong>{DIMENSION_LABELS[entry.dimension]}</strong>
+                <span>{value}</span>
+              </div>
+              <progress value={value} max={100} aria-label={dimensionAria(entry.dimension, value)} />
+              {entry.comment ? <p>{entry.comment}</p> : null}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function dimensionAria(dimension: keyof typeof DIMENSION_LABELS, value: number) {
+  return `${DIMENSION_LABELS[dimension]} ${value} 分`;
+}
+
+function ImprovedAnswer({ answer }: { answer: PracticeEvaluation['improvedAnswer'] }) {
+  if (!answer) return null;
+  return (
+    <section className="practice-evaluation-improved">
+      <header>
+        <strong>AI 高分示范</strong>
+        <span>基于你的作答素材改写，学表达而不是背答案</span>
+      </header>
+      <p>{answer}</p>
+    </section>
   );
 }
 

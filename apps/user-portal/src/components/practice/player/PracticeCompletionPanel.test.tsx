@@ -45,6 +45,8 @@ const weakReport = {
       feedback: '关键边界仍需补强。',
       missingPoints: ['异常恢复'],
       rubricScores: [{ point: '异常恢复', score: 59 }],
+      dimensionScores: [],
+      improvedAnswer: null,
       followUpQuestion: null,
       createdAt: '2026-07-21T00:00:00.000Z',
     },

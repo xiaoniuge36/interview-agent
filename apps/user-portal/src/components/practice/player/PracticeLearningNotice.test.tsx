@@ -48,6 +48,8 @@ function evaluation() {
     feedback: '回答覆盖了验证路径。',
     missingPoints: [],
     rubricScores: [],
+    dimensionScores: [],
+    improvedAnswer: null,
     followUpQuestion: null,
     createdAt: '2026-07-22T00:00:00.000Z',
   };

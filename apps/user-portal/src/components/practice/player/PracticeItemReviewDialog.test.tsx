@@ -31,6 +31,11 @@ const item = {
     feedback: 'Strong layered defense explanation.',
     missingPoints: ['Include human approval'],
     rubricScores: [{ point: 'Validation', score: 90 }],
+    dimensionScores: [
+      { dimension: 'structure' as const, score: 88, comment: 'Clear STAR framing.' },
+      { dimension: 'depth' as const, score: 72, comment: 'Add tradeoff analysis.' },
+    ],
+    improvedAnswer: 'First validate inputs, then enforce approval gates before tool calls.',
     followUpQuestion: 'How do you audit exceptions?',
     createdAt: '2026-07-22T09:02:00.000Z',
   },
@@ -59,6 +64,23 @@ describe('PracticeItemReviewDialog', () => {
     expect(markup).toContain('标准解析');
     expect(markup).toContain('AI 评价');
     expect(markup).toContain('Include human approval');
+  });
+
+  it('renders expression dimensions and the improved answer when present', () => {
+    const markup = renderToStaticMarkup(
+      createElement(PracticeItemReviewDialog, {
+        open: true,
+        item,
+        draft: item.answer,
+        solution,
+        onClose: vi.fn(),
+      }),
+    );
+
+    expect(markup).toContain('结构条理');
+    expect(markup).toContain('深度原理');
+    expect(markup).toContain('AI 高分示范');
+    expect(markup).toContain('First validate inputs');
   });
 
   it('does not render while closed', () => {

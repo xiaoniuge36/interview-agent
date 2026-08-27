@@ -183,6 +183,54 @@
   padding-left: 9px;
 }
 
+.practice-item-review-dimensions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.practice-item-review-dimensions li {
+  display: grid;
+  gap: 2px;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: #f4f8ff;
+}
+
+.practice-item-review-dimensions strong {
+  color: #1d4279;
+  font-size: 11px;
+}
+
+.practice-item-review-dimensions span {
+  color: #2459c7;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.practice-item-review-improved {
+  margin-top: 16px;
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #eefaf3;
+}
+
+.practice-item-review-improved strong {
+  color: #1d6455;
+  font-size: 12px;
+}
+
+.practice-item-review-improved p {
+  margin: 8px 0 0;
+  color: #1f3d33;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 .practice-item-review-section blockquote {
   margin: 18px 0 0;
   border-radius: 12px;

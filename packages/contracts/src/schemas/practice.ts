@@ -61,6 +61,20 @@ export const SubmitPracticeAnswerSchema = z.object({
   answer: z.string().min(1).max(CONTRACT_LIMITS.longText),
 });
 
+/** 表达力固定四维：结构条理（行为/项目类题按 STAR 完整性评估）、切题聚焦、深度原理、清晰具体。 */
+export const PRACTICE_EVALUATION_DIMENSIONS = [
+  'structure',
+  'relevance',
+  'depth',
+  'clarity',
+] as const;
+
+export const PracticeDimensionScoreSchema = z.object({
+  dimension: z.enum(PRACTICE_EVALUATION_DIMENSIONS),
+  score: z.number().min(0).max(CONTRACT_LIMITS.percentage),
+  comment: z.string().max(CONTRACT_LIMITS.mediumText).default(''),
+});
+
 export const PracticeEvaluationSchema = z.object({
   id: z.string().min(1),
   sessionItemId: z.string().min(1),
@@ -75,6 +89,17 @@ export const PracticeEvaluationSchema = z.object({
       }),
     )
     .max(CONTRACT_LIMITS.list),
+  // nullish + transform：兼容存量评价记录（DB 列为 NULL）与旧模型响应（字段缺失）。
+  dimensionScores: z
+    .array(PracticeDimensionScoreSchema)
+    .max(PRACTICE_EVALUATION_DIMENSIONS.length)
+    .nullish()
+    .transform((value) => value ?? []),
+  improvedAnswer: z
+    .string()
+    .max(CONTRACT_LIMITS.longText)
+    .nullish()
+    .transform((value) => (value?.trim() ? value : null)),
   followUpQuestion: z.string().min(1).max(CONTRACT_LIMITS.mediumText).nullable().default(null),
   createdAt: z.string().datetime(),
 });
@@ -220,6 +245,8 @@ export type SubmitPracticeAnswer = z.infer<typeof SubmitPracticeAnswerSchema>;
 export type PracticeSession = z.infer<typeof PracticeSessionSchema>;
 export type PracticeSessionItem = z.infer<typeof PracticeSessionItemSchema>;
 export type PracticeEvaluation = z.infer<typeof PracticeEvaluationSchema>;
+export type PracticeDimensionScore = z.infer<typeof PracticeDimensionScoreSchema>;
+export type PracticeEvaluationDimension = (typeof PRACTICE_EVALUATION_DIMENSIONS)[number];
 export type PracticeItemSolution = z.infer<typeof PracticeItemSolutionSchema>;
 export type PracticeItemFeedback = z.infer<typeof PracticeItemFeedbackSchema>;
 export type PracticeReport = z.infer<typeof PracticeReportSchema>;

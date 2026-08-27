@@ -197,6 +197,8 @@ function evaluation(index: number) {
     feedback: '回答较完整。',
     missingPoints: [],
     rubricScores: [],
+    dimensionScores: [],
+    improvedAnswer: null,
     followUpQuestion: '请补充一个真实案例。',
     createdAt: '2026-07-15T00:00:00.000Z',
   };

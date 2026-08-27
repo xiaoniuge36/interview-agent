@@ -2,6 +2,7 @@
 
 import type { PracticeItemSolution, PracticeSession } from '@interview-agent/contracts';
 import { type KeyboardEvent, type ReactNode, useEffect, useRef } from 'react';
+import { DIMENSION_LABELS, orderedDimensionScores } from './evaluation-dimensions';
 
 type PracticeItemReviewDialogProps = {
   open: boolean;
@@ -121,6 +122,7 @@ function EvaluationReview({ item }: Pick<PracticeItemReviewDialogProps, 'item'>)
         <span>本题得分</span>
       </div>
       <p>{evaluation.feedback}</p>
+      <ReviewDimensions scores={evaluation.dimensionScores} />
       {evaluation.missingPoints.length ? (
         <div className="practice-item-review-gaps">
           <strong>还可补强</strong>
@@ -131,8 +133,33 @@ function EvaluationReview({ item }: Pick<PracticeItemReviewDialogProps, 'item'>)
           </ul>
         </div>
       ) : null}
+      {evaluation.improvedAnswer ? (
+        <div className="practice-item-review-improved">
+          <strong>AI 高分示范</strong>
+          <p>{evaluation.improvedAnswer}</p>
+        </div>
+      ) : null}
       {evaluation.followUpQuestion ? <blockquote>{evaluation.followUpQuestion}</blockquote> : null}
     </ReviewSection>
+  );
+}
+
+function ReviewDimensions({
+  scores,
+}: {
+  scores: NonNullable<PracticeSession['items'][number]['evaluation']>['dimensionScores'];
+}) {
+  const ordered = orderedDimensionScores(scores);
+  if (!ordered.length) return null;
+  return (
+    <ul className="practice-item-review-dimensions">
+      {ordered.map((entry) => (
+        <li key={entry.dimension}>
+          <strong>{DIMENSION_LABELS[entry.dimension]}</strong>
+          <span>{Math.round(entry.score)} 分</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

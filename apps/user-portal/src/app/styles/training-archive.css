@@ -34,6 +34,216 @@
   gap: 9px;
 }
 
+/* === 成长概览：能力雷达 + 得分趋势 ============================== */
+
+.growth-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.growth-overview-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 10px;
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  padding: 18px 20px;
+  background: var(--surface);
+}
+
+.growth-overview-card > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.growth-overview-card > header strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.growth-overview-card > header span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.growth-overview-empty {
+  display: grid;
+  place-content: center;
+  min-height: 150px;
+  margin: 0;
+  padding: 0 14px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.growth-radar,
+.growth-trend {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.growth-radar svg {
+  width: min(100%, 264px);
+  height: auto;
+}
+
+.growth-radar-grid {
+  fill: none;
+  stroke: color-mix(in srgb, var(--outline) 78%, transparent);
+  stroke-width: 1;
+}
+
+.growth-radar-spoke {
+  stroke: color-mix(in srgb, var(--outline) 55%, transparent);
+  stroke-width: 1;
+}
+
+.growth-radar-value {
+  fill: color-mix(in srgb, var(--primary) 22%, transparent);
+  stroke: var(--primary);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.growth-radar-dot {
+  fill: var(--primary-strong);
+}
+
+.growth-radar-label {
+  fill: var(--text-muted);
+  font-size: 10px;
+}
+
+.growth-radar-label .growth-radar-score {
+  fill: var(--primary-strong);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.growth-mastery-bars {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.growth-mastery-bars li {
+  display: grid;
+  grid-template-columns: minmax(72px, 0.4fr) minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+}
+
+.growth-mastery-bars span {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.growth-mastery-bars b {
+  color: var(--primary-strong);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: right;
+}
+
+.growth-mastery-bars progress {
+  width: 100%;
+  height: 5px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: var(--outline);
+}
+
+.growth-mastery-bars progress::-webkit-progress-bar {
+  background: var(--outline);
+}
+
+.growth-mastery-bars progress::-webkit-progress-value {
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+.growth-mastery-bars progress::-moz-progress-bar {
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+.growth-trend svg {
+  width: 100%;
+  height: auto;
+}
+
+.growth-trend-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.growth-trend-dot {
+  fill: var(--surface);
+  stroke: var(--primary-strong);
+  stroke-width: 2;
+}
+
+.growth-trend-dot[data-kind='interview'] {
+  stroke: var(--success);
+}
+
+.growth-trend figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.growth-trend figcaption b {
+  color: var(--primary-strong);
+  font-family: var(--font-mono);
+}
+
+.growth-trend-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.growth-trend-legend i {
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--primary-strong);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.growth-trend-legend i[data-kind='interview'] {
+  border-color: var(--success);
+}
+
+@media (max-width: 860px) {
+  .growth-overview {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 分区切换：训练记录与错题本互斥展示，两块长列表不再堆叠在一条滚动流里。 */
 .training-archive-sections {
   display: flex;

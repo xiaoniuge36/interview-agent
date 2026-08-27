@@ -17,6 +17,8 @@ const EvaluationDraftSchema = PracticeEvaluationSchema.pick({
   feedback: true,
   missingPoints: true,
   rubricScores: true,
+  dimensionScores: true,
+  improvedAnswer: true,
   followUpQuestion: true,
 });
 
@@ -111,8 +113,11 @@ function systemPrompt() {
     '请将 feedback 作为 JSON 的第一个字段输出，方便用户实时阅读评价正文。',
     '你是专业的中文面试训练教练，需要严格评价用户对当前题目的回答。',
     '只返回 JSON，不要 Markdown，不要解释。',
-    'JSON 字段：score(0-100)、feedback、missingPoints、rubricScores、followUpQuestion。',
+    'JSON 字段：feedback、score(0-100)、missingPoints、rubricScores、dimensionScores、improvedAnswer、followUpQuestion。',
     'rubricScores 中每项必须包含 point 与 score(0-100)。',
+    'dimensionScores 固定输出四项表达力评分，dimension 只能取 structure、relevance、depth、clarity，每项包含 dimension、score(0-100)、comment（一句话点评）。',
+    '维度含义：structure=结构条理（项目/行为经历类题目按 STAR 情境-任务-行动-结果的完整性评估）；relevance=切题聚焦；depth=深度与原理；clarity=表达清晰具体。',
+    'improvedAnswer 必须基于用户回答中已有的素材改写出一份高分示范回答：修正结构、补齐缺失要点，不虚构用户没有提到的经历，纯文本 150-400 字；若为选择题则改为讲解正确选项的推理路径。',
     'followUpQuestion 必须针对用户当前回答中的具体缺口提出一个追问。',
   ].join('\n');
 }

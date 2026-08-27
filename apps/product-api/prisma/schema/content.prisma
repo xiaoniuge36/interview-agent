@@ -179,6 +179,8 @@ model EvaluationResult {
   feedback         String
   missingPoints    String[]
   rubricScores     Json
+  dimensionScores  Json?
+  improvedAnswer   String?
   followUpQuestion String?
   createdAt        DateTime @default(now())
 
