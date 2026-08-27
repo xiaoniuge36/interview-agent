@@ -1,6 +1,8 @@
 import { CONTRACT_LIMITS } from '@interview-agent/contracts';
 import type { FormEvent } from 'react';
 import { FieldIcon } from '@/components/FieldIcon';
+import { DictationButton } from '@/components/speech/DictationButton';
+import { appendTranscript } from '@/lib/speech/speech-dictation';
 import type { InterviewController } from '@/hooks/useInterviewController';
 
 type AnswerComposerProps = {
@@ -54,6 +56,12 @@ function AnswerField({
       <span className="field-label-title">
         <FieldIcon name="message" />
         我的回答
+        <DictationButton
+          disabled={!controller.canAnswer}
+          onTranscript={(transcript) =>
+            controller.setDraft(appendTranscript(controller.state.draft, transcript))
+          }
+        />
       </span>
       <span className="answer-guidance">重点说清个人贡献、关键判断和可验证结果。</span>
       <textarea

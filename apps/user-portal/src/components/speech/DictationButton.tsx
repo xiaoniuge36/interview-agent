@@ -1,0 +1,60 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useSpeechDictation } from '@/lib/speech/use-speech-dictation';
+
+type DictationButtonProps = {
+  onTranscript: (transcript: string) => void;
+  disabled?: boolean;
+};
+
+/** 语音输入按钮：浏览器不支持 Web Speech API 时整体隐藏，不打扰键盘输入。 */
+export function DictationButton({ onTranscript, disabled = false }: DictationButtonProps) {
+  const dictation = useSpeechDictation({ onFinal: onTranscript });
+  useEffect(() => {
+    if (disabled) dictation.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stop 引用稳定，仅需响应 disabled。
+  }, [disabled]);
+  if (!dictation.supported) return null;
+  return (
+    <span className="dictation-control" data-listening={dictation.listening}>
+      <button
+        type="button"
+        className="dictation-button"
+        disabled={disabled}
+        aria-pressed={dictation.listening}
+        onClick={dictation.toggle}
+      >
+        <MicIcon />
+        {dictation.listening ? '停止语音' : '语音输入'}
+      </button>
+      {dictation.listening ? (
+        <em className="dictation-live" role="status">
+          {dictation.interim || '正在聆听…'}
+        </em>
+      ) : null}
+      {!dictation.listening && dictation.error ? (
+        <em className="dictation-error" role="status">
+          {dictation.error}
+        </em>
+      ) : null}
+    </span>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
+    </svg>
+  );
+}

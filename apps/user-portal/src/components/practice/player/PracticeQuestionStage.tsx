@@ -1,4 +1,6 @@
 import { CONTRACT_LIMITS, type PracticeSession } from '@interview-agent/contracts';
+import { DictationButton } from '@/components/speech/DictationButton';
+import { appendTranscript } from '@/lib/speech/speech-dictation';
 import { selectedChoiceIds, toggleChoiceAnswer } from './practice-choice-answer';
 import type { PlayerBusy } from './usePracticePlayer';
 
@@ -85,6 +87,10 @@ function TextAnswerEditor(props: PracticeQuestionStageProps & { closed: boolean 
       <span>
         <strong>我的回答</strong>
         <small>{props.draft.length.toLocaleString()} 字 · 建议包含背景、判断、行动与结果</small>
+        <DictationButton
+          disabled={props.closed}
+          onTranscript={(transcript) => props.onDraft(appendTranscript(props.draft, transcript))}
+        />
       </span>
       <textarea
         value={props.draft}
