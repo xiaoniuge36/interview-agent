@@ -5,12 +5,13 @@ import { isMistakeBookReturnHash } from '@/components/practice/player/practice-r
 
 const SWITCHER_RISE_DELAY = { '--rise-delay': '90ms' } as CSSProperties;
 
-export type ArchiveSection = 'records' | 'mistakes';
+export type ArchiveSection = 'records' | 'mistakes' | 'star';
 export type ArchiveSectionCounts = Partial<Record<ArchiveSection, number>>;
 
 const SECTIONS: Array<{ id: ArchiveSection; label: string; hint: string }> = [
   { id: 'records', label: '训练记录', hint: '刷题与面试的全部复盘' },
   { id: 'mistakes', label: '错题本', hint: '低分题集中复练' },
+  { id: 'star', label: 'STAR 素材库', hint: '高分作答沉淀复用' },
 ];
 
 /** 从错题复练返回的深链（/reports#mistake-book-heading）要直接落在错题本分区。 */

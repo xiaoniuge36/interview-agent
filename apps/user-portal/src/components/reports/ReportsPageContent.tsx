@@ -27,6 +27,7 @@ import {
 import { TrainingArchiveFilters } from './TrainingArchiveFilters';
 import { GrowthOverview } from './GrowthOverview';
 import { MistakeBook } from './MistakeBook';
+import { StarMaterialLibrary } from './StarMaterialLibrary';
 import { TrainingArchiveSummary } from './TrainingArchiveSummary';
 import { loadInterviewReportSummaries } from './interview-report-summaries';
 
@@ -42,7 +43,7 @@ export function ReportsPageContent() {
   const archive = useTrainingArchive();
   const view = useArchiveNavigation();
   const { section, changeSection } = useArchiveSection();
-  const [mistakeTotal, setMistakeTotal] = useState<number | null>(null);
+  const totals = useSectionTotals();
   const records = useMemo(
     () => searchTrainingRecords(filterTrainingRecords(archive.records, view.filter), view.query),
     [archive.records, view.filter, view.query],
@@ -53,10 +54,7 @@ export function ReportsPageContent() {
     () => paginateTrainingRecords(records, view.page),
     [records, view.page],
   );
-  const sectionCounts: ArchiveSectionCounts = {
-    ...(archive.status === 'loading' ? {} : { records: counts.total }),
-    ...(mistakeTotal === null ? {} : { mistakes: mistakeTotal }),
-  };
+  const sectionCounts = buildSectionCounts(archive.status, counts.total, totals);
 
   return (
     <div className="workspace page-workspace training-archive">
@@ -84,10 +82,31 @@ export function ReportsPageContent() {
         />
       </div>
       <div className="training-archive-panel" hidden={section !== 'mistakes'}>
-        <MistakeBook onTotalChange={setMistakeTotal} />
+        <MistakeBook onTotalChange={totals.setMistakeTotal} />
+      </div>
+      <div className="training-archive-panel" hidden={section !== 'star'}>
+        <StarMaterialLibrary onTotalChange={totals.setStarTotal} />
       </div>
     </div>
   );
+}
+
+function useSectionTotals() {
+  const [mistakeTotal, setMistakeTotal] = useState<number | null>(null);
+  const [starTotal, setStarTotal] = useState<number | null>(null);
+  return { mistakeTotal, starTotal, setMistakeTotal, setStarTotal };
+}
+
+function buildSectionCounts(
+  archiveStatus: ArchiveState['status'],
+  recordTotal: number,
+  totals: ReturnType<typeof useSectionTotals>,
+): ArchiveSectionCounts {
+  return {
+    ...(archiveStatus === 'loading' ? {} : { records: recordTotal }),
+    ...(totals.mistakeTotal === null ? {} : { mistakes: totals.mistakeTotal }),
+    ...(totals.starTotal === null ? {} : { star: totals.starTotal }),
+  };
 }
 
 /** 筛选或搜索一旦变化就回到第 1 页；翻页后滚回列表顶部，避免停留在页尾。 */

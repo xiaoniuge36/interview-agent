@@ -8,6 +8,7 @@
   PracticeItemSolutionSchema,
   PracticeHistoryListSchema,
   PracticeSessionSchema,
+  StarMaterialListSchema,
   SubmitPracticeAnswerSchema,
   type CreatePracticeSession,
   type AiOperationStreamEvent,
@@ -19,6 +20,7 @@
   type PracticeItemSolution,
   type PracticeHistoryItem,
   type PracticeSession,
+  type StarMaterial,
   type SubmitPracticeAnswer,
 } from '@interview-agent/contracts';
 import { apiRequest } from './api';
@@ -48,6 +50,10 @@ export function listPracticeMistakes(query: Partial<MistakeBookQuery> = {}): Pro
     pageSize: String(parsed.pageSize),
   });
   return apiRequest({ path: `/practice-mistakes?${params}`, schema: MistakeBookSchema });
+}
+
+export function listStarMaterials(): Promise<StarMaterial[]> {
+  return apiRequest({ path: '/practice-star-materials', schema: StarMaterialListSchema });
 }
 
 export function startMistakeReview(mistakeId: string): Promise<PracticeSession> {

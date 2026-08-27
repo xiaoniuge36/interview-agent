@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { JobIntentPayload, ProfilePayload } from '@interview-agent/contracts';
 import { CountUp } from '@/components/motion/CountUp';
+import { JdMatchPanel } from './JdMatchPanel';
 
 type LatestAnalysisProps = {
   job: JobIntentPayload | undefined;
@@ -32,10 +33,17 @@ export function LatestAnalysis({ job, profile }: LatestAnalysisProps) {
           ))}
         </div>
         {job?.profile ? <SkillWeights job={job} /> : null}
+        <JobJdMatch job={job} />
       </section>
       <TrainingPath />
     </aside>
   );
+}
+
+function JobJdMatch({ job }: { job: JobIntentPayload | undefined }) {
+  if (!job) return null;
+  const jdContext = [job.intent.jdText, job.intent.companyContext ?? ''].join('\n');
+  return <JdMatchPanel jdContext={jdContext} />;
 }
 
 function TrainingPath() {

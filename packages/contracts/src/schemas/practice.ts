@@ -223,6 +223,29 @@ export const MistakeBookSchema = PaginationMetaSchema.extend({
   items: z.array(MistakeBookItemSchema),
 });
 
+/** STAR 素材库：沉淀行为面试 / 项目深挖题的高分作答，供用户面试前复用。 */
+export const STAR_MATERIAL_QUESTION_TYPES = ['behavioral', 'project_deep_dive'] as const;
+const STAR_MATERIAL_LIST_LIMIT = 30;
+
+export const StarMaterialSchema = z.object({
+  id: z.string().min(1),
+  practiceItemId: z.string().min(1),
+  questionId: z.string().min(1),
+  questionTitle: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  questionType: z.enum(STAR_MATERIAL_QUESTION_TYPES),
+  tags: z.array(z.string().max(CONTRACT_LIMITS.shortText)).max(CONTRACT_LIMITS.tags),
+  answer: z.string().min(1).max(CONTRACT_LIMITS.longText),
+  improvedAnswer: z.string().max(CONTRACT_LIMITS.longText).nullable(),
+  score: z.number().min(0).max(CONTRACT_LIMITS.percentage),
+  dimensionScores: z
+    .array(PracticeDimensionScoreSchema)
+    .max(PRACTICE_EVALUATION_DIMENSIONS.length)
+    .default([]),
+  evaluatedAt: z.string().datetime(),
+});
+
+export const StarMaterialListSchema = z.array(StarMaterialSchema).max(STAR_MATERIAL_LIST_LIMIT);
+
 export const MasteryProfileSchema = z.object({
   id: z.string().min(1),
   tenantId: z.string().min(1),
@@ -256,4 +279,5 @@ export type MistakeQuestionSnapshot = z.infer<typeof MistakeQuestionSnapshotSche
 export type MistakeEvidence = z.infer<typeof MistakeEvidenceSchema>;
 export type MistakeBookItem = z.infer<typeof MistakeBookItemSchema>;
 export type MistakeBook = z.infer<typeof MistakeBookSchema>;
+export type StarMaterial = z.infer<typeof StarMaterialSchema>;
 export type MasteryProfile = z.infer<typeof MasteryProfileSchema>;

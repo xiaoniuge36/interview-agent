@@ -9,13 +9,17 @@ import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
 import { createAiOperationSse, streamError } from '../../common/streaming/ai-operation-sse';
 import { PracticeService } from './practice.service';
+import { PracticeStarMaterialService } from './practice-star-material.service';
 
 type PracticeAnswerParams = { id: string; itemId: string };
 
 @Roles('user', 'admin')
 @Controller()
 export class PracticeController {
-  constructor(private readonly service: PracticeService) {}
+  constructor(
+    private readonly service: PracticeService,
+    private readonly starMaterialService: PracticeStarMaterialService,
+  ) {}
 
   @Post('practices')
   create(@Req() request: ProductRequest, @Body() body: unknown) {
@@ -40,6 +44,11 @@ export class PracticeController {
   @Post('practice-mistakes/:id/review')
   reviewMistake(@Req() request: ProductRequest, @Param('id') mistakeId: string) {
     return this.service.reviewMistake(request.context, mistakeId);
+  }
+
+  @Get('practice-star-materials')
+  starMaterials(@Req() request: ProductRequest) {
+    return this.starMaterialService.list(request.context);
   }
 
   @Get('practice-recommendations')
