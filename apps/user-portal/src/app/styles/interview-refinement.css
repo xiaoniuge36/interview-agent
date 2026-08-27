@@ -128,19 +128,170 @@
   font-weight: 700;
 }
 
+.interview-console-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.interview-console-header > .chip {
+  flex: 0 0 auto;
+}
+
 .interview-context {
   display: flex;
+  flex: 1;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 12px 14px;
+  min-width: 0;
+}
+
+/* 阶段轨道：八个考察阶段的横向进度，当前阶段高亮、已完成打勾。 */
+.interview-stage-rail {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 0;
+  padding: 0 0 4px;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.interview-stage-rail li {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  padding: 5px 11px 5px 6px;
+  background: var(--surface-subtle);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.interview-stage-marker {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--outline) 55%, var(--surface));
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.interview-stage-name {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.interview-stage-rail li[data-state='current'] {
+  border-color: color-mix(in srgb, var(--primary) 52%, var(--outline));
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.interview-stage-rail li[data-state='current'] .interview-stage-marker {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.interview-stage-rail li[data-state='done'] {
+  border-color: color-mix(in srgb, var(--success, var(--primary)) 34%, var(--outline));
+  color: var(--text-muted);
+}
+
+.interview-stage-rail li[data-state='done'] .interview-stage-marker {
+  background: color-mix(in srgb, var(--success, var(--primary)) 22%, var(--surface));
+  color: var(--success-strong, var(--primary-strong));
+}
+
+/* 结束卡：报告生成后取代答题表单，收拢本轮动作。 */
+.interview-composer-complete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid color-mix(in srgb, var(--success, var(--primary)) 30%, var(--outline));
   border-radius: var(--radius-md);
-  border-color: color-mix(in srgb, var(--primary) 20%, var(--outline));
-  background: linear-gradient(
-    110deg,
-    color-mix(in srgb, var(--primary-soft) 54%, var(--surface)),
-    var(--surface) 52%
-  );
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--success-soft, var(--primary-soft)) 55%, var(--surface));
+}
+
+.interview-composer-complete > div {
+  display: grid;
+  gap: 3px;
+}
+
+.interview-composer-complete span {
+  color: var(--success-strong, var(--primary-strong));
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.interview-composer-complete strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.interview-composer-complete p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.interview-composer-complete .button {
+  flex: 0 0 auto;
+  min-height: 44px;
+}
+
+/* 空态引导卡：未开始任何面试时替代空的进度与复盘面板。 */
+.interview-flow-guide ol {
+  display: grid;
+  gap: 14px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.interview-flow-guide li {
+  display: flex;
+  gap: 10px;
+}
+
+.interview-flow-guide li > span {
+  display: grid;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.interview-flow-guide strong {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.interview-flow-guide p {
+  margin: 3px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .transcript {
@@ -150,6 +301,21 @@
     color-mix(in srgb, var(--primary-soft) 34%, var(--surface)),
     var(--surface-subtle)
   );
+  /* 长对话收进滚动容器，答题框始终留在视口附近；新消息自动跟随。 */
+  max-height: clamp(400px, 58vh, 640px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+/* 已结束且没有可回看对话（归档恢复）时，不再撑出大片空白。 */
+.transcript[data-ended-empty='true'] {
+  min-height: 0;
+}
+
+.transcript[data-ended-empty='true'] .empty-state {
+  min-height: 0;
+  padding: 18px;
 }
 
 .transcript[data-state='streaming'] {
@@ -408,6 +574,20 @@
 }
 
 @media (max-width: 760px) {
+  .interview-console-header {
+    align-items: flex-start;
+    flex-direction: column-reverse;
+  }
+
+  .interview-composer-complete {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .interview-composer-complete .button {
+    justify-content: center;
+  }
+
   .interview-toolbar,
   .interview-toolbar-controls {
     grid-template-columns: 1fr;
@@ -479,6 +659,14 @@
   .score-row:hover {
     transform: none;
   }
+
+  .transcript {
+    scroll-behavior: auto;
+  }
+}
+
+html[data-motion='off'] .transcript {
+  scroll-behavior: auto;
 }
 
 /* 窄屏塌缩（原 responsive.css @1180，随路由级 CSS 拆分迁入以保持层叠次序）。 */

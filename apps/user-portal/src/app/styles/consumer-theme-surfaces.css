@@ -302,11 +302,15 @@ button:disabled {
   box-shadow: 0 12px 30px color-mix(in srgb, var(--theme-ink) 7%, transparent);
 }
 
-.interview-session-pulse > span,
-.interview-runtime-status span,
+/* 只有事件圆点需要实底；状态文字若同用背景色会变成色块吞掉文本。 */
 .event-row strong::before {
   background: var(--theme-secondary);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-secondary) 16%, transparent);
+}
+
+.interview-session-pulse > span,
+.interview-runtime-status span {
+  color: var(--theme-secondary);
 }
 
 .interview-session-pulse strong,

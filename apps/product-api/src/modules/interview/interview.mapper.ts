@@ -30,10 +30,29 @@ export function mapSession(record: SessionWithTurns): InterviewSession {
   return InterviewSessionSchema.parse({
     ...record,
     jobIntentId: record.jobIntentId ?? undefined,
-    turns: record.turns.map(mapTurn),
+    turns: orderConversationTurns(record.turns.map(mapTurn)),
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   });
+}
+
+const TURN_ROLE_ORDER: Record<InterviewTurn['role'], number> = {
+  candidate: 0,
+  interviewer: 1,
+  system: 2,
+};
+
+/**
+ * 同一条命令会以相同 createdAt 写入一对「回答 + 追问」，而 turn id 是随机 UUID，
+ * 数据库排序无法区分同刻问答的先后。这里按对话语义修正：
+ * 时间相同的一对 turn 中，候选人的回答必然先于面试官的追问。
+ */
+export function orderConversationTurns(turns: InterviewTurn[]): InterviewTurn[] {
+  return [...turns].sort(
+    (left, right) =>
+      left.createdAt.localeCompare(right.createdAt) ||
+      TURN_ROLE_ORDER[left.role] - TURN_ROLE_ORDER[right.role],
+  );
 }
 
 export function mapSessionSummary(

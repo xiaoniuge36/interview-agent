@@ -23,6 +23,9 @@
 
 .interview {
   display: grid;
+  /* start：右栏（复盘）很长时不把左侧控制台拉到等高，否则 stack 行会被
+     align-content 均匀拉伸，阶段轨道等紧凑行全部变形。 */
+  align-items: start;
   grid-template-columns: minmax(0, 1fr) 310px;
   gap: 20px;
   scroll-margin-top: 96px;

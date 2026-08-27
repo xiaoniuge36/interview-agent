@@ -28,6 +28,43 @@ describe('AnswerComposer', () => {
 
     expect(markup).toContain('已恢复当前标签页草稿');
   });
+
+  it('invites the user to start before any session exists', () => {
+    const markup = render('');
+
+    expect(markup).toContain('点击上方「开始模拟面试」，第一题会出现在这里。');
+  });
+
+  it('replaces the form with a completion summary after the report is ready', () => {
+    const markup = renderToStaticMarkup(
+      createElement(AnswerComposer, {
+        controller: {
+          canAnswer: false,
+          draftRecovered: false,
+          state: {
+            busy: false,
+            draft: '',
+            notice: '',
+            session: {
+              status: 'report_ready',
+              turns: [
+                { id: 'turn-q', role: 'interviewer' },
+                { id: 'turn-a', role: 'candidate' },
+                { id: 'turn-a2', role: 'candidate' },
+              ],
+            },
+          },
+          setDraft: () => undefined,
+          submitAnswer: () => Promise.resolve(),
+        } as never,
+      }),
+    );
+
+    expect(markup).toContain('本轮已结束');
+    expect(markup).toContain('共回答 2 题，复盘已生成');
+    expect(markup).toContain('href="#interview-report"');
+    expect(markup).not.toContain('提交回答并继续');
+  });
 });
 
 function render(draft: string, busy = false, draftRecovered = false) {

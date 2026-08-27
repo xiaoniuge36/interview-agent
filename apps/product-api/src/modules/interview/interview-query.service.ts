@@ -115,6 +115,7 @@ function ownerScope(context: ProductRequestContext) {
   };
 }
 
+/* 同刻问答的先后由 mapSession 的 orderConversationTurns 按对话语义修正。 */
 function orderedTurns() {
   return {
     orderBy: [{ createdAt: 'asc' as const }, { id: 'asc' as const }],
