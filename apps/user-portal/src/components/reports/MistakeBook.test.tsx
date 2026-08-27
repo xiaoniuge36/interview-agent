@@ -51,7 +51,9 @@ describe('MistakeBookContent', () => {
   it('keeps the pager out of static renders that cannot change pages', () => {
     expect(render(book(true))).not.toContain('上一页');
   });
+});
 
+describe('MistakeBookContent priority sort', () => {
   it('offers the priority sort switch only when sorting is wired up', () => {
     const sortable = renderToStaticMarkup(
       createElement(MistakeBookContent, {

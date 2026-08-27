@@ -1,0 +1,174 @@
+/* 新用户快速定向卡：两步选方向，即时个性化。 */
+
+.quick-start {
+  display: grid;
+  gap: 18px;
+  padding: clamp(22px, 3vw, 32px);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 26%, var(--outline));
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--theme-primary) 9%, var(--surface)),
+      var(--surface) 55%
+    );
+  box-shadow: var(--shadow-soft);
+}
+
+.quick-start header {
+  display: grid;
+  gap: 6px;
+}
+
+.quick-start-kicker {
+  width: fit-content;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+  color: var(--theme-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.quick-start h2 {
+  margin: 0;
+  font-size: clamp(19px, 2.2vw, 24px);
+}
+
+.quick-start header p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.quick-start-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.quick-start-groups button {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms var(--ease-out),
+    transform 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
+}
+
+.quick-start-groups button:hover {
+  border-color: color-mix(in srgb, var(--theme-primary) 55%, var(--outline));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+.quick-start-groups strong {
+  font-size: 15px;
+}
+
+.quick-start-groups span {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.quick-start-roles {
+  display: grid;
+  gap: 12px;
+}
+
+.quick-start-back {
+  width: fit-content;
+  padding: 6px 12px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.quick-start-back:hover:not(:disabled) {
+  color: var(--theme-primary);
+  border-color: color-mix(in srgb, var(--theme-primary) 45%, var(--outline));
+}
+
+.quick-start-role-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quick-start-role-list button {
+  padding: 10px 18px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 160ms var(--ease-out),
+    background 160ms var(--ease-out),
+    color 160ms var(--ease-out);
+}
+
+.quick-start-role-list button:hover:not(:disabled) {
+  border-color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-primary) 10%, var(--surface));
+  color: var(--theme-primary);
+}
+
+.quick-start-role-list button:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.quick-start-role-list button.busy {
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+  opacity: 1;
+}
+
+.quick-start-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.quick-start-done {
+  border-color: color-mix(in srgb, var(--success, #16a34a) 40%, var(--outline));
+  background: color-mix(in srgb, var(--success, #16a34a) 7%, var(--surface));
+}
+
+.quick-start-done strong {
+  font-size: 16px;
+}
+
+.quick-start-done p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  .quick-start-groups {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .quick-start-groups span {
+    display: none;
+  }
+}

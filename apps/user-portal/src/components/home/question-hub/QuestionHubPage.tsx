@@ -1,12 +1,13 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@interview-agent/auth-client';
 import { AgentRecommendationRail } from './AgentRecommendationRail';
 import { PrepPlanCard } from './PrepPlanCard';
 import { QuestionSearchBar } from './QuestionSearchBar';
 import { QuestionTopicGrid } from './QuestionTopicGrid';
+import { QuickStartRoles } from './QuickStartRoles';
 import { useQuestionHubData } from './useQuestionHubData';
 
 const DISCOVERY_TAG_LIMIT = 8;
@@ -15,6 +16,7 @@ const DISCOVERY_RISE_DELAY = { '--rise-delay': '260ms' } as CSSProperties;
 export function QuestionHubPage() {
   const auth = useAuth();
   const data = useQuestionHubData();
+  const [planVersion, setPlanVersion] = useState(0);
   return (
     <div className="question-hub-page">
       <AgentRecommendationRail
@@ -28,7 +30,13 @@ export function QuestionHubPage() {
         onRetry={data.reloadRecommendations}
         onStart={(recommendation) => void data.startRecommendation(recommendation)}
       />
-      <PrepPlanCard />
+      <QuickStartRoles
+        onCreated={() => {
+          void data.reloadRecommendations();
+          setPlanVersion((version) => version + 1);
+        }}
+      />
+      <PrepPlanCard key={planVersion} />
       <div className="question-hub-supporting-content">
         <QuestionSearchBar total={data.catalog?.total} compact />
         {data.catalogError ? (

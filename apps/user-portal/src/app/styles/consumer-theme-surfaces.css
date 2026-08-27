@@ -447,12 +447,24 @@ button:disabled {
 }
 
 .mistake-evidence,
-.weakness-review-evidence,
-.profile-memory-signals,
-.profile-memory-impact {
+.weakness-review-evidence {
   border-color: color-mix(in srgb, var(--theme-primary) 24%, var(--theme-line));
   border-radius: var(--theme-radius-control);
   background: color-mix(in srgb, var(--theme-primary) 7%, var(--theme-surface));
+}
+
+/* 记忆透镜 rail 处于导航面（nav-surface/nav-ink），子面板必须留在同一面内做轻微提亮，
+   否则浅色子面板 + 继承的浅色 nav-ink 文字会互相吞没。 */
+.profile-memory-signals,
+.profile-memory-impact {
+  border-color: color-mix(in srgb, var(--theme-nav-ink) 16%, transparent);
+  border-radius: var(--theme-radius-control);
+  background: color-mix(in srgb, var(--theme-nav-ink) 7%, transparent);
+}
+
+.profile-memory-list li,
+.profile-memory-signals li {
+  color: color-mix(in srgb, var(--theme-nav-ink) 76%, transparent);
 }
 
 .settings-tabs {
