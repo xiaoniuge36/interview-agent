@@ -3,6 +3,7 @@ export * from './schemas/api';
 export * from './schemas/context';
 export * from './schemas/profile';
 export * from './schemas/user-preference';
+export * from './schemas/learning-progress';
 export * from './schemas/job-intent';
 export * from './schemas/training';
 export * from './schemas/question-catalog';

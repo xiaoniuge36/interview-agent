@@ -2,7 +2,12 @@
 
 import { useEffect, useMemo } from 'react';
 import type { PracticeReport, PracticeSession } from '@interview-agent/contracts';
-import { browserLearningProgressStorage } from '@/lib/learning/learning-progress';
+import {
+  browserLearningProgressStorage,
+  loadStoredLearningProgress,
+} from '@/lib/learning/learning-progress';
+import { synchronizeLearningProgress } from '@/lib/learning/learning-progress-sync';
+import { getLearningProgress, saveLearningProgress } from '@/lib/learning-progress-api';
 import {
   persistLearningPracticeEvidence,
   type LearningPracticeOrigin,
@@ -19,12 +24,20 @@ export function useLearningPracticeEvidence(
   const learningOrigin = useLearningPracticeOrigin(readyOrigin);
   useEffect(() => {
     if (!session || !report) return;
-    persistLearningPracticeEvidence({
+    const storage = browserLearningProgressStorage();
+    const stored = persistLearningPracticeEvidence({
       origin: learningOrigin,
       session,
       report,
-      storage: browserLearningProgressStorage(),
+      storage,
     });
+    if (!stored) return;
+    // 验证证据是跨设备的关键信号，本地落盘后立刻与云端合并回写。
+    void synchronizeLearningProgress(
+      loadStoredLearningProgress(storage),
+      getLearningProgress,
+      saveLearningProgress,
+    );
   }, [learningOrigin, report, session]);
 }
 

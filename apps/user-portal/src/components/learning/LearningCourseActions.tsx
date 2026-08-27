@@ -10,6 +10,7 @@ import {
   learningVerificationHref,
   LEARNING_COURSE_ACTIONS_ANCHOR,
 } from '@/lib/learning/learning-verification';
+import { PushNavigationLink } from '@/components/navigation/PushNavigationLink';
 import type { LearningNavigationItem } from './LearningLibraryRail';
 import { useLearningProgress } from './LearningProgressProvider';
 
@@ -54,14 +55,21 @@ export function LearningCourseActions({
             ? `再次验证 · ${verification.topic}`
             : learningVerificationActionLabel(course.slug)}
         </Link>
-        {nextCourse ? (
-          <Link className="primary" href={`/learn?doc=${encodeURIComponent(nextCourse.slug)}`}>
-            下一课 · {nextCourse.title}
-          </Link>
-        ) : null}
+        {nextCourse ? <NextCourseLink nextCourse={nextCourse} /> : null}
       </div>
       <LearningVerificationReturnNotice />
     </section>
+  );
+}
+
+function NextCourseLink({ nextCourse }: { nextCourse: LearningNavigationItem }) {
+  return (
+    <PushNavigationLink
+      className="primary"
+      href={`/learn?doc=${encodeURIComponent(nextCourse.slug)}`}
+    >
+      下一课 · {nextCourse.title}
+    </PushNavigationLink>
   );
 }
 
@@ -104,14 +112,14 @@ function LearningVerificationRecord({ verification }: { verification: LocalLearn
     verification.score === null ? '已完成一次主题练习' : `得分 ${Math.round(verification.score)}`;
   return (
     <div className="learning-verification-record" role="status">
-      <strong>本机最近练习/验证记录</strong>
+      <strong>最近练习/验证记录</strong>
       <p>
         {`${verification.topic} · ${score} · 已答 ${verification.answerCount} 题 · `}
         <time dateTime={verification.recordedAt}>
           {verification.recordedAt.slice(0, ISO_DATE_PREFIX_LENGTH)}
         </time>
       </p>
-      <small>仅保存在当前浏览器；可继续复看本课，或再次验证本主题。</small>
+      <small>已随账号进度同步；可继续复看本课，或再次验证本主题。</small>
     </div>
   );
 }

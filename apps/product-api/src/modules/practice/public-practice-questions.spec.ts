@@ -15,7 +15,7 @@ const CATEGORIES: RoleCategory[] = [
 
 describe('PUBLIC_PRACTICE_QUESTIONS', () => {
   it('为每个岗位类别提供至少五道可用题目并扩充 Agent 专题', () => {
-    expect(PUBLIC_PRACTICE_QUESTIONS).toHaveLength(69);
+    expect(PUBLIC_PRACTICE_QUESTIONS).toHaveLength(96);
     CATEGORIES.forEach((category) => {
       const questions = PUBLIC_PRACTICE_QUESTIONS.filter((question) =>
         question.tags.includes(practiceCategoryTagFor(category)),
@@ -24,10 +24,10 @@ describe('PUBLIC_PRACTICE_QUESTIONS', () => {
     });
   });
 
-  it('包含十二道单选题、八道多选题且题目 ID 唯一', () => {
+  it('包含三十九道单选题、八道多选题且题目 ID 唯一', () => {
     expect(
       PUBLIC_PRACTICE_QUESTIONS.filter((question) => question.type === 'single_choice'),
-    ).toHaveLength(12);
+    ).toHaveLength(39);
     expect(
       PUBLIC_PRACTICE_QUESTIONS.filter((question) => question.type === 'multiple_choice'),
     ).toHaveLength(8);

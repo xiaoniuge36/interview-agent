@@ -44,6 +44,7 @@ test('keeps an authenticated user in the real practice to report loop', async ({
   await expect(page.locator('.practice-player-page')).toBeVisible();
 
   await page.goto('/reports');
+  await page.getByRole('button', { name: /^错题本/ }).click();
   const mistake = page.locator('.mistake-book-row').first();
   await expect(mistake).toBeVisible();
   await expect(mistake.getByLabel('推荐依据')).toBeVisible();

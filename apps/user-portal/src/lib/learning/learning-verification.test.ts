@@ -43,6 +43,14 @@ it('carries only the verified learning course and topic into a practice session 
 it.each([
   ['学习路线-02-tool-calling与mcp', 'tool-calling', 'Tool Calling'],
   ['学习路线-03-rag与agentic-rag', 'rag', 'RAG'],
+  ['学习路线-04-memory-planning与multi-agent', 'memory', '记忆与编排'],
+  ['学习路线-05-evals可观测可靠性与安全', 'evals', 'Agent 评估'],
+  ['学习路线-06-生产架构成本部署与持续改进', 'production', '生产可靠性'],
+  ['学习路线-07-面试表达手撕代码与毕业项目', 'expression', '面试表达'],
+  ['学习路线-08-computer-use与gui-agent', 'computer-use', 'Computer Use'],
+  ['学习路线-09-编码agent与长任务harness', 'harness', 'Agent Harness'],
+  ['学习路线-10-agent互操作协议与生态', 'protocols', '协议与互操作'],
+  ['学习路线-11-agent强化学习与后训练', 'agent-rl', 'Agent RL'],
 ])('maps %s to an exact published question tag', (course, topic, tag) => {
   const verification = resolveLearningVerification({
     source: ['learn'],
@@ -56,13 +64,13 @@ it.each([
 it('keeps a known course with no exact tag mapping in an explicit unavailable state', () => {
   const verification = resolveLearningVerification({
     source: ['learn'],
-    course: ['学习路线-04-memory-planning与multi-agent'],
+    course: ['学习路线-00-学习地图与能力验收'],
     topic: [],
   });
 
   expect(verification).toMatchObject({
     status: 'unavailable',
-    courseSlug: '学习路线-04-memory-planning与multi-agent',
+    courseSlug: '学习路线-00-学习地图与能力验收',
   });
 });
 

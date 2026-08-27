@@ -23,6 +23,7 @@ import { PracticeModule } from './modules/practice/practice.module';
 import { QuestionCatalogModule } from './modules/question-catalog/question-catalog.module';
 import { RetrievalModule } from './modules/retrieval/retrieval.module';
 import { UserPageAgentModule } from './modules/user-page-agent/user-page-agent.module';
+import { LearningProgressModule } from './modules/learning-progress/learning-progress.module';
 import { UserPreferencesModule } from './modules/user-preferences/user-preferences.module';
 
 const localEnvFiles = localEnvironmentFiles(process.cwd(), process.env.E2E_PRESERVE_ENVIRONMENT);
@@ -63,6 +64,7 @@ const localEnvFiles = localEnvironmentFiles(process.cwd(), process.env.E2E_PRESE
     RetrievalModule,
     UserPageAgentModule,
     UserPreferencesModule,
+    LearningProgressModule,
     AdminModule,
   ],
   providers: [

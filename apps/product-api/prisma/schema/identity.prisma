@@ -8,6 +8,7 @@ model Tenant {
   users                  User[]
   profiles               UserProfile[]
   preferences            UserPreference[]
+  learningProgress       UserLearningProgress[]
   profileSnapshots       ProfileSnapshot[]
   jobIntents             JobIntent[]
   jobProfiles            JobProfile[]
@@ -61,6 +62,7 @@ model User {
   tenant                 Tenant                       @relation(fields: [tenantId], references: [id])
   profile                UserProfile?
   preference             UserPreference?
+  learningProgress       UserLearningProgress?
   jobIntents             JobIntent[]
   interviews             InterviewSession[]
   memory                 MemoryEvent[]
@@ -110,6 +112,23 @@ model UserPreference {
   motion    Boolean
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [tenantId, userId], references: [tenantId, id])
+
+  @@unique([tenantId, userId])
+  @@unique([tenantId, id])
+}
+
+model UserLearningProgress {
+  id                   String   @id @default(cuid())
+  tenantId             String
+  userId               String
+  completedSlugs       String[]
+  lastOpenedSlug       String?
+  verificationByCourse Json
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
   user   User   @relation(fields: [tenantId, userId], references: [tenantId, id])

@@ -3,6 +3,7 @@
 import { useAuth } from '@interview-agent/auth-client';
 import {
   createContext,
+  startTransition,
   useCallback,
   useContext,
   useEffect,
@@ -80,7 +81,8 @@ function useLocalThemePreferenceState() {
       const stored = readStoredPreferences();
       preferencesRef.current = stored;
       applyPreferences(stored);
-      setPreferences(stored);
+      // 本地回填对用户是后台行为，走 transition 以免打断进行中的路由导航。
+      startTransition(() => setPreferences(stored));
       return;
     }
     preferencesRef.current = preferences;
@@ -123,7 +125,8 @@ function useThemePreferenceCloudSync(
       saveUserPreferences,
     ).then((result) => {
       if (syncGenerationRef.current !== generation) return;
-      replacePreferences(result.preferences);
+      // 云端回填对用户是后台行为，走 transition 以免打断进行中的路由导航。
+      startTransition(() => replacePreferences(result.preferences));
       writeReadyRef.current = true;
     });
 

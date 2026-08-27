@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useRef, type Ref } from 'react';
 import type { LearningDocumentKind, LearningLevel } from '@/lib/learning/learning-documents';
+import { PushNavigationLink } from '@/components/navigation/PushNavigationLink';
 import { useLearningProgress, type LearningStorageStatus } from './LearningProgressProvider';
 
 export type LearningNavigationItem = {
@@ -81,9 +81,12 @@ function LibraryProgress({
       </div>
       <LearningStorageNotice status={storageStatus} />
       {continueDocument && continueDocument.slug !== activeSlug ? (
-        <Link className="learning-continue-link" href={documentHref(continueDocument.slug)}>
+        <PushNavigationLink
+          className="learning-continue-link"
+          href={documentHref(continueDocument.slug)}
+        >
           继续上次学习：{continueDocument.title}
-        </Link>
+        </PushNavigationLink>
       ) : null}
     </div>
   );
@@ -186,7 +189,7 @@ function DocumentLink({
     .filter(Boolean)
     .join(' ');
   return (
-    <Link
+    <PushNavigationLink
       ref={linkRef}
       className={classes}
       href={documentHref(document.slug)}
@@ -205,7 +208,7 @@ function DocumentLink({
         <strong>{document.title}</strong>
         <small>{documentMeta(document)}</small>
       </span>
-    </Link>
+    </PushNavigationLink>
   );
 }
 

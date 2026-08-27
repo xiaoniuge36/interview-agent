@@ -62,7 +62,7 @@ describe('QuestionPickerPage learning verification', () => {
 
   it('shows a safe no-match state instead of a generic catalog for a known unmapped course', () => {
     searchParamsState.value = new URLSearchParams(
-      'source=learn&course=学习路线-04-memory-planning与multi-agent',
+      'source=learn&course=学习路线-00-学习地图与能力验收',
     );
 
     const markup = renderToStaticMarkup(<QuestionPickerPage />);

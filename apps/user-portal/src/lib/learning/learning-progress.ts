@@ -141,6 +141,14 @@ export function persistLatestLearningVerification(
   return next === progress || persistLearningProgress(next, storage);
 }
 
+/** 读取未按课程列表过滤的本地进度，用于云端同步等需要完整状态的场景。 */
+export function loadStoredLearningProgress(
+  storage: LearningProgressStorage | null,
+): LearningProgress {
+  if (!storage) return emptyLearningProgress();
+  return loadUnfilteredLearningProgress(storage);
+}
+
 export function learningProgressSummary(
   progress: LearningProgress,
   courseSlugs: readonly string[],

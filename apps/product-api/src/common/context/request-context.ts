@@ -13,6 +13,8 @@ const roleScopes: Record<Role, Action[]> = {
     'profile:write',
     'preferences:read',
     'preferences:write',
+    'learning_progress:read',
+    'learning_progress:write',
     'job_intent:read',
     'job_intent:write',
     'interview:create',

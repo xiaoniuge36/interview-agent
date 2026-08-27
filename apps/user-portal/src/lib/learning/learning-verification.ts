@@ -34,15 +34,43 @@ const LEARNING_COURSES: readonly LearningCourse[] = [
   {
     slug: '学习路线-04-memory-planning与multi-agent',
     title: 'Memory、Planning 与 Multi-Agent',
-    topic: null,
+    topic: { slug: 'memory', label: 'Memory 与编排', tag: '记忆与编排' },
   },
-  { slug: '学习路线-05-evals可观测可靠性与安全', title: 'Evals、可观测、可靠性与安全', topic: null },
-  { slug: '学习路线-06-生产架构成本部署与持续改进', title: '生产架构、成本、部署与持续改进', topic: null },
-  { slug: '学习路线-07-面试表达手撕代码与毕业项目', title: '面试表达、手撕代码与毕业项目', topic: null },
-  { slug: '学习路线-08-computer-use与gui-agent', title: 'Computer Use 与 GUI Agent', topic: null },
-  { slug: '学习路线-09-编码agent与长任务harness', title: '编码 Agent 与长任务 Harness 工程', topic: null },
-  { slug: '学习路线-10-agent互操作协议与生态', title: 'Agent 互操作协议与生态', topic: null },
-  { slug: '学习路线-11-agent强化学习与后训练', title: 'Agent 强化学习与后训练', topic: null },
+  {
+    slug: '学习路线-05-evals可观测可靠性与安全',
+    title: 'Evals、可观测、可靠性与安全',
+    topic: { slug: 'evals', label: 'Agent 评估', tag: 'Agent 评估' },
+  },
+  {
+    slug: '学习路线-06-生产架构成本部署与持续改进',
+    title: '生产架构、成本、部署与持续改进',
+    topic: { slug: 'production', label: '生产可靠性', tag: '生产可靠性' },
+  },
+  {
+    slug: '学习路线-07-面试表达手撕代码与毕业项目',
+    title: '面试表达、手撕代码与毕业项目',
+    topic: { slug: 'expression', label: '面试表达', tag: '面试表达' },
+  },
+  {
+    slug: '学习路线-08-computer-use与gui-agent',
+    title: 'Computer Use 与 GUI Agent',
+    topic: { slug: 'computer-use', label: 'Computer Use', tag: 'Computer Use' },
+  },
+  {
+    slug: '学习路线-09-编码agent与长任务harness',
+    title: '编码 Agent 与长任务 Harness 工程',
+    topic: { slug: 'harness', label: 'Agent Harness', tag: 'Agent Harness' },
+  },
+  {
+    slug: '学习路线-10-agent互操作协议与生态',
+    title: 'Agent 互操作协议与生态',
+    topic: { slug: 'protocols', label: '协议与互操作', tag: '协议与互操作' },
+  },
+  {
+    slug: '学习路线-11-agent强化学习与后训练',
+    title: 'Agent 强化学习与后训练',
+    topic: { slug: 'agent-rl', label: 'Agent RL', tag: 'Agent RL' },
+  },
 ];
 
 export type LearningVerification =

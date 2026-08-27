@@ -138,3 +138,8 @@ export function useAuth(): AuthContextValue {
   if (!context) throw new Error('useAuth 必须在 AuthProvider 内使用。');
   return context;
 }
+
+/** 在 AuthProvider 外返回 null，供可离线降级的功能（如进度云同步）探测登录态。 */
+export function useOptionalAuth(): AuthContextValue | null {
+  return useContext(AuthContext);
+}

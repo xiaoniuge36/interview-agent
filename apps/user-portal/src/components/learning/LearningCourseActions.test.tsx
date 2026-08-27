@@ -85,7 +85,7 @@ function registerLocalVerificationRecordTest() {
       />,
     );
 
-    expect(markup).toContain('本机最近练习/验证记录');
+    expect(markup).toContain('最近练习/验证记录');
     expect(markup).toContain('ReAct');
     expect(markup).toContain('86');
     expect(markup).toContain('已答 3 题');
