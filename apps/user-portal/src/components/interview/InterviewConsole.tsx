@@ -1,9 +1,11 @@
 import type { JobIntentPayload } from '@interview-agent/contracts';
 import type { InterviewController } from '@/hooks/useInterviewController';
+import { useInterviewNarration } from '@/lib/speech/use-interview-narration';
 import { AnswerComposer } from './AnswerComposer';
 import { InterviewSessionPulse } from './InterviewSessionPulse';
 import { InterviewStageRail } from './InterviewStageRail';
 import { InterviewToolbar } from './InterviewToolbar';
+import { NarrationToggle } from './NarrationToggle';
 import { Transcript } from './Transcript';
 
 type InterviewConsoleProps = {
@@ -14,6 +16,7 @@ type InterviewConsoleProps = {
 export function InterviewConsole({ jobs, controller }: InterviewConsoleProps) {
   const { focusTags, roleTitle } = controller.interviewPlan;
   const session = controller.state.session;
+  const narration = useInterviewNarration(controller.turns);
   const reportRecoveryRequired =
     session?.status === 'report_ready' && controller.state.report === null;
   return (
@@ -29,10 +32,13 @@ export function InterviewConsole({ jobs, controller }: InterviewConsoleProps) {
             ))}
           </div>
         </div>
-        <span className="chip" aria-label={'面试状态 ' + controller.statusLabel}>
-          <span className="status-dot" />
-          {controller.statusLabel}
-        </span>
+        <div className="interview-header-side">
+          <NarrationToggle narration={narration} />
+          <span className="chip" aria-label={'面试状态 ' + controller.statusLabel}>
+            <span className="status-dot" />
+            {controller.statusLabel}
+          </span>
+        </div>
       </header>
       <InterviewStageRail session={session} />
       <InterviewSessionPulse
@@ -49,6 +55,7 @@ export function InterviewConsole({ jobs, controller }: InterviewConsoleProps) {
         turns={controller.turns}
         streamingText={controller.state.streamingText}
         ended={session?.status === 'report_ready'}
+        onReplayTurn={narration.supported ? narration.speak : undefined}
       />
       <AnswerComposer controller={controller} />
     </div>

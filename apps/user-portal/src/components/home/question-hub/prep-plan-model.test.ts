@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   InterviewSessionSummary,
   JobIntentPayload,
+  MasteryProfile,
   PracticeHistoryItem,
 } from '@interview-agent/contracts';
 import {
@@ -11,6 +12,7 @@ import {
   countdownDays,
   localDayKey,
   pickCountdownIntent,
+  pickWeakFocus,
   recentActivity,
 } from './prep-plan-model';
 
@@ -172,5 +174,37 @@ describe('buildDailyTasks', () => {
       today: TODAY,
     });
     expect(tasks.find((task) => task.id === 'review')?.done).toBe(true);
+  });
+});
+
+function mastery(tag: string, score: number, evidenceCount = 3): MasteryProfile {
+  return {
+    id: `mastery-${tag}`,
+    tenantId: 'tenant-1',
+    userId: 'user-1',
+    tag,
+    score,
+    evidenceCount,
+    lastEvidenceSessionId: null,
+    updatedAt: isoDaysAgo(0),
+  };
+}
+
+describe('pickWeakFocus', () => {
+  it('picks the lowest-score weak tag and links to its practice filter', () => {
+    const focus = pickWeakFocus([mastery('缓存', 62), mastery('索引优化', 41), mastery('网络', 88)]);
+    expect(focus?.tag).toBe('索引优化');
+    expect(focus?.score).toBe(41);
+    expect(focus?.href).toBe(`/questions?tags=${encodeURIComponent('索引优化')}`);
+  });
+
+  it('ignores tags without evidence and returns null when everything is solid', () => {
+    expect(pickWeakFocus([mastery('缓存', 30, 0), mastery('网络', 90)])).toBeNull();
+    expect(pickWeakFocus([])).toBeNull();
+  });
+
+  it('breaks score ties by preferring the tag with more evidence', () => {
+    const focus = pickWeakFocus([mastery('缓存', 50, 1), mastery('索引优化', 50, 6)]);
+    expect(focus?.tag).toBe('索引优化');
   });
 });

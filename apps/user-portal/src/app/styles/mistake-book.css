@@ -62,6 +62,38 @@
   font-size: 12px;
 }
 
+/* 排序切换：最近错题 / 优先复练 */
+.mistake-sort {
+  display: flex;
+  gap: 6px;
+}
+
+.mistake-sort button {
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out),
+    background 140ms var(--ease-out);
+}
+
+.mistake-sort button:hover {
+  border-color: color-mix(in srgb, var(--primary) 34%, var(--outline));
+  color: var(--primary-strong);
+}
+
+.mistake-sort button[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--primary) 46%, var(--outline));
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
 .mistake-book-list {
   display: grid;
   gap: 10px;

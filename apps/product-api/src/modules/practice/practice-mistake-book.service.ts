@@ -60,7 +60,7 @@ export class PracticeMistakeBookService {
       this.prisma.evaluationResult.findMany({
         where,
         include: MISTAKE_INCLUDE,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: mistakeOrderBy(query.sort),
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
       }),
@@ -127,6 +127,16 @@ function mistakeScope(context: ProductRequestContext) {
     score: { lt: MISTAKE_SCORE_THRESHOLD },
     sessionItem: { session: { userId: context.actor.id } },
   } satisfies Prisma.EvaluationResultWhereInput;
+}
+
+/** priority=优先复练：分数最低的错题排前面，同分再看新错的；recent=按时间倒序。 */
+function mistakeOrderBy(
+  sort: MistakeBookQuery['sort'],
+): Prisma.EvaluationResultOrderByWithRelationInput[] {
+  if (sort === 'priority') {
+    return [{ score: 'asc' }, { createdAt: 'desc' }, { id: 'desc' }];
+  }
+  return [{ createdAt: 'desc' }, { id: 'desc' }];
 }
 
 function mistakeItem(record: MistakeRecord, mapping: MistakeMapping) {

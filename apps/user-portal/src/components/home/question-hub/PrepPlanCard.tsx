@@ -5,11 +5,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   InterviewSessionSummary,
   JobIntentPayload,
+  MasteryProfile,
   PracticeHistoryItem,
 } from '@interview-agent/contracts';
 import { getLearningProgress } from '@/lib/learning-progress-api';
 import { listInterviews } from '@/lib/interview-api';
-import { listPracticeHistory } from '@/lib/practice-api';
+import { getMasteryProfiles, listPracticeHistory } from '@/lib/practice-api';
 import { listJobIntents, updateJobIntentSchedule } from '@/lib/workspace-api';
 import {
   buildDailyTasks,
@@ -17,6 +18,7 @@ import {
   computeTrainingStreak,
   countdownDays,
   pickCountdownIntent,
+  pickWeakFocus,
   recentActivity,
 } from './prep-plan-model';
 
@@ -25,6 +27,7 @@ type PrepPlanData = {
   interviews: InterviewSessionSummary[];
   jobs: JobIntentPayload[];
   learningUpdatedAt: string | null;
+  mastery: MasteryProfile[];
 };
 
 /** 备考计划：面试倒计时 + 今日任务 + 连续训练。数据都来自既有记录，无需用户额外维护。 */
@@ -34,26 +37,13 @@ export function PrepPlanCard() {
   const today = new Date();
   const days = collectTrainingDayKeys(plan.data.practices, plan.data.interviews);
   const streak = computeTrainingStreak(days, today);
-  const tasks = buildDailyTasks({ ...plan.data, today });
   return (
     <section className="prep-plan motion-rise" aria-label="备考计划">
       <CountdownPanel jobs={plan.data.jobs} today={today} onSaved={plan.applyJobUpdate} />
-      <div className="prep-plan-tasks">
-        <header>
-          <strong>今日任务</strong>
-          <span>
-            {tasks.filter((task) => task.done).length}/{tasks.length} 已完成
-          </span>
-        </header>
-        <ul>
-          {tasks.map((task) => (
-            <li key={task.id} data-done={task.done}>
-              <span aria-hidden="true">{task.done ? '✓' : ''}</span>
-              {task.done ? <s>{task.label}</s> : <Link href={task.href}>{task.label}</Link>}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <DailyTasksPanel
+        tasks={buildDailyTasks({ ...plan.data, today })}
+        weakFocus={pickWeakFocus(plan.data.mastery)}
+      />
       <div className="prep-plan-streak">
         <header>
           <strong>连续训练</strong>
@@ -72,6 +62,42 @@ export function PrepPlanCard() {
         </ol>
       </div>
     </section>
+  );
+}
+
+function DailyTasksPanel({
+  tasks,
+  weakFocus,
+}: {
+  tasks: ReturnType<typeof buildDailyTasks>;
+  weakFocus: ReturnType<typeof pickWeakFocus>;
+}) {
+  return (
+    <div className="prep-plan-tasks">
+      <header>
+        <strong>今日任务</strong>
+        <span>
+          {tasks.filter((task) => task.done).length}/{tasks.length} 已完成
+        </span>
+      </header>
+      <ul>
+        {tasks.map((task) => (
+          <li key={task.id} data-done={task.done}>
+            <span aria-hidden="true">{task.done ? '✓' : ''}</span>
+            {task.done ? <s>{task.label}</s> : <Link href={task.href}>{task.label}</Link>}
+          </li>
+        ))}
+      </ul>
+      {weakFocus ? (
+        <Link className="prep-plan-focus" href={weakFocus.href}>
+          <span>
+            重点补强：<b>{weakFocus.tag}</b>
+            <small>当前掌握度 {weakFocus.score} 分</small>
+          </span>
+          <em aria-hidden="true">去练 →</em>
+        </Link>
+      ) : null}
+    </div>
   );
 }
 
@@ -100,11 +126,12 @@ function usePrepPlanData() {
 }
 
 async function loadPrepPlanData(): Promise<PrepPlanData | null> {
-  const [practices, interviews, jobs, learning] = await Promise.allSettled([
+  const [practices, interviews, jobs, learning, mastery] = await Promise.allSettled([
     listPracticeHistory(),
     listInterviews(),
     listJobIntents(),
     getLearningProgress(),
+    getMasteryProfiles(),
   ]);
   if (practices.status === 'rejected' && interviews.status === 'rejected') return null;
   return {
@@ -113,6 +140,7 @@ async function loadPrepPlanData(): Promise<PrepPlanData | null> {
     jobs: jobs.status === 'fulfilled' ? jobs.value : [],
     learningUpdatedAt:
       learning.status === 'fulfilled' ? (learning.value.progress?.updatedAt ?? null) : null,
+    mastery: mastery.status === 'fulfilled' ? mastery.value : [],
   };
 }
 

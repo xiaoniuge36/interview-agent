@@ -139,6 +139,82 @@
   flex: 0 0 auto;
 }
 
+.interview-header-side {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.narration-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out),
+    background 140ms var(--ease-out);
+}
+.narration-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+.narration-toggle:hover {
+  border-color: color-mix(in srgb, var(--primary) 34%, var(--outline));
+  color: var(--primary-strong);
+}
+.narration-toggle[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--primary) 46%, var(--outline));
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.turn-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-subtle);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 140ms var(--ease-out),
+    color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out);
+}
+.turn-replay svg {
+  width: 12px;
+  height: 12px;
+}
+.turn:hover .turn-replay,
+.turn-replay:focus-visible {
+  opacity: 1;
+}
+.turn-replay:hover {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--outline));
+  color: var(--primary-strong);
+}
+/* 触屏设备没有 hover，重听入口常驻可见。 */
+@media (hover: none) {
+  .turn-replay {
+    opacity: 1;
+  }
+}
+
 .interview-context {
   display: flex;
   flex: 1;

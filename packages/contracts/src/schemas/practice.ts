@@ -179,6 +179,9 @@ export const PracticeHistoryListSchema = z
   .array(PracticeHistoryItemSchema)
   .max(MAX_PRACTICE_HISTORY_ITEMS);
 
+/** recent=最近先看；priority=优先复练（分数最低的错题排前面）。 */
+export const MistakeBookSortSchema = z.enum(['recent', 'priority']);
+
 export const MistakeBookQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(DEFAULT_MISTAKE_PAGE),
   pageSize: z.coerce
@@ -187,6 +190,7 @@ export const MistakeBookQuerySchema = z.object({
     .positive()
     .max(MAX_MISTAKE_PAGE_SIZE)
     .default(DEFAULT_MISTAKE_PAGE_SIZE),
+  sort: MistakeBookSortSchema.default('recent'),
 });
 
 export const MistakeQuestionSnapshotSchema = CandidateQuestionSchema.pick({
@@ -275,6 +279,7 @@ export type PracticeItemFeedback = z.infer<typeof PracticeItemFeedbackSchema>;
 export type PracticeReport = z.infer<typeof PracticeReportSchema>;
 export type PracticeHistoryItem = z.infer<typeof PracticeHistoryItemSchema>;
 export type MistakeBookQuery = z.infer<typeof MistakeBookQuerySchema>;
+export type MistakeBookSort = z.infer<typeof MistakeBookSortSchema>;
 export type MistakeQuestionSnapshot = z.infer<typeof MistakeQuestionSnapshotSchema>;
 export type MistakeEvidence = z.infer<typeof MistakeEvidenceSchema>;
 export type MistakeBookItem = z.infer<typeof MistakeBookItemSchema>;

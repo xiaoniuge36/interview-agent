@@ -3,8 +3,13 @@ import test from 'node:test';
 import { MistakeBookQuerySchema, MistakeBookSchema } from './schemas/practice';
 
 test('mistake book query applies bounded pagination defaults', () => {
-  assert.deepEqual(MistakeBookQuerySchema.parse({}), { page: 1, pageSize: 20 });
+  assert.deepEqual(MistakeBookQuerySchema.parse({}), { page: 1, pageSize: 20, sort: 'recent' });
   assert.equal(MistakeBookQuerySchema.safeParse({ pageSize: 101 }).success, false);
+});
+
+test('mistake book query accepts the priority sort and rejects unknown sorts', () => {
+  assert.equal(MistakeBookQuerySchema.parse({ sort: 'priority' }).sort, 'priority');
+  assert.equal(MistakeBookQuerySchema.safeParse({ sort: 'hardest' }).success, false);
 });
 
 test('mistake book keeps an unavailable historical snapshot and review evidence', () => {

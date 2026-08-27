@@ -5,7 +5,9 @@ describe('PracticeMistakeBookService list', () => {
   it('returns low-score snapshots, evidence, review state, and bounded pagination', async () => {
     const { service, prisma } = createService({ reviews: [reviewRecord()] });
 
-    await expect(service.list(context(), { page: 1, pageSize: 20 })).resolves.toMatchObject({
+    await expect(
+      service.list(context(), { page: 1, pageSize: 20, sort: 'recent' }),
+    ).resolves.toMatchObject({
       page: 1,
       pageSize: 20,
       total: 1,
@@ -28,6 +30,7 @@ describe('PracticeMistakeBookService list', () => {
           score: { lt: 60 },
           sessionItem: { session: { userId: 'user-1' } },
         }),
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         skip: 0,
         take: 20,
       }),
@@ -38,7 +41,7 @@ describe('PracticeMistakeBookService list', () => {
     const { service, prisma } = createService({ records: [] });
 
     await expect(
-      service.list(context('tenant-2', 'user-2'), { page: 2, pageSize: 10 }),
+      service.list(context('tenant-2', 'user-2'), { page: 2, pageSize: 10, sort: 'recent' }),
     ).resolves.toMatchObject({ items: [], page: 2 });
 
     expect(prisma.evaluationResult.count).toHaveBeenCalledWith({
@@ -47,6 +50,20 @@ describe('PracticeMistakeBookService list', () => {
         sessionItem: { session: { userId: 'user-2' } },
       }),
     });
+  });
+});
+
+describe('PracticeMistakeBookService priority sort', () => {
+  it('orders by lowest score first when the priority sort is requested', async () => {
+    const { service, prisma } = createService();
+
+    await service.list(context(), { page: 1, pageSize: 20, sort: 'priority' });
+
+    expect(prisma.evaluationResult.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ score: 'asc' }, { createdAt: 'desc' }, { id: 'desc' }],
+      }),
+    );
   });
 });
 

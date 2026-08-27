@@ -1,6 +1,7 @@
 import type {
   InterviewSessionSummary,
   JobIntentPayload,
+  MasteryProfile,
   PracticeHistoryItem,
 } from '@interview-agent/contracts';
 
@@ -93,6 +94,28 @@ export function pickCountdownIntent(jobs: readonly JobIntentPayload[]): JobInten
   if (dated.length) return dated[0]!;
   const ready = active.sort((a, b) => b.intent.updatedAt.localeCompare(a.intent.updatedAt));
   return ready[0] ?? null;
+}
+
+/** 掌握度低于该分数的标签视为需要补强的弱项。 */
+const WEAK_FOCUS_MAX_SCORE = 70;
+
+export type WeakFocus = {
+  tag: string;
+  score: number;
+  href: string;
+};
+
+/** 从掌握度里挑出今天最值得补强的一个弱项：有练习证据、分数最低。 */
+export function pickWeakFocus(profiles: readonly MasteryProfile[]): WeakFocus | null {
+  const weakest = profiles
+    .filter((profile) => profile.evidenceCount > 0 && profile.score < WEAK_FOCUS_MAX_SCORE)
+    .sort((left, right) => left.score - right.score || right.evidenceCount - left.evidenceCount)[0];
+  if (!weakest) return null;
+  return {
+    tag: weakest.tag,
+    score: Math.round(weakest.score),
+    href: `/questions?tags=${encodeURIComponent(weakest.tag)}`,
+  };
 }
 
 export function buildDailyTasks(input: {

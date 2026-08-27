@@ -6,9 +6,10 @@ type TranscriptProps = {
   turns: InterviewTurn[];
   streamingText: string;
   ended?: boolean;
+  onReplayTurn?: ((content: string) => void) | undefined;
 };
 
-export function Transcript({ turns, streamingText, ended = false }: TranscriptProps) {
+export function Transcript({ turns, streamingText, ended = false, onReplayTurn }: TranscriptProps) {
   const empty = turns.length === 0 && !streamingText;
   const containerRef = useAutoScrollToLatest(turns.length, streamingText);
   return (
@@ -22,7 +23,7 @@ export function Transcript({ turns, streamingText, ended = false }: TranscriptPr
     >
       {empty ? <EmptyTranscript ended={ended} /> : null}
       {turns.map((turn) => (
-        <TranscriptTurn turn={turn} key={turn.id} />
+        <TranscriptTurn turn={turn} key={turn.id} onReplay={onReplayTurn} />
       ))}
       {streamingText ? <StreamingTurn content={streamingText} /> : null}
     </div>
@@ -73,15 +74,52 @@ function EmptyTranscript({ ended }: { ended: boolean }) {
   );
 }
 
-function TranscriptTurn({ turn }: { turn: InterviewTurn }) {
+function TranscriptTurn({
+  turn,
+  onReplay,
+}: {
+  turn: InterviewTurn;
+  onReplay?: ((content: string) => void) | undefined;
+}) {
   const tone = turn.role === 'candidate' ? 'candidate' : 'interviewer';
+  const replayable = turn.role === 'interviewer' && Boolean(onReplay);
   return (
     <article className={'turn ' + tone}>
       <div className="stage">
-        {interviewSpeakerLabel(turn.role)} · {interviewStageLabel(turn.stage)}
+        <span>
+          {interviewSpeakerLabel(turn.role)} · {interviewStageLabel(turn.stage)}
+        </span>
+        {replayable ? (
+          <button
+            type="button"
+            className="turn-replay"
+            aria-label="朗读这条问题"
+            onClick={() => onReplay?.(turn.content)}
+          >
+            <SpeakerIcon />
+            重听
+          </button>
+        ) : null}
       </div>
       {turn.content}
     </article>
+  );
+}
+
+function SpeakerIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 5 6 9H3v6h3l5 4V5z" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" />
+    </svg>
   );
 }
 

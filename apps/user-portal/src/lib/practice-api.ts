@@ -48,6 +48,7 @@ export function listPracticeMistakes(query: Partial<MistakeBookQuery> = {}): Pro
   const params = new URLSearchParams({
     page: String(parsed.page),
     pageSize: String(parsed.pageSize),
+    sort: parsed.sort,
   });
   return apiRequest({ path: `/practice-mistakes?${params}`, schema: MistakeBookSchema });
 }

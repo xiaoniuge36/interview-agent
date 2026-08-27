@@ -51,6 +51,23 @@ describe('MistakeBookContent', () => {
   it('keeps the pager out of static renders that cannot change pages', () => {
     expect(render(book(true))).not.toContain('上一页');
   });
+
+  it('offers the priority sort switch only when sorting is wired up', () => {
+    const sortable = renderToStaticMarkup(
+      createElement(MistakeBookContent, {
+        book: book(true),
+        startingId: null,
+        onStart: () => undefined,
+        sort: 'priority',
+        onSortChange: () => undefined,
+      }),
+    );
+
+    expect(sortable).toContain('优先复练');
+    expect(sortable).toContain('最近错题');
+    expect(sortable).toMatch(/aria-pressed="true"[^>]*>优先复练/);
+    expect(render(book(true))).not.toContain('优先复练');
+  });
 });
 
 describe('MistakeBookContent course recommendation', () => {

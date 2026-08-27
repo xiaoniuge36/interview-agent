@@ -185,6 +185,51 @@
   font-size: 12px;
 }
 
+/* 今日重点补强：来自能力掌握度里分数最低的弱项 */
+.prep-plan-focus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px dashed color-mix(in srgb, var(--warning) 45%, var(--outline));
+  border-radius: 11px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--warning) 7%, var(--surface-subtle));
+  text-decoration: none;
+  transition:
+    border-color 140ms var(--ease-out),
+    background 140ms var(--ease-out);
+}
+
+.prep-plan-focus:hover {
+  border-color: color-mix(in srgb, var(--warning) 70%, var(--outline));
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface-subtle));
+}
+
+.prep-plan-focus > span {
+  display: grid;
+  gap: 2px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.prep-plan-focus b {
+  color: var(--ink);
+}
+
+.prep-plan-focus small {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.prep-plan-focus em {
+  flex: none;
+  color: var(--warning);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
 /* --- 连续训练 --- */
 
 .prep-plan-streak-count {

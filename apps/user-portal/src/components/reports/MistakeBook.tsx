@@ -3,7 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { MistakeBook as MistakeBookData, MistakeBookItem } from '@interview-agent/contracts';
+import type {
+  MistakeBook as MistakeBookData,
+  MistakeBookItem,
+  MistakeBookSort,
+} from '@interview-agent/contracts';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import { listPracticeMistakes, startMistakeReview } from '@/lib/practice-api';
 import {
@@ -13,6 +17,7 @@ import {
 } from '@/components/practice/player/practice-return-origin';
 import { ArchivePagination } from './ArchivePagination';
 import { MistakeCourseRecommendation } from './MistakeCourseRecommendation';
+import { MistakeSortSwitch } from './MistakeSortSwitch';
 
 const REVIEW_MINUTES_PER_QUESTION = 8;
 /* 错题本独占一个分区，单页 8 条在压缩行高后约一屏半，翻页成本可控。 */
@@ -42,6 +47,8 @@ export function MistakeBook({ onTotalChange }: { onTotalChange?: (total: number)
       startingId={review.startingId}
       onStart={(mistakeId) => void review.start(mistakeId)}
       onPage={source.changePage}
+      sort={source.sort}
+      onSortChange={source.changeSort}
       returnedFromReview={returnedFromReview}
     />
   );
@@ -50,13 +57,14 @@ export function MistakeBook({ onTotalChange }: { onTotalChange?: (total: number)
 function useMistakeBookData(onTotalChange?: (total: number) => void) {
   const [state, setState] = useState<MistakeState>({ status: 'loading' });
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<MistakeBookSort>('recent');
   const [request, setRequest] = useState(0);
   useEffect(() => {
     let active = true;
     setState((current) =>
       current.status === 'ready' ? { ...current, refreshing: true } : { status: 'loading' },
     );
-    void listPracticeMistakes({ page, pageSize: MISTAKE_BOOK_PAGE_SIZE })
+    void listPracticeMistakes({ page, pageSize: MISTAKE_BOOK_PAGE_SIZE, sort })
       .then((book) => {
         if (!active) return;
         setState({ status: 'ready', book, refreshing: false });
@@ -68,12 +76,16 @@ function useMistakeBookData(onTotalChange?: (total: number) => void) {
     return () => {
       active = false;
     };
-  }, [request, page, onTotalChange]);
+  }, [request, page, sort, onTotalChange]);
   const changePage = (next: number) => {
     setPage(next);
     document.getElementById(MISTAKE_BOOK_RETURN_ANCHOR_ID)?.scrollIntoView({ block: 'start' });
   };
-  return { state, changePage, reload: () => setRequest((value) => value + 1) };
+  const changeSort = (next: MistakeBookSort) => {
+    setSort(next);
+    setPage(1);
+  };
+  return { state, changePage, changeSort, sort, reload: () => setRequest((value) => value + 1) };
 }
 
 function useMistakeReview() {
@@ -121,6 +133,8 @@ export function MistakeBookContent({
   startingId,
   onStart,
   onPage,
+  sort = 'recent',
+  onSortChange,
   returnedFromReview = false,
 }: {
   book: MistakeBookData;
@@ -128,6 +142,8 @@ export function MistakeBookContent({
   startingId: string | null;
   onStart: (mistakeId: string) => void;
   onPage?: (page: number) => void;
+  sort?: MistakeBookSort;
+  onSortChange?: (sort: MistakeBookSort) => void;
   returnedFromReview?: boolean;
 }) {
   if (!book.items.length) return <MistakeBookEmpty />;
@@ -138,17 +154,9 @@ export function MistakeBookContent({
       aria-busy={refreshing}
     >
       <MistakeBookHeader total={book.total} returnedFromReview={returnedFromReview} />
+      {onSortChange ? <MistakeSortSwitch sort={sort} onChange={onSortChange} /> : null}
       <MistakeCourseRecommendation items={book.items} />
-      <div className="mistake-book-list motion-stagger">
-        {book.items.map((item) => (
-          <MistakeBookRow
-            key={item.id}
-            item={item}
-            starting={startingId === item.id}
-            onStart={() => onStart(item.id)}
-          />
-        ))}
-      </div>
+      <MistakeRows book={book} startingId={startingId} onStart={onStart} />
       {onPage ? (
         <ArchivePagination
           page={book.page}
@@ -159,6 +167,29 @@ export function MistakeBookContent({
         />
       ) : null}
     </section>
+  );
+}
+
+function MistakeRows({
+  book,
+  startingId,
+  onStart,
+}: {
+  book: MistakeBookData;
+  startingId: string | null;
+  onStart: (mistakeId: string) => void;
+}) {
+  return (
+    <div className="mistake-book-list motion-stagger">
+      {book.items.map((item) => (
+        <MistakeBookRow
+          key={item.id}
+          item={item}
+          starting={startingId === item.id}
+          onStart={() => onStart(item.id)}
+        />
+      ))}
+    </div>
   );
 }
 
