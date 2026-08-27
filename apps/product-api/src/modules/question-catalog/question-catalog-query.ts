@@ -1,5 +1,9 @@
 import type { Prisma, Question } from '@prisma/client';
-import type { QuestionCatalogCategory, QuestionCatalogQuery } from '@interview-agent/contracts';
+import {
+  CONTRACT_LIMITS,
+  type QuestionCatalogCategory,
+  type QuestionCatalogQuery,
+} from '@interview-agent/contracts';
 import {
   companiesFromTags,
   companyTagFor,
@@ -101,22 +105,27 @@ export function catalogFacets(records: FacetRecord[]) {
     categories: counted(
       records.flatMap((record) => categoryValues(record.tags)),
       (value) => CATEGORY_LABELS[value as QuestionCatalogCategory] ?? value,
+      CONTRACT_LIMITS.list,
     ),
     difficulties: counted(
       records.map((record) => record.difficulty),
       labelDifficulty,
+      CONTRACT_LIMITS.list,
     ),
     types: counted(
       records.map((record) => record.type),
       labelType,
+      CONTRACT_LIMITS.list,
     ),
     tags: counted(
       records.flatMap((record) => visiblePracticeTags(record.tags)),
       (value) => value,
+      CONTRACT_LIMITS.mediumList,
     ),
     companies: counted(
       records.flatMap((record) => companiesFromTags(record.tags)),
       (value) => value,
+      CONTRACT_LIMITS.mediumList,
     ),
   };
 }
@@ -136,12 +145,14 @@ function categoryValues(tags: string[]) {
     .filter((value): value is QuestionCatalogCategory => value in CATEGORY_LABELS);
 }
 
-function counted(values: string[], label: (value: string) => string) {
+/** facet 按出现次数取 Top N：题库扩充后标签种类会超过契约上限，只保留高频项。 */
+function counted(values: string[], label: (value: string) => string, limit: number) {
   const counts = new Map<string, number>();
   values.forEach((value) => counts.set(value, (counts.get(value) ?? 0) + 1));
   return [...counts.entries()]
     .map(([value, count]) => ({ value, label: label(value), count }))
-    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
+    .slice(0, limit);
 }
 
 function labelDifficulty(value: string) {

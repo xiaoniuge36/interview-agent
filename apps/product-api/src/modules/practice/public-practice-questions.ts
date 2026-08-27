@@ -5,6 +5,18 @@ import {
   BUSINESS_DELIVERY_QUESTION_INPUTS,
   GENERIC_QUESTION_INPUTS,
 } from './public-practice-questions-business';
+import {
+  BUSINESS_DELIVERY_BANK_INPUTS,
+  GENERIC_BANK_INPUTS,
+} from './public-practice-questions-career-bank';
+import {
+  GROWTH_OPERATIONS_BANK_INPUTS,
+  PRODUCT_DESIGN_BANK_INPUTS,
+} from './public-practice-questions-product-growth-bank';
+import {
+  DATA_BANK_INPUTS,
+  ENGINEERING_BANK_INPUTS,
+} from './public-practice-questions-tech-bank';
 
 export const PUBLIC_PRACTICE_QUESTIONS = [
   ...buildPublicPracticeQuestions('engineering', [
@@ -219,6 +231,13 @@ export const PUBLIC_PRACTICE_QUESTIONS = [
   ]),
   ...buildPublicPracticeQuestions('business_delivery', BUSINESS_DELIVERY_QUESTION_INPUTS),
   ...buildPublicPracticeQuestions('generic', GENERIC_QUESTION_INPUTS),
+  // 多元岗位扩充题库：让非 AI 岗位也有足够的题量支撑完整训练。
+  ...buildPublicPracticeQuestions('engineering', ENGINEERING_BANK_INPUTS),
+  ...buildPublicPracticeQuestions('data', DATA_BANK_INPUTS),
+  ...buildPublicPracticeQuestions('product_design', PRODUCT_DESIGN_BANK_INPUTS),
+  ...buildPublicPracticeQuestions('growth_operations', GROWTH_OPERATIONS_BANK_INPUTS),
+  ...buildPublicPracticeQuestions('business_delivery', BUSINESS_DELIVERY_BANK_INPUTS),
+  ...buildPublicPracticeQuestions('generic', GENERIC_BANK_INPUTS),
   ...PUBLIC_AGENT_CHOICE_QUESTIONS,
   ...PUBLIC_AGENT_OPEN_QUESTIONS,
 ];

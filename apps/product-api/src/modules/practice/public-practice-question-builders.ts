@@ -8,6 +8,9 @@ const THIRD_RUBRIC_SCORE = 3;
 const FALLBACK_RUBRIC_SCORE = 3;
 const RUBRIC_SCORES = [FIRST_RUBRIC_SCORE, SECOND_RUBRIC_SCORE, THIRD_RUBRIC_SCORE] as const;
 
+/** 主观题子集：客观题（选择题）结构不同，走独立定义文件。 */
+type SubjectiveQuestionType = 'short_answer' | 'behavioral' | 'project_deep_dive' | 'system_design';
+
 export type PublicPracticeQuestionInput = {
   suffix: string;
   title: string;
@@ -15,6 +18,8 @@ export type PublicPracticeQuestionInput = {
   answer: string;
   tags: string[];
   points: string[];
+  type?: SubjectiveQuestionType;
+  difficulty?: Question['difficulty'];
 };
 
 export function buildPublicPracticeQuestions(
@@ -27,8 +32,8 @@ export function buildPublicPracticeQuestions(
     visibility: 'public',
     title: input.title,
     stem: input.stem,
-    type: 'project_deep_dive',
-    difficulty: 'medium',
+    type: input.type ?? 'project_deep_dive',
+    difficulty: input.difficulty ?? 'medium',
     tags: [practiceCategoryTagFor(category), ...input.tags],
     answer: input.answer,
     rubric: input.points.map((point, index) => ({

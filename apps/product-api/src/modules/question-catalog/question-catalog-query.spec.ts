@@ -52,4 +52,15 @@ describe('question catalog company tags', () => {
     ]);
     expect(facets.tags.map((facet) => facet.value)).toEqual(['缓存', '索引']);
   });
+
+  it('catalogFacets 标签种类超过契约上限时按热度截断，保证响应可通过校验', () => {
+    const tagLimit = 200;
+    const overflow = 40;
+    const records = Array.from({ length: tagLimit + overflow }, (_, index) =>
+      facetRecord([`标签-${index}`, ...(index < overflow ? [`标签-${index}-热门`] : [])]),
+    );
+    const facets = catalogFacets([...records, ...records.slice(0, overflow)]);
+    expect(facets.tags).toHaveLength(tagLimit);
+    expect(facets.tags[0]?.count).toBeGreaterThanOrEqual(facets.tags.at(-1)?.count ?? 0);
+  });
 });
