@@ -220,11 +220,24 @@
   min-height: calc(100vh - 72px);
 }
 
+/* 顶栏坐在 --theme-nav-surface（多数主题为深色面）上，
+   文字与悬停底色必须跟随 --theme-nav-ink 派生，
+   不能用页面内容变量（--ink/--text-muted/--surface-subtle），否则深导航面下看不清。 */
 .user-topbar-account {
   border-color: transparent;
   border-radius: var(--theme-radius-control);
   padding-right: 9px;
   background: transparent;
+  color: var(--theme-nav-ink);
+}
+
+.user-topbar-account:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--theme-nav-ink) 10%, transparent);
+}
+
+.user-topbar-account small {
+  color: color-mix(in srgb, var(--theme-nav-ink) 62%, transparent);
 }
 
 .user-topbar-account > span:last-child {
@@ -241,6 +254,12 @@
   width: 36px;
   padding: 0;
   justify-content: center;
+  color: color-mix(in srgb, var(--theme-nav-ink) 74%, transparent);
+}
+
+.user-topbar-signout:hover {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
 }
 
 .user-topbar-settings {
@@ -250,14 +269,14 @@
   gap: 6px;
   border-radius: 999px;
   padding: 0 10px;
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--theme-nav-ink) 74%, transparent);
   font-size: 10px;
   font-weight: 700;
 }
 
 .user-topbar-settings:hover {
-  background: var(--surface-subtle);
-  color: var(--consumer-ink);
+  background: color-mix(in srgb, var(--theme-nav-ink) 10%, transparent);
+  color: var(--theme-nav-ink);
 }
 .user-topbar-account.active,
 .user-topbar-settings.active {
