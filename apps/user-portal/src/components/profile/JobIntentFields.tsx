@@ -125,6 +125,30 @@ function JobContextFields(props: JobIntentFieldsProps) {
           onChange={(event) => props.onChange('communicationText', event.target.value)}
         />
       </label>
+      <label className="label" htmlFor="job-interview-date">
+        <span className="field-label-title">
+          <FieldIcon name="calendar" />
+          目标面试日期（可选）
+        </span>
+        <input
+          id="job-interview-date"
+          className="input"
+          type="date"
+          value={dateInputValue(props.value.interviewDate)}
+          onChange={(event) => props.onChange('interviewDate', dateInputToIso(event.target.value))}
+        />
+        <small className="muted-text">填写后，“今天”页会出现面试倒计时和每日备考任务。</small>
+      </label>
     </>
   );
+}
+
+const DATE_INPUT_LENGTH = 'yyyy-mm-dd'.length;
+
+function dateInputValue(interviewDate: string | null): string {
+  return interviewDate?.slice(0, DATE_INPUT_LENGTH) ?? '';
+}
+
+function dateInputToIso(value: string): string | null {
+  return value ? new Date(`${value}T09:00:00`).toISOString() : null;
 }

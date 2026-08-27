@@ -43,6 +43,7 @@ export function roleInputFor(title: string): CreateJobIntentInput {
     jdText: '请补充目标岗位的职责、业务背景和关键要求，系统会据此生成更贴近真实场景的训练内容。',
     companyContext: '请说明目标公司的业务阶段、团队协作方式或你关注的业务挑战。',
     communicationText: '请说明你希望重点训练的表达、项目案例或面试场景。',
+    interviewDate: null,
   };
 }
 
@@ -68,5 +69,6 @@ function toJobInput(template: RoleTemplate): CreateJobIntentInput {
     jdText: template.jdText,
     companyContext: template.companyContext,
     communicationText: template.communicationText,
+    interviewDate: null,
   };
 }

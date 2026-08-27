@@ -17,6 +17,8 @@ export const JobIntentSchema = z.object({
   jdText: z.string().min(1).max(CONTRACT_LIMITS.longText),
   companyContext: z.string().max(CONTRACT_LIMITS.longText).optional(),
   communicationText: z.string().max(CONTRACT_LIMITS.longText).optional(),
+  /** 目标面试日期，驱动备考倒计时；存量记录为 null。 */
+  interviewDate: z.string().datetime().nullable().default(null),
   status: JobIntentStatusSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -49,6 +51,11 @@ export const CreateJobIntentInputSchema = z.object({
     .max(CONTRACT_LIMITS.longText),
   companyContext: z.string().trim().max(CONTRACT_LIMITS.longText).optional().default(''),
   communicationText: z.string().trim().max(CONTRACT_LIMITS.longText).optional().default(''),
+  interviewDate: z.string().datetime().nullable().optional().default(null),
+});
+
+export const UpdateJobIntentScheduleSchema = z.object({
+  interviewDate: z.string().datetime().nullable(),
 });
 
 export type JobIntentStatus = z.infer<typeof JobIntentStatusSchema>;
@@ -56,3 +63,4 @@ export type JobIntent = z.infer<typeof JobIntentSchema>;
 export type JobProfile = z.infer<typeof JobProfileSchema>;
 export type JobIntentPayload = z.infer<typeof JobIntentPayloadSchema>;
 export type CreateJobIntentInput = z.infer<typeof CreateJobIntentInputSchema>;
+export type UpdateJobIntentSchedule = z.infer<typeof UpdateJobIntentScheduleSchema>;

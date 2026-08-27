@@ -6,6 +6,7 @@ export const DEFAULT_JOB_FORM: CreateJobIntentInput = {
   jdText: '',
   companyContext: '',
   communicationText: '',
+  interviewDate: null,
 };
 
 export function jobFormFromRole(title: string): CreateJobIntentInput {

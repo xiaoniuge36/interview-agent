@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@interview-agent/auth-client';
 import { AgentRecommendationRail } from './AgentRecommendationRail';
+import { PrepPlanCard } from './PrepPlanCard';
 import { QuestionSearchBar } from './QuestionSearchBar';
 import { QuestionTopicGrid } from './QuestionTopicGrid';
 import { useQuestionHubData } from './useQuestionHubData';
@@ -27,6 +28,7 @@ export function QuestionHubPage() {
         onRetry={data.reloadRecommendations}
         onStart={(recommendation) => void data.startRecommendation(recommendation)}
       />
+      <PrepPlanCard />
       <div className="question-hub-supporting-content">
         <QuestionSearchBar total={data.catalog?.total} compact />
         {data.catalogError ? (

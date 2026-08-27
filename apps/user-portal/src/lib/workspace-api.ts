@@ -3,11 +3,13 @@ import {
   JobIntentListSchema,
   JobIntentPayloadSchema,
   ProfilePayloadSchema,
+  UpdateJobIntentScheduleSchema,
   UpsertProfileInputSchema,
   type CreateJobIntentInput,
   type InterviewSessionSummary,
   type JobIntentPayload,
   type ProfilePayload,
+  type UpdateJobIntentSchedule,
   type UpsertProfileInput,
 } from '@interview-agent/contracts';
 import { apiRequest } from './api';
@@ -43,5 +45,21 @@ export function createJobIntent(input: CreateJobIntentInput): Promise<JobIntentP
     path: '/job-intents',
     schema: JobIntentPayloadSchema,
     init: { method: 'POST', body: JSON.stringify(validated) },
+  });
+}
+
+export function listJobIntents(): Promise<JobIntentPayload[]> {
+  return apiRequest({ path: '/job-intents', schema: JobIntentListSchema });
+}
+
+export function updateJobIntentSchedule(
+  id: string,
+  input: UpdateJobIntentSchedule,
+): Promise<JobIntentPayload> {
+  const validated = UpdateJobIntentScheduleSchema.parse(input);
+  return apiRequest({
+    path: `/job-intents/${id}/schedule`,
+    schema: JobIntentPayloadSchema,
+    init: { method: 'PATCH', body: JSON.stringify(validated) },
   });
 }

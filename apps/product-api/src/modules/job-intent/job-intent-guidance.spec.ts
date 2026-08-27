@@ -8,6 +8,7 @@ function intent(targetRole: string, jdText: string): JobIntent {
     userId: 'user-a',
     targetRole,
     jdText,
+    interviewDate: null,
     status: 'ready',
     createdAt: '2026-07-14T08:00:00.000Z',
     updatedAt: '2026-07-14T08:00:00.000Z',

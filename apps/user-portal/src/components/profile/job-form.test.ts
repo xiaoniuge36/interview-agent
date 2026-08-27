@@ -14,6 +14,7 @@ describe('job intent first-use form', () => {
       jdText: '',
       companyContext: '',
       communicationText: '',
+      interviewDate: null,
     });
     expect(CreateJobIntentInputSchema.safeParse(DEFAULT_JOB_FORM).success).toBe(false);
   });

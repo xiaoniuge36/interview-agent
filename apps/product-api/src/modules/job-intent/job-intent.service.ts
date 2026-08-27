@@ -9,6 +9,7 @@ import {
   type JobIntent,
   type JobIntentPayload,
   type JobProfile,
+  type UpdateJobIntentSchedule,
 } from '@interview-agent/contracts';
 import { AuditService, jsonValue } from '../../common/audit/audit.service';
 import { PolicyService } from '../../common/authz/policy.service';
@@ -71,6 +72,7 @@ export class JobIntentService {
             jdText: input.jdText,
             companyContext: input.companyContext || null,
             communicationText: input.communicationText || null,
+            interviewDate: input.interviewDate ? new Date(input.interviewDate) : null,
             status: 'ready',
           },
         });
@@ -104,6 +106,37 @@ export class JobIntentService {
     );
   }
 
+  async updateSchedule(
+    context: ProductRequestContext,
+    id: string,
+    input: UpdateJobIntentSchedule,
+  ): Promise<JobIntentPayload> {
+    const record = await this.prisma.jobIntent.findFirst({
+      where: { id, tenantId: context.tenantId },
+      select: { id: true, tenantId: true, userId: true },
+    });
+    if (!record) throw new NotFoundException('JobIntent not found');
+    this.policy.assert(context.actor, 'job_intent:write', {
+      tenantId: record.tenantId,
+      ownerId: record.userId,
+    });
+    const updated = await this.prisma.jobIntent.update({
+      where: { tenantId_id: { tenantId: context.tenantId, id } },
+      data: { interviewDate: input.interviewDate ? new Date(input.interviewDate) : null },
+      include: { profile: true },
+    });
+    await this.audit.record(context, {
+      action: 'job_intent.schedule',
+      resourceType: 'JobIntent',
+      resourceId: id,
+      metadata: { interviewDate: input.interviewDate },
+    });
+    return JobIntentPayloadSchema.parse({
+      intent: mapIntent(updated),
+      profile: updated.profile ? mapProfile(updated.profile) : null,
+    });
+  }
+
   private assertAccess(
     context: ProductRequestContext,
     action: 'job_intent:read' | 'job_intent:write',
@@ -123,6 +156,7 @@ function mapIntent(record: {
   jdText: string;
   companyContext: string | null;
   communicationText: string | null;
+  interviewDate: Date | null;
   status: string;
   createdAt: Date;
   updatedAt: Date;
@@ -131,6 +165,7 @@ function mapIntent(record: {
     ...record,
     companyContext: record.companyContext ?? undefined,
     communicationText: record.communicationText ?? undefined,
+    interviewDate: record.interviewDate?.toISOString() ?? null,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   });

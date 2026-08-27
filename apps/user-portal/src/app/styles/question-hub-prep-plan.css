@@ -1,0 +1,244 @@
+/* 备考计划：面试倒计时 + 今日任务 + 连续训练 streak */
+
+.prep-plan {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 14px;
+  width: min(1480px, 100%);
+  margin: 18px auto 0;
+}
+
+.prep-plan > * {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  padding: 18px 20px;
+  background: var(--surface);
+}
+
+.prep-plan header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.prep-plan header strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.prep-plan header span {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- 倒计时 --- */
+
+.prep-plan-countdown {
+  border-color: color-mix(in srgb, var(--primary) 24%, var(--outline));
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--primary) 10%, transparent),
+      transparent 42%
+    ),
+    var(--surface);
+}
+
+.prep-plan-countdown p {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.prep-plan-countdown-days {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.prep-plan-countdown-days b {
+  margin: 0 4px;
+  color: var(--primary-strong);
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.prep-plan-countdown-days[data-tone='today'] b {
+  color: var(--danger);
+}
+
+.prep-plan-countdown-note {
+  color: var(--warning);
+}
+
+.prep-plan-schedule {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 9px;
+}
+
+.prep-plan-schedule label {
+  display: grid;
+  gap: 4px;
+}
+
+.prep-plan-schedule label span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.prep-plan-schedule input {
+  min-height: 34px;
+  border: 1px solid var(--outline);
+  border-radius: 9px;
+  padding: 0 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.prep-plan-schedule button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 14px;
+  background: var(--primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.prep-plan-schedule button:disabled {
+  opacity: 0.6;
+}
+
+.prep-plan-schedule em {
+  color: var(--danger);
+  font-size: 10px;
+  font-style: normal;
+}
+
+/* --- 今日任务 --- */
+
+.prep-plan-tasks ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prep-plan-tasks li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--outline);
+  border-radius: 11px;
+  padding: 10px 12px;
+  background: var(--surface-subtle);
+}
+
+.prep-plan-tasks li > span {
+  display: grid;
+  flex: none;
+  place-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--outline);
+  border-radius: 999px;
+  color: white;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.prep-plan-tasks li[data-done='true'] {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--outline));
+  background: color-mix(in srgb, var(--success) 7%, var(--surface-subtle));
+}
+
+.prep-plan-tasks li[data-done='true'] > span {
+  border-color: var(--success);
+  background: var(--success);
+}
+
+.prep-plan-tasks li a {
+  color: var(--text);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.prep-plan-tasks li a:hover {
+  color: var(--primary-strong);
+}
+
+.prep-plan-tasks li s {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* --- 连续训练 --- */
+
+.prep-plan-streak-count {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.prep-plan-streak-count b {
+  margin-right: 4px;
+  color: var(--primary-strong);
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.prep-plan-week {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prep-plan-week li {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+}
+
+.prep-plan-week i {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--outline);
+}
+
+.prep-plan-week li[data-active='true'] i {
+  background: var(--primary);
+}
+
+.prep-plan-week li[data-today='true'] i {
+  outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.prep-plan-week span {
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+@media (max-width: 980px) {
+  .prep-plan {
+    grid-template-columns: 1fr;
+  }
+}

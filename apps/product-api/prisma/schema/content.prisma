@@ -6,6 +6,7 @@ model JobIntent {
   jdText            String
   companyContext    String?
   communicationText String?
+  interviewDate     DateTime?
   status            JobIntentStatus @default(draft)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
