@@ -104,6 +104,57 @@ describe('PracticeCompletionPanel', () => {
   });
 });
 
+it('recommends the matching learning course when a low-score answer has a topic tag', () => {
+  const weakSession = {
+    ...session,
+    items: [
+      {
+        id: 'item-1',
+        sequence: 1,
+        question: { title: 'ReAct 循环', tags: ['ReAct'] },
+        evaluation: { score: 40 },
+      },
+    ],
+  } as PracticeSession;
+  const markup = renderToStaticMarkup(
+    createElement(PracticeCompletionPanel, {
+      session: weakSession,
+      report: weakReport,
+      mastery: [],
+      message: '',
+      onRetry: () => undefined,
+      onReviewItem: () => undefined,
+      onStartNextRecommendation: () => undefined,
+      startingNextRecommendation: false,
+      onStartWeaknessReview: () => undefined,
+      startingWeaknessReview: false,
+    }),
+  );
+
+  expect(markup).toContain('针对性补课');
+  expect(markup).toContain('去学《Agent 基础与上下文工程》');
+  expect(markup).toContain('1 道低分题命中 ReAct');
+});
+
+it('keeps the completion panel free of course entries when no tag maps to a course', () => {
+  const markup = renderToStaticMarkup(
+    createElement(PracticeCompletionPanel, {
+      session,
+      report: weakReport,
+      mastery: [],
+      message: '',
+      onRetry: () => undefined,
+      onReviewItem: () => undefined,
+      onStartNextRecommendation: () => undefined,
+      startingNextRecommendation: false,
+      onStartWeaknessReview: () => undefined,
+      startingWeaknessReview: false,
+    }),
+  );
+
+  expect(markup).not.toContain('针对性补课');
+});
+
 it('prioritizes weakness review when the completed report has a low-score answer', () => {
   const markup = renderToStaticMarkup(
     createElement(PracticeCompletionPanel, {

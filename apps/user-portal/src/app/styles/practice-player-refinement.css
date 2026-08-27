@@ -600,6 +600,36 @@ html[data-motion='off'] .practice-completion-review-list button:active {
   line-height: 1.6;
 }
 
+.practice-course-recommendation {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  margin-top: 6px;
+  border-top: 1px dashed color-mix(in srgb, var(--primary) 30%, var(--outline));
+  padding-top: 10px;
+}
+
+.practice-course-recommendation > span {
+  color: var(--primary-strong);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.practice-course-recommendation > a {
+  color: var(--primary-strong);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.practice-course-recommendation > small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
 .practice-player-page :is(button, textarea):focus-visible {
   outline: 3px solid var(--primary-glow);
   outline-offset: 2px;

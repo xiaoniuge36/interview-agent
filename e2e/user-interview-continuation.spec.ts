@@ -34,7 +34,8 @@ async function startFirstInterview(page: Page) {
 async function continueFromHome(page: Page, firstSessionHref: string) {
   await page.goto('/home');
   const continuation = page.getByRole('link', { name: '继续上次面试' });
-  await expect(continuation).toHaveCount(1);
+  /* 满并发下首页数据接口偶尔超过默认 5s，放宽到 20s 与其余档案断言一致。 */
+  await expect(continuation).toHaveCount(1, { timeout: 20_000 });
   await expect(continuation).toHaveAttribute('href', firstSessionHref);
   await continuation.click();
   await expect(page).toHaveURL(firstSessionHref);

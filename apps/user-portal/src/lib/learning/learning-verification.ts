@@ -73,6 +73,23 @@ const LEARNING_COURSES: readonly LearningCourse[] = [
   },
 ];
 
+export type LearningCourseSummary = {
+  slug: string;
+  title: string;
+  topicLabel: string;
+};
+
+const COURSE_BY_TOPIC_TAG = new Map(
+  LEARNING_COURSES.filter((course) => course.topic).map((course) => [course.topic!.tag, course]),
+);
+
+/** 按题库主题标签反查学习课程，用于把薄弱标签换算成补课入口。 */
+export function learningCourseForTag(tag: string): LearningCourseSummary | null {
+  const course = COURSE_BY_TOPIC_TAG.get(tag);
+  if (!course?.topic) return null;
+  return { slug: course.slug, title: course.title, topicLabel: course.topic.label };
+}
+
 export type LearningVerification =
   | { status: 'inactive' }
   | { status: 'invalid' }

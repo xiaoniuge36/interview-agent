@@ -53,6 +53,30 @@ describe('MistakeBookContent', () => {
   });
 });
 
+describe('MistakeBookContent course recommendation', () => {
+  it('turns low-score topic tags into a targeted course entry', () => {
+    const reactMistake = {
+      ...book(true).items[0]!,
+      questionSnapshot: {
+        ...book(true).items[0]!.questionSnapshot,
+        tags: ['ReAct', '基础概念'],
+      },
+    };
+    const markup = render({ ...book(true), items: [reactMistake] });
+
+    expect(markup).toContain('针对性补课');
+    expect(markup).toContain('去学《Agent 基础与上下文工程》');
+    expect(markup).toContain(
+      'href="/learn?doc=%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF-01-agent%E5%9F%BA%E7%A1%80%E4%B8%8E%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B"',
+    );
+    expect(markup).toContain('1 道低分题命中 ReAct');
+  });
+
+  it('hides the course entry when no mistake maps to a learning course', () => {
+    expect(render(book(true))).not.toContain('针对性补课');
+  });
+});
+
 it('opens a created mistake review with the only permitted return origin', () => {
   expect(mistakeBookReviewHref('review-session')).toBe(
     '/practice?session=review-session&origin=mistake-book',

@@ -9,7 +9,7 @@ type WeaknessReviewWorkflow = {
   onError: (error: unknown) => void;
 };
 
-const REVIEWABLE_WEAK_SCORE = 60;
+export const REVIEWABLE_WEAK_SCORE = 60;
 
 export function createExclusiveWeaknessReviewRunner() {
   let running = false;

@@ -67,6 +67,50 @@
   gap: 10px;
 }
 
+/* 低分标签 → 学习课程的补课入口，视觉上承接错题证据的警示色。 */
+.mistake-course-recommendation {
+  display: grid;
+  gap: 8px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 38%, var(--outline));
+  border-radius: 14px;
+  padding: 12px 15px;
+  background: color-mix(in srgb, var(--primary-soft) 46%, var(--surface));
+}
+
+.mistake-course-recommendation > span {
+  color: var(--primary-strong);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mistake-course-recommendation > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.mistake-course-recommendation a {
+  display: grid;
+  gap: 2px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.mistake-course-recommendation a strong {
+  color: var(--primary-strong);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mistake-course-recommendation a small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
 .mistake-book-row {
   display: grid;
   grid-template-columns: 54px minmax(0, 1fr) auto;

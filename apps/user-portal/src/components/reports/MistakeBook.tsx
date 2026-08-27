@@ -12,6 +12,7 @@ import {
   MISTAKE_BOOK_RETURN_ANCHOR_ID,
 } from '@/components/practice/player/practice-return-origin';
 import { ArchivePagination } from './ArchivePagination';
+import { MistakeCourseRecommendation } from './MistakeCourseRecommendation';
 
 const REVIEW_MINUTES_PER_QUESTION = 8;
 /* 错题本独占一个分区，单页 8 条在压缩行高后约一屏半，翻页成本可控。 */
@@ -137,6 +138,7 @@ export function MistakeBookContent({
       aria-busy={refreshing}
     >
       <MistakeBookHeader total={book.total} returnedFromReview={returnedFromReview} />
+      <MistakeCourseRecommendation items={book.items} />
       <div className="mistake-book-list motion-stagger">
         {book.items.map((item) => (
           <MistakeBookRow

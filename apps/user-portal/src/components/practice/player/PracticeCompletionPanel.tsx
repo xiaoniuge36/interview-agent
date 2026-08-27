@@ -3,6 +3,7 @@ import type { MasteryProfile, PracticeReport, PracticeSession } from '@interview
 import Link from 'next/link';
 import { PracticeReportPanel } from '../PracticeReportPanel';
 import { hasReviewableWeakness } from '@/lib/weakness-review';
+import { PracticeCourseRecommendation } from './PracticeCourseRecommendation';
 import { PracticeEvidenceStrip } from './PracticeEvidenceStrip';
 import { practiceReturnHref, type PracticeReturnOrigin } from './practice-return-origin';
 
@@ -105,6 +106,7 @@ function CompletionEvidence({
             returnToMistakeBook,
           })}
         </p>
+        {reportAvailable ? <PracticeCourseRecommendation session={session} /> : null}
       </div>
     </section>
   );
