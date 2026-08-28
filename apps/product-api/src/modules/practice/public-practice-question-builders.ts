@@ -33,6 +33,11 @@ export function buildPublicPracticeQuestions(
   category: RoleCategory,
   inputs: PublicPracticeQuestionInput[],
 ): Question[] {
+  // 空 points 能通过题目契约（rubric 允许空数组），但会延迟到用户作答评估时才 500，构建期直接拦下。
+  const missingPoints = inputs.find((input) => input.points.length === 0);
+  if (missingPoints) {
+    throw new Error(`题目 ${missingPoints.suffix} 缺少评分要点（points），AI 评估会失败`);
+  }
   return inputs.map((input) => ({
     id: `q-practice-${input.suffix}`,
     tenantId: 'public',
