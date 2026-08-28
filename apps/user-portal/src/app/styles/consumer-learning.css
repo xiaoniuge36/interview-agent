@@ -46,6 +46,9 @@
 
 .learning-library {
   gap: 15px;
+  max-height: calc(100vh - 102px - 20px);
+  /* 给滚动条与卡片阴影留出呼吸空间。 */
+  padding: 2px 6px 8px 2px;
 }
 
 .learning-library-heading {
@@ -125,10 +128,19 @@
 
 .learning-document-group {
   gap: 9px;
-  padding: 15px;
+  padding: 10px;
   border: 1px solid var(--outline);
   border-radius: 18px;
   background: color-mix(in srgb, var(--surface) 78%, transparent);
+}
+
+.learning-group-toggle {
+  color: var(--text-muted);
+}
+
+.learning-group-toggle:hover {
+  background: color-mix(in srgb, var(--consumer-violet-soft) 55%, transparent);
+  color: var(--consumer-ink);
 }
 
 .learning-document-list {
@@ -270,15 +282,17 @@
   }
   .learning-library {
     position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
   }
   .learning-library-heading {
     padding: 20px;
   }
   .learning-document-group {
-    padding: 12px;
+    padding: 10px;
   }
   .learning-document-list {
-    grid-auto-columns: minmax(240px, 82%);
     gap: 8px;
   }
   .learning-reading-desk {

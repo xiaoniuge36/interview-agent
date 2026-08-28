@@ -1,6 +1,29 @@
 import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, extname, parse, relative, resolve } from 'node:path';
+import {
+  slugify,
+  TERTIARY_HEADING_DEPTH,
+  type LearningDocument,
+  type LearningDocumentKind,
+  type LearningHeading,
+  type LearningLevel,
+} from './learning-document-model';
+
+// 纯函数与类型的实现在 learning-document-model.ts（客户端可用），这里 re-export 保持既有导入路径。
+export {
+  findLearningReviewHeading,
+  findRequestedLearningDocument,
+  selectLearningDocument,
+  slugify,
+  TERTIARY_HEADING_DEPTH,
+} from './learning-document-model';
+export type {
+  LearningDocument,
+  LearningDocumentKind,
+  LearningHeading,
+  LearningLevel,
+} from './learning-document-model';
 
 const WORKSPACE_SEARCH_DEPTH = 6;
 const DOCUMENT_SCAN_DEPTH = 3;
@@ -8,33 +31,6 @@ const DEFAULT_REFERENCE_TRACK = '参考资料';
 const DEFAULT_COURSE_TRACK = '学习路线';
 const COURSE_SORT_FALLBACK = Number.MAX_SAFE_INTEGER;
 const COURSE_KIND = 'course';
-const REVIEW_HEADING_PATTERN = /自测|review/i;
-export const TERTIARY_HEADING_DEPTH = 3;
-
-export type LearningDocumentKind = 'course' | 'reference';
-export type LearningLevel = 'foundation' | 'intermediate' | 'advanced' | 'reference';
-
-export type LearningHeading = {
-  depth: 2 | typeof TERTIARY_HEADING_DEPTH;
-  id: string;
-  title: string;
-};
-
-export type LearningDocument = {
-  slug: string;
-  sourceName: string;
-  title: string;
-  date: string | null;
-  tags: string[];
-  kind: LearningDocumentKind;
-  track: string;
-  order: number | null;
-  level: LearningLevel;
-  durationMinutes: number | null;
-  summary: string | null;
-  content: string;
-  headings: LearningHeading[];
-};
 
 type FrontmatterAttributes = {
   title?: string;
@@ -62,32 +58,6 @@ export async function loadLearningDocuments(
   } catch {
     return [];
   }
-}
-
-export function selectLearningDocument<T extends { slug: string }>(
-  documents: readonly T[],
-  requestedSlug: string | string[] | undefined,
-): T | null {
-  return findRequestedLearningDocument(documents, requestedSlug) ?? documents[0] ?? null;
-}
-
-export function findRequestedLearningDocument<T extends { slug: string }>(
-  documents: readonly T[],
-  requestedSlug: string | string[] | undefined,
-): T | null {
-  const slug = Array.isArray(requestedSlug) ? requestedSlug[0] : requestedSlug;
-  if (!slug) return null;
-  return documents.find((document) => document.slug === slug) ?? null;
-}
-
-export function findLearningReviewHeading(
-  headings: readonly LearningHeading[],
-): LearningHeading | null {
-  for (let index = headings.length - 1; index >= 0; index -= 1) {
-    const heading = headings[index];
-    if (heading && REVIEW_HEADING_PATTERN.test(heading.title)) return heading;
-  }
-  return null;
 }
 
 export function resolveLearningDocumentsDirectory(startDirectory = process.cwd()): string {
@@ -267,16 +237,6 @@ function cleanHeading(value: string): string {
     .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
     .replace(/[*_~]/g, '')
     .trim();
-}
-
-export function slugify(value: string): string {
-  return (
-    value
-      .normalize('NFKC')
-      .toLowerCase()
-      .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
-      .replace(/^-+|-+$/g, '') || 'document'
-  );
 }
 
 function compareDocuments(left: LearningDocument, right: LearningDocument): number {

@@ -11,7 +11,7 @@ export async function signInUser(page: Page, user: LocalUser): Promise<void> {
 }
 
 export async function signInAdmin(page: Page, user: LocalUser): Promise<void> {
-  await page.goto(process.env.E2E_ADMIN_URL ?? 'http://127.0.0.1:3102');
+  await page.goto(process.env.E2E_ADMIN_URL ?? 'http://localhost:7102');
   await page.locator('#admin-email').fill(user.email);
   await page.locator('#admin-password').fill(user.password);
   await page.locator('.admin-access-submit').click();

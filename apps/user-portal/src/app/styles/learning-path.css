@@ -57,18 +57,60 @@
   gap: 8px;
 }
 
-.learning-document-group > header {
+.learning-group-toggle {
+  width: 100%;
+  min-height: 34px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
   color: var(--text-subtle);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.05em;
+  cursor: pointer;
 }
 
-.learning-document-group > header span {
+.learning-group-toggle:hover {
+  color: var(--ink);
+}
+
+.learning-group-toggle strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.learning-group-meta {
   font-family: var(--font-mono);
+}
+
+.learning-group-chevron {
+  width: 7px;
+  height: 7px;
+  margin: -3px 3px 0 1px;
+  border-right: 1.5px solid currentcolor;
+  border-bottom: 1.5px solid currentcolor;
+  transform: rotate(45deg);
+  transition: transform 160ms var(--ease-out);
+}
+
+.learning-group-toggle[aria-expanded='false'] .learning-group-chevron {
+  margin-top: 0;
+  transform: rotate(-45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learning-group-chevron {
+    transition: none;
+  }
 }
 
 .learning-document-link {
@@ -205,8 +247,8 @@
     min-width: 0;
   }
 
-  .learning-document-group .learning-document-list {
-    grid-auto-columns: minmax(230px, 82%);
+  .learning-group-toggle {
+    min-height: 44px;
   }
 
   .learning-course-brief {

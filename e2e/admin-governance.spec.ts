@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { registerUser, verifyModelConnection } from './helpers/api';
 import { signInAdmin } from './helpers/auth';
 
-const ADMIN_URL = process.env.E2E_ADMIN_URL ?? 'http://127.0.0.1:3102';
+const ADMIN_URL = process.env.E2E_ADMIN_URL ?? 'http://localhost:7102';
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@interview-agent.test';
 const ADMIN_PASSWORD = process.env.LOCAL_ADMIN_PASSWORD ?? '';
 const MODEL_API_KEY = 'e2e-credential-secret-9876';

@@ -1,8 +1,7 @@
 import { isValidElement, type ReactNode } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { LearningDocument } from '@/lib/learning/learning-documents';
-import { slugify } from '@/lib/learning/learning-documents';
+import { slugify, type LearningDocument } from '@/lib/learning/learning-document-model';
 
 export function LearningArticle({ document }: { document: LearningDocument }) {
   const nextHeadingId = createHeadingIdFactory();

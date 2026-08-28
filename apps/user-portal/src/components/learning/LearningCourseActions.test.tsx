@@ -48,6 +48,7 @@ function registerVerificationStartTest() {
           durationMinutes: 75,
         }}
         nextCourse={null}
+        onSelectDocument={() => {}}
         reviewHeading={null}
       />,
     );
@@ -81,6 +82,7 @@ function registerLocalVerificationRecordTest() {
           durationMinutes: 75,
         }}
         nextCourse={null}
+        onSelectDocument={() => {}}
         reviewHeading={null}
       />,
     );

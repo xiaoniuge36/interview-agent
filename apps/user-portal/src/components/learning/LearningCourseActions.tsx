@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import type { LearningHeading } from '@/lib/learning/learning-documents';
+import type { LearningHeading } from '@/lib/learning/learning-document-model';
 import type { LocalLearningVerification } from '@/lib/learning/learning-progress';
 import {
   isLearningVerificationReturnHash,
@@ -10,7 +10,10 @@ import {
   learningVerificationHref,
   LEARNING_COURSE_ACTIONS_ANCHOR,
 } from '@/lib/learning/learning-verification';
-import { PushNavigationLink } from '@/components/navigation/PushNavigationLink';
+import {
+  documentLinkClickHandler,
+  learningDocumentHref,
+} from '@/lib/learning/learning-center-navigation';
 import type { LearningNavigationItem } from './LearningLibraryRail';
 import { useLearningProgress } from './LearningProgressProvider';
 
@@ -20,10 +23,12 @@ export function LearningCourseActions({
   course,
   nextCourse,
   reviewHeading,
+  onSelectDocument,
 }: {
   course: LearningNavigationItem;
   nextCourse: LearningNavigationItem | null;
   reviewHeading: LearningHeading | null;
+  onSelectDocument: (slug: string) => void;
 }) {
   const progress = useLearningProgress();
   const { completed, copy, verification } = learningCourseActionState(progress, course, nextCourse);
@@ -55,21 +60,30 @@ export function LearningCourseActions({
             ? `再次验证 · ${verification.topic}`
             : learningVerificationActionLabel(course.slug)}
         </Link>
-        {nextCourse ? <NextCourseLink nextCourse={nextCourse} /> : null}
+        {nextCourse ? (
+          <NextCourseLink nextCourse={nextCourse} onSelectDocument={onSelectDocument} />
+        ) : null}
       </div>
       <LearningVerificationReturnNotice />
     </section>
   );
 }
 
-function NextCourseLink({ nextCourse }: { nextCourse: LearningNavigationItem }) {
+function NextCourseLink({
+  nextCourse,
+  onSelectDocument,
+}: {
+  nextCourse: LearningNavigationItem;
+  onSelectDocument: (slug: string) => void;
+}) {
   return (
-    <PushNavigationLink
+    <a
       className="primary"
-      href={`/learn?doc=${encodeURIComponent(nextCourse.slug)}`}
+      href={learningDocumentHref(nextCourse.slug)}
+      onClick={documentLinkClickHandler(nextCourse.slug, onSelectDocument)}
     >
       下一课 · {nextCourse.title}
-    </PushNavigationLink>
+    </a>
   );
 }
 

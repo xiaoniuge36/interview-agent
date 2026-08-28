@@ -21,6 +21,26 @@
   scroll-margin-top: 88px;
   display: grid;
   gap: 22px;
+  align-content: start;
+  /* 课程数量多时资料架独立滚动，不再把整页撑长。 */
+  max-height: calc(100vh - 78px - 22px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--outline-strong) transparent;
+}
+
+.learning-library::-webkit-scrollbar {
+  width: 5px;
+}
+
+.learning-library::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--outline-strong);
+}
+
+.learning-library::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .learning-library-heading > span,
@@ -50,6 +70,11 @@
 .learning-document-list {
   display: grid;
   gap: 7px;
+}
+
+/* display: grid 会盖掉 hidden 的 UA 样式，折叠组必须显式收起。 */
+.learning-document-list[hidden] {
+  display: none;
 }
 
 .learning-document-link {
@@ -276,13 +301,8 @@ html[data-motion='off'] .learning-document-link:hover .learning-document-spine {
 
   .learning-library {
     position: static;
-  }
-
-  .learning-document-list {
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(244px, 86%);
-    overflow-x: auto;
-    padding-bottom: 5px;
+    max-height: none;
+    overflow: visible;
   }
 
   .learning-outline nav {

@@ -3,14 +3,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it } from 'vitest';
-import type { LearningDocument } from '@/lib/learning/learning-documents';
+import type { LearningDocument } from '@/lib/learning/learning-document-model';
 import { LearningCenter } from './LearningCenter';
 import { learningCourseActionCopy } from './LearningCourseActions';
-import {
-  groupCoursesByTrack,
-  learningRailScrollLeft,
-  LearningStorageNotice,
-} from './LearningLibraryRail';
+import { LearningStorageNotice } from './LearningLibraryProgress';
+import { groupCoursesByTrack, learningRailScrollOffset } from './LearningLibraryRail';
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 
@@ -129,6 +126,12 @@ it('groups courses by track and summarizes multi-track libraries', () => {
   expect(markup).toContain('AI Agent 工程师完整路线 等 2 个方向');
   expect(markup).toContain('求职通用能力');
   expect(markup).toContain('0 / 3 课');
+
+  // 默认只展开当前文档所在组；折叠组保留链接 DOM（hidden），支持直达与 SEO。
+  expect(markup.match(/aria-expanded="true"/g)).toHaveLength(1);
+  expect(markup.match(/aria-expanded="false"/g)).toHaveLength(2);
+  expect(markup).toContain('href="/learn?doc=star-method"');
+  expect(markup).toMatch(/<nav hidden=""[^>]*>(?:(?!<\/nav>).)*star-method/);
 });
 
 it('explains when progress can only be kept for the current visit', () => {
@@ -162,29 +165,29 @@ it('reserves a desktop docking lane beside the learning outline', () => {
   );
 });
 
-it('centers the active course in an overflowing rail and clamps both edges', () => {
+it('centers the active document in an overflowing rail and clamps both edges', () => {
   expect(
-    learningRailScrollLeft({
-      viewportWidth: 324,
-      contentWidth: 1889,
-      itemLeft: 1422,
-      itemWidth: 230,
+    learningRailScrollOffset({
+      viewportSize: 324,
+      contentSize: 1889,
+      itemStart: 1422,
+      itemSize: 230,
     }),
   ).toBe(1375);
   expect(
-    learningRailScrollLeft({
-      viewportWidth: 324,
-      contentWidth: 1889,
-      itemLeft: 0,
-      itemWidth: 230,
+    learningRailScrollOffset({
+      viewportSize: 324,
+      contentSize: 1889,
+      itemStart: 0,
+      itemSize: 230,
     }),
   ).toBe(0);
   expect(
-    learningRailScrollLeft({
-      viewportWidth: 324,
-      contentWidth: 1889,
-      itemLeft: 1800,
-      itemWidth: 230,
+    learningRailScrollOffset({
+      viewportSize: 324,
+      contentSize: 1889,
+      itemStart: 1800,
+      itemSize: 230,
     }),
   ).toBe(1565);
 });

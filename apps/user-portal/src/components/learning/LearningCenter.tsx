@@ -1,9 +1,12 @@
-import type { CSSProperties } from 'react';
+'use client';
+
+import { useMemo, type CSSProperties } from 'react';
 import {
   findLearningReviewHeading,
   TERTIARY_HEADING_DEPTH,
   type LearningDocument,
-} from '@/lib/learning/learning-documents';
+} from '@/lib/learning/learning-document-model';
+import { useLearningDocumentSwitch } from '@/lib/learning/learning-center-navigation';
 import { LearningArticle } from './LearningArticle';
 import { LearningCourseActions } from './LearningCourseActions';
 import { LearningLibraryRail, type LearningNavigationItem } from './LearningLibraryRail';
@@ -20,42 +23,101 @@ const OUTLINE_RISE_DELAY = { '--rise-delay': '180ms' } as CSSProperties;
 
 export function LearningCenter({
   documents,
-  activeDocument,
-  openedCourseSlug,
+  activeDocument: initialDocument,
+  openedCourseSlug: initialOpenedCourseSlug,
 }: LearningCenterProps) {
+  if (!initialDocument) return <LearningEmptyState />;
+  return (
+    <LearningCenterSwitch
+      documents={documents}
+      initialSlug={initialDocument.slug}
+      initialOpenedCourseSlug={initialOpenedCourseSlug}
+    />
+  );
+}
+
+function LearningCenterSwitch({
+  documents,
+  initialSlug,
+  initialOpenedCourseSlug,
+}: {
+  documents: LearningDocument[];
+  initialSlug: string;
+  initialOpenedCourseSlug: string | null;
+}) {
+  const { activeDocument, openedCourseSlug, selectDocument } = useLearningDocumentSwitch(
+    documents,
+    initialSlug,
+    initialOpenedCourseSlug,
+  );
+  // 切课只是本组件的状态更新；memo 保持引用稳定，避免进度 Provider 的同步 effect 反复触发。
+  const navigationItems = useMemo(() => documents.map(toNavigationItem), [documents]);
+  const courses = useMemo(
+    () => navigationItems.filter((document) => document.kind === 'course'),
+    [navigationItems],
+  );
+  const courseSlugs = useMemo(() => courses.map((course) => course.slug), [courses]);
   if (!activeDocument) return <LearningEmptyState />;
-  const navigationItems = documents.map(toNavigationItem);
-  const courses = navigationItems.filter((document) => document.kind === 'course');
+  return (
+    <LearningProgressProvider courseSlugs={courseSlugs} openedCourseSlug={openedCourseSlug}>
+      <div className="learning-center">
+        <LearningCenterHero />
+        <LearningLibraryRail
+          documents={navigationItems}
+          activeSlug={activeDocument.slug}
+          onSelectDocument={selectDocument}
+        />
+        {/* key 触发内容区 remount，复用 motion-rise 作为切课过渡动画。 */}
+        <ReadingDesk
+          key={activeDocument.slug}
+          activeDocument={activeDocument}
+          courses={courses}
+          onSelectDocument={selectDocument}
+        />
+        <DocumentOutline document={activeDocument} />
+      </div>
+    </LearningProgressProvider>
+  );
+}
+
+function ReadingDesk({
+  activeDocument,
+  courses,
+  onSelectDocument,
+}: {
+  activeDocument: LearningDocument;
+  courses: LearningNavigationItem[];
+  onSelectDocument: (slug: string) => void;
+}) {
+  const { activeCourse, nextCourse, reviewHeading } = deriveCourseContext(courses, activeDocument);
+  return (
+    <section className="learning-reading-desk motion-rise" style={READING_DESK_RISE_DELAY}>
+      <DocumentHeader document={activeDocument} />
+      <CourseBrief document={activeDocument} />
+      <LearningArticle document={activeDocument} />
+      {activeCourse ? (
+        <LearningCourseActions
+          course={activeCourse}
+          nextCourse={nextCourse}
+          reviewHeading={reviewHeading}
+          onSelectDocument={onSelectDocument}
+        />
+      ) : null}
+    </section>
+  );
+}
+
+function deriveCourseContext(
+  courses: LearningNavigationItem[],
+  activeDocument: LearningDocument,
+) {
   const activeCourse =
     activeDocument.kind === 'course'
       ? (courses.find((document) => document.slug === activeDocument.slug) ?? null)
       : null;
   const nextCourse = activeCourse ? (courses[courses.indexOf(activeCourse) + 1] ?? null) : null;
   const reviewHeading = activeCourse ? findLearningReviewHeading(activeDocument.headings) : null;
-  return (
-    <LearningProgressProvider
-      courseSlugs={courses.map((course) => course.slug)}
-      openedCourseSlug={openedCourseSlug}
-    >
-      <div className="learning-center">
-        <LearningCenterHero />
-        <LearningLibraryRail documents={navigationItems} activeSlug={activeDocument.slug} />
-        <section className="learning-reading-desk motion-rise" style={READING_DESK_RISE_DELAY}>
-          <DocumentHeader document={activeDocument} />
-          <CourseBrief document={activeDocument} />
-          <LearningArticle document={activeDocument} />
-          {activeCourse ? (
-            <LearningCourseActions
-              course={activeCourse}
-              nextCourse={nextCourse}
-              reviewHeading={reviewHeading}
-            />
-          ) : null}
-        </section>
-        <DocumentOutline document={activeDocument} />
-      </div>
-    </LearningProgressProvider>
-  );
+  return { activeCourse, nextCourse, reviewHeading };
 }
 
 function LearningCenterHero() {

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-const API_BASE_URL = process.env.E2E_API_URL ?? 'http://127.0.0.1:3101/api';
+const API_BASE_URL = process.env.E2E_API_URL ?? 'http://localhost:7101/api';
 const E2E_MODEL_BASE_URL = 'https://model.e2e.test/v1';
 const ANSWER = '我会说明背景、决策、结果和复盘。';
 

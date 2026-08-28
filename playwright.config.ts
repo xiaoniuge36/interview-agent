@@ -7,7 +7,7 @@ export default defineConfig({
   outputDir: 'test-results/e2e',
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
-    baseURL: process.env.E2E_USER_URL ?? 'http://127.0.0.1:3100',
+    baseURL: process.env.E2E_USER_URL ?? 'http://localhost:7100',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
