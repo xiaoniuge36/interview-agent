@@ -29,9 +29,10 @@
   gap: 8px;
 }
 
-.practice-feedback-header h1 {
+/* hero 是固定深色底：文字用固定浅色，并以 .practice-player-page 前缀压过主题层对 h1 的 ink 覆盖。 */
+.practice-player-page .practice-feedback-header h1 {
   margin: 0;
-  color: white;
+  color: #fff;
   font-size: clamp(27px, 3.4vw, 42px);
   letter-spacing: -0.045em;
 }
@@ -39,7 +40,7 @@
 .practice-feedback-header p {
   max-width: 760px;
   margin: 0;
-  color: color-mix(in srgb, var(--agent-text) 78%, transparent);
+  color: rgba(234, 242, 255, 0.78);
   font-size: 13px;
 }
 

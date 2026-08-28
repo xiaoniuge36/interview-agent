@@ -30,6 +30,7 @@ export function JobPageContent() {
           </header>
           <div className="job-intent-layout">
             <JobIntentPanel
+              savedIntent={data.jobs[0]?.intent ?? null}
               onCreated={data.addJob}
               onStart={(job) => router.push(interviewHrefForJob(job.intent.id))}
             />

@@ -42,7 +42,8 @@
 
 .practice-feedback-launcher > header p {
   margin: 0;
-  color: color-mix(in srgb, var(--agent-text) 76%, transparent);
+  /* 深色渐变底上固定浅色，不随主题 ink 翻转。 */
+  color: rgba(234, 242, 255, 0.76);
   font-size: 12px;
   line-height: 1.65;
 }

@@ -4,6 +4,7 @@ import { useEffect, useState, type Dispatch, type FormEvent, type SetStateAction
 import {
   CreateJobIntentInputSchema,
   type CreateJobIntentInput,
+  type JobIntent,
   type JobIntentPayload,
 } from '@interview-agent/contracts';
 import { createJobIntent } from '@/lib/workspace-api';
@@ -13,6 +14,7 @@ import {
   DEFAULT_JOB_FORM,
   focusFirstInvalidJobField,
   jobFormFromRole,
+  jobFormFromSavedIntent,
   updateJobForm,
 } from './job-form';
 import { createExclusiveJobSubmissionRunner } from './job-submission-single-flight';
@@ -20,12 +22,18 @@ import { createExclusiveJobSubmissionRunner } from './job-submission-single-flig
 type JobIntentCallbacks = {
   onCreated: (payload: JobIntentPayload) => void;
   onStart: (payload: JobIntentPayload) => void;
+  savedIntent?: JobIntent | null;
 };
 
 export function useJobIntentForm(callbacks: JobIntentCallbacks) {
-  const [form, setForm] = useState<CreateJobIntentInput>(DEFAULT_JOB_FORM);
-  const [message, setMessage] = useState(
-    '系统不会替你假定岗位；先选择岗位模板预填，或粘贴真实 JD。',
+  const savedIntent = callbacks.savedIntent ?? null;
+  const [form, setForm] = useState<CreateJobIntentInput>(() =>
+    savedIntent ? jobFormFromSavedIntent(savedIntent) : DEFAULT_JOB_FORM,
+  );
+  const [message, setMessage] = useState(() =>
+    savedIntent
+      ? `已载入上次保存的「${savedIntent.targetRole}」，可直接修改后重新保存。`
+      : '系统不会替你假定岗位；先选择岗位模板预填，或粘贴真实 JD。',
   );
   const update = <Key extends keyof CreateJobIntentInput>(
     key: Key,

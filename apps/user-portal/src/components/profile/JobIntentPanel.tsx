@@ -1,12 +1,13 @@
 'use client';
 
-import type { JobIntentPayload } from '@interview-agent/contracts';
+import type { JobIntent, JobIntentPayload } from '@interview-agent/contracts';
 import { JobIntentFields } from './JobIntentFields';
 import { useJobIntentForm } from './useJobIntentForm';
 
 type JobIntentPanelProps = {
   onCreated: (payload: JobIntentPayload) => void;
   onStart: (payload: JobIntentPayload) => void;
+  savedIntent?: JobIntent | null;
 };
 
 export function JobIntentPanel(props: JobIntentPanelProps) {

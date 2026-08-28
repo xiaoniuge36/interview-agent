@@ -1,4 +1,4 @@
-import type { CreateJobIntentInput } from '@interview-agent/contracts';
+import type { CreateJobIntentInput, JobIntent } from '@interview-agent/contracts';
 import { roleInputFor } from '@/lib/interview-roles';
 
 export const DEFAULT_JOB_FORM: CreateJobIntentInput = {
@@ -11,6 +11,17 @@ export const DEFAULT_JOB_FORM: CreateJobIntentInput = {
 
 export function jobFormFromRole(title: string): CreateJobIntentInput {
   return roleInputFor(title);
+}
+
+/** 已保存过岗位的用户回到本页时预填上次内容：直接在原 JD 上微调，而不是从零重填。 */
+export function jobFormFromSavedIntent(intent: JobIntent): CreateJobIntentInput {
+  return {
+    targetRole: intent.targetRole,
+    jdText: intent.jdText,
+    companyContext: intent.companyContext ?? '',
+    communicationText: intent.communicationText ?? '',
+    interviewDate: intent.interviewDate,
+  };
 }
 
 export function updateJobForm<Key extends keyof CreateJobIntentInput>(
