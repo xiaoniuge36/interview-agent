@@ -50,22 +50,20 @@ describe('自选题单状态', () => {
   });
 });
 
-describe('推荐优先的自选入口', () => {
-  it('有推荐且用户尚未选题时默认收束自选工作区', () => {
+describe('题库大厅的选题工作区展示', () => {
+  it('推荐加载中暂不渲染工作区，避免首屏布局跳动', () => {
     expect(
       shouldShowSelfPicker({
-        recommendationAvailable: true,
-        recommendationLoading: false,
+        recommendationLoading: true,
         selectionCount: 0,
         manuallyOpened: false,
       }),
     ).toBe(false);
   });
 
-  it('在无推荐、已有选题或用户主动打开时展示自选工作区', () => {
+  it('推荐加载结束后默认展示题库工作区；已有选择或主动打开时即使加载中也展示', () => {
     expect(
       shouldShowSelfPicker({
-        recommendationAvailable: false,
         recommendationLoading: false,
         selectionCount: 0,
         manuallyOpened: false,
@@ -73,15 +71,13 @@ describe('推荐优先的自选入口', () => {
     ).toBe(true);
     expect(
       shouldShowSelfPicker({
-        recommendationAvailable: true,
-        recommendationLoading: false,
+        recommendationLoading: true,
         selectionCount: 1,
         manuallyOpened: false,
       }),
     ).toBe(true);
     expect(
       shouldShowSelfPicker({
-        recommendationAvailable: true,
         recommendationLoading: true,
         selectionCount: 0,
         manuallyOpened: true,

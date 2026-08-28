@@ -143,3 +143,21 @@
   gap: 10px;
   margin-top: 24px;
 }
+
+/* 404 页复用错误面板布局，但用主题主色而非告警色：地址错了不是系统故障。 */
+.route-missing {
+  min-height: min(640px, calc(100vh - 160px));
+  padding: 60px 20px;
+}
+
+.route-missing .route-error-panel::before {
+  background: linear-gradient(
+    90deg,
+    var(--theme-primary),
+    color-mix(in srgb, var(--theme-primary) 20%, transparent)
+  );
+}
+
+.route-missing .route-error-eyebrow {
+  color: var(--theme-primary);
+}

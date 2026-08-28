@@ -9,36 +9,17 @@ import type { SettingsReturnTarget } from './settings-return-target';
 type ModelReadinessBannerProps = {
   credentials: ModelCredentialView[];
   returnTarget?: SettingsReturnTarget | null;
-  onAdd: () => void;
 };
 
-export function ModelReadinessBanner({
-  credentials,
-  returnTarget = null,
-  onAdd,
-}: ModelReadinessBannerProps) {
+export function ModelReadinessBanner({ credentials, returnTarget = null }: ModelReadinessBannerProps) {
   const readiness = modelConnectionReadiness(credentials, returnTarget);
-  if (readiness.kind === 'empty') return <EmptyReadiness onAdd={onAdd} />;
+  // 零连接时不重复提示：下方的连接空态卡已承担“连接第一个模型”的完整引导。
+  if (readiness.kind === 'empty') return null;
   if (readiness.kind === 'ready')
     return (
       <ReadyReadiness credential={readiness.defaultCredential} nextAction={readiness.nextAction} />
     );
   return <NeedsActionReadiness credential={readiness.defaultCredential} />;
-}
-
-function EmptyReadiness({ onAdd }: { onAdd: () => void }) {
-  return (
-    <section className="model-readiness-banner" data-state="empty">
-      <div>
-        <span>训练前检查</span>
-        <strong>还没有可用的默认模型</strong>
-        <p>添加并测试一条模型连接后，才可以开始 AI 评价和模拟面试。</p>
-      </div>
-      <button className="button" type="button" onClick={onAdd}>
-        添加模型连接
-      </button>
-    </section>
-  );
 }
 
 function ReadyReadiness({

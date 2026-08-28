@@ -8,11 +8,8 @@ import { parseSettingsReturnTarget } from './settings-return-target';
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 
 describe('ModelReadinessBanner', () => {
-  it('explains when no default model is available', () => {
-    const markup = render([]);
-
-    expect(markup).toContain('还没有可用的默认模型');
-    expect(markup).toContain('添加模型连接');
+  it('stays silent when no connection exists: the empty-state card owns that guidance', () => {
+    expect(render([])).toBe('');
   });
 
   it('distinguishes a verified default from a connection that still needs action', () => {
@@ -55,13 +52,7 @@ function render(
   credentials: ModelCredentialView[],
   returnTarget = null as ReturnType<typeof parseSettingsReturnTarget>,
 ) {
-  return renderToStaticMarkup(
-    createElement(ModelReadinessBanner, {
-      credentials,
-      returnTarget,
-      onAdd: () => undefined,
-    }),
-  );
+  return renderToStaticMarkup(createElement(ModelReadinessBanner, { credentials, returnTarget }));
 }
 
 function credential(overrides: Partial<ModelCredentialView> = {}): ModelCredentialView {

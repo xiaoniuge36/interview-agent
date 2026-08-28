@@ -40,11 +40,7 @@ function ModelConnectionsView({
         </p>
       ) : null}
       {!controller.loading && !controller.error ? (
-        <ModelReadinessBanner
-          credentials={controller.credentials}
-          returnTarget={returnTarget}
-          onAdd={() => controller.setEditor(newEditor())}
-        />
+        <ModelReadinessBanner credentials={controller.credentials} returnTarget={returnTarget} />
       ) : null}
       {controller.editor ? (
         <ModelConnectionEditor

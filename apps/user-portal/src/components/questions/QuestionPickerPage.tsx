@@ -29,11 +29,19 @@ export function QuestionPickerPage() {
   const workspaceFocused = useLearningVerificationWorkspaceFocus(verification.status === 'ready');
   const agentHandoff = searchParams.get('source') === 'agent';
   const selfPickerVisible = shouldShowSelfPicker({
-    recommendationAvailable: Boolean(picker.recommendation),
     recommendationLoading: picker.recommendationLoading,
     selectionCount: picker.selected.length,
     manuallyOpened: selfPickerOpened,
   });
+  const openSelfPicker = () => {
+    setSelfPickerOpened(true);
+    // 工作区默认已展示时，按钮承担“定位到选题区”的职责。
+    requestAnimationFrame(() => {
+      document
+        .getElementById('self-picker-workspace')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
   return (
     <div className="question-picker-page">
       <QuestionPickerHeader verification={verification} />
@@ -43,7 +51,7 @@ export function QuestionPickerPage() {
         selfPickerVisible={selfPickerVisible}
         verification={verification}
         workspaceFocused={workspaceFocused}
-        onOpenSelfPicker={() => setSelfPickerOpened(true)}
+        onOpenSelfPicker={openSelfPicker}
       />
     </div>
   );
