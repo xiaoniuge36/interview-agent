@@ -105,3 +105,38 @@ describe('PUBLIC_PRACTICE_QUESTIONS 多元题型', () => {
     expect(engineering.some((question) => question.type === 'coding')).toBe(true);
   });
 });
+
+describe('PUBLIC_PRACTICE_QUESTIONS 学习课程联动', () => {
+  it('学习课程验证入口依赖的主题标签都有对应单选题', () => {
+    // 与 user-portal learning-verification.ts 的 LEARNING_COURSES topic.tag 保持同步：
+    // 课程页「进入题库验证」按 tag + single_choice 过滤，标签悬空会让验证入口查到空结果。
+    const COURSE_TOPIC_TAGS = [
+      'ReAct',
+      'Tool Calling',
+      'RAG',
+      '记忆与编排',
+      'Agent 评估',
+      '生产可靠性',
+      '面试表达',
+      'Computer Use',
+      'Agent Harness',
+      '协议与互操作',
+      'Agent RL',
+      'STAR',
+      '简历优化',
+      '结构化表达',
+      'Offer 决策',
+      '数据库',
+      '统计思维',
+      '产品方法论',
+      '增长模型',
+    ];
+    const missingTags = COURSE_TOPIC_TAGS.filter(
+      (tag) =>
+        !PUBLIC_PRACTICE_QUESTIONS.some(
+          (question) => question.type === 'single_choice' && question.tags.includes(tag),
+        ),
+    );
+    expect(missingTags).toEqual([]);
+  });
+});

@@ -71,6 +71,46 @@ const LEARNING_COURSES: readonly LearningCourse[] = [
     title: 'Agent 强化学习与后训练',
     topic: { slug: 'agent-rl', label: 'Agent RL', tag: 'Agent RL' },
   },
+  {
+    slug: '学习路线-20-star行为面试与项目深挖',
+    title: 'STAR 行为面试与项目深挖',
+    topic: { slug: 'star', label: 'STAR 方法', tag: 'STAR' },
+  },
+  {
+    slug: '学习路线-21-简历优化与自我介绍',
+    title: '简历优化与自我介绍',
+    topic: { slug: 'resume', label: '简历优化', tag: '简历优化' },
+  },
+  {
+    slug: '学习路线-22-结构化表达与金字塔原理',
+    title: '结构化表达与金字塔原理',
+    topic: { slug: 'structured-expression', label: '结构化表达', tag: '结构化表达' },
+  },
+  {
+    slug: '学习路线-23-反问谈薪与offer决策',
+    title: '反问、谈薪与 Offer 决策',
+    topic: { slug: 'offer', label: 'Offer 决策', tag: 'Offer 决策' },
+  },
+  {
+    slug: '学习路线-30-后端工程面试基础',
+    title: '后端工程面试基础：网络、数据库与并发',
+    topic: { slug: 'backend-basics', label: '后端基础', tag: '数据库' },
+  },
+  {
+    slug: '学习路线-31-数据分析面试指标与实验',
+    title: '数据分析面试：指标、实验与统计思维',
+    topic: { slug: 'stats-thinking', label: '统计思维', tag: '统计思维' },
+  },
+  {
+    slug: '学习路线-32-产品经理面试方法论',
+    title: '产品经理面试方法论',
+    topic: { slug: 'product-method', label: '产品方法论', tag: '产品方法论' },
+  },
+  {
+    slug: '学习路线-33-增长与运营面试模型与案例',
+    title: '增长与运营面试：模型与案例',
+    topic: { slug: 'growth-model', label: '增长模型', tag: '增长模型' },
+  },
 ];
 
 export type LearningCourseSummary = {
@@ -82,6 +122,11 @@ export type LearningCourseSummary = {
 const COURSE_BY_TOPIC_TAG = new Map(
   LEARNING_COURSES.filter((course) => course.topic).map((course) => [course.topic!.tag, course]),
 );
+
+/** 全部已映射课程的 slug，用于与磁盘上的课程文档做对齐校验。 */
+export function mappedLearningCourseSlugs(): string[] {
+  return LEARNING_COURSES.map((course) => course.slug);
+}
 
 /** 按题库主题标签反查学习课程，用于把薄弱标签换算成补课入口。 */
 export function learningCourseForTag(tag: string): LearningCourseSummary | null {

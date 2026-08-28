@@ -1,8 +1,10 @@
 import { expect, it } from 'vitest';
+import { loadLearningDocuments } from './learning-documents';
 import {
   learningPracticeHref,
   learningVerificationHref,
   learningVerificationReturnHref,
+  mappedLearningCourseSlugs,
   resolveLearningVerification,
 } from './learning-verification';
 
@@ -51,6 +53,14 @@ it.each([
   ['学习路线-09-编码agent与长任务harness', 'harness', 'Agent Harness'],
   ['学习路线-10-agent互操作协议与生态', 'protocols', '协议与互操作'],
   ['学习路线-11-agent强化学习与后训练', 'agent-rl', 'Agent RL'],
+  ['学习路线-20-star行为面试与项目深挖', 'star', 'STAR'],
+  ['学习路线-21-简历优化与自我介绍', 'resume', '简历优化'],
+  ['学习路线-22-结构化表达与金字塔原理', 'structured-expression', '结构化表达'],
+  ['学习路线-23-反问谈薪与offer决策', 'offer', 'Offer 决策'],
+  ['学习路线-30-后端工程面试基础', 'backend-basics', '数据库'],
+  ['学习路线-31-数据分析面试指标与实验', 'stats-thinking', '统计思维'],
+  ['学习路线-32-产品经理面试方法论', 'product-method', '产品方法论'],
+  ['学习路线-33-增长与运营面试模型与案例', 'growth-model', '增长模型'],
 ])('maps %s to an exact published question tag', (course, topic, tag) => {
   const verification = resolveLearningVerification({
     source: ['learn'],
@@ -96,6 +106,18 @@ it('leaves the existing agent and plain question entry flows untouched', () => {
   expect(resolveLearningVerification({ source: ['agent'], course: [], topic: [] })).toEqual({
     status: 'inactive',
   });
+});
+
+it('keeps course mappings and on-disk course documents in two-way sync', async () => {
+  const documents = await loadLearningDocuments();
+  const documentSlugs = new Set(
+    documents.filter((document) => document.kind === 'course').map((document) => document.slug),
+  );
+  const mappedSlugs = mappedLearningCourseSlugs();
+
+  // 映射了却没有文档：课程列表里点不开；有文档却没映射：验证入口静默消失。
+  expect(mappedSlugs.filter((slug) => !documentSlugs.has(slug))).toEqual([]);
+  expect([...documentSlugs].filter((slug) => !mappedSlugs.includes(slug))).toEqual([]);
 });
 
 it('returns only to the mapped course action anchor and never to input URLs', () => {

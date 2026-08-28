@@ -25,18 +25,27 @@ export function LearningLibraryRail({
 }) {
   const courses = documents.filter((document) => document.kind === 'course');
   const references = documents.filter((document) => document.kind === 'reference');
+  const trackGroups = groupCoursesByTrack(courses);
   const { progress, summary, storageStatus, isCompleted } = useLearningProgress();
   const continueDocument = courses.find((document) => document.slug === progress.lastOpenedSlug);
   return (
     <aside id="learning-path" className="learning-library" aria-label="学习资料目录" tabIndex={-1}>
       <LibraryProgress
-        track={courses[0]?.track ?? '完整学习路线'}
+        trackSummary={trackSummaryLabel(trackGroups)}
         summary={summary}
         continueDocument={continueDocument}
         activeSlug={activeSlug}
         storageStatus={storageStatus}
       />
-      <CoursePathGroup courses={courses} activeSlug={activeSlug} isCompleted={isCompleted} />
+      {trackGroups.map((group) => (
+        <CoursePathGroup
+          key={group.track}
+          track={group.track}
+          courses={group.courses}
+          activeSlug={activeSlug}
+          isCompleted={isCompleted}
+        />
+      ))}
       {references.length ? (
         <DocumentGroup title="参考资料" count={references.length}>
           {references.map((document) => (
@@ -53,14 +62,40 @@ export function LearningLibraryRail({
   );
 }
 
+type CourseTrackGroup = {
+  track: string;
+  courses: LearningNavigationItem[];
+};
+
+/** 按 track 分组课程，保持文档全局排序中每个 track 首次出现的先后顺序。 */
+export function groupCoursesByTrack(courses: LearningNavigationItem[]): CourseTrackGroup[] {
+  const groups = new Map<string, LearningNavigationItem[]>();
+  for (const course of courses) {
+    const members = groups.get(course.track);
+    if (members) {
+      members.push(course);
+    } else {
+      groups.set(course.track, [course]);
+    }
+  }
+  return [...groups.entries()].map(([track, members]) => ({ track, courses: members }));
+}
+
+function trackSummaryLabel(trackGroups: CourseTrackGroup[]): string {
+  const first = trackGroups[0];
+  if (!first) return '完整学习路线';
+  if (trackGroups.length === 1) return first.track;
+  return `${first.track} 等 ${trackGroups.length} 个方向`;
+}
+
 function LibraryProgress({
-  track,
+  trackSummary,
   summary,
   continueDocument,
   activeSlug,
   storageStatus,
 }: {
-  track: string;
+  trackSummary: string;
   summary: { completed: number; total: number; percentage: number };
   continueDocument: LearningNavigationItem | undefined;
   activeSlug: string;
@@ -71,7 +106,7 @@ function LibraryProgress({
       <span>你的学习路线</span>
       <h2>资料架</h2>
       <strong>完整学习路线</strong>
-      <p>{track}</p>
+      <p>{trackSummary}</p>
       <div className="learning-path-progress-copy">
         <span>{`${summary.completed} / ${summary.total} 课`}</span>
         <span>{summary.percentage}%</span>
@@ -102,19 +137,22 @@ export function LearningStorageNotice({ status }: { status: LearningStorageStatu
 }
 
 function CoursePathGroup({
+  track,
   courses,
   activeSlug,
   isCompleted,
 }: {
+  track: string;
   courses: LearningNavigationItem[];
   activeSlug: string;
   isCompleted: (slug: string) => boolean;
 }) {
   const courseRailRef = useRef<HTMLElement>(null);
   const activeCourseRef = useRef<HTMLAnchorElement>(null);
-  useActiveCourseRail(activeSlug, courseRailRef, activeCourseRef);
+  const containsActive = courses.some((document) => document.slug === activeSlug);
+  useActiveCourseRail(containsActive ? activeSlug : null, courseRailRef, activeCourseRef);
   return (
-    <DocumentGroup title="课程路径" count={courses.length} navigationRef={courseRailRef}>
+    <DocumentGroup title={track} count={courses.length} navigationRef={courseRailRef}>
       {courses.map((document) => (
         <DocumentLink
           key={document.slug}
@@ -129,14 +167,14 @@ function CoursePathGroup({
 }
 
 function useActiveCourseRail(
-  activeSlug: string,
+  activeSlug: string | null,
   courseRailRef: React.RefObject<HTMLElement | null>,
   activeCourseRef: React.RefObject<HTMLAnchorElement | null>,
 ) {
   useEffect(() => {
     const rail = courseRailRef.current;
     const activeCourse = activeCourseRef.current;
-    if (!rail || !activeCourse || rail.scrollWidth <= rail.clientWidth) return;
+    if (!activeSlug || !rail || !activeCourse || rail.scrollWidth <= rail.clientWidth) return;
     const railRect = rail.getBoundingClientRect();
     const activeRect = activeCourse.getBoundingClientRect();
     rail.scrollTo({

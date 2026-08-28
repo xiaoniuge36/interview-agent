@@ -6,7 +6,11 @@ import { expect, it } from 'vitest';
 import type { LearningDocument } from '@/lib/learning/learning-documents';
 import { LearningCenter } from './LearningCenter';
 import { learningCourseActionCopy } from './LearningCourseActions';
-import { learningRailScrollLeft, LearningStorageNotice } from './LearningLibraryRail';
+import {
+  groupCoursesByTrack,
+  learningRailScrollLeft,
+  LearningStorageNotice,
+} from './LearningLibraryRail';
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 
@@ -96,6 +100,35 @@ it('renders the library, GFM content and safe external links', () => {
   expect(markup).toContain('href="https://example.com/docs"');
   expect(markup).toContain('target="_blank"');
   expect(markup).toContain('rel="noreferrer noopener"');
+});
+
+it('groups courses by track and summarizes multi-track libraries', () => {
+  const softSkillCourse: LearningDocument = {
+    ...activeDocument,
+    slug: 'star-method',
+    sourceName: 'STAR.md',
+    title: 'STAR 行为面试与项目深挖',
+    track: '求职通用能力',
+    order: 20,
+  };
+  const groups = groupCoursesByTrack([activeDocument, secondDocument, softSkillCourse]);
+  expect(groups.map((group) => group.track)).toEqual([
+    'AI Agent 工程师完整路线',
+    '求职通用能力',
+  ]);
+  expect(groups[0]?.courses.map((course) => course.slug)).toEqual(['agent-basics', 'rag-guide']);
+  expect(groups[1]?.courses.map((course) => course.slug)).toEqual(['star-method']);
+
+  const markup = renderToStaticMarkup(
+    createElement(LearningCenter, {
+      documents: [activeDocument, secondDocument, softSkillCourse, referenceDocument],
+      activeDocument,
+      openedCourseSlug: activeDocument.slug,
+    }),
+  );
+  expect(markup).toContain('AI Agent 工程师完整路线 等 2 个方向');
+  expect(markup).toContain('求职通用能力');
+  expect(markup).toContain('0 / 3 课');
 });
 
 it('explains when progress can only be kept for the current visit', () => {
