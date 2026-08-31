@@ -1,5 +1,6 @@
 'use client';
 
+import '@/app/styles/speech-dictation.css';
 import { useEffect } from 'react';
 import { useSpeechDictation } from '@/lib/speech/use-speech-dictation';
 
@@ -8,7 +9,7 @@ type DictationButtonProps = {
   disabled?: boolean;
 };
 
-/** 语音输入按钮：浏览器不支持 Web Speech API 时整体隐藏，不打扰键盘输入。 */
+/** 语音输入按钮：浏览器不支持 Web Speech API 时保留禁用态并说明原因，而不是整体消失。 */
 export function DictationButton({ onTranscript, disabled = false }: DictationButtonProps) {
   const dictation = useSpeechDictation({ onFinal: onTranscript });
   useEffect(() => {
@@ -17,7 +18,7 @@ export function DictationButton({ onTranscript, disabled = false }: DictationBut
     if (disabled) dictation.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- abort 引用稳定，仅需响应 disabled。
   }, [disabled]);
-  if (!dictation.supported) return null;
+  if (!dictation.supported) return <UnsupportedDictationButton />;
   return (
     <span className="dictation-control" data-listening={dictation.listening}>
       <button
@@ -40,6 +41,23 @@ export function DictationButton({ onTranscript, disabled = false }: DictationBut
           {dictation.error}
         </em>
       ) : null}
+    </span>
+  );
+}
+
+function UnsupportedDictationButton() {
+  return (
+    <span className="dictation-control" data-supported="false">
+      <button
+        type="button"
+        className="dictation-button"
+        disabled
+        title="当前浏览器不支持语音输入"
+        aria-label="语音输入（当前浏览器不支持）"
+      >
+        <MicIcon />
+        语音输入
+      </button>
     </span>
   );
 }

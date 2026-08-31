@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PracticeAiReportConfirmation,
   PracticeRoundCompletionBar,
+  PracticeSelfStudyConfirmation,
 } from './PracticeRoundCompletionBar';
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
@@ -37,6 +38,22 @@ describe('PracticeRoundCompletionBar', () => {
     expect(markup).toContain('生成整轮总结');
     expect(markup).toContain('更新能力画像');
     expect(markup).toContain('使用我的模型生成复盘');
+  });
+
+  it('仅保留回答并结束需要先确认并写清不生成 AI 评价', () => {
+    const markup = renderToStaticMarkup(
+      createElement(PracticeSelfStudyConfirmation, {
+        onCancel: () => undefined,
+        onConfirm: () => undefined,
+      }),
+    );
+
+    expect(markup).toContain('role="dialog"');
+    expect(markup).toContain('确认仅保留回答并结束？');
+    expect(markup).toContain('本轮将不生成 AI 评价');
+    expect(markup).toContain('不更新能力画像');
+    expect(markup).toContain('暂不结束');
+    expect(markup).toContain('仅保留回答并结束');
   });
 });
 

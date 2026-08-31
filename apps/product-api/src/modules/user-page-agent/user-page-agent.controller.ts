@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req } from '@nestjs/common';
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
+import { AiThrottle } from '../../common/security/ai-throttle';
 import {
   PageAgentAppendMessagesSchema,
   PageAgentCompleteRunSchema,
@@ -27,6 +28,7 @@ export class UserPageAgentController {
     return this.assistant.config(request.context);
   }
 
+  @AiThrottle()
   @Post('chat/completions')
   completion(@Req() request: ProductRequest, @Body() body: unknown) {
     return this.assistant.completion(request.context, body);

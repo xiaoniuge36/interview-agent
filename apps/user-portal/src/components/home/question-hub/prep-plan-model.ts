@@ -51,7 +51,8 @@ export function collectTrainingDayKeys(
   interviews: readonly InterviewSessionSummary[],
 ): Set<string> {
   const keys = new Set<string>();
-  for (const practice of practices) keys.add(localDayKey(practice.reportedAt ?? practice.updatedAt));
+  for (const practice of practices)
+    keys.add(localDayKey(practice.reportedAt ?? practice.updatedAt));
   for (const interview of interviews) keys.add(localDayKey(interview.updatedAt));
   return keys;
 }

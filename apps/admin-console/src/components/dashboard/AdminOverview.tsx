@@ -31,6 +31,7 @@ const COMPACT_GUTTER = 12;
 type AdminOverviewProps = {
   dashboard: SectionState<Dashboard>;
   onNavigate: (view: AdminView) => void;
+  onRetry?: (() => void) | undefined;
 };
 
 export function AdminOverview(props: AdminOverviewProps) {
@@ -39,7 +40,7 @@ export function AdminOverview(props: AdminOverviewProps) {
   return (
     <div className="admin-page">
       <AdminOpsBanner pending={pending} onNavigate={props.onNavigate} />
-      <DashboardStats state={props.dashboard} />
+      <DashboardStats state={props.dashboard} onRetry={props.onRetry} />
       {dashboard ? (
         <OverviewDetails dashboard={dashboard} pending={pending} onNavigate={props.onNavigate} />
       ) : null}
@@ -107,7 +108,7 @@ function GovernanceCommand(props: {
         <Col sm={8} xs={24}>
           <Statistic
             suffix="%"
-            title="Schema 通过率"
+            title="结构校验通过率"
             value={props.dashboard.stats.schemaPassRate}
           />
         </Col>

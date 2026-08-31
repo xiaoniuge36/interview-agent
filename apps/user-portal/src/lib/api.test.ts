@@ -1,6 +1,12 @@
 ﻿import { z } from 'zod';
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, requestJson, type ApiRequest } from './api';
+import {
+  ApiError,
+  isSessionExpiredError,
+  requestJson,
+  subscribeSessionExpiry,
+  type ApiRequest,
+} from './api';
 
 const PayloadSchema = z.object({ value: z.string() });
 const BASE_URL = 'https://api.example.test';
@@ -107,5 +113,45 @@ describe('requestJson security boundaries', () => {
       { code: 'INVALID_API_PATH' },
     );
     expect(deps.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('session expiry propagation', () => {
+  it('取令牌失败映射为 401 会话失效错误', async () => {
+    const deps = {
+      baseUrl: BASE_URL,
+      getAuthHeaders: async () => {
+        throw new Error('登录状态已失效，请重新登录。');
+      },
+      fetch: vi.fn() as typeof fetch,
+    };
+    const error = await requestJson(request(), deps).catch((reason: unknown) => reason);
+    expect(error).toMatchObject({ code: 'AUTH_REQUIRED', status: 401 });
+    expect(isSessionExpiredError(error)).toBe(true);
+    expect(deps.fetch).not.toHaveBeenCalled();
+  });
+
+  it('订阅只接收会话失效事件且可退订', () => {
+    // node 测试环境无 window：用 EventTarget 替身验证订阅协议本身
+    vi.stubGlobal('window', new EventTarget());
+    try {
+      const received: unknown[] = [];
+      const unsubscribe = subscribeSessionExpiry((error) => received.push(error));
+      const expired = new ApiError({ message: '过期', code: 'AUTH_REQUIRED', status: 401 });
+      window.dispatchEvent(new CustomEvent('user-session-expired', { detail: expired }));
+      // 非 ApiError 的事件负载应被忽略，防止外部脚本伪造
+      window.dispatchEvent(new CustomEvent('user-session-expired', { detail: 'noise' }));
+      unsubscribe();
+      window.dispatchEvent(new CustomEvent('user-session-expired', { detail: expired }));
+      expect(received).toEqual([expired]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('普通业务错误不算会话失效', () => {
+    expect(
+      isSessionExpiredError(new ApiError({ message: '禁止', code: 'FORBIDDEN', status: 403 })),
+    ).toBe(false);
   });
 });

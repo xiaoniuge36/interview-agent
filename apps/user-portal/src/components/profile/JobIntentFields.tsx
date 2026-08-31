@@ -45,6 +45,7 @@ export function JobIntentFields(props: JobIntentFieldsProps) {
           value={props.value.jdText}
           onChange={(event) => props.onChange('jdText', event.target.value)}
         />
+        <JdLengthCounter length={props.value.jdText.length} />
       </label>
       <JobContextFields {...props} />
       <datalist id="role-title-options">
@@ -53,6 +54,23 @@ export function JobIntentFields(props: JobIntentFieldsProps) {
         ))}
       </datalist>
     </>
+  );
+}
+
+const JD_LENGTH_WARNING_RATIO = 0.9;
+
+/** 接近 maxLength 时提前警示，避免粘贴长 JD 被浏览器静默截断而毫无反馈。 */
+function JdLengthCounter({ length }: { length: number }) {
+  const max = CONTRACT_LIMITS.longText;
+  const nearLimit = length >= max * JD_LENGTH_WARNING_RATIO;
+  return (
+    <small
+      className="jd-length-counter"
+      data-warning={nearLimit ? 'true' : undefined}
+      aria-live="polite"
+    >
+      当前 {length} / 上限 {max} 字
+    </small>
   );
 }
 

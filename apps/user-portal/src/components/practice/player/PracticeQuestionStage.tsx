@@ -2,6 +2,7 @@ import { CONTRACT_LIMITS, type PracticeSession } from '@interview-agent/contract
 import { DictationButton } from '@/components/speech/DictationButton';
 import { appendTranscript } from '@/lib/speech/speech-dictation';
 import { selectedChoiceIds, toggleChoiceAnswer } from './practice-choice-answer';
+import { isPracticeSaveHotkey } from './practice-player-model';
 import type { PlayerBusy } from './usePracticePlayer';
 
 const MAX_VISIBLE_TAGS = 5;
@@ -81,7 +82,12 @@ function AnswerEditor(
   );
 }
 
-function TextAnswerEditor(props: PracticeQuestionStageProps & { closed: boolean }) {
+function TextAnswerEditor(
+  props: PracticeQuestionStageProps & { closed: boolean; hasUnsavedChanges: boolean },
+) {
+  const hotkeySaveEnabled = Boolean(
+    props.draft.trim() && props.hasUnsavedChanges && props.busy === null,
+  );
   return (
     <label className="practice-answer-editor">
       <span>
@@ -91,6 +97,9 @@ function TextAnswerEditor(props: PracticeQuestionStageProps & { closed: boolean 
           disabled={props.closed}
           onTranscript={(transcript) => props.onDraft(appendTranscript(props.draft, transcript))}
         />
+        <small className="practice-answer-hotkey">
+          <kbd>Ctrl / ⌘ + Enter</kbd> 保存回答
+        </small>
       </span>
       <textarea
         value={props.draft}
@@ -98,6 +107,11 @@ function TextAnswerEditor(props: PracticeQuestionStageProps & { closed: boolean 
         disabled={props.closed}
         placeholder="写下你的完整回答。保存后即可查看标准解析，也可以选择调用自己的 AI 模型获取评价。"
         onChange={(event) => props.onDraft(event.target.value)}
+        onKeyDown={(event) => {
+          if (!isPracticeSaveHotkey(event)) return;
+          event.preventDefault();
+          if (hotkeySaveEnabled) props.onSave();
+        }}
       />
     </label>
   );

@@ -85,9 +85,7 @@ describe('PracticeStarMaterialService', () => {
   });
 
   it('兼容存量记录缺失维度评分与示范答案', async () => {
-    const { service } = serviceWith([
-      starRecord({ dimensionScores: null, improvedAnswer: null }),
-    ]);
+    const { service } = serviceWith([starRecord({ dimensionScores: null, improvedAnswer: null })]);
 
     const materials = await service.list(context);
 

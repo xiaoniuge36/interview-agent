@@ -139,6 +139,15 @@ jobs:
       - name: Run retrieval golden evals
         run: pnpm test:retrieval-eval
 
+      # 失败时也上传：goldenScore/fallbackRate 需要跨 PR 对比与回归定位
+      - name: Upload eval artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: agent-eval-results
+          path: test-results/evals/
+          if-no-files-found: ignore
+
   integration-test:
     name: Migration and integration tests
     runs-on: ubuntu-latest
@@ -266,6 +275,8 @@ jobs:
       - integration-test
       - build
       - audit
+      # 密钥泄漏与其他质量问题同级：进入聚合门禁，泄漏时 quality 变红并阻断 e2e/docker-build
+      - secret-scan
     if: ${{ always() }}
     steps:
       - name: Fail when any required job did not succeed

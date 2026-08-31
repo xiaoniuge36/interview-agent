@@ -54,14 +54,24 @@ describe('PracticeCoachPanel', () => {
     expect(markup).toContain('href="/settings?returnTo=%2Fpractice%3Fsession%3Dsession-123"');
     expect(markup).toContain('连接并测试模型');
   });
+
+  it('流式评价期间提供取消评价入口', () => {
+    const markup = renderCoach({ busy: 'evaluate:item-1' });
+
+    expect(markup).toContain('practice-ai-stream');
+    expect(markup).toContain('取消评价');
+    expect(markup).toContain('practice-ai-stream-cancel');
+  });
 });
 
 function renderCoach({
+  busy = null,
   confirmAiOnOpen = false,
   evaluated = false,
   hasNextQuestion = false,
   issue = null,
 }: {
+  busy?: `evaluate:${string}` | null;
   confirmAiOnOpen?: boolean;
   evaluated?: boolean;
   hasNextQuestion?: boolean;
@@ -73,12 +83,13 @@ function renderCoach({
       sessionId: 'session-123',
       draft: '这是已保存的回答。',
       solution: undefined,
-      busy: null,
+      busy,
       issue,
       aiOperation: null,
       confirmAiOnOpen,
       onRevealSolution: () => undefined,
       onEvaluate: () => undefined,
+      onCancelEvaluation: () => undefined,
       onOpenReview: () => undefined,
       onBackToAnswer: () => undefined,
       hasNextQuestion,

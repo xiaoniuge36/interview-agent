@@ -81,4 +81,16 @@ describe('AgentRecommendationRail', () => {
     expect(markup).toContain('重新获取推荐');
     expect(markup).toContain('自己组一轮');
   });
+
+  it('续练进度读取失败时显示提示条与重新读取入口', () => {
+    const markup = renderRail({
+      continuationError: '上次训练进度暂时读取失败，可能有进行中的练习没有显示。',
+      onRetryContinuation: () => undefined,
+    });
+
+    expect(markup).toContain('上次训练进度暂时读取失败');
+    expect(markup).toContain('重新读取');
+    expect(markup).toContain('agent-rail-continuation-error');
+    expect(markup).toContain('采用这组题开始练习');
+  });
 });

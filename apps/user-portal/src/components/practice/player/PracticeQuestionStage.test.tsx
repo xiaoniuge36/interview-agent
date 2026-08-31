@@ -15,6 +15,14 @@ describe('PracticeQuestionStage', () => {
     expect(markup).toContain('practice-answer-actions');
   });
 
+  it('在作答输入区旁标注 Ctrl/⌘ + Enter 快捷保存', () => {
+    const markup = renderStage({ draft: '这是尚未保存的回答。' });
+
+    expect(markup).toContain('practice-answer-hotkey');
+    expect(markup).toContain('Ctrl / ⌘ + Enter');
+    expect(markup).toContain('保存回答');
+  });
+
   it('对已保存回答提供直接进入下一题的主操作', () => {
     const markup = renderStage({ draft: '这是已保存的回答。', answer: '这是已保存的回答。' });
 
@@ -39,6 +47,18 @@ describe('PracticeQuestionStage', () => {
 
     expect(markup).toContain('进入 AI 评价 →');
     expect(markup).not.toContain('保存并进入 AI 评价 →');
+  });
+});
+
+describe('PracticeQuestionStage 选择题', () => {
+  it('选择题没有文本输入区，不显示快捷键提示', () => {
+    const markup = renderStage({
+      draft: 'B',
+      questionType: 'single_choice',
+      options: choiceOptions(),
+    });
+
+    expect(markup).not.toContain('practice-answer-hotkey');
   });
 
   it('单选题展示 radio 选项并恢复已选答案', () => {

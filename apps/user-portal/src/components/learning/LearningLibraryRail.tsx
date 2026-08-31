@@ -1,10 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type Ref } from 'react';
-import type {
-  LearningDocumentKind,
-  LearningLevel,
-} from '@/lib/learning/learning-document-model';
+import type { LearningDocumentKind, LearningLevel } from '@/lib/learning/learning-document-model';
 import {
   documentLinkClickHandler,
   learningDocumentHref,
@@ -178,7 +175,10 @@ type GroupExpansion = {
  * 分组默认只展开当前文档所在组；用户手动开合的组记入覆盖表，
  * 切换课程时未被覆盖的组跟随“是否包含当前文档”自动开合。
  */
-function useGroupExpansion(documents: LearningNavigationItem[], activeSlug: string): GroupExpansion {
+function useGroupExpansion(
+  documents: LearningNavigationItem[],
+  activeSlug: string,
+): GroupExpansion {
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
   const activeDocument = documents.find((document) => document.slug === activeSlug);
   const activeGroup = activeDocument ? groupTitleFor(activeDocument) : null;

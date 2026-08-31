@@ -109,7 +109,7 @@ function MobileNavigationLink(
       }
     >
       <NavigationIcon name={item.icon} />
-      <span>{mobileLabel(props.id)}</span>
+      <span>{item.label}</span>
     </Link>
   );
 }
@@ -182,12 +182,4 @@ function warmMobileNavigation(options: {
 }) {
   const click = navigationClickFromEvent(options.event, options.target, options.pathname);
   if (shouldStartNavigationPending(click)) options.onWarm(options.href);
-}
-
-function mobileLabel(id: NavigationId) {
-  if (id === 'questions') return '刷题';
-  if (id === 'learn') return '学习';
-  if (id === 'interview') return '模拟';
-  if (id === 'reports') return '复盘';
-  return '首页';
 }

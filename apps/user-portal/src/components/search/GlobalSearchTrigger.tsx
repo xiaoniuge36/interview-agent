@@ -1,7 +1,17 @@
 'use client';
 
-import React, { type ReactNode } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 import { useGlobalSearch } from './GlobalSearchProvider';
+
+/** SSR/首帧统一显示 Ctrl K，挂载后按平台切 ⌘K，避免 hydration 文案不一致。 */
+function useSearchShortcutLabel(): string {
+  const [label, setLabel] = useState('Ctrl K');
+  useEffect(() => {
+    const platform = navigator.platform || navigator.userAgent;
+    if (/Mac|iPhone|iPad|iPod/i.test(platform)) setLabel('⌘ K');
+  }, []);
+  return label;
+}
 
 export function GlobalSearchTrigger({ actions }: { actions?: ReactNode }) {
   const search = useGlobalSearch();
@@ -23,6 +33,7 @@ export function GlobalSearchTriggerView({
   onOpen: (trigger: HTMLElement) => void;
   actions?: ReactNode;
 }) {
+  const shortcutLabel = useSearchShortcutLabel();
   return (
     <div className="global-search-dock" aria-label="全局搜索入口">
       <div className="global-search-dock-inner">
@@ -44,7 +55,7 @@ export function GlobalSearchTriggerView({
             <strong className="global-search-trigger-mobile-copy">搜索</strong>
             <small>题目 · 课程 · 页面</small>
           </span>
-          <kbd>Ctrl K</kbd>
+          <kbd>{shortcutLabel}</kbd>
         </button>
         <div className="global-search-dock-actions">
           <span className="global-search-dock-scope">题目 · 专题 · 页面</span>

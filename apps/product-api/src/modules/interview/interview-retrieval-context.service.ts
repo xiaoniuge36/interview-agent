@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AgentRuntimeRetrievalContext } from '@interview-agent/contracts';
 import type { Environment } from '../../common/config/environment';
 import type { ProductRequestContext } from '../../common/context/request-context';
+import { errorCategory } from '../../common/telemetry/telemetry';
 import { RetrievalService } from '../retrieval/retrieval.service';
 
 const INTERVIEW_RETRIEVAL_LIMIT = 6;
@@ -15,6 +16,8 @@ type InterviewRetrievalInput = {
 
 @Injectable()
 export class InterviewRetrievalContextService {
+  private readonly logger = new Logger(InterviewRetrievalContextService.name);
+
   constructor(
     private readonly config: ConfigService<Environment, true>,
     private readonly retrieval: RetrievalService,
@@ -33,7 +36,10 @@ export class InterviewRetrievalContextService {
         entityType: hit.entityType,
         content: hit.content,
       }));
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `Interview retrieval context unavailable; command continues without RAG: ${errorCategory(error)} (trace=${input.context.traceId})`,
+      );
       return [];
     }
   }

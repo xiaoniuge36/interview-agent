@@ -70,7 +70,7 @@ describe('PracticeCompletionPanel', () => {
       }),
     );
 
-    expect(markup).toContain('AI review complete');
+    expect(markup).toContain('AI 评价已完成');
     expect(markup).toContain('正在恢复本轮 AI 复盘');
     expect(markup).toContain('正在重新读取报告内容');
     expect(markup).toContain('重新加载本轮复盘');
@@ -198,6 +198,29 @@ describe('PracticeCompletionPanel self-study', () => {
     expect(markup).toContain('不会更新能力画像');
     expect(markup).toContain('选择新的题目继续训练');
     expect(markup).not.toContain('用模拟面试检验本轮提升');
+  });
+
+  it('完成页状态标签与说明全中文，不再泄漏英文或 mastery 术语', () => {
+    const markup = renderToStaticMarkup(
+      createElement(PracticeCompletionPanel, {
+        session: { ...session, status: 'submitted' },
+        report: null,
+        mastery: [],
+        message: '',
+        onRetry: () => undefined,
+        onReviewItem: () => undefined,
+        onStartNextRecommendation: () => undefined,
+        startingNextRecommendation: false,
+        onStartWeaknessReview: () => undefined,
+        startingWeaknessReview: false,
+      }),
+    );
+
+    expect(markup).toContain('自学已完成');
+    expect(markup).toContain('不会计入掌握度统计');
+    expect(markup).not.toContain('Self-study complete');
+    expect(markup).not.toContain('AI review complete');
+    expect(markup).not.toContain('mastery 记录');
   });
 });
 

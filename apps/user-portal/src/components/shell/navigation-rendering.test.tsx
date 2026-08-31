@@ -19,10 +19,11 @@ describe('consumer desktop navigation', () => {
       />,
     );
 
-    expect(markup).toContain('今天');
+    // 标签必须与 NAV_ITEMS.label 完全一致：全站只允许一套导航叫法
+    expect(markup).toContain('首页');
     expect(markup).toContain('刷题');
     expect(markup).toContain('模拟面试');
-    expect(markup).toContain('成长');
+    expect(markup).toContain('复盘中心');
     expect(markup).not.toContain('href="/profile"');
     expect(markup).not.toContain('href="/practice"');
     expect(markup).not.toContain('href="/settings"');

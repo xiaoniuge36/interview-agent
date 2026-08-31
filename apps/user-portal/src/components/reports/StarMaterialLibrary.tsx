@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { StarMaterial } from '@interview-agent/contracts';
 import { listStarMaterials } from '@/lib/practice-api';
+import { formatDate } from '@/lib/format';
 import {
   DIMENSION_LABELS,
   orderedDimensionScores,
@@ -16,9 +17,7 @@ const TYPE_LABELS: Record<StarMaterial['questionType'], string> = {
 };
 
 type LibraryState =
-  | { status: 'loading' }
-  | { status: 'error' }
-  | { status: 'ready'; materials: StarMaterial[] };
+  { status: 'loading' } | { status: 'error' } | { status: 'ready'; materials: StarMaterial[] };
 
 /** STAR 素材库：把行为/项目题的高分作答与 AI 高分示范沉淀为面试前可复用的素材。 */
 export function StarMaterialLibrary({
@@ -26,14 +25,24 @@ export function StarMaterialLibrary({
 }: {
   onTotalChange?: (total: number) => void;
 }) {
-  const state = useStarMaterials(onTotalChange);
-  if (state.status === 'loading') {
+  const source = useStarMaterials(onTotalChange);
+  if (source.state.status === 'loading') {
     return <LibraryState title="正在整理素材" copy="高分作答正在同步。" />;
   }
-  if (state.status === 'error') {
-    return <LibraryState title="素材库暂时无法读取" copy="已沉淀的素材不会丢失，请稍后重试。" />;
+  if (source.state.status === 'error') {
+    return <StarMaterialLibraryError onRetry={source.reload} />;
   }
-  return <StarMaterialLibraryContent materials={state.materials} />;
+  return <StarMaterialLibraryContent materials={source.state.materials} />;
+}
+
+export function StarMaterialLibraryError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <LibraryState
+      title="素材库暂时无法读取"
+      copy="已沉淀的素材不会丢失，请稍后重试。"
+      onRetry={onRetry}
+    />
+  );
 }
 
 export function StarMaterialLibraryContent({ materials }: { materials: StarMaterial[] }) {
@@ -53,11 +62,13 @@ export function StarMaterialLibraryContent({ materials }: { materials: StarMater
 
 function useStarMaterials(onTotalChange?: (total: number) => void) {
   const [state, setState] = useState<LibraryState>({ status: 'loading' });
+  const [request, setRequest] = useState(0);
   // ref 化回调：父组件传内联函数时不应触发重新拉取。
   const onTotalChangeRef = useRef(onTotalChange);
   onTotalChangeRef.current = onTotalChange;
   useEffect(() => {
     let active = true;
+    setState({ status: 'loading' });
     listStarMaterials()
       .then((materials) => {
         if (!active) return;
@@ -70,8 +81,8 @@ function useStarMaterials(onTotalChange?: (total: number) => void) {
     return () => {
       active = false;
     };
-  }, []);
-  return state;
+  }, [request]);
+  return { state, reload: () => setRequest((value) => value + 1) };
 }
 
 function StarMaterialCard({ material }: { material: StarMaterial }) {
@@ -105,9 +116,7 @@ function StarMaterialCard({ material }: { material: StarMaterial }) {
       ) : null}
       <footer>
         <CopyButton text={material.improvedAnswer ?? material.answer} />
-        <time dateTime={material.evaluatedAt}>
-          {new Date(material.evaluatedAt).toLocaleDateString('zh-CN')} 评价
-        </time>
+        <time dateTime={material.evaluatedAt}>{formatDate(material.evaluatedAt)} 评价</time>
       </footer>
     </article>
   );
@@ -162,11 +171,24 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function LibraryState({ title, copy }: { title: string; copy: string }) {
+function LibraryState({
+  title,
+  copy,
+  onRetry,
+}: {
+  title: string;
+  copy: string;
+  onRetry?: () => void;
+}) {
   return (
-    <div className="star-material-state">
+    <div className="star-material-state" aria-live="polite">
       <strong>{title}</strong>
       <p>{copy}</p>
+      {onRetry ? (
+        <button type="button" onClick={onRetry}>
+          重新读取
+        </button>
+      ) : null}
     </div>
   );
 }

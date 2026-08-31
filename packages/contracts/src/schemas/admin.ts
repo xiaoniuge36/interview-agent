@@ -2,11 +2,9 @@
 import { CONTRACT_LIMITS } from '../limits';
 import { ADMIN_LIMITS } from './admin-limits';
 import {
-  CandidateReviewSchema,
   CandidateReviewStatusSchema,
   ImportTaskStatusSchema,
   QuestionDifficultySchema,
-  QuestionSchema,
   QuestionStatusSchema,
 } from './training';
 
@@ -251,14 +249,6 @@ export const UpdateAccountStatusInputSchema = z.object({
 export const ResetLocalPasswordInputSchema = z.object({
   password: z.string().min(1, '请输入密码。'),
 });
-
-export const QuestionListSchema = z.array(QuestionSchema).max(CONTRACT_LIMITS.largeList);
-export const CandidateReviewListSchema = z
-  .array(CandidateReviewSchema)
-  .max(CONTRACT_LIMITS.largeList);
-export const ModelProfileListSchema = z.array(ModelProfileSchema).max(CONTRACT_LIMITS.mediumList);
-export const AgentRunListSchema = z.array(AgentRunViewSchema).max(CONTRACT_LIMITS.largeList);
-export const AuditLogListSchema = z.array(AuditLogViewSchema).max(CONTRACT_LIMITS.largeList);
 
 export const ImportTaskListQuerySchema = AdminPaginationQuerySchema.extend({
   status: ImportTaskStatusSchema.optional(),

@@ -298,6 +298,108 @@ html[data-motion='off'] .role-template-groups .role-chip:active {
   background: color-mix(in srgb, var(--warning, #d9930d) 18%, var(--surface));
 }
 
+.jd-match-omitted {
+  color: var(--text-subtle);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.jd-length-counter {
+  justify-self: end;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.jd-length-counter[data-warning] {
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.jd-match-skeleton {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.jd-match-skeleton i {
+  width: 74px;
+  height: 24px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--outline) 55%, var(--surface));
+  animation: jd-match-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.jd-match-skeleton i:nth-child(2) {
+  width: 96px;
+  animation-delay: 0.15s;
+}
+
+.jd-match-skeleton i:nth-child(3) {
+  width: 58px;
+  animation-delay: 0.3s;
+}
+
+@keyframes jd-match-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jd-match-skeleton i {
+    animation: none;
+  }
+}
+
+.jd-match-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jd-match-error p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.jd-match-error button {
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--outline));
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: var(--surface);
+  color: var(--primary-strong);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.jd-match-interview-cta {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--primary) 42%, var(--outline));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-soft) 60%, var(--surface));
+  color: var(--primary-strong);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.jd-match-interview-cta:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
 .job-training-path {
   display: grid;
   gap: 14px;

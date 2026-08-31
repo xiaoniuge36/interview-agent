@@ -30,10 +30,7 @@ import {
   GROWTH_OPERATIONS_BANK_INPUTS,
   PRODUCT_DESIGN_BANK_INPUTS,
 } from './public-practice-questions-product-growth-bank';
-import {
-  DATA_BANK_INPUTS,
-  ENGINEERING_BANK_INPUTS,
-} from './public-practice-questions-tech-bank';
+import { DATA_BANK_INPUTS, ENGINEERING_BANK_INPUTS } from './public-practice-questions-tech-bank';
 
 export const PUBLIC_PRACTICE_QUESTIONS = [
   ...buildPublicPracticeQuestions('engineering', [

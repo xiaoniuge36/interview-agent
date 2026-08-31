@@ -22,7 +22,7 @@
     "test:e2e": "node scripts/e2e/run.mjs",
     "test:evals": "pnpm --filter @interview-agent/contracts build && tsx evals/run-agent-evals.ts",
     "test:retrieval-eval": "tsx evals/retrieval/run-retrieval-eval.ts",
-    "verify": "pnpm format:check && pnpm contracts:check && pnpm db:validate && pnpm db:generate && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm security:audit && pnpm infra:config",
+    "verify": "pnpm format:check && pnpm contracts:check && pnpm db:validate && pnpm db:generate && pnpm lint && pnpm typecheck && pnpm test && pnpm test:evals && pnpm test:retrieval-eval && pnpm build && pnpm security:audit && pnpm infra:config",
     "format": "prettier --write \"**/*.{ts,tsx,js,cjs,mjs,json,md,yml,yaml,css,html}\" \"!apps/agent-runtime/**\" && prettier --write \"apps/agent-runtime/*.{json,md,yml,yaml}\" && uv run --project apps/agent-runtime --extra dev ruff format apps/agent-runtime && prisma format --schema apps/product-api/prisma/schema",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,cjs,mjs,json,md,yml,yaml,css,html}\" \"!apps/agent-runtime/**\" && prettier --check \"apps/agent-runtime/*.{json,md,yml,yaml}\" && uv run --project apps/agent-runtime --extra dev ruff format --check apps/agent-runtime && prisma format --check --schema apps/product-api/prisma/schema",
     "db:generate": "prisma generate --schema apps/product-api/prisma/schema",

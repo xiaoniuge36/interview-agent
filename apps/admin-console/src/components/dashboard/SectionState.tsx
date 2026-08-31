@@ -1,4 +1,4 @@
-import { Button, Empty, Result, Spin } from 'antd';
+import { Alert, Button, Result, Spin } from 'antd';
 import * as React from 'react';
 import type { AdminApiError } from '@/lib/api';
 import type { SectionState } from '@/hooks/useAdminDashboard';
@@ -6,6 +6,7 @@ import type { SectionState } from '@/hooks/useAdminDashboard';
 type SectionFeedbackProps<T> = {
   state: SectionState<T>;
   loadingMessage?: string;
+  onRetry?: (() => void) | undefined;
 };
 
 export function SectionFeedback<T>(props: SectionFeedbackProps<T>) {
@@ -19,7 +20,7 @@ export function SectionFeedback<T>(props: SectionFeedbackProps<T>) {
     );
   }
   if (state.status === 'forbidden') return <ForbiddenState access={state.access} />;
-  return <ErrorState />;
+  return <ErrorState error={state.error} onRetry={props.onRetry} />;
 }
 
 function ForbiddenState({ access }: { access: 'required' | 'admin-only' | 'platform-only' }) {
@@ -46,12 +47,28 @@ function ForbiddenState({ access }: { access: 'required' | 'admin-only' | 'platf
   );
 }
 
-function ErrorState() {
+type ErrorStateProps = {
+  error: AdminApiError;
+  onRetry?: (() => void) | undefined;
+};
+
+// 为什么：错误态必须与空态区分开，展示失败原因并给出重试入口，
+// 否则接口故障会被运营误读成「暂无数据」。
+function ErrorState({ error, onRetry }: ErrorStateProps) {
   return (
-    <Empty
-      className="admin-section-empty"
-      description="暂无可展示数据"
-      image={Empty.PRESENTED_IMAGE_SIMPLE}
+    <Alert
+      action={
+        onRetry ? (
+          <Button size="small" onClick={onRetry}>
+            重试
+          </Button>
+        ) : null
+      }
+      className="admin-section-error"
+      description={error.message}
+      showIcon
+      title="数据加载失败"
+      type="error"
     />
   );
 }

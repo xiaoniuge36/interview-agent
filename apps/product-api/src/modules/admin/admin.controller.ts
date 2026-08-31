@@ -152,11 +152,6 @@ export class AdminController {
     return sendCsv(response, 'questions.csv', renderQuestionExportCsv(rows));
   }
 
-  @Get('questions')
-  questions(@Req() request: ProductRequest) {
-    return this.services.admin.questions(request.context);
-  }
-
   @Roles('admin')
   @Get('model-profiles/query')
   queryModelProfiles(@Req() request: ProductRequest, @Query() query: unknown) {
@@ -178,12 +173,6 @@ export class AdminController {
       ModelProfileListQuerySchema.parse(query),
     );
     return sendCsv(response, 'model-profiles.csv', renderModelProfileExportCsv(rows));
-  }
-
-  @Roles('admin')
-  @Get('model-profiles')
-  modelProfiles(@Req() request: ProductRequest) {
-    return this.services.admin.modelProfiles(request.context);
   }
 
   @Roles('admin')
@@ -210,12 +199,6 @@ export class AdminController {
   }
 
   @Roles('admin')
-  @Get('agent-runs')
-  agentRuns(@Req() request: ProductRequest) {
-    return this.services.admin.agentRuns(request.context);
-  }
-
-  @Roles('admin')
   @Get('audit-logs/query')
   queryAuditLogs(@Req() request: ProductRequest, @Query() query: unknown) {
     return this.services.query.queryAuditLogs(
@@ -236,12 +219,6 @@ export class AdminController {
       AuditLogListQuerySchema.parse(query),
     );
     return sendCsv(response, 'audit-logs.csv', renderAuditLogExportCsv(rows));
-  }
-
-  @Roles('admin')
-  @Get('audit-logs')
-  auditLogs(@Req() request: ProductRequest) {
-    return this.services.admin.auditLogs(request.context);
   }
 }
 

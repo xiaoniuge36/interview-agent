@@ -1,6 +1,7 @@
 import type { InterviewReport, InterviewSessionSummary } from '@interview-agent/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  INTERVIEW_REPORT_SUMMARY_CONCURRENCY,
   INTERVIEW_REPORT_SUMMARY_LIMIT,
   loadInterviewReportSummaries,
 } from './interview-report-summaries';
@@ -33,6 +34,25 @@ describe('interview report summary budget', () => {
     expect(load).not.toHaveBeenCalledWith('interview-0');
     expect(result.failed).toBe(true);
     expect(result.items).toHaveLength(19);
+  });
+
+  it('caps in-flight report requests at the concurrency budget', async () => {
+    const interviews = Array.from({ length: 12 }, (_, index) => interview(index));
+    let active = 0;
+    let peak = 0;
+    const load = vi.fn(async (id: string) => {
+      active += 1;
+      peak = Math.max(peak, active);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      active -= 1;
+      return report(id);
+    });
+
+    const result = await loadInterviewReportSummaries(interviews, load);
+
+    expect(peak).toBeLessThanOrEqual(INTERVIEW_REPORT_SUMMARY_CONCURRENCY);
+    expect(load).toHaveBeenCalledTimes(12);
+    expect(result.items).toHaveLength(12);
   });
 });
 

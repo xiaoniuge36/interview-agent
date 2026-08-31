@@ -49,15 +49,27 @@ describe('matchJdWithMastery', () => {
   });
 
   it('空 JD 或过短标签不产生匹配', () => {
-    expect(matchJdWithMastery('   ', [profile('RAG', 80)])).toEqual({ covered: [], gaps: [] });
+    expect(matchJdWithMastery('   ', [profile('RAG', 80)])).toEqual({
+      covered: [],
+      gaps: [],
+      coveredOmitted: 0,
+      gapsOmitted: 0,
+    });
     expect(matchJdWithMastery('go 语言', [profile('g', 80)]).covered).toEqual([]);
   });
 
-  it('超出上限的匹配会被截断', () => {
+  it('超出上限的匹配会被截断，并报告每侧被省略的条数', () => {
     const tags = ['T1', 'T2', 'T3'];
-    const result = matchJdWithMastery(tags.join(' '), tags.map((tag) => profile(tag, 90)), 2);
+    const result = matchJdWithMastery(
+      [...tags, '薄弱项'].join(' '),
+      [...tags.map((tag) => profile(tag, 90)), profile('薄弱项', 30)],
+      2,
+    );
 
     expect(result.covered).toHaveLength(2);
+    expect(result.coveredOmitted).toBe(1);
+    expect(result.gaps).toHaveLength(1);
+    expect(result.gapsOmitted).toBe(0);
   });
 });
 

@@ -1,9 +1,6 @@
 import type { AgentRunDetailView } from '@interview-agent/contracts';
+import { formatAdminDateTime } from '@/lib/format';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
-  dateStyle: 'short',
-  timeStyle: 'medium',
-});
 const NUMBER_FORMATTER = new Intl.NumberFormat('zh-CN');
 const COMMAND_LABELS: Record<NonNullable<AgentRunDetailView['command']>, string> = {
   start: '开始面试',
@@ -65,12 +62,12 @@ export function durationValue(value: number | null): string {
 }
 
 export function formatRunTime(value: string): string {
-  return DATE_FORMATTER.format(new Date(value));
+  return formatAdminDateTime(value);
 }
 
 export function qualitySummary(run: AgentRunDetailView): string {
   const latency = run.latencyMs === null ? '无延迟数据' : `${run.latencyMs} ms`;
   return run.schemaValid === null
     ? `未校验 · ${latency}`
-    : `${run.schemaValid ? 'Schema 通过' : 'Schema 失败'} · ${latency}`;
+    : `${run.schemaValid ? '结构校验通过' : '结构校验失败'} · ${latency}`;
 }

@@ -29,7 +29,7 @@ export function QuestionSearchBar({
       aria-labelledby="question-hub-heading"
     >
       <div className="question-search-copy">
-        <span className="question-hub-kicker">Question library · 自主训练</span>
+        <span className="question-hub-kicker">公共题库 · 自主训练</span>
         <h2 id="question-hub-heading">
           {compact ? '想按自己的节奏练？' : '今天，想把哪类问题练明白？'}
         </h2>

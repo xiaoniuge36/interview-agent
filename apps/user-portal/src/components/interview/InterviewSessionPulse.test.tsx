@@ -1,9 +1,12 @@
 import React, { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { formatClockTime } from '@/lib/format';
 import { InterviewSessionPulse } from './InterviewSessionPulse';
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
+
+const CREATED_AT = '2026-08-31T01:30:00.000Z';
 
 describe('InterviewSessionPulse', () => {
   it('shows only real answered turns, stage, and AI processing state', () => {
@@ -20,6 +23,20 @@ describe('InterviewSessionPulse', () => {
     expect(markup).toContain('AI 正在组织下一题');
     expect(markup).not.toContain('预计完成时间');
   });
+});
+
+describe('InterviewSessionPulse start time and report jump', () => {
+  it('shows the local start time next to the answered count', () => {
+    const markup = renderToStaticMarkup(
+      createElement(InterviewSessionPulse, {
+        session: session(),
+        phase: null,
+        statusLabel: '等待回答',
+      }),
+    );
+
+    expect(markup).toContain(`已回答 2 题 · ${formatClockTime(CREATED_AT)} 开始`);
+  });
 
   it('describes a session that has not started', () => {
     const markup = renderToStaticMarkup(
@@ -31,6 +48,7 @@ describe('InterviewSessionPulse', () => {
     );
 
     expect(markup).toContain('已回答 0 题');
+    expect(markup).not.toContain('开始</span>');
     expect(markup).toContain('准备开始');
     expect(markup).toContain('尚未开始');
   });
@@ -41,6 +59,7 @@ describe('InterviewSessionPulse', () => {
         session: {
           status: 'report_ready',
           stage: 'report_ready',
+          createdAt: CREATED_AT,
           turns: [{ role: 'interviewer' }, { role: 'candidate' }, { role: 'candidate' }],
         } as never,
         phase: null,
@@ -65,6 +84,7 @@ function session() {
   return {
     status: 'waiting_user',
     stage: 'project_deep_dive',
+    createdAt: CREATED_AT,
     turns: [{ role: 'interviewer' }, { role: 'candidate' }, { role: 'candidate' }],
   } as never;
 }

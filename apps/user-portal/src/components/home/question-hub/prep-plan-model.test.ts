@@ -229,7 +229,11 @@ function mastery(tag: string, score: number, evidenceCount = 3): MasteryProfile 
 
 describe('pickWeakFocus', () => {
   it('picks the lowest-score weak tag and links to its practice filter', () => {
-    const focus = pickWeakFocus([mastery('缓存', 62), mastery('索引优化', 41), mastery('网络', 88)]);
+    const focus = pickWeakFocus([
+      mastery('缓存', 62),
+      mastery('索引优化', 41),
+      mastery('网络', 88),
+    ]);
     expect(focus?.tag).toBe('索引优化');
     expect(focus?.score).toBe(41);
     expect(focus?.href).toBe(`/questions?tags=${encodeURIComponent('索引优化')}`);

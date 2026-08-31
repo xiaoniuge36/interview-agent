@@ -36,9 +36,10 @@ export const assertInterviewCommand = (
   }
 
   if (!allowedStatus[command].includes(session.status)) {
+    // message 面向最终用户展示，内部 status/command 只进 details 供排障。
     throw new ConflictException({
       code: 'INTERVIEW_COMMAND_NOT_ALLOWED',
-      message: `当前状态 ${session.status} 不允许执行 ${command}。`,
+      message: '本场面试的进度已变化，当前操作暂不可用，请刷新页面同步最新进度。',
       details: { status: session.status, command },
     });
   }

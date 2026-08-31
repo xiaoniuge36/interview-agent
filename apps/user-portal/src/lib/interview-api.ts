@@ -15,15 +15,21 @@ import {
   type StartInterviewInput,
   type SubmitInterviewAnswerInput,
 } from '@interview-agent/contracts';
+import { shareInFlight } from '@interview-agent/api-client';
 import { apiRequest, createIdempotencyKey } from './api';
 import { ApiError } from './api';
 import { runAiOperationStream } from './ai-operation-stream';
 
-export function listInterviews(): Promise<InterviewSessionSummary[]> {
-  return apiRequest({
+const listInterviewsShared = shareInFlight(() =>
+  apiRequest({
     path: '/interviews',
     schema: InterviewListSchema,
-  });
+  }),
+);
+
+/** 首页备考计划与训练续接、复盘中心会并发拉取面试列表：共享在途请求，避免同屏重复打后端。 */
+export function listInterviews(): Promise<InterviewSessionSummary[]> {
+  return listInterviewsShared();
 }
 
 export function startInterview(input: StartInterviewInput): Promise<InterviewCommandResult> {

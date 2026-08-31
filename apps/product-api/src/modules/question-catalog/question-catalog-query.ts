@@ -1,4 +1,4 @@
-import type { Prisma, Question } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   CONTRACT_LIMITS,
   type QuestionCatalogCategory,
@@ -7,6 +7,8 @@ import {
 import {
   companiesFromTags,
   companyTagFor,
+  isCompanyTag,
+  isPracticeCategoryTag,
   practiceCategoryTagFor,
   visiblePracticeTags,
 } from '../practice/practice-question-categories';
@@ -37,7 +39,13 @@ const TYPE_LABELS: Record<string, string> = {
   multiple_choice: '多选题',
 };
 
-type FacetRecord = Pick<Question, 'tags' | 'type' | 'difficulty'>;
+export type FacetCount = { value: string; count: number };
+
+export type CatalogFacetSource = {
+  tagCounts: FacetCount[];
+  typeCounts: FacetCount[];
+  difficultyCounts: FacetCount[];
+};
 
 export const QUESTION_CATALOG_ITEM_SELECT = {
   id: true,
@@ -58,11 +66,7 @@ type CatalogItemRecord = Prisma.QuestionGetPayload<{
 }>;
 
 export function catalogWhere(tenantId: string, query: QuestionCatalogQuery) {
-  const requiredTags = [
-    ...(query.category ? [practiceCategoryTagFor(query.category)] : []),
-    ...(query.company ? [companyTagFor(query.company)] : []),
-    ...(query.tags ?? []),
-  ];
+  const requiredTags = requiredTagsFor(query);
   const keyword = query.query?.trim();
   return {
     status: 'published',
@@ -74,6 +78,56 @@ export function catalogWhere(tenantId: string, query: QuestionCatalogQuery) {
       ...(keyword ? [{ OR: keywordFilters(keyword) }] : []),
     ],
   } satisfies Prisma.QuestionWhereInput;
+}
+
+/**
+ * 标签 facet 用 unnest 在数据库内聚合，避免把全部匹配行拉回内存（O(N) 热点）。
+ * WHERE 条件必须与 catalogWhere 保持语义一致，改动其一时同步另一处。
+ */
+export function catalogTagCountsSql(tenantId: string, query: QuestionCatalogQuery): Prisma.Sql {
+  return Prisma.sql`SELECT tag AS value, COUNT(*)::int AS count
+FROM "Question" AS q
+CROSS JOIN LATERAL unnest(q."tags") AS tag
+WHERE ${catalogWhereSql(tenantId, query)}
+GROUP BY tag`;
+}
+
+function catalogWhereSql(tenantId: string, query: QuestionCatalogQuery): Prisma.Sql {
+  const requiredTags = requiredTagsFor(query);
+  const keyword = query.query?.trim();
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`q."status" = 'published'::"QuestionStatus"`,
+    Prisma.sql`(q."tenantId" = ${tenantId} OR q."visibility" = 'public'::"QuestionVisibility")`,
+  ];
+  if (query.type) {
+    conditions.push(Prisma.sql`q."type" = ${query.type}::"QuestionType"`);
+  }
+  if (query.difficulty) {
+    conditions.push(Prisma.sql`q."difficulty" = ${query.difficulty}::"QuestionDifficulty"`);
+  }
+  if (requiredTags.length) {
+    conditions.push(Prisma.sql`q."tags" @> ${requiredTags}::text[]`);
+  }
+  if (keyword) {
+    const pattern = `%${escapeLikePattern(keyword)}%`;
+    conditions.push(
+      Prisma.sql`(q."title" ILIKE ${pattern} OR q."stem" ILIKE ${pattern} OR q."tags" @> ARRAY[${keyword}]::text[])`,
+    );
+  }
+  return Prisma.join(conditions, ' AND ');
+}
+
+function requiredTagsFor(query: QuestionCatalogQuery): string[] {
+  return [
+    ...(query.category ? [practiceCategoryTagFor(query.category)] : []),
+    ...(query.company ? [companyTagFor(query.company)] : []),
+    ...(query.tags ?? []),
+  ];
+}
+
+/** 与 Prisma contains 一致：LIKE 元字符按字面匹配。 */
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
 }
 
 export function catalogOrderBy(
@@ -100,33 +154,31 @@ export function mapCatalogItem(record: CatalogItemRecord) {
   };
 }
 
-export function catalogFacets(records: FacetRecord[]) {
+export function catalogFacets(source: CatalogFacetSource) {
+  const categories = source.tagCounts
+    .filter((entry) => isPracticeCategoryTag(entry.value))
+    .map((entry) => ({ ...entry, value: entry.value.slice('role:'.length) }))
+    .filter((entry) => entry.value in CATEGORY_LABELS);
+  const companies = source.tagCounts
+    .filter((entry) => isCompanyTag(entry.value))
+    .map((entry) => ({ ...entry, value: entry.value.slice('company:'.length).trim() }))
+    .filter((entry) => entry.value.length > 0);
+  const visibleTags = source.tagCounts.filter(
+    (entry) =>
+      entry.value.trim().length > 0 &&
+      !isPracticeCategoryTag(entry.value) &&
+      !isCompanyTag(entry.value),
+  );
   return {
     categories: counted(
-      records.flatMap((record) => categoryValues(record.tags)),
+      categories,
       (value) => CATEGORY_LABELS[value as QuestionCatalogCategory] ?? value,
       CONTRACT_LIMITS.list,
     ),
-    difficulties: counted(
-      records.map((record) => record.difficulty),
-      labelDifficulty,
-      CONTRACT_LIMITS.list,
-    ),
-    types: counted(
-      records.map((record) => record.type),
-      labelType,
-      CONTRACT_LIMITS.list,
-    ),
-    tags: counted(
-      records.flatMap((record) => visiblePracticeTags(record.tags)),
-      (value) => value,
-      CONTRACT_LIMITS.mediumList,
-    ),
-    companies: counted(
-      records.flatMap((record) => companiesFromTags(record.tags)),
-      (value) => value,
-      CONTRACT_LIMITS.mediumList,
-    ),
+    difficulties: counted(source.difficultyCounts, labelDifficulty, CONTRACT_LIMITS.list),
+    types: counted(source.typeCounts, labelType, CONTRACT_LIMITS.list),
+    tags: counted(visibleTags, (value) => value, CONTRACT_LIMITS.mediumList),
+    companies: counted(companies, (value) => value, CONTRACT_LIMITS.mediumList),
   };
 }
 
@@ -138,17 +190,12 @@ function keywordFilters(keyword: string): Prisma.QuestionWhereInput[] {
   ];
 }
 
-function categoryValues(tags: string[]) {
-  return tags
-    .filter((tag) => tag.startsWith('role:'))
-    .map((tag) => tag.slice('role:'.length))
-    .filter((value): value is QuestionCatalogCategory => value in CATEGORY_LABELS);
-}
-
-/** facet 按出现次数取 Top N：题库扩充后标签种类会超过契约上限，只保留高频项。 */
-function counted(values: string[], label: (value: string) => string, limit: number) {
+/** facet 按出现次数取 Top N（同值合并计数）：题库扩充后标签种类会超过契约上限，只保留高频项。 */
+function counted(entries: FacetCount[], label: (value: string) => string, limit: number) {
   const counts = new Map<string, number>();
-  values.forEach((value) => counts.set(value, (counts.get(value) ?? 0) + 1));
+  for (const entry of entries) {
+    counts.set(entry.value, (counts.get(entry.value) ?? 0) + entry.count);
+  }
   return [...counts.entries()]
     .map(([value, count]) => ({ value, label: label(value), count }))
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))

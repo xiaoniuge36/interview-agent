@@ -6,6 +6,7 @@ import {
   confirmPracticeNavigation,
   hasUnsavedPracticeAnswer,
   initialPracticeItemIndex,
+  isPracticeSaveHotkey,
   pendingEvaluationCount,
   practiceEvidence,
   practiceProgress,
@@ -39,6 +40,13 @@ describe('单题播放器状态', () => {
 
   it('有待评价题目时需要在页面内确认 AI 复盘', () => {
     expect(requiresAiReportConfirmation(session({ answerAll: true }))).toBe(true);
+  });
+
+  it('只有 Ctrl/⌘ + Enter 触发快捷保存，普通 Enter 留给换行', () => {
+    expect(isPracticeSaveHotkey({ key: 'Enter', ctrlKey: true, metaKey: false })).toBe(true);
+    expect(isPracticeSaveHotkey({ key: 'Enter', ctrlKey: false, metaKey: true })).toBe(true);
+    expect(isPracticeSaveHotkey({ key: 'Enter', ctrlKey: false, metaKey: false })).toBe(false);
+    expect(isPracticeSaveHotkey({ key: 'a', ctrlKey: true, metaKey: false })).toBe(false);
   });
 
   it('题目均已评价时不需要重复确认', () => {

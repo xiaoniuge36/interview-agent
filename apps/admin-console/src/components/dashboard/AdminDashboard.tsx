@@ -118,7 +118,7 @@ function DashboardSections({
   return (
     <div className="admin-dashboard-content" data-admin-view={activeView}>
       <DashboardView active={activeView === 'overview'} view="overview">
-        <AdminOverview dashboard={state.dashboard} onNavigate={onNavigate} />
+        <AdminOverview dashboard={state.dashboard} onNavigate={onNavigate} onRetry={onChanged} />
       </DashboardView>
       <DashboardView active={activeView === 'imports'} view="imports">
         <ImportCenter

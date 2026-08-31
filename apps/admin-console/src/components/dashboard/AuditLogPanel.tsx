@@ -2,13 +2,10 @@ import type { AuditLogView } from '@interview-agent/contracts';
 import { Card, Empty, Space, Table, Tag, Typography, type TableColumnsType } from 'antd';
 import { useAdminListExport } from '@/hooks/useAdminListExport';
 import { useAdminPagedList, type AdminPagedListController } from '@/hooks/useAdminPagedList';
+import { formatAdminDateTime } from '@/lib/format';
 import { AdminPagination, AdminTableToolbar } from './AdminTableControls';
 import { SectionFeedback } from './SectionState';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
-  dateStyle: 'short',
-  timeStyle: 'medium',
-});
 const RESULT_OPTIONS = [
   { value: 'all', label: '全部结果' },
   { value: 'success', label: '成功' },
@@ -27,7 +24,7 @@ export function AuditLogPanel({ active, refreshKey }: { active: boolean; refresh
       <Card className="admin-dense-card admin-table-card" size="small">
         <div className="admin-page-heading">
           <div>
-            <div className="eyebrow">Audit Trail</div>
+            <div className="eyebrow">审计日志</div>
             <h2 id="audit-heading">审计日志</h2>
           </div>
           <p>记录治理动作、操作者、结果与跨服务追踪标识。</p>
@@ -46,7 +43,9 @@ type AuditListContentProps = {
 
 function AuditListContent({ exportList, isExporting, list }: AuditListContentProps) {
   if (list.state.status !== 'ready')
-    return <SectionFeedback state={list.state} loadingMessage="正在加载审计日志" />;
+    return (
+      <SectionFeedback state={list.state} loadingMessage="正在加载审计日志" onRetry={list.reload} />
+    );
   const page = list.state.data;
   return (
     <>
@@ -153,7 +152,7 @@ const AUDIT_COLUMNS: TableColumnsType<AuditLogView> = [
     width: 180,
     render: (_, log) => (
       <Typography.Text type="secondary">
-        <time dateTime={log.createdAt}>{DATE_FORMATTER.format(new Date(log.createdAt))}</time>
+        <time dateTime={log.createdAt}>{formatAdminDateTime(log.createdAt)}</time>
       </Typography.Text>
     ),
   },

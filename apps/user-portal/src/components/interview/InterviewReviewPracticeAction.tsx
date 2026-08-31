@@ -1,6 +1,7 @@
 'use client';
 
 import type { InterviewReport } from '@interview-agent/contracts';
+import { roundScore } from '@/lib/format';
 import { interviewReviewFocus } from './interview-review-practice';
 
 type Props = {
@@ -20,7 +21,7 @@ export function InterviewReviewPracticeAction(props: Props) {
         {focus.map((item) => (
           <li key={item.stage}>
             <span>{item.label}</span>
-            <strong>{item.score} 分</strong>
+            <strong>{roundScore(item.score)} 分</strong>
           </li>
         ))}
       </ul>

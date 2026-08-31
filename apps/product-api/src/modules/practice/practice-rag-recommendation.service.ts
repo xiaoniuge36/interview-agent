@@ -4,6 +4,7 @@ import type { PracticeRecommendationEvidence } from '@interview-agent/contracts'
 import type { Environment } from '../../common/config/environment';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { PrismaService } from '../../common/database/prisma.service';
+import { errorCategory } from '../../common/telemetry/telemetry';
 import { RetrievalService } from '../retrieval/retrieval.service';
 import type { RecommendationContext } from './practice-recommendation-context';
 
@@ -94,8 +95,4 @@ function recommendationQuery(context: RecommendationContext) {
   return [context.role, context.weakTag, context.focusTag, 'interview question']
     .filter((value): value is string => Boolean(value?.trim()))
     .join(' ');
-}
-
-function errorCategory(error: unknown): string {
-  return error instanceof Error ? error.name : typeof error;
 }

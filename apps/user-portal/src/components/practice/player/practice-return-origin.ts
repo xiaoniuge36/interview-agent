@@ -36,6 +36,16 @@ export function practiceReturnHref(origin: PracticeReturnOrigin) {
   return null;
 }
 
+/** 练习进行中的返回入口：按来源回错题本/课程，无来源时回题库。 */
+export function practiceReturnLink(origin: PracticeReturnOrigin): { href: string; label: string } {
+  if (origin === MISTAKE_BOOK_ORIGIN)
+    return { href: MISTAKE_BOOK_RETURN_HREF, label: '返回错题本' };
+  if (origin?.status === 'ready') {
+    return { href: learningVerificationReturnHref(origin.courseSlug), label: '返回本课' };
+  }
+  return { href: '/questions', label: '返回题库' };
+}
+
 export function isMistakeBookReturnHash(hash: string) {
   return hash === `#${MISTAKE_BOOK_RETURN_ANCHOR_ID}`;
 }

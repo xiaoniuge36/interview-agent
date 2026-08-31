@@ -11,8 +11,9 @@ import {
   type TableColumnsType,
 } from 'antd';
 import type { PlatformDashboard, PlatformDashboardPeriod } from '@interview-agent/contracts';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AdminApiError } from '@/lib/api';
+import { formatAdminDateTime } from '@/lib/format';
 import { getPlatformDashboard } from '@/lib/platform-api';
 import { PlatformFunnel } from './PlatformFunnel';
 import { PlatformHealthSummary } from './PlatformHealthSummary';
@@ -30,7 +31,6 @@ const PERIOD_OPTIONS: { label: string; value: PlatformDashboardPeriod }[] = [
   { label: '近 7 天', value: '7d' },
   { label: '近 30 天', value: '30d' },
 ];
-const TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short', timeStyle: 'short' });
 
 type DashboardState =
   | { status: 'loading' }
@@ -40,13 +40,13 @@ type DashboardState =
 
 export function PlatformAnalytics({ active, refreshKey }: { active: boolean; refreshKey: number }) {
   const [period, setPeriod] = useState<PlatformDashboardPeriod>('7d');
-  const state = usePlatformDashboard(active, period, refreshKey);
+  const { state, reload } = usePlatformDashboard(active, period, refreshKey);
 
   return (
     <section className="admin-page platform-pulse-page" aria-labelledby="analytics-heading">
       <div className="admin-page-heading admin-page-heading-actions">
         <div>
-          <div className="eyebrow">Platform Operations</div>
+          <div className="eyebrow">平台运营</div>
           <h2 id="analytics-heading">数据看板</h2>
           <p>从内容供给、训练使用到 Agent 运行质量，查看平台经营健康。</p>
         </div>
@@ -63,7 +63,7 @@ export function PlatformAnalytics({ active, refreshKey }: { active: boolean; ref
         </>
       ) : null}
       {state.status !== 'ready' ? (
-        <SectionFeedback state={state} loadingMessage="正在汇总全站运营数据" />
+        <SectionFeedback state={state} loadingMessage="正在汇总全站运营数据" onRetry={reload} />
       ) : null}
     </section>
   );
@@ -106,7 +106,7 @@ function RuntimeQuality({ dashboard }: { dashboard: PlatformDashboard }) {
         <PlatformRuntimeGauge runtime={runtime} />
       </div>
       <div className="platform-bi-runtime-stats">
-        <Statistic suffix="%" title="Schema 通过率" value={runtime.schemaPassRate} />
+        <Statistic suffix="%" title="结构校验通过率" value={runtime.schemaPassRate} />
         <Statistic suffix="ms" title="平均延迟" value={Math.round(runtime.averageLatencyMs)} />
         <Statistic title="降级次数" value={runtime.fallbacks} />
       </div>
@@ -148,7 +148,7 @@ const RUN_COLUMNS: TableColumnsType<PlatformDashboard['runtime']['recentFailures
   {
     title: '更新时间',
     dataIndex: 'updatedAt',
-    render: (value) => TIME_FORMATTER.format(new Date(value)),
+    render: (value) => formatAdminDateTime(value),
   },
 ];
 
@@ -156,8 +156,10 @@ function usePlatformDashboard(
   active: boolean,
   period: PlatformDashboardPeriod,
   refreshKey: number,
-): DashboardState {
+): { state: DashboardState; reload: () => void } {
   const [state, setState] = useState<DashboardState>({ status: 'loading' });
+  const [retryKey, setRetryKey] = useState(0);
+  const reload = useCallback(() => setRetryKey((value) => value + 1), []);
 
   useEffect(() => {
     if (!active) return;
@@ -176,9 +178,9 @@ function usePlatformDashboard(
       });
 
     return () => controller.abort();
-  }, [active, period, refreshKey]);
+  }, [active, period, refreshKey, retryKey]);
 
-  return state;
+  return { state, reload };
 }
 
 function normalizeError(error: unknown): AdminApiError {

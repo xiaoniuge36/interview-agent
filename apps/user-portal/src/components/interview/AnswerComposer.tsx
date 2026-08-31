@@ -1,5 +1,6 @@
 import { CONTRACT_LIMITS } from '@interview-agent/contracts';
-import type { FormEvent } from 'react';
+import Link from 'next/link';
+import type { FormEvent, KeyboardEvent } from 'react';
 import { FieldIcon } from '@/components/FieldIcon';
 import { DictationButton } from '@/components/speech/DictationButton';
 import { appendTranscript } from '@/lib/speech/speech-dictation';
@@ -15,6 +16,7 @@ export function AnswerComposer({ controller }: AnswerComposerProps) {
     return (
       <CompletedComposer
         answeredCount={session.turns.filter((turn) => turn.role === 'candidate').length}
+        reportLoaded={Boolean(controller.state.report)}
       />
     );
   }
@@ -42,6 +44,15 @@ export function AnswerComposer({ controller }: AnswerComposerProps) {
   );
 }
 
+/** Ctrl/⌘ + Enter 视为提交快捷键；单独 Enter 保留换行。 */
+export function isAnswerSubmitShortcut(event: {
+  key: string;
+  ctrlKey: boolean;
+  metaKey: boolean;
+}): boolean {
+  return event.key === 'Enter' && (event.ctrlKey || event.metaKey);
+}
+
 function AnswerField({
   controller,
   hasSession,
@@ -51,6 +62,11 @@ function AnswerField({
 }) {
   const characterCount = controller.state.draft.length.toLocaleString();
   const characterLimit = CONTRACT_LIMITS.longText.toLocaleString();
+  const submitShortcut = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!isAnswerSubmitShortcut(event)) return;
+    event.preventDefault();
+    event.currentTarget.form?.requestSubmit();
+  };
   return (
     <label className="label" htmlFor="candidate-answer">
       <span className="field-label-title">
@@ -63,7 +79,9 @@ function AnswerField({
           }
         />
       </span>
-      <span className="answer-guidance">重点说清个人贡献、关键判断和可验证结果。</span>
+      <span className="answer-guidance">
+        按「背景、任务、行动、结果（STAR）」组织回答，突出个人贡献与可验证结果。
+      </span>
       <textarea
         id="candidate-answer"
         className="textarea answer-box"
@@ -73,6 +91,7 @@ function AnswerField({
         placeholder={composerPlaceholder(hasSession, controller.state.busy)}
         value={controller.state.draft}
         onChange={(event) => controller.setDraft(event.target.value)}
+        onKeyDown={submitShortcut}
       />
       <span className="interview-answer-meta">
         <span>{answerMetaLabel(controller.draftRecovered)}</span>
@@ -84,21 +103,41 @@ function AnswerField({
   );
 }
 
-function CompletedComposer({ answeredCount }: { answeredCount: number }) {
+function CompletedComposer({
+  answeredCount,
+  reportLoaded,
+}: {
+  answeredCount: number;
+  reportLoaded: boolean;
+}) {
   return (
     <div className="interview-composer-complete" role="status">
       <div>
         <span>本轮已结束</span>
-        <strong>
-          {answeredCount > 0 ? `共回答 ${answeredCount} 题，复盘已生成` : '本轮复盘已生成'}
-        </strong>
-        <p>评分、薄弱环节和下一步建议已在复盘面板；想再来一轮，从上方「重新开始本轮」发起。</p>
+        <strong>{completedHeadline(answeredCount, reportLoaded)}</strong>
+        <p>
+          {reportLoaded
+            ? '评分、薄弱环节和下一步建议已在复盘面板；想再来一轮，从上方「重新开始本轮」发起。'
+            : '报告详情读取完成后会出现在「本轮复盘」面板；想再来一轮，从上方「重新开始本轮」发起。'}
+        </p>
       </div>
-      <a className="button" href="#interview-report">
-        查看本轮复盘
-      </a>
+      <div className="interview-composer-complete-actions">
+        <a className="button" href="#interview-report">
+          查看本轮复盘
+        </a>
+        <Link className="button secondary" href="/reports">
+          前往复盘中心
+        </Link>
+      </div>
     </div>
   );
+}
+
+function completedHeadline(answeredCount: number, reportLoaded: boolean): string {
+  const readingSuffix = reportLoaded ? '' : '，正在读取详情…';
+  return answeredCount > 0
+    ? `共回答 ${answeredCount} 题，复盘已生成${readingSuffix}`
+    : `本轮复盘已生成${readingSuffix}`;
 }
 
 function composerPlaceholder(hasSession: boolean, busy: boolean): string {
@@ -117,5 +156,8 @@ function SubmitArrow({ busy }: { busy: boolean }) {
 }
 
 function answerMetaLabel(draftRecovered: boolean): string {
-  return draftRecovered ? '已恢复当前标签页草稿' : '回答结构提示：背景、行动、判断、结果';
+  const base = draftRecovered
+    ? '已恢复当前标签页草稿'
+    : '回答结构提示：背景、任务、行动、结果（STAR）';
+  return `${base} · Ctrl/⌘ + Enter 提交`;
 }

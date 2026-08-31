@@ -15,17 +15,19 @@ const RAIL_NOTE_RISE_DELAY = { '--rise-delay': '280ms' } as CSSProperties;
 type AgentRecommendationRailProps = {
   displayName?: string | null | undefined;
   continuation?: TrainingContinuation | null;
+  continuationError?: string;
   recommendations: PracticeRecommendation[];
   loading: boolean;
   error: string;
   actionError: string;
   busyRecommendationId: string | null;
   onRetry: () => void;
+  onRetryContinuation?: () => void;
   onStart: (recommendation: PracticeRecommendation) => void;
 };
 
 export function AgentRecommendationRail(props: AgentRecommendationRailProps) {
-  const { actionError, continuation, displayName } = props;
+  const { actionError, continuation, continuationError, displayName, onRetryContinuation } = props;
   return (
     <section className="home-training-plan" aria-labelledby="home-training-plan-heading">
       <ThemeAtmosphere context="home" />
@@ -33,6 +35,9 @@ export function AgentRecommendationRail(props: AgentRecommendationRailProps) {
         <HomeWelcome displayName={displayName} continuation={continuation ?? null} />
       </header>
       <ChineseTicker />
+      {continuationError ? (
+        <ContinuationError message={continuationError} onRetry={onRetryContinuation} />
+      ) : null}
       <RailPrimaryContent {...props} />
       {actionError ? (
         <p className="agent-action-error motion-pop" role="alert">
@@ -120,6 +125,25 @@ function RecommendationCard({
         自己组一轮
       </Link>
     </article>
+  );
+}
+
+function ContinuationError({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: (() => void) | undefined;
+}) {
+  return (
+    <div className="question-hub-error agent-rail-continuation-error motion-rise" role="status">
+      <span>{message}</span>
+      {onRetry ? (
+        <button type="button" onClick={onRetry}>
+          重新读取
+        </button>
+      ) : null}
+    </div>
   );
 }
 

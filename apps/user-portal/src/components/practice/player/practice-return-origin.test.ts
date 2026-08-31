@@ -3,6 +3,7 @@ import {
   MISTAKE_BOOK_RETURN_HREF,
   mistakeBookReviewPracticeHref,
   practiceReturnHref,
+  practiceReturnLink,
   practiceReturnOriginFromValues,
 } from './practice-return-origin';
 
@@ -21,7 +22,11 @@ it('accepts exactly one lower-case mistake-book origin and maps it to a fixed re
 });
 
 it('accepts one verified learning origin and returns only to its fixed course anchor', () => {
-  const origin = practiceReturnOriginFromValues(['learn'], ['学习路线-01-agent基础与上下文工程'], ['react']);
+  const origin = practiceReturnOriginFromValues(
+    ['learn'],
+    ['学习路线-01-agent基础与上下文工程'],
+    ['react'],
+  );
 
   expect(origin).toMatchObject({
     status: 'ready',
@@ -63,4 +68,25 @@ it.each([
 
   expect(origin).toBeNull();
   expect(practiceReturnHref(origin)).toBeNull();
+});
+
+it('keeps the in-progress return link on the origin instead of the generic catalog', () => {
+  expect(practiceReturnLink('mistake-book')).toEqual({
+    href: '/reports#mistake-book-heading',
+    label: '返回错题本',
+  });
+
+  const learning = practiceReturnOriginFromValues(
+    ['learn'],
+    ['学习路线-01-agent基础与上下文工程'],
+    ['react'],
+  );
+  expect(practiceReturnLink(learning)).toEqual({
+    href: '/learn?doc=%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF-01-agent%E5%9F%BA%E7%A1%80%E4%B8%8E%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B#learning-course-actions',
+    label: '返回本课',
+  });
+});
+
+it('falls back to the question catalog when the practice has no return origin', () => {
+  expect(practiceReturnLink(null)).toEqual({ href: '/questions', label: '返回题库' });
 });

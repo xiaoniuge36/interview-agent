@@ -70,7 +70,9 @@ function NotificationViewport({
   onDismiss: (id: string) => void;
 }) {
   return (
-    <aside className="notification-viewport" aria-label="操作通知" aria-live="polite">
+    // 容器不再挂 aria-live：错误卡走 role=alert（assertive）、普通卡走 role=status（polite），
+    // 避免外层 polite 把关键错误的播报级别压低
+    <aside className="notification-viewport" aria-label="操作通知">
       {items.map((item) => (
         <NotificationCard key={item.id} item={item} onDismiss={onDismiss} />
       ))}

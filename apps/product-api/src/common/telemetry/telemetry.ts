@@ -35,6 +35,11 @@ export function withTraceSpan<T>(
   });
 }
 
+/** 降级日志里的错误标签：只暴露错误类型名，避免 message 携带的敏感内容进日志。 */
+export function errorCategory(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error;
+}
+
 export function sanitizeSpanAttributes(attributes: Record<string, unknown>): Attributes {
   const sanitized: Attributes = {};
   for (const [key, value] of Object.entries(attributes)) {

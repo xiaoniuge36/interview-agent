@@ -1,0 +1,191 @@
+/* Agent 浮钮与移动端触发器：常驻壳层的轻量样式，随 UserAgentFloatButton 组件加载。
+   抽屉/会话面板样式在 user-agent-drawer.css，随动态挂载的 UserAgentWidgetBody 下发。 */
+.user-agent-float {
+  position: fixed;
+  z-index: 1250;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 34%);
+  border-radius: 50%;
+  padding: 0;
+
+  /* 跟随六主题主色：写死蓝渐变会在 terminal/constructivist 等主题下突兀失衡 */
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--theme-primary) 84%, #fff) 0%,
+    var(--theme-primary) 52%,
+    color-mix(in srgb, var(--theme-primary) 72%, #000) 100%
+  );
+  box-shadow:
+    0 12px 26px color-mix(in srgb, var(--theme-primary) 28%, transparent),
+    0 3px 8px color-mix(in srgb, var(--theme-primary) 18%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 22%);
+  color: #fff;
+  cursor: grab;
+  isolation: isolate;
+  touch-action: none;
+  user-select: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.user-agent-float::before {
+  position: absolute;
+  inset: 3px;
+  z-index: 0;
+  border: 1px solid rgb(255 255 255 / 11%);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
+.user-agent-float:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 16px 32px color-mix(in srgb, var(--theme-primary) 34%, transparent),
+    0 4px 10px color-mix(in srgb, var(--theme-primary) 20%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 26%);
+}
+.user-agent-float:active {
+  cursor: grabbing;
+}
+.user-agent-float:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--theme-primary) 30%, transparent);
+  outline-offset: 3px;
+}
+.user-agent-float-mark {
+  position: relative;
+  z-index: 1;
+  width: 30px;
+  height: 30px;
+  overflow: visible;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.user-agent-float-mark-monogram,
+.user-agent-float-mark-accent {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+.user-agent-float-mark-monogram {
+  stroke: #fff;
+  stroke-width: 2.1;
+}
+.user-agent-float-mark-accent {
+  stroke: #65e1c2;
+  stroke-width: 2.2;
+}
+.user-agent-float-status {
+  position: absolute;
+  z-index: 1;
+  top: 8px;
+  right: 8px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #b6c1d1;
+}
+.user-agent-float-status.is-running {
+  background: #55c6a9;
+  animation: user-agent-pulse 1.4s ease-in-out infinite;
+}
+.user-agent-float-label {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  padding: 7px 10px;
+  border: 1px solid #d8e4f5;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(19 35 61 / 14%);
+  color: #193a74;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(4px, -50%);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+.user-agent-float:hover .user-agent-float-label,
+.user-agent-float:focus-visible .user-agent-float-label {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+@keyframes user-agent-pulse {
+  50% {
+    box-shadow: 0 0 0 5px rgb(85 198 169 / 15%);
+  }
+}
+
+@media (max-width: 720px) {
+  .user-agent-float-label {
+    display: none;
+  }
+}
+@media (max-width: 820px) {
+  .user-agent-float {
+    display: none;
+  }
+  .user-agent-mobile-trigger {
+    position: relative;
+    min-width: 0;
+    display: grid;
+    place-items: center;
+    grid-template-rows: 20px auto;
+    align-content: center;
+    gap: 3px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 9px;
+    font-weight: 700;
+    touch-action: manipulation;
+  }
+  .user-agent-mobile-trigger:hover,
+  .user-agent-mobile-trigger:focus-visible,
+  .user-agent-mobile-trigger[aria-expanded='true'] {
+    background: var(--consumer-violet-soft);
+    color: var(--consumer-violet);
+  }
+  .user-agent-mobile-trigger:focus-visible {
+    outline: 2px solid currentcolor;
+    outline-offset: -2px;
+  }
+  .user-agent-mobile-trigger .user-agent-float-mark {
+    width: 20px;
+    height: 20px;
+  }
+  .user-agent-mobile-trigger .user-agent-float-mark-monogram {
+    stroke: currentcolor;
+    stroke-width: 2.3;
+  }
+  .user-agent-mobile-trigger .user-agent-float-mark-accent {
+    stroke: var(--consumer-coral);
+    stroke-width: 2.3;
+  }
+  .user-agent-mobile-trigger .user-agent-float-status {
+    top: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+  }
+  .user-agent-mobile-label {
+    line-height: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .user-agent-float,
+  .user-agent-float-label,
+  .user-agent-float-mark {
+    transition: none;
+  }
+  .user-agent-float-status.is-running {
+    animation: none;
+  }
+}

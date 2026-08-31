@@ -89,6 +89,13 @@
   font-weight: 700;
 }
 
+/* 续练进度读取失败：提示条位于深色训练区内，需要压过主题氛围层保持可点。 */
+.agent-rail-continuation-error {
+  position: relative;
+  z-index: 1;
+  justify-content: center;
+}
+
 .question-discovery {
   align-items: flex-start;
   padding-top: 22px;

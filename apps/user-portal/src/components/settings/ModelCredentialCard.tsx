@@ -7,7 +7,9 @@ import {
   useNotifications,
   type NotificationApi,
 } from '@/components/notifications/NotificationProvider';
+import { formatDateTime } from '@/lib/format';
 import { MODEL_PROVIDER_OPTIONS } from './model-connection-form';
+import { credentialErrorLabel } from './model-credential-error-codes';
 import {
   createExclusiveCredentialActionRunner,
   credentialActionOutcome,
@@ -24,10 +26,15 @@ type ModelCredentialCardProps = {
 
 export function ModelCredentialCard(props: ModelCredentialCardProps) {
   const { credential, onEdit } = props;
-  const { busy, message, remove, test } = useCredentialActions(props);
+  const { busy, busyAction, message, remove, test } = useCredentialActions(props);
   const needsTest = credential.status !== 'verified';
   return (
-    <article className="credential-card motion-lift" data-status={credential.status}>
+    // id 供就绪横幅的"去测试默认模型" CTA 锚定
+    <article
+      id={`credential-${credential.id}`}
+      className="credential-card motion-lift"
+      data-status={credential.status}
+    >
       <CredentialHeader credential={credential} onEdit={onEdit} busy={busy} />
       <CredentialFacts credential={credential} />
       <CredentialActions
@@ -35,6 +42,7 @@ export function ModelCredentialCard(props: ModelCredentialCardProps) {
         onRemove={remove}
         onTest={test}
         busy={busy}
+        busyAction={busyAction}
         needsTest={needsTest}
       />
       {needsTest ? (
@@ -52,16 +60,28 @@ export function ModelCredentialCard(props: ModelCredentialCardProps) {
 function useCredentialActions(options: ModelCredentialCardProps) {
   const notifications = useNotifications();
   const [busy, setBusy] = useState(false);
+  // 记录进行中的具体动作：只让当前动作的按钮显示"进行中"，其余按钮仅禁用
+  const [busyAction, setBusyAction] = useState<'test' | 'remove' | null>(null);
   const [message, setMessage] = useState('');
   const [runExclusive] = useState(createExclusiveCredentialActionRunner);
   const context = { ...options, notifications, setBusy, setMessage };
   const test = async () => {
-    await runExclusive(() => testCredential(context));
+    setBusyAction('test');
+    try {
+      await runExclusive(() => testCredential(context));
+    } finally {
+      setBusyAction(null);
+    }
   };
   const remove = async () => {
-    await runExclusive(() => removeCredential(context));
+    setBusyAction('remove');
+    try {
+      await runExclusive(() => removeCredential(context));
+    } finally {
+      setBusyAction(null);
+    }
   };
-  return { busy, message, remove, test };
+  return { busy, busyAction, message, remove, test };
 }
 
 type CredentialActionContext = Pick<
@@ -149,16 +169,14 @@ function CredentialHeader({
 }
 
 function CredentialFacts({ credential }: { credential: ModelCredentialView }) {
-  const testedAt = credential.lastTestedAt
-    ? new Date(credential.lastTestedAt).toLocaleString()
-    : '尚未测试';
+  const testedAt = credential.lastTestedAt ? formatDateTime(credential.lastTestedAt) : '尚未测试';
   return (
     <div className="credential-facts">
       <CredentialFact label="模型名称" value={credential.model} />
       <CredentialFact label="密钥" value={credential.keyHint} secret />
       <CredentialFact label="上次测试时间" value={testedAt} />
       {credential.lastErrorCode ? (
-        <CredentialFact label="上次失败" value={credential.lastErrorCode} />
+        <CredentialFact label="上次失败" value={credentialErrorLabel(credential.lastErrorCode)} />
       ) : null}
     </div>
   );
@@ -189,12 +207,14 @@ function CredentialActions({
   onRemove,
   onTest,
   busy,
+  busyAction,
   needsTest,
 }: {
   onEdit: () => void;
   onRemove: () => Promise<void>;
   onTest: () => Promise<void>;
   busy: boolean;
+  busyAction: 'test' | 'remove' | null;
   needsTest: boolean;
 }) {
   return (
@@ -204,8 +224,9 @@ function CredentialActions({
         type="button"
         onClick={() => void onTest()}
         disabled={busy}
+        aria-busy={busyAction === 'test'}
       >
-        ◌ 测试连接
+        {busyAction === 'test' ? '◌ 测试中…' : '◌ 测试连接'}
       </button>
       <button className="connection-action" type="button" onClick={onEdit} disabled={busy}>
         ⌕ 更新密钥
@@ -215,8 +236,9 @@ function CredentialActions({
         type="button"
         onClick={() => void onRemove()}
         disabled={busy}
+        aria-busy={busyAction === 'remove'}
       >
-        ⌫ 删除连接
+        {busyAction === 'remove' ? '⌫ 删除中…' : '⌫ 删除连接'}
       </button>
     </footer>
   );

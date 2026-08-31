@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { InterviewRetrievalContextService } from './interview-retrieval-context.service';
 
@@ -64,4 +65,19 @@ test('returns a bounded read-only context with server-issued source ids', async 
     context,
     expect.objectContaining({ query: input.answer, purpose: 'interview', limit: 6 }),
   );
+});
+
+test('logs the degradation and continues without context when retrieval fails', async () => {
+  const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  const retrieval = { search: jest.fn().mockRejectedValue(new Error('retrieval down')) };
+  const service = new InterviewRetrievalContextService(
+    { get: jest.fn().mockReturnValue(true) } as never,
+    retrieval as never,
+  );
+
+  await expect(service.forCommand(input)).resolves.toEqual([]);
+  expect(warn).toHaveBeenCalledWith(
+    expect.stringContaining('Interview retrieval context unavailable'),
+  );
+  warn.mockRestore();
 });

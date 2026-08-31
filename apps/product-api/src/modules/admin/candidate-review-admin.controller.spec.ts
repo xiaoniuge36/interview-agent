@@ -19,11 +19,7 @@ const request = {
 describe('CandidateReviewAdminController', () => {
   it('parses the batch publish command before delegating to the candidate service', async () => {
     const candidates = { batchPublish: jest.fn().mockResolvedValue({}) };
-    const controller = new CandidateReviewAdminController(
-      candidates as never,
-      {} as never,
-      {} as never,
-    );
+    const controller = new CandidateReviewAdminController(candidates as never, {} as never);
 
     await controller.batchPublishCandidates(request, { candidateIds: ['candidate-1'] });
 

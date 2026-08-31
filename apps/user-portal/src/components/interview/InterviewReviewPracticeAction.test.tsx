@@ -52,6 +52,20 @@ it('uses one primary click to enter the targeted practice', () => {
   expect(markup).toContain('开始专项回练');
 });
 
+it('rounds fractional stage scores before showing them', () => {
+  const markup = renderToStaticMarkup(
+    createElement(InterviewReviewPracticeAction, {
+      report: report({ project_deep_dive: 42.6 }),
+      sessionId: 'interview-1',
+      starting: false,
+      onStart: () => undefined,
+    }),
+  );
+
+  expect(markup).toContain('43 分');
+  expect(markup).not.toContain('42.6');
+});
+
 function report(scores: Record<string, number>) {
   return {
     stageScores: Object.entries(scores).map(([stage, score]) => ({

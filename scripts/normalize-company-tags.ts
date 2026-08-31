@@ -32,9 +32,7 @@ async function main() {
   console.log(`matched ${questions.length} questions (${dryRun ? 'dry-run' : 'APPLY'})`);
   for (const question of questions) {
     const nextTags = [
-      ...new Set(
-        question.tags.map((tag) => (COMPANIES.includes(tag) ? `company:${tag}` : tag)),
-      ),
+      ...new Set(question.tags.map((tag) => (COMPANIES.includes(tag) ? `company:${tag}` : tag))),
     ];
     console.log(`- ${question.title}: [${question.tags}] -> [${nextTags}]`);
     if (!dryRun) {

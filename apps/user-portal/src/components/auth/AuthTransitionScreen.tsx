@@ -6,14 +6,14 @@ const TRANSITION_COPY = {
     title: '正在确认登录状态',
     detail: '正在验证当前账号会话，请稍候。',
     status: '正在恢复安全会话',
-    signal: 'SECURE LINK · OIDC',
+    signal: '安全连接',
   },
   entering: {
     eyebrow: '已确认身份',
     title: '正在进入训练空间',
     detail: '登录状态已准备就绪，即将带你返回刚才的位置。',
     status: '正在完成页面跳转',
-    signal: 'SESSION READY',
+    signal: '会话就绪',
   },
 } as const;
 

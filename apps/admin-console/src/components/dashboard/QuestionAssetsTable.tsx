@@ -63,7 +63,9 @@ type QuestionListContentProps = {
 
 function QuestionListContent({ exportList, isExporting, list }: QuestionListContentProps) {
   if (list.state.status !== 'ready')
-    return <SectionFeedback state={list.state} loadingMessage="正在加载题库" />;
+    return (
+      <SectionFeedback state={list.state} loadingMessage="正在加载题库" onRetry={list.reload} />
+    );
   const page = list.state.data;
   return (
     <>

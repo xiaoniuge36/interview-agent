@@ -73,7 +73,7 @@ function AccountManagementCard({ screen }: { screen: ReturnType<typeof useAccoun
           onOpenRole={screen.role.open}
         />
       ) : (
-        <SectionFeedback state={list} loadingMessage="正在查询账号" />
+        <SectionFeedback state={list} loadingMessage="正在查询账号" onRetry={screen.reload} />
       )}
       {page ? (
         <AdminPagination
@@ -92,7 +92,7 @@ function AccountPageHeading({ total, onCreate }: { total: number; onCreate: () =
   return (
     <div className="admin-page-heading account-page-heading">
       <div>
-        <div className="eyebrow">Account Governance</div>
+        <div className="eyebrow">账号治理</div>
         <h2 id="accounts-heading">账号管理</h2>
       </div>
       <div>

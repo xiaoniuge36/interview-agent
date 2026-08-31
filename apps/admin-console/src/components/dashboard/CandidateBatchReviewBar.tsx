@@ -4,8 +4,10 @@ import type { CandidateBatchReviewSelection } from './admin-records';
 
 type BatchReviewStatus = 'approved' | 'needs_edit' | 'rejected';
 
+export type CandidateBatchAction = BatchReviewStatus | 'publish';
+
 type CandidateBatchReviewBarProps = {
-  isSubmitting: boolean;
+  submittingAction: CandidateBatchAction | null;
   notes: string;
   selection: CandidateBatchReviewSelection;
   onNotesChange: (notes: string) => void;
@@ -14,7 +16,7 @@ type CandidateBatchReviewBarProps = {
 };
 
 export function CandidateBatchReviewBar({
-  isSubmitting,
+  submittingAction,
   notes,
   selection,
   onNotesChange,
@@ -30,11 +32,15 @@ export function CandidateBatchReviewBar({
         </Typography.Text>
       </div>
       {selection.canSubmit ? (
-        <ReviewActions isSubmitting={isSubmitting} onReview={onReview} />
+        <ReviewActions submittingAction={submittingAction} onReview={onReview} />
       ) : (
         <SourceMismatchAlert />
       )}
-      <PublishAction isSubmitting={isSubmitting} selection={selection} onPublish={onPublish} />
+      <PublishAction
+        submittingAction={submittingAction}
+        selection={selection}
+        onPublish={onPublish}
+      />
       <Input.TextArea
         aria-label="批量审核备注"
         maxLength={500}
@@ -47,16 +53,19 @@ export function CandidateBatchReviewBar({
   );
 }
 
+// 为什么：仅让正在提交的动作转圈，其余按钮只禁用，
+// 避免三个按钮同时 loading 让运营误以为点了全部操作。
 function ReviewActions({
-  isSubmitting,
+  submittingAction,
   onReview,
-}: Pick<CandidateBatchReviewBarProps, 'isSubmitting' | 'onReview'>) {
+}: Pick<CandidateBatchReviewBarProps, 'submittingAction' | 'onReview'>) {
+  const isBusy = submittingAction !== null;
   return (
     <Space wrap>
       <Button
         data-page-agent-not-interactive="true"
-        disabled={isSubmitting}
-        loading={isSubmitting}
+        disabled={isBusy}
+        loading={submittingAction === 'approved'}
         type="primary"
         onClick={() => onReview('approved')}
       >
@@ -64,8 +73,8 @@ function ReviewActions({
       </Button>
       <Button
         data-page-agent-not-interactive="true"
-        disabled={isSubmitting}
-        loading={isSubmitting}
+        disabled={isBusy}
+        loading={submittingAction === 'needs_edit'}
         onClick={() => onReview('needs_edit')}
       >
         批量需修改
@@ -73,8 +82,8 @@ function ReviewActions({
       <Button
         danger
         data-page-agent-not-interactive="true"
-        disabled={isSubmitting}
-        loading={isSubmitting}
+        disabled={isBusy}
+        loading={submittingAction === 'rejected'}
         onClick={() => onReview('rejected')}
       >
         批量驳回
@@ -84,10 +93,10 @@ function ReviewActions({
 }
 
 function PublishAction({
-  isSubmitting,
+  submittingAction,
   selection,
   onPublish,
-}: Pick<CandidateBatchReviewBarProps, 'isSubmitting' | 'selection' | 'onPublish'>) {
+}: Pick<CandidateBatchReviewBarProps, 'submittingAction' | 'selection' | 'onPublish'>) {
   if (!selection.canPublish) {
     return <Typography.Text type="secondary">仅发布已通过的候选题。</Typography.Text>;
   }
@@ -106,8 +115,8 @@ function PublishAction({
       >
         <Button
           data-page-agent-not-interactive="true"
-          disabled={isSubmitting}
-          loading={isSubmitting}
+          disabled={submittingAction !== null}
+          loading={submittingAction === 'publish'}
           type="primary"
         >
           批量发布到题库

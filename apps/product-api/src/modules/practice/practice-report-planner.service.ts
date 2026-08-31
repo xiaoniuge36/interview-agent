@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type {
   AgentRuntimeRetrievalContext,
@@ -6,7 +6,7 @@ import type {
 } from '@interview-agent/contracts';
 import type { Environment } from '../../common/config/environment';
 import type { ProductRequestContext } from '../../common/context/request-context';
-import { withTraceSpan } from '../../common/telemetry/telemetry';
+import { errorCategory, withTraceSpan } from '../../common/telemetry/telemetry';
 import { AgentRuntimeClient } from '../agent-runtime/agent-runtime.client';
 import { RetrievalService } from '../retrieval/retrieval.service';
 import type { SessionRecord } from './practice-mappers';
@@ -17,6 +17,8 @@ const REPORT_QUALITY_GATE_PASSED = true;
 
 @Injectable()
 export class PracticeReportPlannerService {
+  private readonly logger = new Logger(PracticeReportPlannerService.name);
+
   constructor(
     private readonly config: ConfigService<Environment, true>,
     private readonly retrieval: RetrievalService,
@@ -54,7 +56,10 @@ export class PracticeReportPlannerService {
         },
         context,
       );
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `Practice report runtime plan failed; falling back to locally composed report: ${errorCategory(error)} (session=${session.id}, trace=${context.traceId})`,
+      );
       return null;
     }
   }
@@ -76,7 +81,10 @@ export class PracticeReportPlannerService {
         entityType: hit.entityType,
         content: hit.content,
       }));
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `Report retrieval context unavailable; report continues without RAG: ${errorCategory(error)} (session=${session.id}, trace=${context.traceId})`,
+      );
       return [];
     }
   }

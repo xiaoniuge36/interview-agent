@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, type CSSProperties } from 'react';
 import {
   findLearningReviewHeading,
@@ -107,10 +108,7 @@ function ReadingDesk({
   );
 }
 
-function deriveCourseContext(
-  courses: LearningNavigationItem[],
-  activeDocument: LearningDocument,
-) {
+function deriveCourseContext(courses: LearningNavigationItem[], activeDocument: LearningDocument) {
   const activeCourse =
     activeDocument.kind === 'course'
       ? (courses.find((document) => document.slug === activeDocument.slug) ?? null)
@@ -191,11 +189,16 @@ function LearningEmptyState() {
   return (
     <section className="learning-empty-state">
       <span aria-hidden="true">◇</span>
-      <p>LEARNING LIBRARY</p>
-      <h1>还没有可阅读的资料</h1>
-      <p>
-        将 Markdown 文档放入仓库的 <code>参考资料</code> 目录，刷新后就会出现在这里。
-      </p>
+      <h1>课程内容准备中</h1>
+      <p>学习内容上线后会出现在这里。上线前可以先去题库刷题，或用一场模拟面试保持手感。</p>
+      <div className="learning-empty-actions">
+        <Link className="button" href="/questions">
+          去刷题
+        </Link>
+        <Link className="button secondary" href="/interview">
+          去模拟面试
+        </Link>
+      </div>
     </section>
   );
 }

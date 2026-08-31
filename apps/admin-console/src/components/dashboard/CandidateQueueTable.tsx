@@ -1,12 +1,13 @@
 import type { CandidateReview } from '@interview-agent/contracts';
 import { App, Button, Empty, Table, Tag, Typography, type TableProps } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
+import { adminViewHash } from '@/components/admin-navigation';
 import type { AdminPagedListController } from '@/hooks/useAdminPagedList';
+import { formatAdminDateTime } from '@/lib/format';
 import { batchPublishCandidates, batchReviewCandidates } from '@/lib/training-content-api';
-import { CandidateBatchReviewBar } from './CandidateBatchReviewBar';
+import { CandidateBatchReviewBar, type CandidateBatchAction } from './CandidateBatchReviewBar';
 import { resolveCandidateBatchReview } from './admin-records';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium' });
 const STATUS_LABELS: Record<CandidateReview['status'], string> = {
   pending: '待审核',
   needs_edit: '需修改',
@@ -52,7 +53,7 @@ function useCandidateBatchReview(props: CandidateQueueTableProps) {
   const { message } = App.useApp();
   const [notes, setNotes] = useState('');
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
-  const [isSubmitting, setSubmitting] = useState(false);
+  const [submittingAction, setSubmittingAction] = useState<CandidateBatchAction | null>(null);
   const selectedCandidates = useMemo(
     () => props.candidates.filter((candidate) => selectedCandidateIds.includes(candidate.id)),
     [props.candidates, selectedCandidateIds],
@@ -71,7 +72,7 @@ function useCandidateBatchReview(props: CandidateQueueTableProps) {
       selection,
       setNotes,
       setSelectedCandidateIds,
-      setSubmitting,
+      setSubmittingAction,
       message,
       status,
     });
@@ -82,12 +83,12 @@ function useCandidateBatchReview(props: CandidateQueueTableProps) {
       selection,
       setNotes,
       setSelectedCandidateIds,
-      setSubmitting,
+      setSubmittingAction,
       message,
     });
   };
   return {
-    isSubmitting,
+    submittingAction,
     notes,
     onNotesChange: setNotes,
     onPublish,
@@ -105,13 +106,13 @@ type SubmitCandidateBatchReview = {
   selection: ReturnType<typeof resolveCandidateBatchReview>;
   setNotes: (notes: string) => void;
   setSelectedCandidateIds: (ids: string[]) => void;
-  setSubmitting: (isSubmitting: boolean) => void;
+  setSubmittingAction: (action: CandidateBatchAction | null) => void;
   status: 'approved' | 'needs_edit' | 'rejected';
 };
 
 async function submitCandidateBatchReview(input: SubmitCandidateBatchReview) {
   if (!input.selection.canSubmit) return;
-  input.setSubmitting(true);
+  input.setSubmittingAction(input.status);
   try {
     const result = await batchReviewCandidates({
       candidateIds: input.selection.candidateIds,
@@ -126,7 +127,7 @@ async function submitCandidateBatchReview(input: SubmitCandidateBatchReview) {
   } catch {
     // 统一请求层会展示失败原因；此处只恢复批量操作状态。
   } finally {
-    input.setSubmitting(false);
+    input.setSubmittingAction(null);
   }
 }
 
@@ -134,7 +135,7 @@ type SubmitCandidateBatchPublish = Omit<SubmitCandidateBatchReview, 'notes' | 's
 
 async function submitCandidateBatchPublish(input: SubmitCandidateBatchPublish) {
   if (!input.selection.canPublish) return;
-  input.setSubmitting(true);
+  input.setSubmittingAction('publish');
   try {
     const result = await batchPublishCandidates({
       candidateIds: input.selection.candidateIds,
@@ -151,7 +152,7 @@ async function submitCandidateBatchPublish(input: SubmitCandidateBatchPublish) {
   } catch {
     // 统一请求层会展示失败原因；此处只恢复批量操作状态。
   } finally {
-    input.setSubmitting(false);
+    input.setSubmittingAction(null);
   }
 }
 
@@ -160,7 +161,11 @@ function CandidateQueueEmpty() {
     <Empty
       description="没有匹配的候选题，可前往资料导入创建新任务。"
       image={Empty.PRESENTED_IMAGE_SIMPLE}
-    />
+    >
+      <Button href={adminViewHash('imports')} type="primary">
+        前往资料导入
+      </Button>
+    </Empty>
   );
 }
 
@@ -197,8 +202,8 @@ function candidateColumns(
     {
       title: '创建时间',
       dataIndex: 'createdAt',
-      width: 132,
-      render: (value) => DATE_FORMATTER.format(new Date(value)),
+      width: 148,
+      render: (value) => formatAdminDateTime(value),
     },
     {
       title: '操作',

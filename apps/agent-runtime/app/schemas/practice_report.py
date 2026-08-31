@@ -1,3 +1,4 @@
+# Generated from packages/contracts Zod schemas. Do not edit by hand.
 from typing import Literal
 
 from pydantic import Field
@@ -21,7 +22,7 @@ class PracticeReportEvaluation(ContractModel):
     question_tags: list[str] = Field(max_length=20)
     score: float = Field(ge=0, le=100)
     feedback: str = Field(min_length=1, max_length=2000)
-    missing_points: list[str] = Field(max_length=20)
+    missing_points: list[str] = Field(max_length=50)
 
 
 class PracticeReportRequest(ContractModel):
@@ -40,12 +41,13 @@ class PracticeReportMemoryEvent(ContractModel):
     evidence: str = Field(min_length=1, max_length=2000)
 
 
+# Runtime-internal LLM decision payload (a subset of the response); not part of the HTTP contract.
 class PracticeReportDecision(ContractModel):
     summary: str = Field(min_length=1, max_length=2000)
-    strengths: list[str] = Field(max_length=20)
-    weaknesses: list[str] = Field(max_length=20)
-    next_actions: list[str] = Field(max_length=20)
-    report_markdown: str = Field(min_length=1, max_length=20_000)
+    strengths: list[str] = Field(max_length=50)
+    weaknesses: list[str] = Field(max_length=50)
+    next_actions: list[str] = Field(max_length=50)
+    report_markdown: str = Field(min_length=1, max_length=20000)
     source_ids: list[str] = Field(max_length=6)
 
 
@@ -53,10 +55,10 @@ class PracticeReportResponse(ContractModel):
     contract_version: ContractVersion = "practice-report-runtime.v1"
     overall_score: float = Field(ge=0, le=100)
     summary: str = Field(min_length=1, max_length=2000)
-    strengths: list[str] = Field(max_length=20)
-    weaknesses: list[str] = Field(max_length=20)
-    next_actions: list[str] = Field(max_length=20)
-    report_markdown: str = Field(min_length=1, max_length=20_000)
+    strengths: list[str] = Field(max_length=50)
+    weaknesses: list[str] = Field(max_length=50)
+    next_actions: list[str] = Field(max_length=50)
+    report_markdown: str = Field(min_length=1, max_length=20000)
     source_ids: list[str] = Field(max_length=6)
-    memory_events: list[PracticeReportMemoryEvent] = Field(max_length=20)
+    memory_events: list[PracticeReportMemoryEvent] = Field(max_length=50)
     fallback_used: bool

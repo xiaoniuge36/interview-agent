@@ -27,7 +27,12 @@ describe('admin attention queue', () => {
       expect.objectContaining({ id: 'review-backlog', count: 4, view: 'content' }),
       expect.objectContaining({ id: 'failed-imports', count: 2, view: 'imports' }),
       expect.objectContaining({ id: 'runtime-risk', count: 2, view: 'runtime' }),
-      expect.objectContaining({ id: 'schema-pass-rate', count: 92, view: 'questions' }),
+      expect.objectContaining({
+        id: 'schema-pass-rate',
+        count: 92,
+        view: 'questions',
+        title: '结构校验通过率待提升',
+      }),
     ]);
   });
 

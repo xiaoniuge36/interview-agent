@@ -262,6 +262,14 @@
   line-height: 1.65;
 }
 
+.learning-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
 html[data-motion='off'] .learning-document-link:hover .learning-document-spine {
   transform: none;
 }

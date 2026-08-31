@@ -24,6 +24,7 @@ export function QuestionCatalogList(props: QuestionCatalogListProps) {
   if (!catalog?.items.length) return <QuestionListEmpty />;
   return (
     <section className="question-catalog-results" aria-busy={loading}>
+      {error ? <QuestionListRefreshError message={error} onRetry={onRetry} /> : null}
       <div className="question-result-summary">
         <span>
           找到 <CountUp value={catalog.total} durationMs={520} /> 道题
@@ -142,6 +143,18 @@ function QuestionListError({ message, onRetry }: { message: string; onRetry: () 
       <p>{message}</p>
       <button type="button" onClick={onRetry}>
         重新加载
+      </button>
+    </div>
+  );
+}
+
+/** 翻页/改筛选失败时旧列表仍然可用：错误条置顶提示，而不是静默保留旧结果。 */
+function QuestionListRefreshError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="question-catalog-refresh-error" role="alert">
+      <span>{message}下方仍是上一次的结果。</span>
+      <button type="button" onClick={onRetry}>
+        重试
       </button>
     </div>
   );

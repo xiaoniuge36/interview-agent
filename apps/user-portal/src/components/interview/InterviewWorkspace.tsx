@@ -40,9 +40,8 @@ export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
             <ReportPanel
               report={controller.state.report}
               sessionStatus={controller.state.session?.status ?? null}
-              onRetry={
-                controller.restoredSessionId ? controller.reloadArchivedInterview : undefined
-              }
+              connectionLost={controller.state.connectionLost}
+              onRetry={reportRetryHandler(controller)}
               retrying={controller.archivedReloading}
               sessionId={controller.state.session?.id}
               onStartInterviewReview={reviewPractice.start}
@@ -53,6 +52,12 @@ export function InterviewWorkspace({ jobs }: InterviewWorkspaceProps) {
       </aside>
     </section>
   );
+}
+
+/* 只要能定位到会话（活动或待恢复），生成中/断连/报告缺失都提供手动重查入口。 */
+function reportRetryHandler(controller: ReturnType<typeof useInterviewController>) {
+  const sessionId = controller.state.session?.id ?? controller.restoredSessionId;
+  return sessionId ? controller.reloadArchivedInterview : undefined;
 }
 
 function interviewSourceCount(

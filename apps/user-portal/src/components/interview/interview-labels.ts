@@ -1,5 +1,9 @@
 import type { InterviewStage, InterviewTurnRole } from '@interview-agent/contracts';
 
+/** 页面顶部一句话简介：讲用户能感知的体验，不暴露状态机、runtime 等实现词汇。 */
+export const INTERVIEW_PAGE_INTRO =
+  'AI 面试官会按阶段持续追问，作答过程全程可回放，结束后自动生成结构化复盘。';
+
 export const INTERVIEW_STAGE_LABELS: Record<InterviewStage, string> = {
   warmup: '开场破冰',
   self_intro: '自我介绍',

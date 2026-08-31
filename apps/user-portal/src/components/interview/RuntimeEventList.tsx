@@ -1,10 +1,9 @@
 import type { CSSProperties } from 'react';
 import type { AiOperationPhase, AgentStreamEvent } from '@interview-agent/contracts';
+import { formatClockTime } from '@/lib/format';
 
 const PROGRESS_RISE_DELAY = { '--rise-delay': '120ms' } as CSSProperties;
 
-const ISO_TIME_START_INDEX = 11;
-const ISO_TIME_END_INDEX = 16;
 const MAX_BASIS_SUMMARY_ITEMS = 3;
 
 const EVENT_LABELS: Record<AgentStreamEvent['type'], string> = {
@@ -52,7 +51,7 @@ export function RuntimeEventList({
       {events.map((event) => (
         <div className="event-row" key={event.eventId}>
           <strong>{EVENT_LABELS[event.type]}</strong>
-          <span>{event.occurredAt.slice(ISO_TIME_START_INDEX, ISO_TIME_END_INDEX)}</span>
+          <span>{formatClockTime(event.occurredAt)}</span>
         </div>
       ))}
       {basisSummary.length ? (

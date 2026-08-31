@@ -8,6 +8,7 @@ import type { NotificationApi } from '@/components/notifications/NotificationPro
 import {
   advanceInterviewStream,
   answerInterviewStream,
+  getInterview,
   startInterview,
   type InterviewNextStreamResult,
 } from '@/lib/interview-api';
@@ -15,6 +16,10 @@ import { listModelCredentials } from '@/lib/model-credentials-api';
 import { interviewPlanForJob } from '@/lib/interview-roles';
 import { interviewErrorMessage, interviewStatusNotice } from './interview-feedback';
 import { createExclusiveInterviewActionRunner } from './interview-action-single-flight';
+import {
+  isInterviewVersionConflict,
+  recoverInterviewVersionConflict,
+} from './interview-version-conflict';
 
 type StreamConnector = (sessionId: string, cursor: number) => void;
 type InterviewActionOptions = {
@@ -147,9 +152,22 @@ async function executeAnswer(context: AnswerContext) {
     context.connect(result.result.session.id, result.result.eventCursor);
     context.notifications.success('回答已提交', '服务端已保存回答，AI 面试官正在组织追问。');
   } catch (error) {
+    if (isInterviewVersionConflict(error) && (await recoverAnswerConflict(context))) return;
     context.dispatch({ type: 'failure', message: interviewErrorMessage(error) });
     context.notifications.error('回答提交失败', error, '回答没有提交，请稍后重试。');
   }
+}
+
+/* 冲突恢复保留未提交草稿，用户可基于同步后的最新题目直接改写重交。 */
+function recoverAnswerConflict(context: AnswerContext): Promise<boolean> {
+  const sessionId = context.session?.id;
+  if (!sessionId) return Promise.resolve(false);
+  return recoverInterviewVersionConflict({
+    loadSession: () => getInterview(sessionId),
+    dispatch: context.dispatch,
+    connect: context.connect,
+    notifySynced: (notice) => context.notifications.info('面试进度已同步', notice),
+  });
 }
 
 function handleAiOperationEvent(

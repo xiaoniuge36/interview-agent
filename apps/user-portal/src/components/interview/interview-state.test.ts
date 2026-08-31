@@ -60,3 +60,21 @@ describe('interview streaming state', () => {
     expect(interviewReducer(withRecoveredDraft, { type: 'reset' }).draft).toBe('');
   });
 });
+
+describe('interview connection state', () => {
+  it('flags a lost connection until a fresh session snapshot arrives', () => {
+    const lost = interviewReducer(INITIAL_INTERVIEW_STATE, {
+      type: 'connection_lost',
+      message: '实时连接暂时不可用。',
+    });
+    const recovered = interviewReducer(lost, {
+      type: 'session',
+      session: { id: 'session-1', status: 'generating_report' } as never,
+    });
+
+    expect(lost.connectionLost).toBe(true);
+    expect(lost.busy).toBe(false);
+    expect(lost.notice).toBe('实时连接暂时不可用。');
+    expect(recovered.connectionLost).toBe(false);
+  });
+});

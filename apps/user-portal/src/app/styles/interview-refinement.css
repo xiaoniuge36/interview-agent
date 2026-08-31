@@ -329,6 +329,14 @@
   min-height: 44px;
 }
 
+.interview-composer-complete-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 /* 空态引导卡：未开始任何面试时替代空的进度与复盘面板。 */
 .interview-flow-guide ol {
   display: grid;
@@ -548,6 +556,21 @@
   );
   color: var(--surface);
   box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 24%, transparent);
+  /* 分数与「/ 100」量纲上下排布，保持 72px 方块内不换行溢出。 */
+  align-content: center;
+  gap: 1px;
+}
+
+.score-hero span {
+  line-height: 1;
+}
+
+.score-hero small {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  opacity: 0.72;
 }
 
 .score-row {
@@ -658,6 +681,11 @@
   .interview-composer-complete {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .interview-composer-complete-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .interview-composer-complete .button {

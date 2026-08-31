@@ -170,7 +170,12 @@ function ChipFilters({
   return (
     <div className={className} aria-label={title}>
       <span className="chip-filter-title">{title}</span>
-      <button className={!active ? 'active' : ''} type="button" onClick={() => onChange('')}>
+      <button
+        className={!active ? 'active' : ''}
+        type="button"
+        aria-pressed={!active}
+        onClick={() => onChange('')}
+      >
         {allLabel}
       </button>
       {options.slice(0, MAX_TAG_FILTERS).map((option) => (
@@ -178,6 +183,7 @@ function ChipFilters({
           key={option.value}
           className={active === option.value ? 'active' : ''}
           type="button"
+          aria-pressed={active === option.value}
           onClick={() => onChange(option.value)}
         >
           {option.label}

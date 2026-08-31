@@ -15,7 +15,7 @@ it('renders an interrupted run as a safe retry and bounded history entry', () =>
     />,
   );
 
-  expect(markup).toContain('上次训练建议已中断');
+  expect(markup).toContain('上次教练任务已中断');
   expect(markup).toContain('安全重试');
   expect(markup).toContain('运行历史');
   expect(markup).toContain('心跳超时');
@@ -35,7 +35,7 @@ it('keeps a server-side running task visible while the reopened page synchronize
     <UserAgentRunHistory latestRun={runningRun} runs={[runningRun]} onRetry={() => undefined} />,
   );
 
-  expect(markup).toContain('训练建议正在运行');
+  expect(markup).toContain('教练任务正在运行');
   expect(markup).toContain('正在读取近期练习记录');
   expect(markup).toContain('正在同步运行状态');
   expect(markup).not.toContain('安全重试');

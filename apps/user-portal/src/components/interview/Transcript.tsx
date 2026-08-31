@@ -18,7 +18,6 @@ export function Transcript({ turns, streamingText, ended = false, onReplayTurn }
       className="transcript"
       data-state={streamingText ? 'streaming' : 'ready'}
       data-ended-empty={ended && empty ? 'true' : undefined}
-      aria-live="polite"
       aria-label="面试对话"
     >
       {empty ? <EmptyTranscript ended={ended} /> : null}
@@ -123,9 +122,10 @@ function SpeakerIcon() {
   );
 }
 
+/* 只有流式中的气泡进 live region：整卷对话挂 aria-live 会让读屏在每个 token 后重读全文。 */
 function StreamingTurn({ content }: { content: string }) {
   return (
-    <article className="turn interviewer">
+    <article className="turn interviewer" aria-live="polite" aria-busy="true">
       <div className="stage">AI 面试官 · 正在组织追问</div>
       {content}
     </article>

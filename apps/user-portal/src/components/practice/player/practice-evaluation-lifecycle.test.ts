@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { isCurrentPracticeEvaluation } from './practice-evaluation-lifecycle';
+import {
+  isCurrentPracticeEvaluation,
+  practiceEvaluationCancelPatch,
+} from './practice-evaluation-lifecycle';
 
 describe('练习 AI 评价 settlement scope', () => {
   it('当前且未 abort 的 controller 可以结算', () => {
@@ -24,5 +27,14 @@ describe('练习 AI 评价 settlement scope', () => {
 
   it('没有活动 controller 时不能结算', () => {
     expect(isCurrentPracticeEvaluation(null, new AbortController())).toBe(false);
+  });
+
+  it('取消补丁立即解除评价占用并保留可重试提示', () => {
+    const patch = practiceEvaluationCancelPatch();
+
+    expect(patch.busy).toBeNull();
+    expect(patch.aiOperation).toBeNull();
+    expect(patch.issue).toBeNull();
+    expect(patch.message).toContain('已取消本次 AI 评价');
   });
 });

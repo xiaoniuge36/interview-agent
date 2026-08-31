@@ -31,7 +31,11 @@ function SpeakerWaveIcon({ muted }: { muted: boolean }) {
       strokeLinejoin="round"
     >
       <path d="M11 5 6 9H3v6h3l5 4V5z" />
-      {muted ? <path d="M16 9l5 6M21 9l-5 6" /> : <path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" />}
+      {muted ? (
+        <path d="M16 9l5 6M21 9l-5 6" />
+      ) : (
+        <path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" />
+      )}
     </svg>
   );
 }

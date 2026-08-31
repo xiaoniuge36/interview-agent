@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { PolicyService } from '../../common/authz/policy.service';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { withTraceSpan } from '../../common/telemetry/telemetry';
@@ -6,6 +7,7 @@ import { RetrievalRepository } from './retrieval-repository';
 import { EmbeddingClient } from './embedding-client';
 
 jest.mock('../../common/telemetry/telemetry', () => ({
+  ...jest.requireActual('../../common/telemetry/telemetry'),
   withTraceSpan: jest.fn(
     (
       _name: string,
@@ -158,6 +160,41 @@ test('never places a confidential retrieval query in span or retrieval log attri
     'retrieval.latency_ms': expect.any(Number),
   });
   expect(JSON.stringify(repository.recordLog.mock.calls)).not.toContain(confidentialQuery);
+});
+
+test('marks the span degraded and logs a category-only warning when embedding fails', async () => {
+  const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  const span = { setAttributes: jest.fn() };
+  (withTraceSpan as jest.MockedFunction<typeof withTraceSpan>).mockImplementation(
+    (_name, _attributes, run) => run(span as never),
+  );
+  const repository = {
+    searchKeyword: jest.fn().mockResolvedValue([hit({ id: 'keyword-1', tenantId: 'tenant-1' })]),
+    searchVector: jest.fn(),
+    recordLog: jest.fn().mockResolvedValue(undefined),
+  };
+  const service = new RetrievalService(
+    repository as never,
+    { embed: jest.fn().mockRejectedValue(new Error('upstream timeout: key sk-secret')) } as never,
+    new PolicyService(),
+  );
+
+  const result = await service.search(context, {
+    query: 'fallback',
+    purpose: 'training',
+    limit: 8,
+  });
+
+  expect(result.hits[0]).toMatchObject({ source: 'keyword' });
+  expect(repository.searchVector).not.toHaveBeenCalled();
+  expect(span.setAttributes).toHaveBeenCalledWith({
+    'retrieval.vector_used': false,
+    'retrieval.vector_degraded': true,
+  });
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining('Embedding lookup failed'));
+  // 降级日志只带错误类别，不得携带上游 message（可能包含密钥等敏感串）
+  expect(JSON.stringify(warn.mock.calls)).not.toContain('sk-secret');
+  warn.mockRestore();
 });
 
 function hit(overrides: Record<string, unknown> = {}) {

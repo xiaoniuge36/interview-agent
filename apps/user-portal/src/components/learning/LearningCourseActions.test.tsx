@@ -1,6 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { formatDate } from '@/lib/format';
 import { LearningCourseActions } from './LearningCourseActions';
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
@@ -91,6 +92,8 @@ function registerLocalVerificationRecordTest() {
     expect(markup).toContain('ReAct');
     expect(markup).toContain('86');
     expect(markup).toContain('已答 3 题');
+    // 可见时间走全站统一 formatDate；dateTime 属性仍保留完整 ISO。
+    expect(markup).toContain(`>${formatDate('2026-07-30T08:00:00.000Z')}</time>`);
     expect(markup).toContain('2026-07-30');
     expect(markup).toContain('再次验证');
   });

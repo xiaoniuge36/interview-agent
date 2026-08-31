@@ -9,6 +9,7 @@ const MAX_THROTTLE_TTL_MS = 3_600_000;
 const DEFAULT_THROTTLE_TTL_MS = 60_000;
 const MAX_THROTTLE_REQUESTS = 10_000;
 const DEFAULT_THROTTLE_REQUESTS = 120;
+const DEFAULT_AI_THROTTLE_REQUESTS = 30;
 const MIN_RUNTIME_TIMEOUT_MS = 500;
 const MAX_RUNTIME_TIMEOUT_MS = 60_000;
 const DEFAULT_RUNTIME_TIMEOUT_MS = 8_000;
@@ -68,6 +69,13 @@ const EnvironmentSchema = z
       .min(1)
       .max(MAX_THROTTLE_REQUESTS)
       .default(DEFAULT_THROTTLE_REQUESTS),
+    // 昂贵 AI 接口（LLM/Embedding）单独限流：默认远严于全局，保护模型成本
+    API_AI_THROTTLE_LIMIT: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(MAX_THROTTLE_REQUESTS)
+      .default(DEFAULT_AI_THROTTLE_REQUESTS),
     DATABASE_URL: z.string().url(),
     REDIS_URL: z.string().url(),
     REDIS_REQUIRED: BooleanEnvironmentSchema.default('false'),

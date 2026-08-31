@@ -20,6 +20,7 @@ import {
 import type { Observable } from 'rxjs';
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
+import { AiThrottle } from '../../common/security/ai-throttle';
 import { createAiOperationSse, streamError } from '../../common/streaming/ai-operation-sse';
 import { InterviewService } from './interview.service';
 
@@ -41,6 +42,7 @@ export class InterviewController {
     return this.service.get(request.context, sessionId);
   }
 
+  @AiThrottle()
   @Post('start')
   start(@Req() request: ProductRequest, @Body() body: unknown) {
     return this.service.start({
@@ -50,6 +52,7 @@ export class InterviewController {
     });
   }
 
+  @AiThrottle()
   @Post(':id/advance')
   advance(@Req() request: ProductRequest, @Param('id') sessionId: string, @Body() body: unknown) {
     const cancellation = responseCancellation(request.res);
@@ -66,6 +69,7 @@ export class InterviewController {
       .finally(cancellation.dispose);
   }
 
+  @AiThrottle()
   @Post(':id/advance/stream')
   async advanceStream(
     @Req() request: ProductRequest,
@@ -94,6 +98,7 @@ export class InterviewController {
     }
   }
 
+  @AiThrottle()
   @Post(':id/answer')
   answer(@Req() request: ProductRequest, @Param('id') sessionId: string, @Body() body: unknown) {
     const cancellation = responseCancellation(request.res);
@@ -110,6 +115,7 @@ export class InterviewController {
       .finally(cancellation.dispose);
   }
 
+  @AiThrottle()
   @Post(':id/answer/stream')
   async answerStream(
     @Req() request: ProductRequest,

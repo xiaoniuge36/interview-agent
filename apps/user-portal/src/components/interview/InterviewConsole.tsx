@@ -7,6 +7,7 @@ import { InterviewStageRail } from './InterviewStageRail';
 import { InterviewToolbar } from './InterviewToolbar';
 import { NarrationToggle } from './NarrationToggle';
 import { Transcript } from './Transcript';
+import { shouldGuardInterviewLeave, useInterviewLeaveGuard } from './useInterviewLeaveGuard';
 
 type InterviewConsoleProps = {
   jobs: JobIntentPayload[];
@@ -17,6 +18,7 @@ export function InterviewConsole({ jobs, controller }: InterviewConsoleProps) {
   const { focusTags, roleTitle } = controller.interviewPlan;
   const session = controller.state.session;
   const narration = useInterviewNarration(controller.turns);
+  useInterviewLeaveGuard(shouldGuardInterviewLeave(session, controller.state.busy));
   const reportRecoveryRequired =
     session?.status === 'report_ready' && controller.state.report === null;
   return (

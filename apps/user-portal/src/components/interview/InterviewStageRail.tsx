@@ -16,12 +16,17 @@ const FLOW_STAGES: readonly InterviewStage[] = [
 export type InterviewStageState = 'done' | 'current' | 'pending';
 
 export function InterviewStageRail({ session }: { session: InterviewSession | null }) {
+  const visitedStages = collectVisitedStages(session);
   return (
     <ol className="interview-stage-rail" aria-label="面试阶段进度">
       {FLOW_STAGES.map((stage, index) => {
-        const state = interviewStageState(session, index);
+        const state = interviewStageState(session, stage, visitedStages);
         return (
-          <li key={stage} data-state={state} aria-current={state === 'current' ? 'step' : undefined}>
+          <li
+            key={stage}
+            data-state={state}
+            aria-current={state === 'current' ? 'step' : undefined}
+          >
             <span className="interview-stage-marker" aria-hidden="true">
               {state === 'done' ? '✓' : index + 1}
             </span>
@@ -33,13 +38,19 @@ export function InterviewStageRail({ session }: { session: InterviewSession | nu
   );
 }
 
+/** 会话对话记录里出现过的阶段才算真实经历过；跳过的阶段不能按下标推断为已完成。 */
+export function collectVisitedStages(
+  session: InterviewSession | null,
+): ReadonlySet<InterviewStage> {
+  return new Set((session?.turns ?? []).map((turn) => turn.stage));
+}
+
 export function interviewStageState(
   session: InterviewSession | null,
-  stageIndex: number,
+  stage: InterviewStage,
+  visitedStages: ReadonlySet<InterviewStage>,
 ): InterviewStageState {
   if (!session) return 'pending';
-  const currentIndex = FLOW_STAGES.indexOf(session.stage);
-  if (currentIndex === -1) return 'done';
-  if (stageIndex < currentIndex) return 'done';
-  return stageIndex === currentIndex ? 'current' : 'pending';
+  if (session.stage === stage) return 'current';
+  return visitedStages.has(stage) ? 'done' : 'pending';
 }

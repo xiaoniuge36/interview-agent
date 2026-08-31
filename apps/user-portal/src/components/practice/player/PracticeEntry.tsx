@@ -34,7 +34,7 @@ export function PracticeEntry() {
       <section className="practice-entry" aria-labelledby="practice-entry-heading">
         <section className="practice-entry-hero">
           <SignalField />
-          <span>Practice workspace · 自主训练</span>
+          <span>练习空间 · 自主训练</span>
           <h1 id="practice-entry-heading" aria-label="把想练的题，组合成一轮专注练习">
             <SplitRevealText text="把想练的题，" />
             <br />

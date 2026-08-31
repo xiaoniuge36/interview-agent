@@ -27,7 +27,7 @@ export function UserAgentConversationSidebar(props: SidebarProps) {
       <ConversationSearch query={query} onChange={setQuery} />
       {props.loading ? <p className="user-agent-sidebar-state">正在加载历史对话...</p> : null}
       {!props.loading && filtered.length === 0 ? (
-        <p className="user-agent-sidebar-state">还没有匹配的训练对话</p>
+        <ConversationEmptyState searching={query.trim().length > 0} onCreate={props.onCreate} />
       ) : null}
       <div className="user-agent-conversation-list">
         {filtered.map((conversation) => (
@@ -54,6 +54,21 @@ function SidebarHeading({ onCreate }: { onCreate: () => void }) {
       </div>
       <button aria-label="新建对话" className="user-agent-new" type="button" onClick={onCreate}>
         +
+      </button>
+    </div>
+  );
+}
+
+function ConversationEmptyState(props: { searching: boolean; onCreate: () => void }) {
+  // 搜索无结果与全新用户是两种空态：前者不该引导"新建"，先让用户意识到是关键词问题
+  if (props.searching) {
+    return <p className="user-agent-sidebar-state">没有匹配的对话，换个关键词试试。</p>;
+  }
+  return (
+    <div className="user-agent-sidebar-state">
+      <p>还没有训练对话。</p>
+      <button className="user-agent-sidebar-create" type="button" onClick={props.onCreate}>
+        开始第一次对话
       </button>
     </div>
   );
@@ -164,11 +179,11 @@ function ConversationTitleEditor(props: {
 function ConversationActions(props: { onRename: () => void; onDelete: () => void }) {
   return (
     <div className="user-agent-conversation-actions">
-      <button aria-label="重命名对话" type="button" onClick={props.onRename}>
-        改
+      <button aria-label="重命名对话" title="重命名" type="button" onClick={props.onRename}>
+        重命名
       </button>
-      <button aria-label="删除对话" type="button" onClick={props.onDelete}>
-        删
+      <button aria-label="删除对话" title="删除" type="button" onClick={props.onDelete}>
+        删除
       </button>
     </div>
   );

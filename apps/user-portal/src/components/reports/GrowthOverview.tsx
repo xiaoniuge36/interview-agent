@@ -3,6 +3,7 @@
 import type { MasteryProfile } from '@interview-agent/contracts';
 import { useEffect, useState } from 'react';
 import { getMasteryProfiles } from '@/lib/practice-api';
+import { formatDateTime } from '@/lib/format';
 import {
   RADAR_SIZE,
   TREND_HEIGHT,
@@ -16,31 +17,45 @@ import {
   type RadarAxis,
   type TrendPoint,
 } from './growth-overview-model';
-import { formatTrainingRecordDate, type TrainingRecord } from './training-records-model';
+import type { TrainingRecord } from './training-records-model';
 
 const GRID_LEVEL_OUTER = 1;
 const GRID_LEVEL_MIDDLE = 0.66;
 const GRID_LEVEL_INNER = 0.33;
 const GRID_LEVELS = [GRID_LEVEL_OUTER, GRID_LEVEL_MIDDLE, GRID_LEVEL_INNER];
 
+export type MasterySource = {
+  profiles: MasteryProfile[];
+  status: 'loading' | 'ready' | 'error';
+  reload: () => void;
+};
+
 /** 成长概览：左侧能力雷达（mastery 证据），右侧历次复盘得分趋势。 */
 export function GrowthOverview({ records }: { records: TrainingRecord[] }) {
-  const mastery = useMasteryProfiles();
-  const axes = buildRadarAxes(mastery.profiles);
+  return <GrowthOverviewView records={records} mastery={useMasteryProfiles()} />;
+}
+
+/** 概览区在加载/失败时也保持挂载：加载给骨架、失败给重试，避免整块静默消失。 */
+export function GrowthOverviewView({
+  records,
+  mastery,
+}: {
+  records: TrainingRecord[];
+  mastery: MasterySource;
+}) {
   const trend = buildTrendPoints(records);
-  const fallbackProfiles = selectRadarProfiles(mastery.profiles);
-  if (mastery.status === 'loading') return null;
-  const masteryFailed = mastery.status === 'error';
-  if (!axes.length && !fallbackProfiles.length && !trend.length && !masteryFailed) return null;
-  if (masteryFailed && !trend.length) return null;
   return (
-    <section className="growth-overview motion-rise" aria-label="成长概览">
+    <section
+      className="growth-overview motion-rise"
+      aria-label="成长概览"
+      aria-busy={mastery.status === 'loading'}
+    >
       <article className="growth-overview-card">
         <header>
           <strong>能力雷达</strong>
           <span>来自练习与面试的证据加权</span>
         </header>
-        <RadarSlot axes={axes} fallbackProfiles={fallbackProfiles} failed={masteryFailed} />
+        <MasterySlot mastery={mastery} />
       </article>
       <article className="growth-overview-card">
         <header>
@@ -53,30 +68,45 @@ export function GrowthOverview({ records }: { records: TrainingRecord[] }) {
   );
 }
 
-function RadarSlot({
-  axes,
-  fallbackProfiles,
-  failed,
-}: {
-  axes: RadarAxis[];
-  fallbackProfiles: MasteryProfile[];
-  failed: boolean;
-}) {
-  // 拉取失败与「训练还不够」是两回事，失败时不要用引导文案误导用户。
-  if (failed) {
-    return <p className="growth-overview-empty">掌握度暂时读取失败，稍后刷新即可恢复。</p>;
-  }
+function MasterySlot({ mastery }: { mastery: MasterySource }) {
+  if (mastery.status === 'loading') return <MasterySkeleton />;
+  // 拉取失败与「训练还不够」是两回事，失败时给重试入口而不是引导文案。
+  if (mastery.status === 'error') return <MasteryError onRetry={mastery.reload} />;
+  const axes = buildRadarAxes(mastery.profiles);
   if (axes.length) return <CapabilityRadar axes={axes} />;
-  return <MasteryFallback profiles={fallbackProfiles} />;
+  return <MasteryFallback profiles={selectRadarProfiles(mastery.profiles)} />;
 }
 
-function useMasteryProfiles() {
+function MasterySkeleton() {
+  return (
+    <div className="growth-overview-skeleton" role="status" aria-label="能力雷达读取中">
+      <i />
+      <i />
+      <i />
+    </div>
+  );
+}
+
+function MasteryError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="growth-overview-error" role="alert">
+      <p>掌握度暂时读取失败，已有的训练证据不会丢失。</p>
+      <button type="button" onClick={onRetry}>
+        重新读取
+      </button>
+    </div>
+  );
+}
+
+function useMasteryProfiles(): MasterySource {
   const [state, setState] = useState<{
     profiles: MasteryProfile[];
     status: 'loading' | 'ready' | 'error';
   }>({ profiles: [], status: 'loading' });
+  const [request, setRequest] = useState(0);
   useEffect(() => {
     let active = true;
+    setState((current) => ({ ...current, status: 'loading' }));
     getMasteryProfiles()
       .then((profiles) => {
         if (active) setState({ profiles, status: 'ready' });
@@ -87,8 +117,8 @@ function useMasteryProfiles() {
     return () => {
       active = false;
     };
-  }, []);
-  return state;
+  }, [request]);
+  return { ...state, reload: () => setRequest((value) => value + 1) };
 }
 
 function CapabilityRadar({ axes }: { axes: RadarAxis[] }) {
@@ -186,7 +216,7 @@ function ScoreTrend({ points }: { points: TrendPoint[] }) {
             cy={point.y}
             r={3.4}
           >
-            <title>{`${formatTrainingRecordDate(point.date)} · ${point.title} · ${point.score} 分`}</title>
+            <title>{`${formatDateTime(point.date)} · ${point.title} · ${point.score} 分`}</title>
           </circle>
         ))}
       </svg>

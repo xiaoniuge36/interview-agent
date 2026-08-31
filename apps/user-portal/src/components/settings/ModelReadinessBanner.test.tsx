@@ -22,6 +22,9 @@ describe('ModelReadinessBanner', () => {
     expect(readyMarkup).toContain('返回题库继续组卷');
     expect(needsActionMarkup).toContain('还需要完成一项检查');
     expect(needsActionMarkup).not.toContain('返回题库继续组卷');
+    // 提示必须带行动入口：锚到需要重测的连接卡
+    expect(needsActionMarkup).toContain('href="#credential-credential-1"');
+    expect(needsActionMarkup).toContain('去测试默认模型');
   });
 
   it('offers a return to the originating practice after the model is ready', () => {

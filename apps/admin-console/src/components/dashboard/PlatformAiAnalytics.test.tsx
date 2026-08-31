@@ -107,10 +107,12 @@ describe('PlatformAiAnalyticsContent', () => {
     expect(markup).toContain('MODEL_PROVIDER_RATE_LIMITED');
     expect(markup).toContain('预算拒绝');
     expect(markup).toContain('熔断拒绝');
-    expect(markup).toContain('Embedding 覆盖率');
+    expect(markup).toContain('向量覆盖率');
     expect(markup).toContain('检索延迟');
     expect(markup).toContain('死信任务');
-    expect(markup).toContain('Fallback 率');
+    expect(markup).toContain('结构校验通过率');
+    expect(markup).toContain('降级率');
+    expect(markup).not.toContain('Fallback 率');
     expect(markup).not.toContain('prompt');
   });
 

@@ -17,13 +17,18 @@ const STAT_DEFINITIONS: readonly StatDefinition[] = [
   { key: 'pendingCandidates', label: '待审核候选题' },
   { key: 'activeInterviews', label: '活跃面试' },
   { key: 'reportsReady', label: '已生成报告' },
-  { key: 'schemaPassRate', label: 'Schema 通过率', suffix: '%' },
+  { key: 'schemaPassRate', label: '结构校验通过率', suffix: '%' },
   { key: 'avgLatencyMs', label: '平均延迟', suffix: 'ms' },
 ];
 
-export function DashboardStats({ state }: { state: SectionState<Dashboard> }) {
+type DashboardStatsProps = {
+  state: SectionState<Dashboard>;
+  onRetry?: (() => void) | undefined;
+};
+
+export function DashboardStats({ state, onRetry }: DashboardStatsProps) {
   if (state.status !== 'ready')
-    return <SectionFeedback state={state} loadingMessage="正在汇总治理指标" />;
+    return <SectionFeedback state={state} loadingMessage="正在汇总治理指标" onRetry={onRetry} />;
   return (
     <section aria-label="治理指标">
       <Row gutter={[COMPACT_GUTTER, COMPACT_GUTTER]}>

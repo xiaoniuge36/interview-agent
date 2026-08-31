@@ -17,3 +17,4 @@ export {
   type LatestRequestHandlers,
   type LatestRequestRunner,
 } from './latest-request';
+export { shareInFlight } from './single-flight';

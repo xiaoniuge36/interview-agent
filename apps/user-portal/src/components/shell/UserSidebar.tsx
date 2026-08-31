@@ -133,19 +133,11 @@ export function SidebarNavigation(props: {
             })
           }
         >
-          <span>{primaryNavigationLabel(item.id)}</span>
+          <span>{item.label}</span>
         </Link>
       ))}
     </nav>
   );
-}
-
-function primaryNavigationLabel(id: NavigationId): string {
-  if (id === 'home') return '今天';
-  if (id === 'questions') return '刷题';
-  if (id === 'interview') return '模拟面试';
-  if (id === 'reports') return '成长';
-  return '学习';
 }
 
 function BrandMark() {

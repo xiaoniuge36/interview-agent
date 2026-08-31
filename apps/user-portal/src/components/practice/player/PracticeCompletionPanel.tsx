@@ -155,7 +155,7 @@ function CompletionHeader(
 ) {
   return (
     <header className="motion-rise">
-      <span>{props.aiCompleted ? 'AI review complete' : 'Self-study complete'}</span>
+      <span>{props.aiCompleted ? 'AI 评价已完成' : '自学已完成'}</span>
       <h1>{completionTitle(props.aiCompleted, props.reportAvailable)}</h1>
       <p>{completionDescription(props.aiCompleted, props.reportAvailable)}</p>
       <div>
@@ -281,7 +281,7 @@ function completionTitle(aiCompleted: boolean, reportAvailable: boolean) {
 }
 
 function completionDescription(aiCompleted: boolean, reportAvailable: boolean) {
-  if (!aiCompleted) return '本轮没有生成 AI 分数和 mastery 记录，你的回答仍已安全保留。';
+  if (!aiCompleted) return '本轮没有生成 AI 分数，也不会计入掌握度统计，你的回答仍已安全保留。';
   return reportAvailable
     ? '逐题评价已汇总为能力记录，并会影响下一次 Agent 推荐。'
     : '正在重新读取报告内容；恢复后再查看本轮证据和错题。';

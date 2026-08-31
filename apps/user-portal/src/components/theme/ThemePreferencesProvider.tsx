@@ -94,10 +94,34 @@ function useLocalThemePreferenceState() {
     preferencesRef.current = next;
     setPreferences(next);
   }, []);
+  useCrossTabThemeSync(preferencesRef, replacePreferences);
   return useMemo(
     () => ({ preferences, preferencesRef, replacePreferences }),
     [preferences, replacePreferences],
   );
+}
+
+/** 多 Tab 同步：其他标签页改主题后本 Tab 跟随，避免来回切换时界面各说各话。 */
+function useCrossTabThemeSync(
+  preferencesRef: { current: ThemePreferences },
+  replacePreferences: (next: ThemePreferences) => void,
+) {
+  useEffect(() => {
+    function onStorage(event: StorageEvent) {
+      if (event.key !== THEME_STORAGE_KEY || !event.newValue) return;
+      try {
+        const next = parseStoredThemePreferences(JSON.parse(event.newValue), null);
+        const current = preferencesRef.current;
+        if (next.theme === current.theme && next.motion === current.motion) return;
+        // 只跟随展示，不回写云端：发起改动的 Tab 已负责云同步
+        startTransition(() => replacePreferences(next));
+      } catch {
+        // 其他 Tab 写入的坏数据不应打断本 Tab
+      }
+    }
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [preferencesRef, replacePreferences]);
 }
 
 function useThemePreferenceCloudSync(
@@ -107,6 +131,8 @@ function useThemePreferenceCloudSync(
 ) {
   const syncGenerationRef = useRef(0);
   const writeReadyRef = useRef(false);
+  // 初始同步进行中用户又改了主题：暂存该改动，同步完成后以它为准反推云端，而不是被云端覆盖
+  const pendingBeforeReadyRef = useRef<ThemePreferences | null>(null);
   const saveQueueRef = useRef<ReturnType<typeof createLatestThemePreferenceQueue> | null>(null);
   if (!saveQueueRef.current) {
     saveQueueRef.current = createLatestThemePreferenceQueue(saveUserPreferences);
@@ -116,6 +142,7 @@ function useThemePreferenceCloudSync(
     const generation = syncGenerationRef.current + 1;
     syncGenerationRef.current = generation;
     writeReadyRef.current = false;
+    pendingBeforeReadyRef.current = null;
     saveQueueRef.current?.reset();
     if (!identityKey) return;
 
@@ -125,21 +152,32 @@ function useThemePreferenceCloudSync(
       saveUserPreferences,
     ).then((result) => {
       if (syncGenerationRef.current !== generation) return;
+      writeReadyRef.current = true;
+      const pendingLocal = pendingBeforeReadyRef.current;
+      pendingBeforeReadyRef.current = null;
+      if (pendingLocal) {
+        saveQueueRef.current?.enqueue(pendingLocal);
+        return;
+      }
       // 云端回填对用户是后台行为，走 transition 以免打断进行中的路由导航。
       startTransition(() => replacePreferences(result.preferences));
-      writeReadyRef.current = true;
     });
 
     return () => {
       if (syncGenerationRef.current !== generation) return;
       syncGenerationRef.current += 1;
       writeReadyRef.current = false;
+      pendingBeforeReadyRef.current = null;
       saveQueueRef.current?.reset();
     };
   }, [identityKey, preferencesRef, replacePreferences]);
 
   return useCallback((preferences: ThemePreferences) => {
-    if (writeReadyRef.current) saveQueueRef.current?.enqueue(preferences);
+    if (writeReadyRef.current) {
+      saveQueueRef.current?.enqueue(preferences);
+      return;
+    }
+    pendingBeforeReadyRef.current = preferences;
   }, []);
 }
 

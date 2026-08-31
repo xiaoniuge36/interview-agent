@@ -11,7 +11,6 @@ import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
 import { CandidateReviewService } from '../content-review/candidate-review.service';
 import { AdminQueryService } from './admin-query.service';
-import { AdminService } from './admin.service';
 import { renderCandidateExportCsv } from './admin-export-csv';
 
 @Roles('admin', 'question_reviewer')
@@ -20,7 +19,6 @@ export class CandidateReviewAdminController {
   constructor(
     private readonly candidates: CandidateReviewService,
     private readonly query: AdminQueryService,
-    private readonly admin: AdminService,
   ) {}
 
   @Get('candidates/query')
@@ -41,11 +39,6 @@ export class CandidateReviewAdminController {
     response.attachment('candidates.csv');
     response.type('text/csv; charset=utf-8');
     return renderCandidateExportCsv(rows);
-  }
-
-  @Get('candidates')
-  candidatesList(@Req() request: ProductRequest) {
-    return this.admin.candidates(request.context);
   }
 
   @Patch('candidates/batch-review')

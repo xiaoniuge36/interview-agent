@@ -10,7 +10,7 @@ export function UserAgentRunHistory(props: {
 }) {
   if (!props.latestRun) return null;
   return (
-    <section aria-label="训练运行恢复" className="user-agent-run-recovery">
+    <section aria-label="教练任务恢复" className="user-agent-run-recovery">
       <RunRecoveryCard run={props.latestRun} onRetry={props.onRetry} />
       <RunHistoryList runs={props.runs} />
     </section>
@@ -27,7 +27,7 @@ function RunRecoveryCard(props: {
     <div className="user-agent-run-recovery-card">
       <div>
         <strong>{recoveryTitle(props.run.status)}</strong>
-        <p>{props.run.errorSummary ?? props.run.currentStep ?? '本次训练建议未能完整保存。'}</p>
+        <p>{props.run.errorSummary ?? props.run.currentStep ?? '本次教练任务未能完整保存。'}</p>
       </div>
       {active ? (
         <span role="status">正在同步运行状态，完成或中断后会自动更新。</span>
@@ -67,15 +67,16 @@ function isRetryable(status: UserAgentRun['status']) {
 }
 
 function recoveryTitle(status: UserAgentRun['status']) {
+  // 统一叫"教练任务"：与"AI 刷题教练"产品名对齐，避免再造"训练建议"一词
   return (
     {
-      running: '训练建议正在运行',
-      waiting_confirmation: '训练建议等待确认',
-      succeeded: '训练建议已完成',
-      failed: '上次训练建议执行失败',
-      cancelled: '上次训练建议已取消',
-      interrupted: '上次训练建议已中断',
-    }[status] ?? '上次训练建议需要恢复'
+      running: '教练任务正在运行',
+      waiting_confirmation: '教练任务等待确认',
+      succeeded: '教练任务已完成',
+      failed: '上次教练任务执行失败',
+      cancelled: '上次教练任务已取消',
+      interrupted: '上次教练任务已中断',
+    }[status] ?? '上次教练任务需要恢复'
   );
 }
 

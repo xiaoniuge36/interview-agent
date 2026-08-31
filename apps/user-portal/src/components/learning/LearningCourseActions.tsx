@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { formatDate } from '@/lib/format';
 import type { LearningHeading } from '@/lib/learning/learning-document-model';
 import type { LocalLearningVerification } from '@/lib/learning/learning-progress';
 import {
@@ -16,8 +17,6 @@ import {
 } from '@/lib/learning/learning-center-navigation';
 import type { LearningNavigationItem } from './LearningLibraryRail';
 import { useLearningProgress } from './LearningProgressProvider';
-
-const ISO_DATE_PREFIX_LENGTH = 10;
 
 export function LearningCourseActions({
   course,
@@ -46,26 +45,45 @@ export function LearningCourseActions({
       {verification ? <LearningVerificationRecord verification={verification} /> : null}
       <div className="learning-course-action-buttons">
         {reviewHeading ? (
-          <Link href={`#${reviewHeading.id}`}>Review · {reviewHeading.title}</Link>
+          <Link href={`#${reviewHeading.id}`}>复习本节 · {reviewHeading.title}</Link>
         ) : null}
         <ManualCompletionToggle
           completed={completed}
           onToggle={() => progress.toggleCompleted(course.slug)}
         />
-        <Link className={copy.emphasizeMap ? 'primary' : undefined} href="#learning-path">
-          {copy.mapLabel}
-        </Link>
-        <Link href={learningVerificationHref(course.slug)}>
-          {verification
-            ? `再次验证 · ${verification.topic}`
-            : learningVerificationActionLabel(course.slug)}
-        </Link>
+        <MapAndVerificationLinks copy={copy} courseSlug={course.slug} verification={verification} />
         {nextCourse ? (
           <NextCourseLink nextCourse={nextCourse} onSelectDocument={onSelectDocument} />
         ) : null}
       </div>
       <LearningVerificationReturnNotice />
     </section>
+  );
+}
+
+function MapAndVerificationLinks({
+  copy,
+  courseSlug,
+  verification,
+}: {
+  copy: ReturnType<typeof learningCourseActionCopy>;
+  courseSlug: string;
+  verification: LocalLearningVerification | null;
+}) {
+  return (
+    <>
+      <Link className={copy.emphasizeMap ? 'primary' : undefined} href="#learning-path">
+        {copy.mapLabel}
+      </Link>
+      <Link
+        className={copy.emphasizeVerification ? 'primary' : undefined}
+        href={learningVerificationHref(courseSlug)}
+      >
+        {verification
+          ? `再次验证 · ${verification.topic}`
+          : learningVerificationActionLabel(courseSlug)}
+      </Link>
+    </>
   );
 }
 
@@ -129,9 +147,7 @@ function LearningVerificationRecord({ verification }: { verification: LocalLearn
       <strong>最近练习/验证记录</strong>
       <p>
         {`${verification.topic} · ${score} · 已答 ${verification.answerCount} 题 · `}
-        <time dateTime={verification.recordedAt}>
-          {verification.recordedAt.slice(0, ISO_DATE_PREFIX_LENGTH)}
-        </time>
+        <time dateTime={verification.recordedAt}>{formatDate(verification.recordedAt)}</time>
       </p>
       <small>已随账号进度同步；可继续复看本课，或再次验证本主题。</small>
     </div>
@@ -171,6 +187,7 @@ export function learningCourseActionCopy(
       heading: '把理解转化为可验证的产出',
       mapLabel: '返回学习地图',
       emphasizeMap: false,
+      emphasizeVerification: false,
     };
   }
   if (hasNextCourse) {
@@ -179,14 +196,17 @@ export function learningCourseActionCopy(
       heading: '继续巩固或进入下一课',
       mapLabel: '返回学习地图',
       emphasizeMap: false,
+      emphasizeVerification: false,
     };
   }
   if (pathCompleted) {
+    // 路线全部完成后没有下一课可学，主按钮换成「去题库验证本主题」而非回地图。
     return {
       status: '完整路线已完成',
-      heading: '回到学习地图复盘成果，或进入题库继续验证',
+      heading: '去题库验证本主题，或回学习地图复盘成果',
       mapLabel: '完成路线 · 返回学习地图',
-      emphasizeMap: true,
+      emphasizeMap: false,
+      emphasizeVerification: true,
     };
   }
   return {
@@ -194,5 +214,6 @@ export function learningCourseActionCopy(
     heading: '回到学习地图补齐未完成课程，或进入题库继续验证',
     mapLabel: '返回学习地图 · 补齐课程',
     emphasizeMap: true,
+    emphasizeVerification: false,
   };
 }

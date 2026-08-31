@@ -21,7 +21,9 @@ export function UserTopbarActions() {
       <Link
         className={`user-topbar-account${profileCurrent ? ' active' : ''}`}
         href="/profile"
-        aria-label="打开个人档案"
+        aria-label={`打开个人档案（${name}）`}
+        // 超长用户名被 116px ellipsis 截断，悬停 tooltip 露出全名
+        title={name}
         aria-current={profileCurrent}
       >
         <span className="user-topbar-avatar">{initial(name)}</span>

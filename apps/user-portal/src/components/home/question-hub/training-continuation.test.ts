@@ -4,7 +4,7 @@ import type {
   InterviewSessionSummary,
   RecentPracticeSummary,
 } from '@interview-agent/contracts';
-import { selectTrainingContinuation } from './training-continuation';
+import { loadTrainingContinuation, selectTrainingContinuation } from './training-continuation';
 
 describe('首页未完成训练选择', () => {
   it('忽略已结束面试并选择最新活动面试', () => {
@@ -61,6 +61,32 @@ describe('首页未完成训练选择', () => {
     expect(
       selectTrainingContinuation(null, [interview('failed', 'failed', '2026-07-23T11:00:00.000Z')]),
     ).toBeNull();
+  });
+});
+
+describe('首页未完成训练加载', () => {
+  it('两个来源都成功时返回选中的续练入口', async () => {
+    const result = await loadTrainingContinuation({
+      loadRecentPractice: () => Promise.resolve(practice('2026-07-23T12:00:00.000Z')),
+      loadInterviews: () => Promise.resolve([]),
+    });
+
+    expect(result).toMatchObject({ kind: 'practice', id: 'practice-1' });
+  });
+
+  it('任一来源失败时整体失败而不是静默展示空态', async () => {
+    await expect(
+      loadTrainingContinuation({
+        loadRecentPractice: () => Promise.reject(new Error('network')),
+        loadInterviews: () => Promise.resolve([]),
+      }),
+    ).rejects.toThrow('network');
+    await expect(
+      loadTrainingContinuation({
+        loadRecentPractice: () => Promise.resolve(null),
+        loadInterviews: () => Promise.reject(new Error('interviews down')),
+      }),
+    ).rejects.toThrow('interviews down');
   });
 });
 

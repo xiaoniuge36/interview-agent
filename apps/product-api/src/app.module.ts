@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { CommonModule } from './common/common.module';
 import { RolesGuard } from './common/authz/roles.guard';
 import { validateEnvironment, type Environment } from './common/config/environment';
+import { configureAiThrottle } from './common/security/ai-throttle';
 import { localEnvironmentFiles } from './common/config/environment-files';
 import { ContextMiddleware } from './common/context/context.middleware';
 import { PrismaModule } from './common/database/prisma.module';
@@ -74,6 +75,13 @@ const localEnvFiles = localEnvironmentFiles(process.cwd(), process.env.E2E_PRESE
   ],
 })
 export class AppModule implements NestModule {
+  constructor(config: ConfigService<Environment, true>) {
+    configureAiThrottle({
+      ttl: config.get('API_THROTTLE_TTL_MS', { infer: true }),
+      limit: config.get('API_AI_THROTTLE_LIMIT', { infer: true }),
+    });
+  }
+
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(ContextMiddleware).forRoutes('*');
   }

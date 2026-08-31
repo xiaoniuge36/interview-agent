@@ -1,5 +1,6 @@
 'use client';
 
+import '@/app/styles/user-agent-drawer.css';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { AgentStatus, PageAgentCore } from '@page-agent/core';

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   buildTrainingRecords,
   filterTrainingRecords,
-  formatTrainingRecordDate,
   paginateTrainingRecords,
   searchTrainingRecords,
   summarizeTrainingRecords,
@@ -66,10 +65,6 @@ describe('training records model', () => {
     expect(searchTrainingRecords(records, '模拟面试').map((record) => record.id)).toEqual([
       'interview-older',
     ]);
-  });
-
-  it('formats each training record time with seconds', () => {
-    expect(formatTrainingRecordDate('2026-07-22T10:00:08.000Z')).toMatch(/\d{2}:\d{2}:\d{2}/);
   });
 
   it('summarizes only persisted training evidence', () => {

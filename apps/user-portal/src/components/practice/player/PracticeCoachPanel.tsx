@@ -21,6 +21,7 @@ type PracticeCoachPanelProps = {
   confirmAiOnOpen: boolean;
   onRevealSolution: () => void;
   onEvaluate: () => void;
+  onCancelEvaluation: () => void;
   onOpenReview: () => void;
   onBackToAnswer: () => void;
   hasNextQuestion: boolean;
@@ -119,7 +120,7 @@ function AiEvaluationSection(props: PracticeCoachPanelProps & { answerCurrent: b
       {evaluation ? (
         <PracticeEvaluationResult evaluation={evaluation} />
       ) : evaluating ? (
-        <AiEvaluationProgress stream={props.aiOperation} />
+        <AiEvaluationProgress stream={props.aiOperation} onCancel={props.onCancelEvaluation} />
       ) : (
         <div className="practice-ai-ready">
           <p>
@@ -181,7 +182,13 @@ const PHASE_LABELS = {
   saving: '正在保存本题评价',
 } as const;
 
-function AiEvaluationProgress({ stream }: { stream: PlayerAiOperation | null }) {
+function AiEvaluationProgress({
+  stream,
+  onCancel,
+}: {
+  stream: PlayerAiOperation | null;
+  onCancel: () => void;
+}) {
   const label = stream?.phase ? PHASE_LABELS[stream.phase] : '正在准备 AI 评价';
   return (
     <div className="practice-ai-stream" aria-live="polite">
@@ -194,6 +201,9 @@ function AiEvaluationProgress({ stream }: { stream: PlayerAiOperation | null }) 
       ) : (
         <p>你的评分和追问会在结果校验并保存后出现。</p>
       )}
+      <button className="practice-ai-stream-cancel" type="button" onClick={onCancel}>
+        取消评价
+      </button>
     </div>
   );
 }

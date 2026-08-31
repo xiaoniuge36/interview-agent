@@ -25,6 +25,22 @@ const ACTIVE_INTERVIEW_STATUSES = new Set<InterviewSessionStatus>([
   'generating_report',
 ]);
 
+type TrainingContinuationSources = {
+  loadRecentPractice: () => Promise<RecentPracticeSummary | null>;
+  loadInterviews: () => Promise<InterviewSessionSummary[]>;
+};
+
+/** 任一来源失败即整体失败：部分数据会选出错误的「最近训练」，宁可让用户显式重试。 */
+export async function loadTrainingContinuation(
+  sources: TrainingContinuationSources,
+): Promise<TrainingContinuation | null> {
+  const [recentPractice, interviews] = await Promise.all([
+    sources.loadRecentPractice(),
+    sources.loadInterviews(),
+  ]);
+  return selectTrainingContinuation(recentPractice, interviews);
+}
+
 export function selectTrainingContinuation(
   recentPractice: RecentPracticeSummary | null,
   interviews: InterviewSessionSummary[],

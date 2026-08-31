@@ -2,6 +2,7 @@ import type { MistakeBook } from '@interview-agent/contracts';
 import React, { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { formatDate, formatDateTime } from '@/lib/format';
 import { MistakeBookContent, mistakeBookReviewHref } from './MistakeBook';
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
@@ -50,6 +51,27 @@ describe('MistakeBookContent', () => {
 
   it('keeps the pager out of static renders that cannot change pages', () => {
     expect(render(book(true))).not.toContain('上一页');
+  });
+});
+
+describe('MistakeBookContent 时间与复练状态', () => {
+  it('低分评价时间使用全站统一的日期时间格式', () => {
+    const markup = render(book(true));
+
+    expect(markup).toContain(`${formatDateTime('2026-07-29T08:00:00.000Z')} · 低分评价`);
+  });
+
+  it('已复练的可练题标注上次复练时间并说明可再次复练', () => {
+    const markup = render(withReviewedAt(book(true), '2026-08-01T09:00:00.000Z'));
+
+    expect(markup).toContain(`上次复练于 ${formatDate('2026-08-01T09:00:00.000Z')}（可再次复练）`);
+  });
+
+  it('已下架的已复练题不再声称可以再次复练', () => {
+    const markup = render(withReviewedAt(book(false), '2026-08-01T09:00:00.000Z'));
+
+    expect(markup).toContain(`上次复练于 ${formatDate('2026-08-01T09:00:00.000Z')}`);
+    expect(markup).not.toContain('可再次复练');
   });
 });
 
@@ -129,6 +151,10 @@ function render(value: MistakeBook) {
 
 function emptyBook(): MistakeBook {
   return { items: [], page: 1, pageSize: 20, total: 0, totalPages: 0 };
+}
+
+function withReviewedAt(value: MistakeBook, reviewedAt: string): MistakeBook {
+  return { ...value, items: value.items.map((item) => ({ ...item, reviewedAt })) };
 }
 
 function book(canStartReview: boolean): MistakeBook {

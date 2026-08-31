@@ -81,6 +81,78 @@
   text-align: center;
 }
 
+.growth-overview-skeleton {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  min-height: 150px;
+}
+
+.growth-overview-skeleton i {
+  width: 82%;
+  height: 13px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--outline) 60%, var(--surface));
+  animation: growth-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.growth-overview-skeleton i:nth-child(2) {
+  width: 64%;
+  animation-delay: 0.15s;
+}
+
+.growth-overview-skeleton i:nth-child(3) {
+  width: 44%;
+  animation-delay: 0.3s;
+}
+
+@keyframes growth-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .growth-overview-skeleton i {
+    animation: none;
+  }
+}
+
+.growth-overview-error {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  min-height: 150px;
+  padding: 0 14px;
+  text-align: center;
+}
+
+.growth-overview-error p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.growth-overview-error button {
+  min-height: 36px;
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--outline));
+  border-radius: 999px;
+  padding: 6px 16px;
+  background: var(--surface);
+  color: var(--primary-strong);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .growth-radar,
 .growth-trend {
   display: grid;
@@ -387,6 +459,12 @@
 .training-archive-list {
   display: grid;
   gap: 11px;
+  transition: opacity 0.2s ease;
+}
+
+/* 重新读取时保留旧列表并降不透明度作视觉刷新态，避免整表闪白。 */
+.training-archive-list[aria-busy='true'] {
+  opacity: 0.55;
 }
 
 .training-archive-summary {
@@ -613,6 +691,13 @@
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.7;
+}
+
+.training-archive-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
 }
 
 .training-archive-partial {

@@ -25,7 +25,10 @@ import {
 } from '@/lib/practice-api';
 import { clearPracticeDraft } from '@/lib/practice-local-state';
 import type { NotificationApi } from '@/components/notifications/NotificationProvider';
-import { isCurrentPracticeEvaluation } from './practice-evaluation-lifecycle';
+import {
+  isCurrentPracticeEvaluation,
+  practiceEvaluationCancelPatch,
+} from './practice-evaluation-lifecycle';
 import { createExclusivePracticeSaveRunner } from './practice-save-single-flight';
 import { createExclusivePracticeSolutionRunner } from './practice-solution-single-flight';
 
@@ -71,7 +74,7 @@ export function usePracticeItemActions(context: PracticeActionContext) {
   return {
     save: useSavePracticeAnswer(context),
     revealSolution: useRevealPracticeSolution(context),
-    evaluate: useEvaluatePracticeItem(context),
+    ...useEvaluatePracticeItem(context),
   };
 }
 
@@ -137,7 +140,7 @@ function useRevealPracticeSolution(context: PracticeActionContext) {
 function useEvaluatePracticeItem(context: PracticeActionContext) {
   const controllerRef = useRef<AbortController | null>(null);
   useEffect(() => () => controllerRef.current?.abort(), []);
-  return useCallback(
+  const evaluate = useCallback(
     async (itemId: string) => {
       if (!context.sessionId) return;
       setBusy(context.setState, `evaluate:${itemId}`);
@@ -165,6 +168,14 @@ function useEvaluatePracticeItem(context: PracticeActionContext) {
     },
     [context],
   );
+  const cancelEvaluation = useCallback(() => {
+    const controller = controllerRef.current;
+    if (!controller) return;
+    controllerRef.current = null;
+    controller.abort();
+    context.setState((state) => ({ ...state, ...practiceEvaluationCancelPatch() }));
+  }, [context]);
+  return { evaluate, cancelEvaluation };
 }
 
 function applyFeedback(

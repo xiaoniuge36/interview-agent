@@ -14,6 +14,22 @@ describe('ModelCredentialCard', () => {
     expect(markup).toContain('data-status="failed"');
     expect(markup).toContain('测试连接');
     expect(markup).toContain('需要重新测试后才能用于 Agent 任务');
+    // 未知错误码也不允许裸码直出：必须带中文说明
+    expect(markup).toContain('连接失败（MODEL_UNAVAILABLE）');
+  });
+
+  it('translates known provider error codes into a readable reason', () => {
+    const markup = render(
+      credential({ status: 'failed', lastErrorCode: 'MODEL_PROVIDER_AUTH_FAILED' }),
+    );
+
+    expect(markup).toContain('密钥无效或已过期（MODEL_PROVIDER_AUTH_FAILED）');
+  });
+
+  it('anchors the card so the readiness banner CTA can jump to it', () => {
+    const markup = render(credential());
+
+    expect(markup).toContain('id="credential-credential-1"');
   });
 
   it('retains a verified default model as an identifiable card state', () => {

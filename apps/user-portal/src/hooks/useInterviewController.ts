@@ -39,7 +39,8 @@ export function useInterviewController(jobs: JobIntentPayload[]) {
   const [connect, disconnect] = useInterviewStream(dispatch, notifications);
   const onSessionStarted = useInterviewSessionNavigation();
   const archivedRestore = useInterviewRestore({
-    restoredSessionId,
+    /* URL 尚未带上 session 参数时也允许对活动会话手动重查状态。 */
+    restoredSessionId: restoredSessionId ?? state.session?.id ?? null,
     session: state.session,
     dispatch,
     connect,
@@ -165,8 +166,12 @@ function useInterviewStream(dispatch: Dispatch<InterviewAction>, notifications: 
         onEvent: (event) => handleStreamEvent(dispatch, event, notifications),
         onRetry: (retry) => dispatch({ type: 'notice', notice: interviewRetryNotice(retry) }),
         onTerminalError: (error) => {
-          dispatch({ type: 'failure', message: interviewErrorMessage(error) });
-          notifications.error('面试实时连接中断', error, '面试连接暂时无法恢复，请稍后重试。');
+          dispatch({ type: 'connection_lost', message: interviewErrorMessage(error) });
+          notifications.error(
+            '面试实时连接中断',
+            error,
+            '连接已断开，可在复盘面板点击「重新检查」同步最新进度。',
+          );
         },
       });
     },

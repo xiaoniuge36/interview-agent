@@ -97,7 +97,9 @@ describe('buildTrendPoints', () => {
     expect(points[0]!.score).toBe(60);
     expect(points[1]!.score).toBe(90);
     expect(points[0]!.y).toBeGreaterThan(points[1]!.y);
-    expect(trendPolyline(points)).toBe(`${points[0]!.x},${points[0]!.y} ${points[1]!.x},${points[1]!.y}`);
+    expect(trendPolyline(points)).toBe(
+      `${points[0]!.x},${points[0]!.y} ${points[1]!.x},${points[1]!.y}`,
+    );
   });
 
   it('keeps only the most recent points when history is long', () => {

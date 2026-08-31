@@ -40,7 +40,7 @@ export function RuntimeObservability({
       <Card className="admin-dense-card admin-table-card" size="small">
         <div className="admin-page-heading">
           <div>
-            <div className="eyebrow">Runtime Observability</div>
+            <div className="eyebrow">运行观测</div>
             <h2 id="runs-heading">Agent 运行观测</h2>
           </div>
           <p>跟踪执行阶段、延迟、降级与结构化输出结果。</p>
@@ -59,7 +59,13 @@ type RunListContentProps = {
 
 function RunListContent({ exportList, isExporting, list }: RunListContentProps) {
   if (list.state.status !== 'ready')
-    return <SectionFeedback state={list.state} loadingMessage="正在加载 Agent 运行记录" />;
+    return (
+      <SectionFeedback
+        state={list.state}
+        loadingMessage="正在加载 Agent 运行记录"
+        onRetry={list.reload}
+      />
+    );
   const page = list.state.data;
   return (
     <>

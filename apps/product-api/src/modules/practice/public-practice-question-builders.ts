@@ -12,11 +12,7 @@ const CHOICE_JUDGMENT_SCORE = 6;
 
 /** 主观题子集：客观题（选择题）结构不同，走独立定义文件。 */
 type SubjectiveQuestionType =
-  | 'short_answer'
-  | 'behavioral'
-  | 'project_deep_dive'
-  | 'system_design'
-  | 'coding';
+  'short_answer' | 'behavioral' | 'project_deep_dive' | 'system_design' | 'coding';
 
 export type PublicPracticeQuestionInput = {
   suffix: string;

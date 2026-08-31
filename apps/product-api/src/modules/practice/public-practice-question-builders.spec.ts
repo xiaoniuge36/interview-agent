@@ -19,7 +19,9 @@ function subjectiveInput(
   };
 }
 
-function choiceInput(overrides: Partial<PublicChoiceQuestionInput> = {}): PublicChoiceQuestionInput {
+function choiceInput(
+  overrides: Partial<PublicChoiceQuestionInput> = {},
+): PublicChoiceQuestionInput {
   return {
     suffix: 'engineering-choice-demo',
     title: '示例单选',

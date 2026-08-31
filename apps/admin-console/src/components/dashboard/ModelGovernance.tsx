@@ -2,6 +2,7 @@ import type { ModelProfile } from '@interview-agent/contracts';
 import { Card, Empty, Space, Table, Tag, Typography, type TableColumnsType } from 'antd';
 import { useAdminListExport } from '@/hooks/useAdminListExport';
 import { useAdminPagedList, type AdminPagedListController } from '@/hooks/useAdminPagedList';
+import { formatAdminDateTime } from '@/lib/format';
 import { AdminPagination, AdminTableToolbar } from './AdminTableControls';
 import { SectionFeedback } from './SectionState';
 
@@ -16,10 +17,6 @@ const BUDGET_LABELS: Record<ModelProfile['budget'], string> = {
   medium: '中预算',
   high: '高预算',
 };
-const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
 const STATUS_OPTIONS = [
   { value: 'all', label: '全部状态' },
   { value: 'active', label: '启用' },
@@ -40,10 +37,10 @@ export function ModelGovernance({ active, refreshKey }: { active: boolean; refre
       <Card className="admin-dense-card admin-table-card" size="small">
         <div className="admin-page-heading">
           <div>
-            <div className="eyebrow">Model Governance</div>
+            <div className="eyebrow">模型治理</div>
             <h2 id="models-heading">模型配置与用途边界</h2>
           </div>
-          <p>仅管理员可查看模型路由、预算与 Schema 模式。</p>
+          <p>仅管理员可查看模型路由、预算与结构化输出模式。</p>
         </div>
         <ModelListContent exportList={exportList} isExporting={isExporting} list={list} />
       </Card>
@@ -59,7 +56,9 @@ type ModelListContentProps = {
 
 function ModelListContent({ exportList, isExporting, list }: ModelListContentProps) {
   if (list.state.status !== 'ready')
-    return <SectionFeedback state={list.state} loadingMessage="正在加载模型配置" />;
+    return (
+      <SectionFeedback state={list.state} loadingMessage="正在加载模型配置" onRetry={list.reload} />
+    );
   const page = list.state.data;
   return (
     <>
@@ -147,7 +146,7 @@ const MODEL_COLUMNS: TableColumnsType<ModelProfile> = [
       <Space size={COMPACT_TAG_GAP} wrap>
         <Tag>{BUDGET_LABELS[model.budget]}</Tag>
         <Tag color={model.schemaMode ? 'blue' : 'default'}>
-          {model.schemaMode ? 'Schema' : '自由格式'}
+          {model.schemaMode ? '结构化输出' : '自由格式'}
         </Tag>
       </Space>
     ),
@@ -166,7 +165,7 @@ const MODEL_COLUMNS: TableColumnsType<ModelProfile> = [
     width: 180,
     render: (_, model) => (
       <Typography.Text type="secondary">
-        <time dateTime={model.updatedAt}>{DATE_FORMATTER.format(new Date(model.updatedAt))}</time>
+        <time dateTime={model.updatedAt}>{formatAdminDateTime(model.updatedAt)}</time>
       </Typography.Text>
     ),
   },

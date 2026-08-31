@@ -18,9 +18,6 @@ export type AuditEventInput = {
 
 type AuditClient = Pick<Prisma.TransactionClient, 'auditLog'>;
 
-const DEFAULT_AUDIT_LIMIT = 100;
-const MAX_AUDIT_LIMIT = 500;
-
 @Injectable()
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
@@ -40,14 +37,6 @@ export class AuditService {
   ) {
     return client.auditLog.createMany({
       data: events.map((event) => auditLogData(context, event)),
-    });
-  }
-
-  list(context: ProductRequestContext, limit = DEFAULT_AUDIT_LIMIT) {
-    return this.prisma.auditLog.findMany({
-      where: { tenantId: context.tenantId },
-      orderBy: { createdAt: 'desc' },
-      take: Math.min(Math.max(limit, 1), MAX_AUDIT_LIMIT),
     });
   }
 }

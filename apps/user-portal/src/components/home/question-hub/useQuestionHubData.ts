@@ -16,54 +16,90 @@ import {
   startHomeRecommendation,
 } from './home-recommendation-start';
 import { createLatestRequestRunner } from '@interview-agent/api-client';
-import { selectTrainingContinuation, type TrainingContinuation } from './training-continuation';
+import { loadTrainingContinuation, type TrainingContinuation } from './training-continuation';
 
 export function useQuestionHubData() {
   return { ...useQuestionHubQueries(), ...useRecommendationStarter() };
 }
 
 function useQuestionHubQueries() {
-  const [catalog, setCatalog] = useState<QuestionCatalogResponse | null>(null);
-  const [recommendations, setRecommendations] = useState<PracticeRecommendation[]>([]);
-  const [continuation, setContinuation] = useState<TrainingContinuation | null>(null);
-  const [catalogError, setCatalogError] = useState('');
-  const [recommendationError, setRecommendationError] = useState('');
-  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
   const [requests] = useState(createHomeQueryRequests);
+  const catalogQuery = useCatalogQuery(requests.catalog);
+  const recommendationQuery = useRecommendationsQuery(requests.recommendations);
+  const continuationQuery = useContinuationQuery(requests.continuation);
 
-  const loadCatalog = useCallback(() => {
-    setCatalogError('');
-    return requests.catalog.run({
-      load: () => getQuestionCatalog({ pageSize: 20 }),
-      onSuccess: setCatalog,
-      onError: () => setCatalogError('题库暂时没有加载成功，你仍可以进入选题页重试。'),
-      onSettled: () => undefined,
-    });
-  }, [requests.catalog]);
-
-  const loadRecommendations = useCallback(() => {
-    setRecommendationError('');
-    setRecommendationsLoading(true);
-    return requests.recommendations.run({
-      load: getPracticeRecommendations,
-      onSuccess: setRecommendations,
-      onError: () => setRecommendationError('Agent 推荐暂时不可用，不影响你自主选题。'),
-      onSettled: () => setRecommendationsLoading(false),
-    });
-  }, [requests.recommendations]);
-
-  useHomeQueryLifecycle({ requests, loadCatalog, loadRecommendations, setContinuation });
+  useHomeQueryLifecycle({
+    requests,
+    loadCatalog: catalogQuery.load,
+    loadRecommendations: recommendationQuery.load,
+    loadContinuation: continuationQuery.load,
+  });
 
   return {
-    catalog,
-    recommendations,
-    continuation,
-    catalogError,
-    recommendationError,
-    recommendationsLoading,
-    reloadCatalog: loadCatalog,
-    reloadRecommendations: loadRecommendations,
+    catalog: catalogQuery.catalog,
+    recommendations: recommendationQuery.recommendations,
+    continuation: continuationQuery.continuation,
+    catalogError: catalogQuery.error,
+    recommendationError: recommendationQuery.error,
+    continuationError: continuationQuery.error,
+    recommendationsLoading: recommendationQuery.loading,
+    reloadCatalog: catalogQuery.load,
+    reloadRecommendations: recommendationQuery.load,
+    reloadContinuation: continuationQuery.load,
   };
+}
+
+type HomeQueryRunner = ReturnType<typeof createLatestRequestRunner>;
+
+function useCatalogQuery(runner: HomeQueryRunner) {
+  const [catalog, setCatalog] = useState<QuestionCatalogResponse | null>(null);
+  const [error, setError] = useState('');
+  const load = useCallback(() => {
+    setError('');
+    return runner.run({
+      load: () => getQuestionCatalog({ pageSize: 20 }),
+      onSuccess: setCatalog,
+      onError: () => setError('题库暂时没有加载成功，你仍可以进入选题页重试。'),
+      onSettled: () => undefined,
+    });
+  }, [runner]);
+  return { catalog, error, load };
+}
+
+function useRecommendationsQuery(runner: HomeQueryRunner) {
+  const [recommendations, setRecommendations] = useState<PracticeRecommendation[]>([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const load = useCallback(() => {
+    setError('');
+    setLoading(true);
+    return runner.run({
+      load: getPracticeRecommendations,
+      onSuccess: setRecommendations,
+      onError: () => setError('Agent 推荐暂时不可用，不影响你自主选题。'),
+      onSettled: () => setLoading(false),
+    });
+  }, [runner]);
+  return { recommendations, error, loading, load };
+}
+
+function useContinuationQuery(runner: HomeQueryRunner) {
+  const [continuation, setContinuation] = useState<TrainingContinuation | null>(null);
+  const [error, setError] = useState('');
+  const load = useCallback(() => {
+    setError('');
+    return runner.run({
+      load: () =>
+        loadTrainingContinuation({
+          loadRecentPractice: getRecentPractice,
+          loadInterviews: listInterviews,
+        }),
+      onSuccess: setContinuation,
+      onError: () => setError('上次训练进度暂时读取失败，可能有进行中的练习没有显示。'),
+      onSettled: () => undefined,
+    });
+  }, [runner]);
+  return { continuation, error, load };
 }
 
 function createHomeQueryRequests() {
@@ -78,34 +114,21 @@ type HomeQueryLifecycle = {
   requests: ReturnType<typeof createHomeQueryRequests>;
   loadCatalog: () => Promise<boolean>;
   loadRecommendations: () => Promise<boolean>;
-  setContinuation: (value: TrainingContinuation | null) => void;
+  loadContinuation: () => Promise<boolean>;
 };
 
 function useHomeQueryLifecycle(input: HomeQueryLifecycle) {
-  const { requests, loadCatalog, loadRecommendations, setContinuation } = input;
+  const { requests, loadCatalog, loadRecommendations, loadContinuation } = input;
   useEffect(() => {
     void loadCatalog();
     void loadRecommendations();
-    void requests.continuation.run({
-      load: loadTrainingContinuation,
-      onSuccess: setContinuation,
-      onError: () => undefined,
-      onSettled: () => undefined,
-    });
+    void loadContinuation();
     return () => {
       requests.catalog.invalidate();
       requests.recommendations.invalidate();
       requests.continuation.invalidate();
     };
-  }, [loadCatalog, loadRecommendations, requests, setContinuation]);
-}
-
-async function loadTrainingContinuation() {
-  const [recentPractice, interviews] = await Promise.all([
-    getRecentPractice().catch(() => null),
-    listInterviews().catch(() => []),
-  ]);
-  return selectTrainingContinuation(recentPractice, interviews);
+  }, [loadCatalog, loadContinuation, loadRecommendations, requests]);
 }
 
 function useRecommendationStarter() {

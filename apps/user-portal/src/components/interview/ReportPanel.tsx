@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react';
+import Link from 'next/link';
 import type { InterviewReport, InterviewSessionStatus } from '@interview-agent/contracts';
+import { formatScoreOutOf100, roundScore } from '@/lib/format';
 import { interviewStageLabel } from './interview-labels';
 import { InterviewReviewPracticeAction } from './InterviewReviewPracticeAction';
 
@@ -8,6 +10,7 @@ const REPORT_RISE_DELAY = { '--rise-delay': '200ms' } as CSSProperties;
 type ReportPanelProps = {
   report: InterviewReport | null;
   sessionStatus?: InterviewSessionStatus | null;
+  connectionLost?: boolean;
   onRetry?: (() => void) | undefined;
   retrying?: boolean;
   sessionId?: string | undefined;
@@ -18,6 +21,7 @@ type ReportPanelProps = {
 export function ReportPanel({
   report,
   sessionStatus = null,
+  connectionLost = false,
   onRetry,
   retrying = false,
   sessionId,
@@ -40,7 +44,12 @@ export function ReportPanel({
           reviewStarting={reviewStarting}
         />
       ) : (
-        <ReportPlaceholder status={sessionStatus} onRetry={onRetry} retrying={retrying} />
+        <ReportPlaceholder
+          status={sessionStatus}
+          connectionLost={connectionLost}
+          onRetry={onRetry}
+          retrying={retrying}
+        />
       )}
     </section>
   );
@@ -55,23 +64,13 @@ function ReportContent(props: {
   const { report } = props;
   return (
     <>
-      <div className="score-hero" aria-label={'总分 ' + report.overall.score}>
-        {report.overall.score}
+      <div className="score-hero" aria-label={'总分 ' + formatScoreOutOf100(report.overall.score)}>
+        <span>{roundScore(report.overall.score)}</span>
+        <small>/ 100</small>
       </div>
       <p className="muted-text">{report.overall.summary}</p>
       <StageDiagnostics stages={report.stageScores} />
-      {report.nextActions.length ? (
-        <section className="report-next-actions" aria-labelledby="report-next-actions-heading">
-          <h3 id="report-next-actions-heading">下一步建议</h3>
-          <div className="stack compact">
-            {report.nextActions.map((item) => (
-              <span className="chip" key={item}>
-                {item}
-              </span>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <NextActions actions={report.nextActions} />
       {props.sessionId && props.onStartInterviewReview ? (
         <InterviewReviewPracticeAction
           report={report}
@@ -84,50 +83,94 @@ function ReportContent(props: {
   );
 }
 
+function NextActions({ actions }: { actions: InterviewReport['nextActions'] }) {
+  return (
+    <section className="report-next-actions" aria-labelledby="report-next-actions-heading">
+      <h3 id="report-next-actions-heading">下一步建议</h3>
+      {actions.length ? (
+        <div className="stack compact">
+          {actions.map((item) => (
+            <span className="chip" key={item}>
+              {item}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <>
+          <p className="muted-text">
+            本轮没有额外行动建议。可前往复盘中心对比历史表现，或从上方「重新开始本轮」再练一轮。
+          </p>
+          <Link className="button secondary" href="/reports">
+            前往复盘中心
+          </Link>
+        </>
+      )}
+    </section>
+  );
+}
+
 function StageDiagnostics({ stages }: { stages: InterviewReport['stageScores'] }) {
   const rankedStages = [...stages].sort((left, right) => left.score - right.score);
   return (
     <section className="report-stage-diagnostics" aria-labelledby="report-stage-heading">
       <div className="report-stage-heading">
         <h3 id="report-stage-heading">阶段诊断</h3>
-        <small>先看最低分，理解评分依据</small>
+        {stages.length ? <small>先看最低分，理解评分依据</small> : null}
       </div>
-      <div className="report-stage-list">
-        {rankedStages.map((item, index) => (
-          <details key={item.stage} open={index === 0} data-priority={index === 0}>
-            <summary>
-              <span>
-                <strong>{interviewStageLabel(item.stage)}</strong>
-                <small>{index === 0 ? '首要复练' : '阶段反馈'}</small>
-              </span>
-              <b>{item.score}</b>
-            </summary>
-            <p>{item.summary}</p>
-            {item.evidence.length ? (
-              <ul aria-label={`${interviewStageLabel(item.stage)}评分依据`}>
-                {item.evidence.map((evidence) => (
-                  <li key={evidence}>{evidence}</li>
-                ))}
-              </ul>
-            ) : null}
-            <small>为什么是 {item.score} 分</small>
-          </details>
-        ))}
-      </div>
+      {stages.length ? (
+        <div className="report-stage-list">
+          {rankedStages.map((item, index) => (
+            <StageDiagnosticItem item={item} primary={index === 0} key={item.stage} />
+          ))}
+        </div>
+      ) : (
+        <p className="muted-text">本轮未返回分项评分。</p>
+      )}
     </section>
+  );
+}
+
+function StageDiagnosticItem({
+  item,
+  primary,
+}: {
+  item: InterviewReport['stageScores'][number];
+  primary: boolean;
+}) {
+  return (
+    <details open={primary} data-priority={primary}>
+      <summary>
+        <span>
+          <strong>{interviewStageLabel(item.stage)}</strong>
+          <small>{primary ? '首要复练' : '阶段反馈'}</small>
+        </span>
+        <b>{roundScore(item.score)}</b>
+      </summary>
+      <p>{item.summary}</p>
+      {item.evidence.length ? (
+        <ul aria-label={`${interviewStageLabel(item.stage)}评分依据`}>
+          {item.evidence.map((evidence) => (
+            <li key={evidence}>{evidence}</li>
+          ))}
+        </ul>
+      ) : null}
+      <small>为什么是 {roundScore(item.score)} 分</small>
+    </details>
   );
 }
 
 function ReportPlaceholder({
   status,
+  connectionLost,
   onRetry,
   retrying,
 }: {
   status: InterviewSessionStatus | null;
+  connectionLost: boolean;
   onRetry?: (() => void) | undefined;
   retrying: boolean;
 }) {
-  const state = reportPlaceholderState(status, Boolean(onRetry));
+  const state = reportPlaceholderState(status, Boolean(onRetry), connectionLost);
   if (state) {
     return (
       <div className="interview-report-status" data-state={state.kind} role="status">
@@ -157,15 +200,10 @@ type ReportPlaceholderState = {
 function reportPlaceholderState(
   status: InterviewSessionStatus | null,
   canRetry: boolean,
+  connectionLost: boolean,
 ): ReportPlaceholderState | null {
   if (status === 'generating_report') {
-    return {
-      kind: 'processing',
-      title: 'AI 正在生成本轮复盘',
-      detail: '阶段和面试对话已保存。页面会自动接收结果，刷新后仍会恢复同一轮。',
-      actionLabel: canRetry ? '重新检查生成状态' : null,
-      retryingLabel: '正在检查生成状态…',
-    };
+    return generatingReportState(canRetry, connectionLost);
   }
   if (status === 'failed') {
     return {
@@ -186,4 +224,24 @@ function reportPlaceholderState(
     };
   }
   return null;
+}
+
+function generatingReportState(canRetry: boolean, connectionLost: boolean): ReportPlaceholderState {
+  if (connectionLost) {
+    return {
+      kind: 'processing',
+      title: '连接已断开，复盘仍在生成',
+      detail:
+        '实时连接已断开，生成会在服务端继续，阶段和面试对话都已保存。点击下方重新检查生成状态。',
+      actionLabel: canRetry ? '重新检查生成状态' : null,
+      retryingLabel: '正在检查生成状态…',
+    };
+  }
+  return {
+    kind: 'processing',
+    title: 'AI 正在生成本轮复盘',
+    detail: '阶段和面试对话已保存。页面会自动接收结果，通常需要 30–90 秒；刷新后仍会恢复同一轮。',
+    actionLabel: canRetry ? '重新检查生成状态' : null,
+    retryingLabel: '正在检查生成状态…',
+  };
 }

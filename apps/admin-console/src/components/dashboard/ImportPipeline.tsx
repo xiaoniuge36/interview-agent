@@ -13,13 +13,18 @@ const PIPELINE_LABELS: Record<PipelineStage, string> = {
   failed: '失败',
 };
 
-export function ImportPipeline({ state }: { state: SectionState<Dashboard> }) {
+type ImportPipelineProps = {
+  state: SectionState<Dashboard>;
+  onRetry?: (() => void) | undefined;
+};
+
+export function ImportPipeline({ state, onRetry }: ImportPipelineProps) {
   return (
     <Card className="admin-dense-card" title="资料导入流水线">
       {state.status === 'ready' ? (
         <PipelineSteps dashboard={state.data} />
       ) : (
-        <SectionFeedback state={state} loadingMessage="正在加载导入流水线" />
+        <SectionFeedback state={state} loadingMessage="正在加载导入流水线" onRetry={onRetry} />
       )}
     </Card>
   );

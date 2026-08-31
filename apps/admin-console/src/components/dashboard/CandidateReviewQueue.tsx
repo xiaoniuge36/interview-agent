@@ -51,7 +51,7 @@ export function CandidateReviewQueue({
           onReview={onReview}
         />
       ) : (
-        <SectionFeedback state={list.state} loadingMessage="正在加载候选题" />
+        <SectionFeedback state={list.state} loadingMessage="正在加载候选题" onRetry={list.reload} />
       )}
     </Card>
   );

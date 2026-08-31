@@ -14,6 +14,7 @@ import {
 } from 'antd';
 import type { AccountView } from '@interview-agent/contracts';
 import React from 'react';
+import { formatAdminDateTime } from '@/lib/format';
 import { roleOption } from './account-management.types';
 
 type AccountTableProps = {
@@ -22,8 +23,6 @@ type AccountTableProps = {
   onOpenDrawer: (accountId: string) => void;
   onOpenRole: (account: AccountView) => void;
 };
-
-const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short', timeStyle: 'short' });
 
 export function AccountTable(props: AccountTableProps) {
   return (
@@ -178,5 +177,5 @@ function AccountActions(props: AccountTableProps & { account: AccountView }) {
 }
 
 function formatTime(value: string | null): string {
-  return value ? DATE_FORMATTER.format(new Date(value)) : '—';
+  return value ? formatAdminDateTime(value) : '—';
 }

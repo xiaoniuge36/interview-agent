@@ -9,6 +9,7 @@ import {
   updateAccountStatus,
   type AccountQueryInput,
 } from '@/lib/account-api';
+import { adminExportSuccessMessage } from '@/hooks/useAdminListExport';
 import { saveAdminDownloadedFile } from '@/lib/admin-list-api';
 import { INITIAL_ACCOUNT_QUERY, type RoleModalState } from './account-management.types';
 import { useCreateLocalAdmin } from './useCreateLocalAdmin';
@@ -39,7 +40,7 @@ function useAccountQueries(options: ScreenOptions) {
     try {
       const file = await exportAccounts(submitted);
       saveAdminDownloadedFile(file);
-      message.success(`已开始导出 ${file.fileName}`);
+      message.success(adminExportSuccessMessage(file.fileName));
     } catch {
       return;
     }

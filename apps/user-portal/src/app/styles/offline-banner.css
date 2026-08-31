@@ -1,0 +1,30 @@
+/* 全局离线提示条：随 OfflineBanner 组件加载，断网时置顶展示，恢复后自动消失。 */
+.offline-banner {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #f0c9a1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #fff7ef;
+  box-shadow: 0 10px 24px rgb(58 34 8 / 14%);
+  color: #8a4b16;
+  font-size: 13px;
+  font-weight: 600;
+  transform: translateX(-50%);
+}
+.offline-banner > span {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f4a94c;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+}

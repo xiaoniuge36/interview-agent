@@ -66,7 +66,7 @@ describe('UserAgentFloatButton', () => {
 
 describe('UserAgent desktop trigger sizing', () => {
   it('preserves a 48px target', () => {
-    const stylesheet = readFileSync(resolve('src/app/styles/user-agent.css'), 'utf8');
+    const stylesheet = readFileSync(resolve('src/app/styles/user-agent-float.css'), 'utf8');
     const desktopRule = stylesheet.match(/\.user-agent-float \{[^}]+\}/)?.[0];
 
     expect(desktopRule).toContain('width: 48px');

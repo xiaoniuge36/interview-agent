@@ -96,7 +96,8 @@ export function ThemeMenuPopover(props: ThemeMenuPopoverProps) {
           <strong>选择界面主题</strong>
           <small>六种完整视觉语言</small>
         </span>
-        <small>保存在当前设备</small>
+        {/* 登录后偏好会经 user-preferences API 云同步，此处文案不得再写"仅当前设备" */}
+        <small>登录后自动同步到账号</small>
       </header>
       <ThemeModeList preferences={props.preferences} onSelect={props.setTheme} />
       <ThemeMotionRow preferences={props.preferences} onChange={props.setMotion} />

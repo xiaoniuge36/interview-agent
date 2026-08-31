@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ModelCredentialView } from '@interview-agent/contracts';
+import { formatDateTime } from '@/lib/format';
 import {
   modelConnectionReadiness,
   type ModelConnectionNextAction,
@@ -11,7 +12,10 @@ type ModelReadinessBannerProps = {
   returnTarget?: SettingsReturnTarget | null;
 };
 
-export function ModelReadinessBanner({ credentials, returnTarget = null }: ModelReadinessBannerProps) {
+export function ModelReadinessBanner({
+  credentials,
+  returnTarget = null,
+}: ModelReadinessBannerProps) {
   const readiness = modelConnectionReadiness(credentials, returnTarget);
   // 零连接时不重复提示：下方的连接空态卡已承担“连接第一个模型”的完整引导。
   if (readiness.kind === 'empty') return null;
@@ -57,12 +61,19 @@ function NeedsActionReadiness({ credential }: { credential: ModelCredentialView 
         <strong>还需要完成一项检查</strong>
         <p>{copy}</p>
       </div>
+      {credential ? (
+        <div className="model-readiness-actions">
+          {/* 锚到对应连接卡：横幅只提示不给入口会让用户在页面里自己找 */}
+          <a className="button" href={`#credential-${credential.id}`}>
+            去测试默认模型
+          </a>
+        </div>
+      ) : null}
     </section>
   );
 }
 
 function formatTestedAt(value: string | null) {
-  return value
-    ? new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric' }).format(new Date(value))
-    : '尚未测试';
+  // 与连接卡"上次测试时间"同一格式：横幅只给月日、卡片给全时间会让用户以为是两个字段
+  return value ? formatDateTime(value) : '尚未测试';
 }

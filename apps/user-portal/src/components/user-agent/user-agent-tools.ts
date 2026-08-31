@@ -4,35 +4,17 @@ import { ProfilePayloadSchema } from '@interview-agent/contracts';
 // ZodType 定型（其运行时依赖 v4 的 JSON Schema 能力）。仓库其余代码统一用 'zod'（v3 API）；
 // zod/v4 的使用仅收敛在本文件与 admin-console 的 admin-agent-tools.ts。
 import { z } from 'zod/v4';
-import type { NavigationId } from '@/components/shell/navigation';
+import { NAV_ITEMS, navItemById, type NavigationId } from '@/components/shell/navigation';
 import { apiRequest } from '@/lib/api';
 import { getMasteryProfiles } from '@/lib/practice-api';
 import { getPracticeRecommendations, getRecentPractice } from '@/lib/question-catalog-api';
 
-const NAVIGATION_PATHS: Record<NavigationId, string> = {
-  home: '/home',
-  questions: '/questions',
-  learn: '/learn',
-  profile: '/profile',
-  practice: '/practice',
-  interview: '/interview',
-  reports: '/reports',
-  settings: '/settings',
-};
-const NAVIGATION_LABELS: Record<NavigationId, string> = {
-  home: '首页',
-  questions: '自主刷题',
-  learn: '学习中心',
-  profile: '我的 Agent',
-  practice: '练习空间',
-  interview: '面试工作台',
-  reports: '复盘中心',
-  settings: '设置中心',
-};
+// 路径与叫法直接复用 NAV_ITEMS：Agent 回话里的页面名必须与壳层导航一字不差
+const NAVIGATION_IDS = NAV_ITEMS.map((item) => item.id) as [NavigationId, ...NavigationId[]];
 type ToolFactory = <TParams>(options: PageAgentTool<TParams>) => PageAgentTool<TParams>;
 
 export function userAgentNavigationPath(view: NavigationId) {
-  return view === 'questions' ? '/questions?source=agent' : NAVIGATION_PATHS[view];
+  return view === 'questions' ? '/questions?source=agent' : navItemById(view).href;
 }
 
 export function createUserPageAgentTools(tool: ToolFactory) {
@@ -49,12 +31,12 @@ function createNavigationTool(tool: ToolFactory) {
   return tool({
     description: 'Navigate to an existing user portal view. Never invent a view id.',
     inputSchema: z.object({
-      view: z.enum(Object.keys(NAVIGATION_PATHS) as [NavigationId, ...NavigationId[]]),
+      view: z.enum(NAVIGATION_IDS),
     }),
     execute: async (input, { signal }) => {
       signal.throwIfAborted();
       window.location.href = userAgentNavigationPath(input.view);
-      return `已打开${NAVIGATION_LABELS[input.view]}。`;
+      return `已打开${navItemById(input.view).label}。`;
     },
   });
 }

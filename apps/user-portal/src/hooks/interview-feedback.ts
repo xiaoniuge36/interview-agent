@@ -10,7 +10,7 @@ export function interviewStatusNotice(status: InterviewSessionStatus): string {
     case 'running':
       return 'AI 面试官正在组织追问…';
     case 'waiting_user':
-      return '轮到你作答。可按背景、目标、行动、结果组织回答。';
+      return '轮到你作答。可按「背景、任务、行动、结果（STAR）」组织回答。';
     case 'generating_report':
       return 'AI 面试官正在整理本轮复盘…';
     case 'report_ready':

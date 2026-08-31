@@ -105,7 +105,7 @@ async function verifyGovernedAnalytics(page: Page) {
         await page.getByRole('button', { name: '刷新' }).click();
         const coverage = page
           .locator('.platform-ai-quality .ant-statistic')
-          .filter({ hasText: 'Embedding 覆盖率' });
+          .filter({ hasText: '向量覆盖率' });
         await expect(coverage).toBeVisible();
         return coverage.textContent();
       },

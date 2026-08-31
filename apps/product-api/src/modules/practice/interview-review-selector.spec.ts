@@ -125,7 +125,9 @@ it('creates a source-linked practice session from an owned ready interview repor
     expect.objectContaining({
       data: expect.objectContaining({
         mode: 'interview_review',
-        sourceInterviewSession: { connect: { id: 'interview-1' } },
+        sourceInterviewSession: {
+          connect: { tenantId_id: { tenantId: 'tenant-1', id: 'interview-1' } },
+        },
       }),
     }),
   );

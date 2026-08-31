@@ -14,6 +14,7 @@ type PracticePlayer = ReturnType<typeof usePracticePlayer>;
 
 export function PracticeRoundCompletionBar({ player }: { player: PracticePlayer }) {
   const [confirming, setConfirming] = useState(false);
+  const [confirmingSelfStudy, setConfirmingSelfStudy] = useState(false);
   const session = player.session;
   if (!session || !canCompleteSelfStudy(session)) return null;
   const pendingCount = pendingEvaluationCount(session);
@@ -26,23 +27,12 @@ export function PracticeRoundCompletionBar({ player }: { player: PracticePlayer 
   return (
     <section className="practice-round-actions practice-round-completion-step motion-rise">
       <CompletionSummary pendingCount={pendingCount} submitting={submitting} />
-      <div>
-        <button
-          className="secondary"
-          type="button"
-          disabled={player.busy !== null}
-          onClick={() => void player.completeSelfStudy()}
-        >
-          {player.busy === 'submit-self' ? '结束中…' : '仅保留回答并结束'}
-        </button>
-        <button
-          type="button"
-          disabled={!canSubmitAiReport(session) || player.busy !== null}
-          onClick={requestAiReport}
-        >
-          {submitting ? '生成复盘中…' : '生成整轮 AI 复盘'}
-        </button>
-      </div>
+      <CompletionActions
+        busy={player.busy}
+        canSubmit={canSubmitAiReport(session)}
+        onAiReport={requestAiReport}
+        onSelfStudy={() => setConfirmingSelfStudy(true)}
+      />
       {confirming ? (
         <PracticeAiReportConfirmation
           pendingCount={pendingCount}
@@ -53,7 +43,43 @@ export function PracticeRoundCompletionBar({ player }: { player: PracticePlayer 
           }}
         />
       ) : null}
+      {confirmingSelfStudy ? (
+        <PracticeSelfStudyConfirmation
+          onCancel={() => setConfirmingSelfStudy(false)}
+          onConfirm={() => {
+            setConfirmingSelfStudy(false);
+            void player.completeSelfStudy();
+          }}
+        />
+      ) : null}
     </section>
+  );
+}
+
+function CompletionActions(props: {
+  busy: PracticePlayer['busy'];
+  canSubmit: boolean;
+  onAiReport: () => void;
+  onSelfStudy: () => void;
+}) {
+  return (
+    <div>
+      <button
+        className="secondary"
+        type="button"
+        disabled={props.busy !== null}
+        onClick={props.onSelfStudy}
+      >
+        {props.busy === 'submit-self' ? '结束中…' : '仅保留回答并结束'}
+      </button>
+      <button
+        type="button"
+        disabled={!props.canSubmit || props.busy !== null}
+        onClick={props.onAiReport}
+      >
+        {props.busy === 'submit-ai' ? '生成复盘中…' : '生成整轮 AI 复盘'}
+      </button>
+    </div>
   );
 }
 
@@ -105,6 +131,31 @@ export function PracticeAiReportConfirmation({
       securityNote="生成完成后会同步薄弱项和能力记录；API Key 仅在调用期间解密。"
       cancelLabel="暂不生成"
       confirmLabel="使用我的模型生成复盘"
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    />
+  );
+}
+
+/** 该动作会跳过整轮 AI 复盘且不可再生成：必须先写清后果再执行。 */
+export function PracticeSelfStudyConfirmation({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <PracticeAiConfirmationDialog
+      titleId="practice-self-study-confirmation-title"
+      eyebrow="结束本轮 · 自学模式"
+      title="确认仅保留回答并结束？"
+      copy="本轮将不生成 AI 评价：没有整轮复盘和分数，能力画像也不会更新。"
+      benefits={['已保存回答全部保留', '不生成 AI 评价', '不更新能力画像']}
+      securityNote="结束后本轮无法再生成 AI 复盘；想要复盘请返回选择「生成整轮 AI 复盘」。"
+      cancelLabel="暂不结束"
+      confirmLabel="仅保留回答并结束"
+      glyph="存"
       onCancel={onCancel}
       onConfirm={onConfirm}
     />

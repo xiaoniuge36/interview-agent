@@ -27,7 +27,6 @@ describe('PUBLIC_PRACTICE_QUESTIONS', () => {
     });
   });
 
-
   it('包含六十九道单选题、八道多选题且题目 ID 唯一', () => {
     expect(
       PUBLIC_PRACTICE_QUESTIONS.filter((question) => question.type === 'single_choice'),

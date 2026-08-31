@@ -215,6 +215,7 @@ services:
       API_SWAGGER_ENABLED: ${API_SWAGGER_ENABLED:-true}
       API_THROTTLE_TTL_MS: ${API_THROTTLE_TTL_MS:-60000}
       API_THROTTLE_LIMIT: ${API_THROTTLE_LIMIT:-120}
+      API_AI_THROTTLE_LIMIT: ${API_AI_THROTTLE_LIMIT:-30}
       DATABASE_URL: postgresql://${POSTGRES_USER:-interview_agent}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-interview_agent}?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       # 该 Compose 栈自带 Redis，就绪探针必须同时校验 Redis，可用性不允许降级。

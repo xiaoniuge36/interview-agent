@@ -22,12 +22,14 @@ export function QuestionHubPage() {
       <AgentRecommendationRail
         displayName={auth.identity?.displayName}
         continuation={data.continuation}
+        continuationError={data.continuationError}
         recommendations={data.recommendations}
         loading={data.recommendationsLoading}
         error={data.recommendationError}
         actionError={data.actionError}
         busyRecommendationId={data.busyRecommendationId}
         onRetry={data.reloadRecommendations}
+        onRetryContinuation={data.reloadContinuation}
         onStart={(recommendation) => void data.startRecommendation(recommendation)}
       />
       <QuickStartRoles

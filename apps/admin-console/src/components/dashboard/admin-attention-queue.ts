@@ -71,9 +71,9 @@ function schemaRisk(dashboard: Dashboard): AdminAttentionItem | null {
     ? {
         id: 'schema-pass-rate',
         count,
-        description: 'Schema 通过率未达到 100%，请复核题目结构与导入规则。',
+        description: '结构校验通过率未达到 100%，请复核题目结构与导入规则。',
         severity: 'warning',
-        title: 'Schema 通过率待提升',
+        title: '结构校验通过率待提升',
         view: 'questions',
       }
     : null;

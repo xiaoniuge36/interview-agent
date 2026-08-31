@@ -59,6 +59,8 @@ describe('PlatformAnalyticsContent', () => {
     expect(markup).toContain('经营趋势');
     expect(markup).toContain('内容与训练链路');
     expect(markup).toContain('运行质量');
+    expect(markup).toContain('结构校验通过率');
+    expect(markup).not.toContain('Schema 通过率');
     expect(markup).toContain('近期运行风险');
     expect(markup).toContain('用户使用情况');
     expect(markup).toContain('模拟面试 Agent');

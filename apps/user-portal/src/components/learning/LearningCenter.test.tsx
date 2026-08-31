@@ -82,7 +82,7 @@ it('renders the library, GFM content and safe external links', () => {
   expect(markup).toContain('href="/learn?doc=rag-guide"');
   expect(markup).toContain('标记本课已完成');
   expect(markup).toContain('aria-pressed="false"');
-  expect(markup).toContain('Review · 自测');
+  expect(markup).toContain('复习本节 · 自测');
   expect(markup).toContain('href="#自测"');
   expect(markup).toContain('返回学习地图');
   expect(markup).toContain('id="learning-path"');
@@ -109,10 +109,7 @@ it('groups courses by track and summarizes multi-track libraries', () => {
     order: 20,
   };
   const groups = groupCoursesByTrack([activeDocument, secondDocument, softSkillCourse]);
-  expect(groups.map((group) => group.track)).toEqual([
-    'AI Agent 工程师完整路线',
-    '求职通用能力',
-  ]);
+  expect(groups.map((group) => group.track)).toEqual(['AI Agent 工程师完整路线', '求职通用能力']);
   expect(groups[0]?.courses.map((course) => course.slug)).toEqual(['agent-basics', 'rag-guide']);
   expect(groups[1]?.courses.map((course) => course.slug)).toEqual(['star-method']);
 
@@ -193,22 +190,25 @@ it('centers the active document in an overflowing rail and clamps both edges', (
 });
 
 it('closes the learning path honestly when the final course is complete', () => {
+  // 路线完成后主按钮从「返回地图」对调为「去题库验证本主题」。
   expect(learningCourseActionCopy(true, false, true)).toEqual({
     status: '完整路线已完成',
-    heading: '回到学习地图复盘成果，或进入题库继续验证',
+    heading: '去题库验证本主题，或回学习地图复盘成果',
     mapLabel: '完成路线 · 返回学习地图',
-    emphasizeMap: true,
+    emphasizeMap: false,
+    emphasizeVerification: true,
   });
   expect(learningCourseActionCopy(true, false, false)).toEqual({
     status: '本课已完成',
     heading: '回到学习地图补齐未完成课程，或进入题库继续验证',
     mapLabel: '返回学习地图 · 补齐课程',
     emphasizeMap: true,
+    emphasizeVerification: false,
   });
   expect(learningCourseActionCopy(true, true, false).heading).toBe('继续巩固或进入下一课');
 });
 
-it('shows a useful empty state when no learning document is available', () => {
+it('shows a user-facing empty state with training exits instead of developer hints', () => {
   const markup = renderToStaticMarkup(
     createElement(LearningCenter, {
       documents: [],
@@ -217,6 +217,11 @@ it('shows a useful empty state when no learning document is available', () => {
     }),
   );
 
-  expect(markup).toContain('还没有可阅读的资料');
-  expect(markup).toContain('参考资料');
+  expect(markup).toContain('课程内容准备中');
+  expect(markup).toContain('去刷题');
+  expect(markup).toContain('href="/questions"');
+  expect(markup).toContain('去模拟面试');
+  expect(markup).toContain('href="/interview"');
+  expect(markup).not.toContain('LEARNING LIBRARY');
+  expect(markup).not.toContain('Markdown');
 });

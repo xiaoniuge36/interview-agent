@@ -62,6 +62,8 @@ model Question {
   @@unique([tenantId, id])
   @@index([tenantId, visibility, status, difficulty])
   @@index([tenantId, updatedAt])
+  // 推荐/目录/复习选题大量使用 tags has/hasEvery，GIN 避免数组包含查询退化为顺序扫描
+  @@index([tags(ops: ArrayOps)], type: Gin)
 }
 
 model ImportTask {
@@ -135,7 +137,8 @@ model PracticeSession {
   tenant                 Tenant                @relation(fields: [tenantId], references: [id])
   user                   User                  @relation(fields: [tenantId, userId], references: [tenantId, id])
   jobIntent              JobIntent?            @relation(fields: [tenantId, jobIntentId], references: [tenantId, id])
-  sourceInterviewSession InterviewSession?     @relation("InterviewReviewPracticeSessions", fields: [sourceInterviewSessionId], references: [id], onDelete: SetNull)
+  // 复合外键保证跨租户不可误关联；复合 FK 下 SetNull 会连 tenantId 一起置空，故用 Restrict（生产代码不删除面试会话）
+  sourceInterviewSession InterviewSession?     @relation("InterviewReviewPracticeSessions", fields: [tenantId, sourceInterviewSessionId], references: [tenantId, id], onDelete: Restrict)
   items                  PracticeSessionItem[]
   report                 PracticeReport?
 

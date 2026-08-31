@@ -87,6 +87,15 @@ export function hasUnsavedPracticeAnswer(item: PracticeSession['items'][number],
   return draft.trim() !== (item.answer?.trim() ?? '');
 }
 
+/** Ctrl+Enter（mac ⌘+Enter）快捷保存：普通 Enter 必须留给换行。 */
+export function isPracticeSaveHotkey(event: {
+  key: string;
+  ctrlKey: boolean;
+  metaKey: boolean;
+}): boolean {
+  return event.key === 'Enter' && (event.ctrlKey || event.metaKey);
+}
+
 export function confirmPracticeNavigation(item: PracticeSession['items'][number], draft: string) {
   if (!hasUnsavedPracticeAnswer(item, draft)) return null;
   return {

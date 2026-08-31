@@ -63,7 +63,13 @@ export function practiceSessionData(
         }
       : {}),
     ...(input.sourceInterviewSessionId
-      ? { sourceInterviewSession: { connect: { id: input.sourceInterviewSessionId } } }
+      ? {
+          sourceInterviewSession: {
+            connect: {
+              tenantId_id: { tenantId: context.tenantId, id: input.sourceInterviewSessionId },
+            },
+          },
+        }
       : {}),
     mode: input.mode ?? (input.questionIds ? 'manual' : 'smart'),
     title: input.title ?? defaultPracticeTitle(input.mode),

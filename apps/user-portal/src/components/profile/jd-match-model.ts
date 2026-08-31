@@ -14,6 +14,9 @@ export type JdMatchItem = {
 export type JdMatchResult = {
   covered: JdMatchItem[];
   gaps: JdMatchItem[];
+  /** 每侧超过展示上限被截断的条数，UI 据此提示「还有 k 项未列出」。 */
+  coveredOmitted: number;
+  gapsOmitted: number;
 };
 
 const ASCII_ONLY = /^[\x20-\x7e]+$/;
@@ -39,7 +42,7 @@ export function matchJdWithMastery(
   limit = DEFAULT_MATCH_LIMIT,
 ): JdMatchResult {
   const context = jdContext.toLowerCase();
-  if (!context.trim()) return { covered: [], gaps: [] };
+  if (!context.trim()) return { covered: [], gaps: [], coveredOmitted: 0, gapsOmitted: 0 };
   const matched = profiles
     .filter((profile) => {
       const tag = profile.tag.trim().toLowerCase();
@@ -50,13 +53,18 @@ export function matchJdWithMastery(
       score: Math.round(profile.score),
       evidenceCount: profile.evidenceCount,
     }));
-  const covered = matched
+  const allCovered = matched
     .filter((item) => item.score >= JD_COVERED_SCORE)
-    .sort((left, right) => right.score - left.score)
-    .slice(0, limit);
-  const gaps = matched
+    .sort((left, right) => right.score - left.score);
+  const allGaps = matched
     .filter((item) => item.score < JD_COVERED_SCORE)
-    .sort((left, right) => left.score - right.score)
-    .slice(0, limit);
-  return { covered, gaps };
+    .sort((left, right) => left.score - right.score);
+  const covered = allCovered.slice(0, limit);
+  const gaps = allGaps.slice(0, limit);
+  return {
+    covered,
+    gaps,
+    coveredOmitted: allCovered.length - covered.length,
+    gapsOmitted: allGaps.length - gaps.length,
+  };
 }

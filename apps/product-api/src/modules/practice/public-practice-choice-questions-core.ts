@@ -93,7 +93,8 @@ export const DATA_CHOICE_INPUTS: PublicChoiceQuestionInput[] = [
       'b.status 为 NULL 的行也会保留',
     ],
     correctOptionIds: ['B'],
-    answer: 'B。右表字段在 WHERE 中过滤会剔除 NULL 行，使 LEFT JOIN 退化为 INNER JOIN；应把条件写进 ON。',
+    answer:
+      'B。右表字段在 WHERE 中过滤会剔除 NULL 行，使 LEFT JOIN 退化为 INNER JOIN；应把条件写进 ON。',
     tags: ['SQL', '数据处理'],
     difficulty: 'medium',
   },
@@ -108,7 +109,8 @@ export const DATA_CHOICE_INPUTS: PublicChoiceQuestionInput[] = [
       '效果量（提升幅度）达到 3%',
     ],
     correctOptionIds: ['C'],
-    answer: 'C。p 值是条件概率：假设原假设成立时出现当前或更极端数据的概率，不是假设本身为真的概率。',
+    answer:
+      'C。p 值是条件概率：假设原假设成立时出现当前或更极端数据的概率，不是假设本身为真的概率。',
     tags: ['统计思维', 'A/B 测试'],
     difficulty: 'medium',
   },

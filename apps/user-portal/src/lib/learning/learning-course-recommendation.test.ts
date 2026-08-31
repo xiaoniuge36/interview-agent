@@ -36,7 +36,6 @@ describe('recommendCoursesForWeakness', () => {
       },
     ]);
   });
-
 });
 
 describe('recommendCoursesForWeakness 过滤与排序', () => {
@@ -52,11 +51,7 @@ describe('recommendCoursesForWeakness 过滤与排序', () => {
 
   it('命中数相同的课程按最低分升序（更薄弱的优先），并按 limit 截断', () => {
     const recommendations = recommendCoursesForWeakness(
-      [
-        weakSignal(['Tool Calling'], 55),
-        weakSignal(['RAG'], 30),
-        weakSignal(['Agent 评估'], 45),
-      ],
+      [weakSignal(['Tool Calling'], 55), weakSignal(['RAG'], 30), weakSignal(['Agent 评估'], 45)],
       { limit: 2 },
     );
 
@@ -64,9 +59,7 @@ describe('recommendCoursesForWeakness 过滤与排序', () => {
   });
 
   it('同一道题多个标签指向同一课程时只计一次弱项', () => {
-    const recommendations = recommendCoursesForWeakness([
-      weakSignal(['ReAct', 'ReAct'], 30),
-    ]);
+    const recommendations = recommendCoursesForWeakness([weakSignal(['ReAct', 'ReAct'], 30)]);
 
     expect(recommendations).toHaveLength(1);
     expect(recommendations[0]!.weakCount).toBe(1);

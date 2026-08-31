@@ -5,6 +5,7 @@ import {
 } from '@interview-agent/contracts';
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
+import { AiThrottle } from '../../common/security/ai-throttle';
 import { ModelCredentialService } from './model-credential.service';
 
 @Roles('user', 'admin', 'platform_admin')
@@ -35,6 +36,7 @@ export class ModelCredentialController {
     );
   }
 
+  @AiThrottle()
   @Post(':credentialId/test')
   test(@Req() request: ProductRequest, @Param('credentialId') credentialId: string) {
     return this.credentials.testConnection(request.context, credentialId);

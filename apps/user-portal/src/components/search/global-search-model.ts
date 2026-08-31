@@ -77,10 +77,11 @@ export const SEARCH_PAGES = [
   {
     id: 'questions',
     glyph: '⌘',
-    title: '自主刷题',
+    // title 与 NAV_ITEMS.label 保持一字不差：搜索结果里的页面名即导航名
+    title: '刷题',
     description: '筛选并组合自己的练习题单',
     href: '/questions',
-    keywords: ['题库', '选题', '练习'],
+    keywords: ['题库', '选题', '练习', '自主刷题'],
   },
   {
     id: 'profile',
@@ -93,10 +94,10 @@ export const SEARCH_PAGES = [
   {
     id: 'interview',
     glyph: '◉',
-    title: '面试工作室',
+    title: '模拟面试',
     description: '开始真实追问和 AI 模拟面试',
     href: '/interview',
-    keywords: ['模拟面试', '追问', '语音'],
+    keywords: ['模拟面试', '追问', '语音', '面试工作室'],
   },
   {
     id: 'practice',

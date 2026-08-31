@@ -22,7 +22,6 @@ import {
 } from './import-mappers';
 import { MarkdownImportExtractor } from './markdown-import-extractor';
 
-const IMPORT_LIST_LIMIT = 100;
 const IMPORT_EXPORT_LIMIT = 10_000;
 const PAGE_INDEX_OFFSET = 1;
 const REVIEW_SOURCE_CHUNK_LIMIT = 200;
@@ -109,16 +108,6 @@ export class ImportService {
       };
     });
     return created.task;
-  }
-
-  async list(context: ProductRequestContext): Promise<ImportTask[]> {
-    this.assertPermission(context);
-    const tasks = await this.prisma.importTask.findMany({
-      where: { tenantId: context.tenantId },
-      orderBy: { updatedAt: 'desc' },
-      take: IMPORT_LIST_LIMIT,
-    });
-    return this.withCandidateReviewProgress(context.tenantId, tasks);
   }
 
   async reviewContext(

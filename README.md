@@ -43,8 +43,10 @@ interview-agent/
 │  ├─ product-api/            # NestJS Product API，默认端口 7101
 │  └─ agent-runtime/          # FastAPI Agent Runtime，默认端口 7103
 ├─ packages/
+│  ├─ api-client/             # Web/Admin 共用的 API 请求内核（校验、重试、single-flight）
 │  ├─ auth-client/            # Web/Admin 共用的 development/OIDC 认证客户端
-│  └─ contracts/              # TypeScript/Zod 契约与 Runtime Schema 生成源
+│  ├─ contracts/              # TypeScript/Zod 契约与 Runtime Schema 生成源
+│  └─ page-agent-client/      # 页面 Agent（浮窗助手）运行时的共享客户端
 ├─ infra/docker/              # 本地集成环境 Docker Compose
 ├─ .github/                   # CI、Dependabot、CODEOWNERS 与 PR 模板
 ├─ 需求/                      # 产品范围与冻结稿，不参与构建

@@ -73,7 +73,8 @@ export const GROWTH_CHOICE_INPUTS: PublicChoiceQuestionInput[] = [
       '私域不需要内容运营',
     ],
     correctOptionIds: ['A'],
-    answer: 'A。核心区别在触达权：私域可低成本反复触达（社群、公众号、企微），公域受平台规则与付费约束。',
+    answer:
+      'A。核心区别在触达权：私域可低成本反复触达（社群、公众号、企微），公域受平台规则与付费约束。',
     tags: ['私域运营', '流量运营'],
   },
 ];
@@ -101,7 +102,12 @@ export const BUSINESS_CHOICE_INPUTS: PublicChoiceQuestionInput[] = [
     suffix: 'business-choice-triangle',
     title: '项目管理三角形指哪三个约束？',
     stem: '「项目管理铁三角」互相制衡的三要素是？',
-    options: ['人力、物力、财力', '范围、时间、成本（质量受三者共同影响）', '计划、执行、复盘', '客户、团队、老板'],
+    options: [
+      '人力、物力、财力',
+      '范围、时间、成本（质量受三者共同影响）',
+      '计划、执行、复盘',
+      '客户、团队、老板',
+    ],
     correctOptionIds: ['B'],
     answer: 'B。范围、时间、成本三者互相约束，改变任意一角必然影响其他角或最终质量。',
     tags: ['项目管理', '铁三角'],
@@ -117,7 +123,8 @@ export const BUSINESS_CHOICE_INPUTS: PublicChoiceQuestionInput[] = [
       '竞争对手的关键联系人',
     ],
     correctOptionIds: ['B'],
-    answer: 'B。Champion 是客户内部的支持者与内线，帮你获取信息、影响决策链；经营 Champion 是赢单关键。',
+    answer:
+      'B。Champion 是客户内部的支持者与内线，帮你获取信息、影响决策链；经营 Champion 是赢单关键。',
     tags: ['大客户销售', 'MEDDIC'],
     difficulty: 'medium',
   },
@@ -125,7 +132,12 @@ export const BUSINESS_CHOICE_INPUTS: PublicChoiceQuestionInput[] = [
     suffix: 'business-choice-health-score',
     title: '客户成功健康分通常不包含哪类信号？',
     stem: '构建客户健康度模型时，以下哪项通常不是健康分输入？',
-    options: ['产品活跃度与核心功能使用深度', '服务工单与投诉趋势', '关键干系人变动与续约沟通反馈', '客户公司的股票代码'],
+    options: [
+      '产品活跃度与核心功能使用深度',
+      '服务工单与投诉趋势',
+      '关键干系人变动与续约沟通反馈',
+      '客户公司的股票代码',
+    ],
     correctOptionIds: ['D'],
     answer: 'D。健康分围绕使用行为、服务体验、关系与商务信号构建；股票代码本身不构成健康信号。',
     tags: ['客户成功', '健康分'],
@@ -141,7 +153,8 @@ export const BUSINESS_CHOICE_INPUTS: PublicChoiceQuestionInput[] = [
       '双方的合同模板',
     ],
     correctOptionIds: ['B'],
-    answer: 'B。BATNA 是谈不成时的最佳替代选项；替代方案越强底线越高，谈判前应主动改善自己的 BATNA。',
+    answer:
+      'B。BATNA 是谈不成时的最佳替代选项；替代方案越强底线越高，谈判前应主动改善自己的 BATNA。',
     tags: ['商务谈判', 'BATNA'],
     difficulty: 'medium',
   },
@@ -162,7 +175,8 @@ export const GENERIC_CHOICE_INPUTS: PublicChoiceQuestionInput[] = [
       '开场、主体、总结、反问',
     ],
     correctOptionIds: ['B'],
-    answer: 'B。STAR=Situation 情境、Task 任务、Action 行动、Result 结果，重点笔墨放在行动与可量化结果。',
+    answer:
+      'B。STAR=Situation 情境、Task 任务、Action 行动、Result 结果，重点笔墨放在行动与可量化结果。',
     tags: ['STAR', '面试方法'],
   },
   {

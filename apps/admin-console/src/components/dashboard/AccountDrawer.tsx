@@ -4,6 +4,7 @@ import { App, Button, Descriptions, Divider, Form, Input, Spin, Table, Typograph
 import type { AccountDetail } from '@interview-agent/contracts';
 import React, { useEffect, useState } from 'react';
 import { getAccountDetail, resetLocalPassword } from '@/lib/account-api';
+import { formatAdminDateTime } from '@/lib/format';
 import { AdminDrawer } from './AdminDrawer';
 
 type AccountDrawerProps = {
@@ -122,9 +123,5 @@ const AUDIT_COLUMNS = [
 ];
 
 function formatTime(value: string | null): string {
-  return value
-    ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short', timeStyle: 'short' }).format(
-        new Date(value),
-      )
-    : '—';
+  return value ? formatAdminDateTime(value) : '—';
 }

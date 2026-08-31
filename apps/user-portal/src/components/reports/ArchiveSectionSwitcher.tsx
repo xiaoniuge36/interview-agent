@@ -37,7 +37,7 @@ export function ArchiveSectionSwitcher({
       className="training-archive-sections motion-rise"
       style={SWITCHER_RISE_DELAY}
       role="group"
-      aria-label="切换训练档案分区"
+      aria-label="切换复盘中心分区"
     >
       {SECTIONS.map((item) => (
         <button

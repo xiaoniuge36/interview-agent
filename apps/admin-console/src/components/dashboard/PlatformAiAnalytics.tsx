@@ -1,39 +1,23 @@
 'use client';
 
-import {
-  Card,
-  Empty,
-  Select,
-  Statistic,
-  Table,
-  Tag,
-  Typography,
-  type TableColumnsType,
-} from 'antd';
+import { Card, Empty, Statistic, Table, Tag, Typography, type TableColumnsType } from 'antd';
 import type {
   AiInvocationOperation,
   ModelProvider,
   PlatformAiAnalytics as PlatformAiAnalyticsData,
   PlatformDashboardPeriod,
 } from '@interview-agent/contracts';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AdminApiError } from '@/lib/api';
+import { formatAdminDateTime } from '@/lib/format';
 import { getPlatformAiAnalytics } from '@/lib/platform-api';
 import { SectionFeedback } from './SectionState';
 import { AiGuardrailStatus } from './AiGuardrailStatus';
 import { AiQualityStatus } from './AiQualityStatus';
-import { operationLabel, OPERATION_OPTIONS } from './platform-ai-operations';
+import { operationLabel } from './platform-ai-operations';
+import { PlatformAiAnalyticsFilters } from './PlatformAiAnalyticsFilters';
 
 const HTTP_FORBIDDEN = 403;
-const PROVIDER_OPTIONS: { label: string; value: ModelProvider | 'all' }[] = [
-  { label: '全部提供商', value: 'all' },
-  { label: 'OpenAI', value: 'openai' },
-  { label: 'Anthropic', value: 'anthropic' },
-  { label: 'DeepSeek', value: 'deepseek' },
-  { label: 'Qwen', value: 'qwen' },
-  { label: '兼容端点', value: 'openai_compatible' },
-];
-const TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short', timeStyle: 'short' });
 
 type AnalyticsState =
   | { status: 'loading' }
@@ -52,12 +36,18 @@ export function PlatformAiAnalytics({
 }) {
   const [provider, setProvider] = useState<ModelProvider | 'all'>('all');
   const [operation, setOperation] = useState<AiInvocationOperation | 'all'>('all');
-  const state = usePlatformAiAnalytics({ active, period, provider, operation, refreshKey });
+  const { state, reload } = usePlatformAiAnalytics({
+    active,
+    period,
+    provider,
+    operation,
+    refreshKey,
+  });
   return (
     <section className="platform-ai-analytics" aria-labelledby="ai-analytics-heading">
       <div className="platform-ai-analytics-heading">
         <div>
-          <Typography.Text className="platform-bi-kicker">BYOK OBSERVABILITY</Typography.Text>
+          <Typography.Text className="platform-bi-kicker">BYOK 可观测性</Typography.Text>
           <Typography.Title id="ai-analytics-heading" level={3}>
             AI 调用洞察
           </Typography.Title>
@@ -65,24 +55,16 @@ export function PlatformAiAnalytics({
             基于真实模型调用的健康度，不记录用户的提示词、回答或模型正文。
           </Typography.Text>
         </div>
-        <div className="platform-ai-analytics-filters">
-          <Select
-            aria-label="提供商筛选"
-            onChange={setProvider}
-            options={PROVIDER_OPTIONS}
-            value={provider}
-          />
-          <Select
-            aria-label="调用类型筛选"
-            onChange={setOperation}
-            options={OPERATION_OPTIONS}
-            value={operation}
-          />
-        </div>
+        <PlatformAiAnalyticsFilters
+          provider={provider}
+          operation={operation}
+          onProviderChange={setProvider}
+          onOperationChange={setOperation}
+        />
       </div>
       {state.status === 'ready' ? <PlatformAiAnalyticsContent analytics={state.data} /> : null}
       {state.status !== 'ready' ? (
-        <SectionFeedback state={state} loadingMessage="正在汇总真实模型调用…" />
+        <SectionFeedback state={state} loadingMessage="正在汇总真实模型调用…" onRetry={reload} />
       ) : null}
     </section>
   );
@@ -228,7 +210,7 @@ const FAILURE_COLUMNS: TableColumnsType<PlatformAiAnalyticsData['recentFailures'
   {
     title: '时间',
     dataIndex: 'createdAt',
-    render: (value) => TIME_FORMATTER.format(new Date(value)),
+    render: (value) => formatAdminDateTime(value),
   },
 ];
 
@@ -238,8 +220,10 @@ function usePlatformAiAnalytics(input: {
   provider: ModelProvider | 'all';
   operation: AiInvocationOperation | 'all';
   refreshKey: number;
-}): AnalyticsState {
+}): { state: AnalyticsState; reload: () => void } {
   const [state, setState] = useState<AnalyticsState>({ status: 'loading' });
+  const [retryKey, setRetryKey] = useState(0);
+  const reload = useCallback(() => setRetryKey((value) => value + 1), []);
   const { active, operation, period, provider, refreshKey } = input;
   useEffect(() => {
     if (!active) return;
@@ -257,8 +241,8 @@ function usePlatformAiAnalytics(input: {
         );
       });
     return () => controller.abort();
-  }, [active, operation, period, provider, refreshKey]);
-  return state;
+  }, [active, operation, period, provider, refreshKey, retryKey]);
+  return { state, reload };
 }
 
 function queryFor(

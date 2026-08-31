@@ -7,6 +7,7 @@ import {
 } from '@interview-agent/contracts';
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
+import { AiThrottle } from '../../common/security/ai-throttle';
 import { createAiOperationSse, streamError } from '../../common/streaming/ai-operation-sse';
 import { PracticeService } from './practice.service';
 import { PracticeStarMaterialService } from './practice-star-material.service';
@@ -75,6 +76,7 @@ export class PracticeController {
     });
   }
 
+  @AiThrottle()
   @Post('practices/:id/items/:itemId/evaluate')
   evaluate(@Req() request: ProductRequest, @Param() params: PracticeAnswerParams) {
     return this.service.evaluate({
@@ -84,6 +86,7 @@ export class PracticeController {
     });
   }
 
+  @AiThrottle()
   @Post('practices/:id/items/:itemId/evaluate/stream')
   async evaluateStream(
     @Req() request: ProductRequest,
@@ -122,6 +125,7 @@ export class PracticeController {
     return this.service.completeSelfStudy(request.context, sessionId);
   }
 
+  @AiThrottle()
   @Post('practices/:id/submit')
   submit(@Req() request: ProductRequest, @Param('id') sessionId: string) {
     return this.service.submit(request.context, sessionId);

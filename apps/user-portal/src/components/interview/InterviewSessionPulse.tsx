@@ -1,4 +1,5 @@
 import type { AiOperationPhase, InterviewSession } from '@interview-agent/contracts';
+import { formatClockTime } from '@/lib/format';
 import { interviewSessionProgress } from './interview-state';
 import { interviewStageLabel } from './interview-labels';
 
@@ -20,7 +21,7 @@ export function InterviewSessionPulse({ session, phase, statusLabel }: Interview
   const progress = interviewSessionProgress(session);
   return (
     <section className="interview-session-pulse" aria-label="本轮面试状态">
-      <span>已回答 {progress.answered} 题</span>
+      <span>{pulseSummary(progress.answered, session)}</span>
       <strong>{progress.stage ? interviewStageLabel(progress.stage) : '准备开始'}</strong>
       <small>{phase ? PHASE_LABELS[phase] : statusLabel}</small>
       {session?.status === 'report_ready' ? (
@@ -30,4 +31,10 @@ export function InterviewSessionPulse({ session, phase, statusLabel }: Interview
       ) : null}
     </section>
   );
+}
+
+/* 会话没有独立的 startedAt 字段，createdAt 即本轮开始时刻。 */
+function pulseSummary(answered: number, session: InterviewSession | null): string {
+  const base = `已回答 ${answered} 题`;
+  return session ? `${base} · ${formatClockTime(session.createdAt)} 开始` : base;
 }

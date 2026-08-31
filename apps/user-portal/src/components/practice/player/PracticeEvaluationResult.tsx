@@ -64,7 +64,11 @@ function DimensionScores({ scores }: { scores: PracticeEvaluation['dimensionScor
                 <strong>{DIMENSION_LABELS[entry.dimension]}</strong>
                 <span>{value}</span>
               </div>
-              <progress value={value} max={100} aria-label={dimensionAria(entry.dimension, value)} />
+              <progress
+                value={value}
+                max={100}
+                aria-label={dimensionAria(entry.dimension, value)}
+              />
               {entry.comment ? <p>{entry.comment}</p> : null}
             </article>
           );

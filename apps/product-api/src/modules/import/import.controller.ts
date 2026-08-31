@@ -40,9 +40,4 @@ export class ImportController {
   reviewContext(@Req() request: ProductRequest, @Param('taskId') taskId: string) {
     return this.service.reviewContext(request.context, taskId);
   }
-
-  @Get()
-  list(@Req() request: ProductRequest) {
-    return this.service.list(request.context);
-  }
 }

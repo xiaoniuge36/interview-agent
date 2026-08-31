@@ -1,17 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type {
-  InterviewSessionSummary,
-  JobIntentPayload,
-  MasteryProfile,
-  PracticeHistoryItem,
-} from '@interview-agent/contracts';
-import { getLearningProgress } from '@/lib/learning-progress-api';
-import { listInterviews } from '@/lib/interview-api';
-import { getMasteryProfiles, listPracticeHistory } from '@/lib/practice-api';
-import { listJobIntents, updateJobIntentSchedule } from '@/lib/workspace-api';
+import { useEffect, useMemo, useState } from 'react';
+import type { JobIntentPayload } from '@interview-agent/contracts';
+import { updateJobIntentSchedule } from '@/lib/workspace-api';
 import {
   buildDailyTasks,
   collectTrainingDayKeys,
@@ -22,34 +14,78 @@ import {
   pickWeakFocus,
   recentActivity,
 } from './prep-plan-model';
+import { usePrepPlanData, type PrepPlanData } from './use-prep-plan-data';
 
-type PrepPlanData = {
-  practices: PracticeHistoryItem[];
-  interviews: InterviewSessionSummary[];
-  jobs: JobIntentPayload[];
-  jobsFailed: boolean;
-  learningUpdatedAt: string | null;
-  mastery: MasteryProfile[];
-};
+const SKELETON_PANELS = ['面试倒计时', '今日任务', '连续训练'] as const;
 
 /** 备考计划：面试倒计时 + 今日任务 + 连续训练。数据都来自既有记录，无需用户额外维护。 */
 export function PrepPlanCard() {
   const plan = usePrepPlanData();
-  if (!plan.data) return null;
+  if (plan.state.status === 'loading') return <PrepPlanSkeleton />;
+  if (plan.state.status === 'error') {
+    return <PrepPlanLoadError onRetry={() => void plan.reload()} />;
+  }
+  return <PrepPlanContent data={plan.state.data} onJobSaved={plan.applyJobUpdate} />;
+}
+
+function PrepPlanSkeleton() {
+  return (
+    <section
+      className="prep-plan motion-rise"
+      data-state="loading"
+      aria-label="备考计划"
+      aria-busy="true"
+    >
+      {SKELETON_PANELS.map((label) => (
+        <div key={label} className="prep-plan-skeleton-panel">
+          <header>
+            <strong>{label}</strong>
+            <span>读取中…</span>
+          </header>
+          <span className="prep-plan-skeleton-bar" data-size="lg" />
+          <span className="prep-plan-skeleton-bar" />
+          <span className="prep-plan-skeleton-bar" data-size="sm" />
+        </div>
+      ))}
+    </section>
+  );
+}
+
+export function PrepPlanLoadError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <section className="prep-plan motion-rise" data-state="error" aria-label="备考计划">
+      <div className="prep-plan-error" role="status">
+        <strong>备考计划暂时没有读取成功</strong>
+        <p>面试倒计时、今日任务和连续训练记录都还保存着，重新读取即可恢复。</p>
+        <button type="button" onClick={onRetry}>
+          重新读取
+        </button>
+      </div>
+    </section>
+  );
+}
+
+export function PrepPlanContent({
+  data,
+  onJobSaved,
+}: {
+  data: PrepPlanData;
+  onJobSaved: (job: JobIntentPayload) => void;
+}) {
   const today = new Date();
-  const days = collectTrainingDayKeys(plan.data.practices, plan.data.interviews);
+  const days = collectTrainingDayKeys(data.practices, data.interviews);
   const streak = computeTrainingStreak(days, today);
   return (
     <section className="prep-plan motion-rise" aria-label="备考计划">
       <CountdownPanel
-        jobs={plan.data.jobs}
-        jobsFailed={plan.data.jobsFailed}
+        jobs={data.jobs}
+        jobsFailed={data.jobsFailed}
         today={today}
-        onSaved={plan.applyJobUpdate}
+        onSaved={onJobSaved}
       />
       <DailyTasksPanel
-        tasks={buildDailyTasks({ ...plan.data, today })}
-        weakFocus={pickWeakFocus(plan.data.mastery)}
+        tasks={buildDailyTasks({ ...data, today })}
+        weakFocus={pickWeakFocus(data.mastery)}
       />
       <div className="prep-plan-streak">
         <header>
@@ -106,50 +142,6 @@ function DailyTasksPanel({
       ) : null}
     </div>
   );
-}
-
-function usePrepPlanData() {
-  const [data, setData] = useState<PrepPlanData | null>(null);
-  useEffect(() => {
-    let active = true;
-    void loadPrepPlanData().then((result) => {
-      if (active && result) setData(result);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-  const applyJobUpdate = useCallback((job: JobIntentPayload) => {
-    setData((current) =>
-      current
-        ? {
-            ...current,
-            jobs: current.jobs.map((item) => (item.intent.id === job.intent.id ? job : item)),
-          }
-        : current,
-    );
-  }, []);
-  return { data, applyJobUpdate };
-}
-
-async function loadPrepPlanData(): Promise<PrepPlanData | null> {
-  const [practices, interviews, jobs, learning, mastery] = await Promise.allSettled([
-    listPracticeHistory(),
-    listInterviews(),
-    listJobIntents(),
-    getLearningProgress(),
-    getMasteryProfiles(),
-  ]);
-  if (practices.status === 'rejected' && interviews.status === 'rejected') return null;
-  return {
-    practices: practices.status === 'fulfilled' ? practices.value : [],
-    interviews: interviews.status === 'fulfilled' ? interviews.value : [],
-    jobs: jobs.status === 'fulfilled' ? jobs.value : [],
-    jobsFailed: jobs.status === 'rejected',
-    learningUpdatedAt:
-      learning.status === 'fulfilled' ? (learning.value.progress?.updatedAt ?? null) : null,
-    mastery: mastery.status === 'fulfilled' ? mastery.value : [],
-  };
 }
 
 function CountdownPanel({

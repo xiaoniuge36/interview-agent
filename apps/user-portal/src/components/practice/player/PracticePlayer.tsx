@@ -13,6 +13,7 @@ import { PracticeNavigationDialog } from './PracticeNavigationDialog';
 import { PracticeQuestionNav } from './PracticeQuestionNav';
 import { PracticeQuestionStage } from './PracticeQuestionStage';
 import { PracticeRoundCompletionBar } from './PracticeRoundCompletionBar';
+import { practiceReturnLink, type PracticeReturnOrigin } from './practice-return-origin';
 import { usePracticePlayer } from './usePracticePlayer';
 
 type PracticePlayerState = ReturnType<typeof usePracticePlayer>;
@@ -51,7 +52,11 @@ function ActivePractice({ player }: { player: PracticePlayerState }) {
   };
   return (
     <div className="practice-player-page" data-user-agent-scope="practice-player">
-      <PlayerHeader title={session.title} progress={practiceProgress(session)} />
+      <PlayerHeader
+        title={session.title}
+        progress={practiceProgress(session)}
+        returnOrigin={player.returnOrigin}
+      />
       <PracticeEvidenceStrip session={session} compact />
       {player.message ? <PlayerMessage message={player.message} /> : null}
       <PracticeSessionContent
@@ -134,6 +139,8 @@ function PracticeSessionContent(props: PracticeSessionContentProps) {
         ) : (
           <PracticeFeedbackStep {...props} />
         )}
+        {/* 完成入口不依赖反馈步：全部题已作答后在作答步同样直达 STEP 03。 */}
+        <PracticeRoundCompletionBar player={props.player} />
       </div>
       {pendingNavigation ? (
         <PracticeNavigationDialog
@@ -186,26 +193,24 @@ function PracticeFeedbackStep(props: PracticeSessionContentProps) {
     props.onShowAnswer();
   };
   return (
-    <>
-      <PracticeCoachPanel
-        key={item.id}
-        sessionId={player.sessionId!}
-        item={item}
-        draft={props.draft}
-        solution={player.solutions[item.id]}
-        busy={player.busy}
-        issue={player.issue}
-        aiOperation={player.aiOperation}
-        confirmAiOnOpen={props.confirmAiOnOpen}
-        onRevealSolution={() => void player.revealSolution(item.id)}
-        onEvaluate={() => void player.evaluate(item.id)}
-        onOpenReview={props.onOpenReview}
-        onBackToAnswer={props.onShowAnswer}
-        hasNextQuestion={hasNextQuestion}
-        onNextQuestion={showNextQuestion}
-      />
-      <PracticeRoundCompletionBar player={player} />
-    </>
+    <PracticeCoachPanel
+      key={item.id}
+      sessionId={player.sessionId!}
+      item={item}
+      draft={props.draft}
+      solution={player.solutions[item.id]}
+      busy={player.busy}
+      issue={player.issue}
+      aiOperation={player.aiOperation}
+      confirmAiOnOpen={props.confirmAiOnOpen}
+      onRevealSolution={() => void player.revealSolution(item.id)}
+      onEvaluate={() => void player.evaluate(item.id)}
+      onCancelEvaluation={player.cancelEvaluation}
+      onOpenReview={props.onOpenReview}
+      onBackToAnswer={props.onShowAnswer}
+      hasNextQuestion={hasNextQuestion}
+      onNextQuestion={showNextQuestion}
+    />
   );
 }
 
@@ -238,14 +243,17 @@ function practiceNavigation(options: PracticeNavigationOptions) {
 function PlayerHeader({
   title,
   progress,
+  returnOrigin,
 }: {
   title: string;
   progress: ReturnType<typeof practiceProgress>;
+  returnOrigin: PracticeReturnOrigin;
 }) {
+  const returnLink = practiceReturnLink(returnOrigin);
   return (
     <header className="practice-player-header">
       <div>
-        <Link href="/questions">← 返回题库</Link>
+        <Link href={returnLink.href}>← {returnLink.label}</Link>
         <span>专注练习</span>
         <h1>{title}</h1>
       </div>

@@ -2,7 +2,8 @@ import type { StarMaterial } from '@interview-agent/contracts';
 import React, { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { StarMaterialLibraryContent } from './StarMaterialLibrary';
+import { formatDate } from '@/lib/format';
+import { StarMaterialLibraryContent, StarMaterialLibraryError } from './StarMaterialLibrary';
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 
@@ -37,6 +38,22 @@ describe('StarMaterialLibraryContent', () => {
     expect(markup).toContain('AI 高分示范');
     expect(markup).toContain('结构条理');
     expect(markup).toContain('复制素材');
+  });
+
+  it('评价时间使用全站统一的日期格式', () => {
+    const markup = render([material()]);
+
+    expect(markup).toContain(`${formatDate('2026-08-27T10:00:00.000Z')} 评价`);
+    expect(markup).toMatch(/\d{4}\/\d{2}\/\d{2} 评价/);
+  });
+
+  it('读取失败时提供重新读取入口', () => {
+    const markup = renderToStaticMarkup(
+      createElement(StarMaterialLibraryError, { onRetry: () => undefined }),
+    );
+
+    expect(markup).toContain('素材库暂时无法读取');
+    expect(markup).toContain('重新读取');
   });
 
   it('缺少示范答案时不渲染示范区块', () => {

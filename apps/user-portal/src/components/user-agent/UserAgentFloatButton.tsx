@@ -1,3 +1,4 @@
+import '@/app/styles/user-agent-float.css';
 import type { MouseEvent, PointerEvent } from 'react';
 import type { AgentStatus } from '@page-agent/core';
 import type { UserAgentFloatPosition } from './useUserAgentDrag';
@@ -16,11 +17,12 @@ export function UserAgentFloatButton(props: {
     process.env.NODE_ENV === 'development'
       ? 'user-agent-float development-float'
       : 'user-agent-float';
+  const actionLabel = props.open ? '收起 AI 刷题教练' : '打开 AI 刷题教练';
   return (
     <button
       aria-controls="user-agent-drawer"
       aria-expanded={props.open}
-      aria-label="打开 AI 刷题教练"
+      aria-label={actionLabel}
       className={className}
       data-page-agent-not-interactive="true"
       onClick={props.onClick}
@@ -29,7 +31,7 @@ export function UserAgentFloatButton(props: {
       onPointerUp={props.onPointerUp}
       onPointerCancel={props.onPointerCancel}
       style={{ right: props.position.right, bottom: props.position.bottom }}
-      title="打开 AI 刷题教练"
+      title={actionLabel}
       type="button"
     >
       <CoachMark />
@@ -49,15 +51,16 @@ export function UserAgentMobileTrigger(props: {
   status: AgentStatus;
   onClick: () => void;
 }) {
+  const actionLabel = props.open ? '收起 AI 刷题教练' : '打开 AI 刷题教练';
   return (
     <button
       aria-controls="user-agent-drawer"
       aria-expanded={props.open}
-      aria-label="打开 AI 刷题教练"
+      aria-label={actionLabel}
       className="user-agent-mobile-trigger"
       data-page-agent-not-interactive="true"
       onClick={props.onClick}
-      title="打开 AI 刷题教练"
+      title={actionLabel}
       type="button"
     >
       <CoachMark />

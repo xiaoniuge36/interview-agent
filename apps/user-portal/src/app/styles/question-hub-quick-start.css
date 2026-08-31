@@ -6,12 +6,11 @@
   padding: clamp(22px, 3vw, 32px);
   border: 1px solid color-mix(in srgb, var(--theme-primary) 26%, var(--outline));
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--theme-primary) 9%, var(--surface)),
-      var(--surface) 55%
-    );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-primary) 9%, var(--surface)),
+    var(--surface) 55%
+  );
   box-shadow: var(--shadow-soft);
 }
 

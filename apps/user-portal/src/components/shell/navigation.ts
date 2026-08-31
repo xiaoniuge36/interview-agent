@@ -14,7 +14,11 @@ export type NavigationItem = {
   step?: number;
 };
 
-/** C 端主导航：目标岗位从“我的 Agent”工作流进入，避免侧栏项过碎。 */
+/**
+ * C 端主导航：目标岗位从“我的 Agent”工作流进入，避免侧栏项过碎。
+ * label 是全站唯一叫法：侧栏、底栏、pending 播报、Agent 工具与全局搜索都从这里取，
+ * 禁止在渲染层再写一套别名（曾出现 今天/成长/面试工作台 多套并存导致用户迷路）。
+ */
 export const NAV_ITEMS: NavigationItem[] = [
   {
     id: 'home',
@@ -27,7 +31,7 @@ export const NAV_ITEMS: NavigationItem[] = [
   {
     id: 'questions',
     href: '/questions',
-    label: '自主刷题',
+    label: '刷题',
     title: '独立选题',
     helper: '筛选并组合 1–10 道题',
     icon: 'book',
@@ -52,7 +56,7 @@ export const NAV_ITEMS: NavigationItem[] = [
   {
     id: 'interview',
     href: '/interview',
-    label: '面试工作室',
+    label: '模拟面试',
     title: '模拟面试',
     helper: '开始真实追问与模拟',
     icon: 'mic',

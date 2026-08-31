@@ -1,3 +1,6 @@
+'use client';
+
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import type { SelectedQuestion } from './question-selection-storage';
 
 const MINUTES_PER_QUESTION = 4;
@@ -28,10 +31,11 @@ export function SelectedQuestionTray(props: SelectedQuestionTrayProps) {
     quickComposeDisabled,
     onStart,
   } = props;
+  const [confirmingClear, setConfirmingClear] = useState(false);
   return (
     <aside className="selected-question-tray" aria-labelledby="selected-question-heading">
       <TrayAgentNote selectedCount={selected.length} />
-      <SelectionHeader selectedCount={selected.length} onClear={onClear} />
+      <SelectionHeader selectedCount={selected.length} onClear={() => setConfirmingClear(true)} />
       <div
         className="selected-question-progress"
         aria-label={`题单完成度 ${selected.length}/${MAX_QUESTIONS}`}
@@ -42,6 +46,16 @@ export function SelectedQuestionTray(props: SelectedQuestionTrayProps) {
       <SelectionFeedback message={message} error={error} />
       <QuickCompose disabled={quickComposeDisabled} onQuickCompose={onQuickCompose} />
       <SelectionFooter selectedCount={selected.length} starting={starting} onStart={onStart} />
+      {confirmingClear ? (
+        <ClearSelectionDialog
+          selectedCount={selected.length}
+          onCancel={() => setConfirmingClear(false)}
+          onConfirm={() => {
+            setConfirmingClear(false);
+            onClear();
+          }}
+        />
+      ) : null}
     </aside>
   );
 }
@@ -170,6 +184,72 @@ function SparkIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z" />
     </svg>
+  );
+}
+
+/** 与练习内确认对话框一致：打开聚焦「取消」、Tab 双键循环、Escape 关闭、关闭归还焦点。 */
+function useClearDialogFocusTrap(onCancel: () => void) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    window.requestAnimationFrame(() => cancelRef.current?.focus());
+    return () => previousFocus?.focus();
+  }, []);
+  const trapKeydown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'Escape') return onCancel();
+    if (event.key !== 'Tab' || !cancelRef.current || !confirmRef.current) return;
+    event.preventDefault();
+    (document.activeElement === confirmRef.current
+      ? cancelRef.current
+      : confirmRef.current
+    ).focus();
+  };
+  return { cancelRef, confirmRef, trapKeydown };
+}
+
+/** 清空会一次丢掉最多 10 题的挑选且不可撤销：必须先确认。 */
+export function ClearSelectionDialog({
+  selectedCount,
+  onCancel,
+  onConfirm,
+}: {
+  selectedCount: number;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { cancelRef, confirmRef, trapKeydown } = useClearDialogFocusTrap(onCancel);
+  return (
+    <div className="practice-ai-confirmation-backdrop">
+      <section
+        className="practice-item-ai-confirmation practice-ai-confirmation-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="clear-selection-dialog-title"
+        aria-describedby="clear-selection-dialog-description"
+        onKeyDown={trapKeydown}
+      >
+        <header>
+          <span aria-hidden="true">清</span>
+          <div>
+            <small>本轮题单</small>
+            <h2 id="clear-selection-dialog-title">清空已选的 {selectedCount} 道题？</h2>
+          </div>
+        </header>
+        <p id="clear-selection-dialog-description">
+          清空后本轮题单需要重新挑选，此操作无法撤销；也可以在列表里逐题移除。
+        </p>
+        <footer>
+          <button ref={cancelRef} className="secondary" type="button" onClick={onCancel}>
+            保留题单
+          </button>
+          <button ref={confirmRef} type="button" onClick={onConfirm}>
+            清空题单
+          </button>
+        </footer>
+      </section>
+    </div>
   );
 }
 

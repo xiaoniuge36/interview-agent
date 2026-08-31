@@ -9,6 +9,7 @@ import type {
   MistakeBookSort,
 } from '@interview-agent/contracts';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
+import { formatDate, formatDateTime } from '@/lib/format';
 import { listPracticeMistakes, startMistakeReview } from '@/lib/practice-api';
 import {
   isMistakeBookReturnHash,
@@ -22,7 +23,6 @@ import { MistakeSortSwitch } from './MistakeSortSwitch';
 const REVIEW_MINUTES_PER_QUESTION = 8;
 /* 错题本独占一个分区，单页 8 条在压缩行高后约一屏半，翻页成本可控。 */
 const MISTAKE_BOOK_PAGE_SIZE = 8;
-const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium' });
 
 type MistakeState =
   | { status: 'loading' }
@@ -244,7 +244,7 @@ function MistakeBookRow({
         <span>分</span>
       </div>
       <div className="mistake-book-main">
-        <small>{DATE_FORMATTER.format(new Date(item.evaluatedAt))} · 低分评价</small>
+        <small>{formatDateTime(item.evaluatedAt)} · 低分评价</small>
         <h3 title={item.questionSnapshot.title}>{item.questionSnapshot.title}</h3>
         <p title={item.feedback}>{item.feedback}</p>
         <MistakeEvidence item={item} />
@@ -258,10 +258,18 @@ function MistakeBookRow({
         ) : (
           <em>题目已下架，仅保留历史回看</em>
         )}
-        {item.reviewedAt ? <small>已于 {formatDate(item.reviewedAt)} 复练</small> : null}
+        {item.reviewedAt ? (
+          <small>{reviewedNote(item.reviewedAt, item.canStartReview)}</small>
+        ) : null}
       </div>
     </article>
   );
+}
+
+/** 「已复练」不是终点：题目仍可再练时明确说出来，避免用户以为按钮失效。 */
+function reviewedNote(reviewedAt: string, canStartReview: boolean) {
+  const date = formatDate(reviewedAt);
+  return canStartReview ? `上次复练于 ${date}（可再次复练）` : `上次复练于 ${date}`;
 }
 
 function MistakeEvidence({ item }: { item: MistakeBookItem }) {
@@ -296,8 +304,4 @@ function MistakeBookState({ copy, onRetry }: { copy: string; onRetry?: () => voi
       ) : null}
     </section>
   );
-}
-
-function formatDate(value: string) {
-  return DATE_FORMATTER.format(new Date(value));
 }
