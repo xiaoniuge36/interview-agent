@@ -44,7 +44,7 @@ export function useUserAgentRuntime(options: UserAgentRuntimeOptions) {
           onTokens: setTokens,
           onAskUser,
         }),
-      fallbackMessage: '无法启动 AI 刷题教练。',
+      fallbackMessage: '无法启动 AI 训练助教。',
       isDisposed: () => disposed,
       onDispose: (next) => next.dispose(),
       onError: setError,

@@ -243,7 +243,7 @@ async function executeAgentTask(agent: PageAgentCore, options: AgentExecutionOpt
       errorCode: 'AGENT_EXECUTION_FAILED',
       errorSummary: error instanceof Error ? error.message : 'Agent execution failed',
     });
-    const content = error instanceof Error ? error.message : '刷题教练执行失败，请稍后重试。';
+    const content = error instanceof Error ? error.message : '训练助教执行失败，请稍后重试。';
     appendMessage(options.setMessages, 'error', content);
     void persistSafely(options, [{ role: 'error', content }]);
   }

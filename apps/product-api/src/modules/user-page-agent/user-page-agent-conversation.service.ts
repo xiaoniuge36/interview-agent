@@ -27,7 +27,7 @@ export class UserPageAgentConversationService extends PageAgentConversationCore 
       client: userConversationClient(prisma),
       notFound: {
         code: 'USER_AGENT_CONVERSATION_NOT_FOUND',
-        message: '刷题教练会话不存在或无权访问。',
+        message: '训练助教会话不存在或无权访问。',
       },
     });
   }

@@ -17,7 +17,7 @@ export function UserAgentFloatButton(props: {
     process.env.NODE_ENV === 'development'
       ? 'user-agent-float development-float'
       : 'user-agent-float';
-  const actionLabel = props.open ? '收起 AI 刷题教练' : '打开 AI 刷题教练';
+  const actionLabel = props.open ? '收起 AI 训练助教' : '打开 AI 训练助教';
   return (
     <button
       aria-controls="user-agent-drawer"
@@ -40,7 +40,7 @@ export function UserAgentFloatButton(props: {
         className={`user-agent-float-status${props.status === 'running' ? ' is-running' : ''}`}
       />
       <span aria-hidden="true" className="user-agent-float-label">
-        AI 刷题教练
+        AI 训练助教
       </span>
     </button>
   );
@@ -51,7 +51,7 @@ export function UserAgentMobileTrigger(props: {
   status: AgentStatus;
   onClick: () => void;
 }) {
-  const actionLabel = props.open ? '收起 AI 刷题教练' : '打开 AI 刷题教练';
+  const actionLabel = props.open ? '收起 AI 训练助教' : '打开 AI 训练助教';
   return (
     <button
       aria-controls="user-agent-drawer"
@@ -69,7 +69,7 @@ export function UserAgentMobileTrigger(props: {
         className={`user-agent-float-status${props.status === 'running' ? ' is-running' : ''}`}
       />
       <span aria-hidden="true" className="user-agent-mobile-label">
-        教练
+        助教
       </span>
     </button>
   );

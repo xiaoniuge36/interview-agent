@@ -16,7 +16,7 @@ export function UserAgentComposer(props: {
   return (
     <form className="user-agent-composer" onSubmit={submit}>
       <textarea
-        aria-label="向 AI 刷题教练提问"
+        aria-label="向 AI 训练助教提问"
         disabled={props.busy}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={(event) => {

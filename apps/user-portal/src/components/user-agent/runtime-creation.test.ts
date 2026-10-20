@@ -3,7 +3,7 @@ import { runRuntimeCreation } from './runtime-creation';
 
 function handlers(disposed = false) {
   return {
-    fallbackMessage: '无法启动 AI 刷题教练。',
+    fallbackMessage: '无法启动 AI 训练助教。',
     isDisposed: () => disposed,
     onDispose: vi.fn(),
     onError: vi.fn(),
@@ -51,7 +51,7 @@ describe('runtime creation 失败结算', () => {
     await expect(
       runRuntimeCreation({ ...events, create: () => Promise.reject('unavailable') }),
     ).resolves.toBe(false);
-    expect(events.onError).toHaveBeenCalledWith('无法启动 AI 刷题教练。');
+    expect(events.onError).toHaveBeenCalledWith('无法启动 AI 训练助教。');
   });
 
   it('已 disposed lifecycle 忽略失败', async () => {

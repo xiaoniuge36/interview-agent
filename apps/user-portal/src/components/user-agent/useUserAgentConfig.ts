@@ -16,7 +16,7 @@ export function useUserAgentConfig() {
         setError(null);
       },
       onError: (reason) => {
-        setError(reason instanceof Error ? reason.message : '无法读取刷题教练配置。');
+        setError(reason instanceof Error ? reason.message : '无法读取训练助教配置。');
       },
       onSettled: () => setLoading(false),
     });

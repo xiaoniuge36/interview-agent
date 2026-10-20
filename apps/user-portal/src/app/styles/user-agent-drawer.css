@@ -66,15 +66,20 @@
   font-size: 12px;
 }
 .user-agent-model {
-  max-width: 135px;
+  display: inline-block;
+  max-width: 300px;
   overflow: hidden;
   border: 1px solid #c9dbf4;
   border-radius: 999px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   color: #265ca7;
   font-size: 11px;
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.user-agent-model:hover {
+  border-color: #265ca7;
 }
 .user-agent-header-action,
 .user-agent-close {
@@ -84,8 +89,11 @@
   cursor: pointer;
 }
 .user-agent-header-action {
+  display: inline-flex;
+  align-items: center;
   padding: 6px 7px;
   font-size: 12px;
+  text-decoration: none;
 }
 .user-agent-close {
   width: 32px;

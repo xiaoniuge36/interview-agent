@@ -112,7 +112,7 @@ function AgentHandoffNotice({ visible }: { visible: boolean }) {
   if (!visible) return null;
   return (
     <p className="question-agent-handoff" role="status">
-      AI 刷题教练已为你带到推荐训练入口；确认采用后才会创建本轮题单。
+      AI 训练助教已为你带到推荐训练入口；确认采用后才会创建本轮题单。
     </p>
   );
 }

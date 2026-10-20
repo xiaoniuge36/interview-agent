@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { UserPageAgentConfig } from '@/lib/user-page-agent-api';
 import { UserAgentComposer } from './UserAgentComposer';
 import { UserAgentConversationSidebar } from './UserAgentConversationSidebar';
@@ -24,13 +25,13 @@ export function UserAgentDrawer(props: UserAgentDrawerProps) {
   return (
     <div className="user-agent-layer" data-page-agent-not-interactive="true">
       <button
-        aria-label="关闭 AI 刷题教练"
+        aria-label="关闭 AI 训练助教"
         className="user-agent-backdrop"
         type="button"
         onClick={props.onClose}
       />
       <section
-        aria-label="AI 刷题教练"
+        aria-label="AI 训练助教"
         aria-modal={presentation.ariaModal}
         className="user-agent-drawer"
         id="user-agent-drawer"
@@ -38,7 +39,7 @@ export function UserAgentDrawer(props: UserAgentDrawerProps) {
         role="dialog"
         tabIndex={-1}
       >
-        <DrawerHeader config={props.config} onClose={props.onClose} onSetup={props.onSetup} />
+        <DrawerHeader config={props.config} onClose={props.onClose} />
         <div className="user-agent-drawer-body">
           <UserAgentConversationSidebar
             activeId={props.activeConversationId}
@@ -56,24 +57,29 @@ export function UserAgentDrawer(props: UserAgentDrawerProps) {
   );
 }
 
-function DrawerHeader(props: {
-  config: UserPageAgentConfig | null;
-  onClose: () => void;
-  onSetup: () => void;
-}) {
+function DrawerHeader(props: { config: UserPageAgentConfig | null; onClose: () => void }) {
   return (
     <header className="user-agent-drawer-header">
       <span className="user-agent-header-mark" aria-hidden="true">
         ✦
       </span>
       <div>
-        <strong>AI 刷题教练</strong>
+        <strong>AI 训练助教</strong>
         <small>结合你的岗位、档案和练习记录</small>
       </div>
-      {props.config?.model ? <span className="user-agent-model">{props.config.model}</span> : null}
-      <button className="user-agent-header-action" type="button" onClick={props.onSetup}>
+      {props.config?.model ? (
+        <Link
+          className="user-agent-model"
+          href="/settings"
+          title={`${props.config.model} · 打开模型设置`}
+          onClick={props.onClose}
+        >
+          {props.config.model}
+        </Link>
+      ) : null}
+      <Link className="user-agent-header-action" href="/settings" onClick={props.onClose}>
         模型
-      </button>
+      </Link>
       <button aria-label="关闭" className="user-agent-close" type="button" onClick={props.onClose}>
         ×
       </button>
@@ -116,7 +122,7 @@ function ChatNotices(props: UserAgentDrawerProps) {
 }
 
 function ChatContent(props: UserAgentDrawerProps) {
-  if (props.loading) return <div className="user-agent-loading">正在连接刷题教练…</div>;
+  if (props.loading) return <div className="user-agent-loading">正在连接训练助教…</div>;
   if (!props.config?.enabled)
     return <SetupState message={props.config?.message} onSetup={props.onSetup} />;
   const currentTitle =
@@ -230,7 +236,7 @@ function MessageList({ messages }: { messages: UserAgentMessage[] }) {
     <div className="user-agent-message-list">
       {messages.map((item) => (
         <article className={`user-agent-message is-${item.role}`} key={item.id}>
-          <span>{item.role === 'user' ? '你' : item.role === 'assistant' ? '教练' : '提示'}</span>
+          <span>{item.role === 'user' ? '你' : item.role === 'assistant' ? '助教' : '提示'}</span>
           <div>
             {item.content.split('\n').map((line, index) => (
               <p key={`${item.id}-${index}`}>{line || ' '}</p>

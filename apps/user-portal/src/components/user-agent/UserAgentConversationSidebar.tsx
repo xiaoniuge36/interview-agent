@@ -22,7 +22,7 @@ export function UserAgentConversationSidebar(props: SidebarProps) {
     );
   }, [props.conversations, query]);
   return (
-    <aside className="user-agent-conversation-sidebar" aria-label="AI 刷题教练历史对话">
+    <aside className="user-agent-conversation-sidebar" aria-label="AI 训练助教历史对话">
       <SidebarHeading onCreate={props.onCreate} />
       <ConversationSearch query={query} onChange={setQuery} />
       {props.loading ? <p className="user-agent-sidebar-state">正在加载历史对话...</p> : null}

@@ -92,7 +92,7 @@ test('keeps a model-backed coach conversation after the user refreshes the page'
 
   await signInUser(page, user);
   await openCoach(page);
-  const composer = page.getByLabel('向 AI 刷题教练提问');
+  const composer = page.getByLabel('向 AI 训练助教提问');
   await expect(composer).toBeEnabled();
   await composer.fill(question);
   await page.getByRole('button', { name: '发送' }).click();
@@ -111,8 +111,8 @@ test('keeps a model-backed coach conversation after the user refreshes the page'
 });
 
 async function openCoach(page: Page) {
-  await page.getByRole('button', { name: '打开 AI 刷题教练' }).click();
-  await expect(page.getByRole('dialog', { name: 'AI 刷题教练' })).toBeVisible();
+  await page.getByRole('button', { name: '打开 AI 训练助教' }).click();
+  await expect(page.getByRole('dialog', { name: 'AI 训练助教' })).toBeVisible();
 }
 
 async function verifyMobileDraftNavigation(page: Page) {

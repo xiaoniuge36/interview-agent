@@ -57,10 +57,10 @@ describe('UserAgentFloatButton', () => {
     );
 
     expect(markup).toContain('class="user-agent-mobile-trigger"');
-    expect(markup).toContain('aria-label="打开 AI 刷题教练"');
+    expect(markup).toContain('aria-label="打开 AI 训练助教"');
     expect(markup).toContain('aria-controls="user-agent-drawer"');
     expect(markup).toContain('aria-expanded="false"');
-    expect(markup).toContain('>教练<');
+    expect(markup).toContain('>助教<');
   });
 });
 

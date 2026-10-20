@@ -62,7 +62,7 @@ describe('UserPageAgentService', () => {
       enabled: false,
       model: null,
       provider: null,
-      message: '请先连接一个 AI 模型，刷题教练才能开始工作。',
+      message: '请先连接一个 AI 模型，训练助教才能开始工作。',
     });
     await expect(service.completion(context, request)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'MODEL_CONNECTION_REQUIRED' }),

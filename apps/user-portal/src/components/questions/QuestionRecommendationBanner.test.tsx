@@ -52,9 +52,9 @@ describe('QuestionRecommendationBanner', () => {
     const agentHandoffMarkup = renderBanner(true);
     const standardMarkup = renderBanner(false);
 
-    expect(agentHandoffMarkup).toContain('AI 刷题教练已为你带到推荐训练入口');
+    expect(agentHandoffMarkup).toContain('AI 训练助教已为你带到推荐训练入口');
     expect(agentHandoffMarkup).toContain('确认采用后才会创建本轮题单');
-    expect(standardMarkup).not.toContain('AI 刷题教练已为你带到推荐训练入口');
+    expect(standardMarkup).not.toContain('AI 训练助教已为你带到推荐训练入口');
   });
 });
 

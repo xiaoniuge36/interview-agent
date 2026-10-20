@@ -58,7 +58,7 @@ describe('optimistic navigation feedback', () => {
     const markup = renderToStaticMarkup(
       <MobileNavigationItems
         active="home"
-        agentTrigger={<button aria-label="打开 AI 刷题教练">教练</button>}
+        agentTrigger={<button aria-label="打开 AI 训练助教">助教</button>}
         pathname="/home"
         pending="reports"
         onNavigate={vi.fn()}
@@ -83,7 +83,7 @@ describe('mobile navigation semantics', () => {
     const markup = renderToStaticMarkup(
       <MobileNavigationItems
         active="home"
-        agentTrigger={<button aria-label="打开 AI 刷题教练">教练</button>}
+        agentTrigger={<button aria-label="打开 AI 训练助教">助教</button>}
         pathname="/home"
         pending={null}
         onNavigate={vi.fn()}
@@ -92,7 +92,7 @@ describe('mobile navigation semantics', () => {
     );
 
     const learnIndex = markup.indexOf('href="/learn"');
-    const coachIndex = markup.indexOf('aria-label="打开 AI 刷题教练"');
+    const coachIndex = markup.indexOf('aria-label="打开 AI 训练助教"');
     const interviewIndex = markup.indexOf('href="/interview"');
 
     expect(markup).not.toContain('href="/profile"');
