@@ -1,9 +1,13 @@
 import {
+  AvailableModelListSchema,
   CreateModelCredentialInputSchema,
+  DiscoverAvailableModelsInputSchema,
   ModelCredentialListSchema,
   ModelCredentialViewSchema,
   UpdateModelCredentialInputSchema,
+  type AvailableModel,
   type CreateModelCredentialInput,
+  type DiscoverAvailableModelsInput,
   type ModelCredentialView,
   type UpdateModelCredentialInput,
 } from '@interview-agent/contracts';
@@ -11,6 +15,19 @@ import { apiRequest } from './api';
 
 export function listModelCredentials(): Promise<ModelCredentialView[]> {
   return apiRequest({ path: '/model-credentials', schema: ModelCredentialListSchema });
+}
+
+export function discoverAvailableModels(
+  input: DiscoverAvailableModelsInput,
+): Promise<AvailableModel[]> {
+  return apiRequest({
+    path: '/model-credentials/available-models',
+    schema: AvailableModelListSchema,
+    init: {
+      method: 'POST',
+      body: JSON.stringify(DiscoverAvailableModelsInputSchema.parse(input)),
+    },
+  });
 }
 
 export function createModelCredential(

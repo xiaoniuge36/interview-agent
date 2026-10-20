@@ -1,4 +1,4 @@
-import type { ModelProvider } from '@interview-agent/contracts';
+import type { DiscoverAvailableModelsInput, ModelProvider } from '@interview-agent/contracts';
 
 export type ModelConnectionDraft = {
   provider: ModelProvider;
@@ -23,6 +23,36 @@ export const MODEL_PROVIDER_OPTIONS: Array<{ value: ModelProvider; label: string
 
 export function emptyModelConnection(): ModelConnectionDraft {
   return { provider: 'deepseek', model: 'deepseek-chat', baseUrl: '', apiKey: '', isDefault: true };
+}
+
+/**
+ * 表单里「获取模型」的前置校验：返回阻塞原因，可获取时返回 null。
+ * 已保存的连接复用服务端保存的密钥，因此可以只传 credentialId。
+ */
+export function modelCatalogBlocker(
+  value: ModelConnectionDraft,
+  credentialId: string | null,
+): string | null {
+  if (value.baseUrl.trim() && !validUrl(value.baseUrl)) return '请输入有效的 HTTPS Base URL。';
+  if (value.provider === 'openai_compatible' && !value.baseUrl.trim()) {
+    return '自定义兼容端点需要先填写 Base URL。';
+  }
+  if (!value.apiKey.trim() && !credentialId) return '请先填写 API Key，再获取模型列表。';
+  return null;
+}
+
+export function modelCatalogInput(
+  value: ModelConnectionDraft,
+  credentialId: string | null,
+): DiscoverAvailableModelsInput {
+  const baseUrl = value.baseUrl.trim();
+  const apiKey = value.apiKey.trim();
+  return {
+    provider: value.provider,
+    ...(baseUrl ? { baseUrl } : {}),
+    ...(apiKey ? { apiKey } : {}),
+    ...(credentialId ? { credentialId } : {}),
+  };
 }
 
 export function validateModelConnection(value: ModelConnectionDraft): ModelConnectionErrors {

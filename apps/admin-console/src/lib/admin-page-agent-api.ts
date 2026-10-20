@@ -1,9 +1,13 @@
 import {
+  AvailableModelListSchema,
   CreateModelCredentialInputSchema,
+  DiscoverAvailableModelsInputSchema,
   ModelCredentialListSchema,
   ModelCredentialViewSchema,
   UpdateModelCredentialInputSchema,
+  type AvailableModel,
   type CreateModelCredentialInput,
+  type DiscoverAvailableModelsInput,
   type ModelCredentialView,
   type UpdateModelCredentialInput,
 } from '@interview-agent/contracts';
@@ -74,6 +78,19 @@ export function testAdminModelCredential(credentialId: string): Promise<ModelCre
     path: `/model-credentials/${encodeURIComponent(credentialId)}/test`,
     schema: ModelCredentialViewSchema,
     init: { method: 'POST' },
+  });
+}
+
+export function discoverAdminAvailableModels(
+  input: DiscoverAvailableModelsInput,
+): Promise<AvailableModel[]> {
+  return adminRequest({
+    path: '/model-credentials/available-models',
+    schema: AvailableModelListSchema,
+    init: {
+      method: 'POST',
+      body: JSON.stringify(DiscoverAvailableModelsInputSchema.parse(input)),
+    },
   });
 }
 

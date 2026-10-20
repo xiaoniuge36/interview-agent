@@ -1,5 +1,7 @@
 import {
+  AvailableModelListSchema,
   CreateModelCredentialInputSchema,
+  DiscoverAvailableModelsInputSchema,
   ModelCredentialViewSchema,
   UpdateModelCredentialInputSchema,
 } from './schemas/model-credential';
@@ -106,4 +108,51 @@ test('编辑模型连接时支持服务商切换且兼容端点必须同时更�
     providerUpdate.success ? (providerUpdate.data as { provider?: string }).provider : undefined,
     'qwen',
   );
+});
+
+test('获取模型列表允许使用新填写的密钥或复用已保存的连接', () => {
+  assert.equal(
+    DiscoverAvailableModelsInputSchema.safeParse({
+      provider: 'deepseek',
+      apiKey: 'sk-one-time-secret',
+    }).success,
+    true,
+  );
+  assert.equal(
+    DiscoverAvailableModelsInputSchema.safeParse({
+      provider: 'deepseek',
+      credentialId: 'credential-1',
+    }).success,
+    true,
+  );
+});
+
+test('获取模型列表要求密钥或已保存连接，并继续校验端点安全', () => {
+  assert.equal(
+    DiscoverAvailableModelsInputSchema.safeParse({ provider: 'deepseek' }).success,
+    false,
+  );
+  assert.equal(
+    DiscoverAvailableModelsInputSchema.safeParse({
+      provider: 'openai_compatible',
+      apiKey: 'sk-one-time-secret',
+    }).success,
+    false,
+  );
+  assert.equal(
+    DiscoverAvailableModelsInputSchema.safeParse({
+      provider: 'openai_compatible',
+      apiKey: 'sk-one-time-secret',
+      baseUrl: 'https://localhost/v1',
+    }).success,
+    false,
+  );
+});
+
+test('模型列表只暴露模型标识和可读名称', () => {
+  assert.deepEqual(
+    AvailableModelListSchema.parse([{ id: 'deepseek-chat', label: 'DeepSeek Chat' }]),
+    [{ id: 'deepseek-chat', label: 'DeepSeek Chat' }],
+  );
+  assert.equal(AvailableModelListSchema.safeParse([{ id: '', label: 'x' }]).success, false);
 });

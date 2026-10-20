@@ -11,6 +11,8 @@ import {
   type ModelConnectionDraft,
 } from './model-connection-form';
 import { createExclusiveModelConnectionSaveRunner } from './model-connection-save';
+import { ModelCatalogResult, ModelNameField } from './ModelConnectionCatalog';
+import { useModelCatalog } from './model-catalog';
 
 type ModelConnectionEditorProps = {
   credential: ModelCredentialView | null;
@@ -29,7 +31,12 @@ export function ModelConnectionEditor({
   return (
     <form className="credential-editor" onSubmit={(event) => void form.submit(event)}>
       <EditorHeader existing={form.existing} />
-      <ConnectionFields draft={form.draft} existing={form.existing} update={form.update} />
+      <ConnectionFields
+        draft={form.draft}
+        existing={form.existing}
+        credentialId={credential?.id ?? null}
+        update={form.update}
+      />
       <EditorActions busy={form.busy} message={form.message} onCancel={onCancel} />
     </form>
   );
@@ -92,51 +99,59 @@ function EditorHeader({ existing }: { existing: boolean }) {
 function ConnectionFields({
   draft,
   existing,
+  credentialId,
   update,
-}: {
-  draft: ModelConnectionDraft;
-  existing: boolean;
-  update: (patch: Partial<ModelConnectionDraft>) => void;
-}) {
+}: FieldProps & { credentialId: string | null }) {
+  const catalog = useModelCatalog(draft, credentialId);
   return (
     <>
-      <ProviderAndModelFields draft={draft} existing={existing} update={update} />
+      <div className="settings-field-grid">
+        <ProviderField
+          draft={draft}
+          existing={existing}
+          update={(patch) => {
+            if (patch.provider !== undefined && patch.provider !== draft.provider) catalog.reset();
+            update(patch);
+          }}
+        />
+        <ModelNameField
+          model={draft.model}
+          fetching={catalog.state.kind === 'loading'}
+          update={update}
+          onFetch={catalog.fetchModels}
+        />
+      </div>
+      <ModelCatalogResult
+        state={catalog.state}
+        selected={draft.model}
+        onSelect={(model) => update({ model })}
+        onDismiss={catalog.reset}
+      />
       <EndpointAndKeyFields draft={draft} existing={existing} update={update} />
       <DefaultModelField checked={draft.isDefault ?? false} update={update} />
     </>
   );
 }
 
-function ProviderAndModelFields({ draft, existing, update }: FieldProps) {
+function ProviderField({ draft, existing, update }: FieldProps) {
   return (
-    <div className="settings-field-grid">
-      <label className="label">
-        Provider
-        <select
-          className="input"
-          value={draft.provider}
-          disabled={existing}
-          onChange={(event) =>
-            update({ provider: event.target.value as ModelConnectionDraft['provider'] })
-          }
-        >
-          {MODEL_PROVIDER_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="label">
-        模型名称
-        <input
-          className="input"
-          value={draft.model}
-          onChange={(event) => update({ model: event.target.value })}
-          placeholder="例如 deepseek-chat"
-        />
-      </label>
-    </div>
+    <label className="label">
+      Provider
+      <select
+        className="input"
+        value={draft.provider}
+        disabled={existing}
+        onChange={(event) =>
+          update({ provider: event.target.value as ModelConnectionDraft['provider'] })
+        }
+      >
+        {MODEL_PROVIDER_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

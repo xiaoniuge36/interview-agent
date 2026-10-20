@@ -5,7 +5,18 @@ import {
   providerStreamEvents,
   type ModelTokenUsage,
 } from './model-provider-stream';
-import { e2eModelStubUrl } from './model-provider-e2e';
+import {
+  catalogHeaders,
+  parseModelCatalog,
+  type ModelCatalogEntry,
+  type ModelCatalogRequest,
+} from './model-provider-catalog';
+import {
+  ANTHROPIC_API_VERSION,
+  baseUrlFor,
+  endpointFor,
+  modelsEndpointFor,
+} from './model-provider-endpoints';
 import {
   MODEL_PROVIDER_TRANSPORT,
   ModelProviderError,
@@ -16,6 +27,7 @@ import {
 import { compatibleUsageFromResponse } from './model-provider-usage';
 
 export { ModelProviderError } from './model-provider-request';
+export type { ModelCatalogEntry, ModelCatalogRequest } from './model-provider-catalog';
 
 export type ModelConnection = {
   provider: ModelProvider;
@@ -43,12 +55,6 @@ export type CompatibleModelInvocationRequest = ModelConnection &
     requestBody: Record<string, unknown>;
   };
 
-const DEFAULT_BASE_URLS: Record<Exclude<ModelProvider, 'openai_compatible'>, string> = {
-  openai: 'https://api.openai.com/v1',
-  anthropic: 'https://api.anthropic.com/v1',
-  deepseek: 'https://api.deepseek.com/v1',
-  qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-};
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
 const HTTP_TOO_MANY_REQUESTS = 429;
@@ -91,6 +97,22 @@ export class ModelProviderClient {
       systemPrompt: 'Respond with a compact JSON object only.',
       userPrompt: 'Return {"ok":true}.',
     });
+  }
+
+  async listModels(input: ModelCatalogRequest): Promise<ModelCatalogEntry[]> {
+    const response = await providerFetch(
+      modelsEndpointFor(input),
+      {
+        method: 'GET',
+        redirect: 'error',
+        headers: catalogHeaders(input),
+        signal: requestSignal(undefined, input.timeoutMs),
+      },
+      { transport: this.transport, timeoutMs: input.timeoutMs },
+    );
+    const payload = await readJsonResponse(response);
+    if (!response.ok) throw new ModelProviderError(errorCode(response.status));
+    return parseModelCatalog(payload);
   }
 
   async embed(input: ModelConnection & ModelRequestLimits, texts: string[]): Promise<number[][]> {
@@ -189,20 +211,6 @@ async function sendProviderRequest(
   return response;
 }
 
-function endpointFor(input: ModelConnection) {
-  const baseUrl = baseUrlFor(input).replace(/\/$/, '');
-  return input.provider === 'anthropic' ? `${baseUrl}/messages` : `${baseUrl}/chat/completions`;
-}
-
-function baseUrlFor(input: ModelConnection) {
-  const e2eStubUrl = e2eModelStubUrl();
-  if (e2eStubUrl) return e2eStubUrl;
-  if (input.baseUrl) return input.baseUrl;
-  if (input.provider === 'openai_compatible')
-    throw new ModelProviderError('MODEL_BASE_URL_REQUIRED');
-  return DEFAULT_BASE_URLS[input.provider];
-}
-
 function requestFor(input: ModelCompletionRequest): RequestInit {
   return input.provider === 'anthropic' ? anthropicRequest(input) : compatibleRequest(input);
 }
@@ -232,7 +240,7 @@ function anthropicRequest(input: ModelCompletionRequest): RequestInit {
     redirect: 'error',
     headers: {
       'x-api-key': input.apiKey,
-      'anthropic-version': '2023-06-01',
+      'anthropic-version': ANTHROPIC_API_VERSION,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

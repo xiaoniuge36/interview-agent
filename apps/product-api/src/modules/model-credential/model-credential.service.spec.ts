@@ -63,7 +63,10 @@ function createService() {
     }),
     decrypt: jest.fn().mockReturnValue('sk-real-secret'),
   };
-  const connectionTester = { test: jest.fn().mockResolvedValue(undefined) };
+  const connectionTester = {
+    test: jest.fn().mockResolvedValue(undefined),
+    listModels: jest.fn().mockResolvedValue([{ id: 'gpt-4.1', label: 'gpt-4.1' }]),
+  };
   const service = new ModelCredentialService(
     { prisma, policy, audit } as never,
     crypto as never,

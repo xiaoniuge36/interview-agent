@@ -3,7 +3,7 @@ import type { ModelProvider } from '@interview-agent/contracts';
 import type { ProductRequestContext } from '../../common/context/request-context';
 import { AiInvocationService } from '../ai-usage/ai-invocation.service';
 import { modelRequestLimits } from '../ai-usage/ai-budget-policy';
-import { ModelProviderClient } from './model-provider.client';
+import { ModelProviderClient, type ModelCatalogEntry } from './model-provider.client';
 
 export type ModelCredentialConnection = {
   id: string;
@@ -34,6 +34,17 @@ export class ModelCredentialConnectionTester {
         ...modelRequestLimits(budget),
       }),
     );
+  }
+
+  listModels(
+    credential: Pick<ModelCredentialConnection, 'provider' | 'baseUrl'>,
+    apiKey: string,
+  ): Promise<ModelCatalogEntry[]> {
+    return this.provider.listModels({
+      provider: credential.provider as ModelProvider,
+      baseUrl: credential.baseUrl,
+      apiKey,
+    });
   }
 }
 

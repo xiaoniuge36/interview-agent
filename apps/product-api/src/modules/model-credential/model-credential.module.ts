@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CommonModule } from '../../common/common.module';
 import { AiUsageModule } from '../ai-usage/ai-usage.module';
 import { CredentialCryptoService } from './credential-crypto.service';
+import { ModelCredentialCatalogService } from './model-credential-catalog.service';
 import { ModelCredentialConnectionTester } from './model-credential-connection-tester';
 import { ModelCredentialController } from './model-credential.controller';
 import { ModelCredentialInfrastructure } from './model-credential-infrastructure';
@@ -21,6 +22,7 @@ import { defaultProviderTransport, MODEL_PROVIDER_TRANSPORT } from './model-prov
     ModelCredentialInfrastructure,
     ModelCredentialResolver,
     ModelCredentialService,
+    ModelCredentialCatalogService,
   ],
   exports: [ModelCredentialResolver, ModelCredentialService, ModelProviderClient],
 })

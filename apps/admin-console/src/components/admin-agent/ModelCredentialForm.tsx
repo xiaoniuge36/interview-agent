@@ -14,6 +14,7 @@ import {
   toCredentialUpdateInput,
   type ModelCredentialFormValues,
 } from './model-credential-form-model';
+import { ModelCatalogPicker } from './ModelCatalogPicker';
 
 const PROVIDER_OPTIONS = [
   { label: 'OpenAI', value: 'openai' },
@@ -115,6 +116,7 @@ function CredentialFields({
   onSubmit,
   provider,
 }: Omit<Parameters<typeof CredentialForm>[0], 'error'>) {
+  const model = Form.useWatch('model', form) ?? '';
   return (
     <Form form={form} layout="vertical" onFinish={onSubmit}>
       <Form.Item
@@ -140,6 +142,14 @@ function CredentialFields({
         <Input.Password
           autoComplete="new-password"
           placeholder={credential ? '仅在轮换密钥时填写' : '仅提交到后端加密保存'}
+        />
+      </Form.Item>
+      <Form.Item label="可用模型" colon={false}>
+        <ModelCatalogPicker
+          credentialId={credential?.id ?? null}
+          form={form}
+          model={model}
+          onSelect={(selected) => form.setFieldsValue({ model: selected })}
         />
       </Form.Item>
       <Form.Item label="设为默认模型" name="isDefault" valuePropName="checked">

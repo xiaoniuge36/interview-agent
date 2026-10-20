@@ -94,11 +94,46 @@ export const ModelCredentialListSchema = z
   .array(ModelCredentialViewSchema)
   .max(CONTRACT_LIMITS.list);
 
+export const DiscoverAvailableModelsInputSchema = z
+  .object({
+    provider: ModelProviderSchema,
+    baseUrl: BaseUrlSchema.nullable().optional(),
+    apiKey: z.string().trim().min(API_KEY_MIN_LENGTH).max(CONTRACT_LIMITS.mediumText).optional(),
+    credentialId: z.string().min(1).optional(),
+  })
+  .superRefine((input, context) => {
+    if (!input.apiKey && !input.credentialId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['apiKey'],
+        message: '请先填写 API Key，或选择一条已保存的模型连接。',
+      });
+    }
+    if (input.provider === 'openai_compatible' && !input.baseUrl && !input.credentialId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['baseUrl'],
+        message: '自定义兼容端点必须填写 Base URL。',
+      });
+    }
+  });
+
+export const AvailableModelSchema = z.object({
+  id: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+  label: z.string().min(1).max(CONTRACT_LIMITS.shortText),
+});
+
+export const AvailableModelListSchema = z
+  .array(AvailableModelSchema)
+  .max(CONTRACT_LIMITS.largeList);
+
 export type ModelProvider = z.infer<typeof ModelProviderSchema>;
 export type ModelCredentialStatus = z.infer<typeof ModelCredentialStatusSchema>;
 export type CreateModelCredentialInput = z.infer<typeof CreateModelCredentialInputSchema>;
 export type UpdateModelCredentialInput = z.infer<typeof UpdateModelCredentialInputSchema>;
 export type ModelCredentialView = z.infer<typeof ModelCredentialViewSchema>;
+export type DiscoverAvailableModelsInput = z.infer<typeof DiscoverAvailableModelsInputSchema>;
+export type AvailableModel = z.infer<typeof AvailableModelSchema>;
 
 function isHttpsUrl(value: string) {
   try {

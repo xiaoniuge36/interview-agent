@@ -1,17 +1,22 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req } from '@nestjs/common';
 import {
   CreateModelCredentialInputSchema,
+  DiscoverAvailableModelsInputSchema,
   UpdateModelCredentialInputSchema,
 } from '@interview-agent/contracts';
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
 import { AiThrottle } from '../../common/security/ai-throttle';
+import { ModelCredentialCatalogService } from './model-credential-catalog.service';
 import { ModelCredentialService } from './model-credential.service';
 
 @Roles('user', 'admin', 'platform_admin')
 @Controller('model-credentials')
 export class ModelCredentialController {
-  constructor(private readonly credentials: ModelCredentialService) {}
+  constructor(
+    private readonly credentials: ModelCredentialService,
+    private readonly catalog: ModelCredentialCatalogService,
+  ) {}
 
   @Get()
   list(@Req() request: ProductRequest) {
@@ -40,6 +45,12 @@ export class ModelCredentialController {
   @Post(':credentialId/test')
   test(@Req() request: ProductRequest, @Param('credentialId') credentialId: string) {
     return this.credentials.testConnection(request.context, credentialId);
+  }
+
+  @AiThrottle()
+  @Post('available-models')
+  availableModels(@Req() request: ProductRequest, @Body() body: unknown) {
+    return this.catalog.discover(request.context, DiscoverAvailableModelsInputSchema.parse(body));
   }
 
   @Delete(':credentialId')

@@ -35,4 +35,26 @@ describe('ModelCredentialConnectionTester', () => {
       expect.objectContaining({ apiKey: 'sk-user-secret', provider: 'deepseek' }),
     );
   });
+
+  it('reads the model catalog without recording an AI invocation', async () => {
+    const provider = {
+      testConnection: jest.fn(),
+      listModels: jest.fn().mockResolvedValue([{ id: 'deepseek-chat', label: 'DeepSeek Chat' }]),
+    };
+    const invocations = { measure: jest.fn() };
+    const tester = new ModelCredentialConnectionTester(provider as never, invocations as never);
+
+    const models = await tester.listModels(
+      { provider: 'deepseek', baseUrl: null },
+      'sk-user-secret',
+    );
+
+    expect(models).toEqual([{ id: 'deepseek-chat', label: 'DeepSeek Chat' }]);
+    expect(provider.listModels).toHaveBeenCalledWith({
+      provider: 'deepseek',
+      baseUrl: null,
+      apiKey: 'sk-user-secret',
+    });
+    expect(invocations.measure).not.toHaveBeenCalled();
+  });
 });
