@@ -11,6 +11,8 @@ const RECENT_INVOCATION_MAX = 10;
 const OPERATION_BREAKDOWN_MAX = 8;
 const FAILURE_BREAKDOWN_MAX = 10;
 const TREND_POINT_MAX = 30;
+const PAGE_SIZE_DEFAULT = 10;
+const PAGE_SIZE_MAX = 50;
 
 export const AiUsagePeriodSchema = z.enum(['today', '7d', '30d']).default('7d');
 export const AiInvocationOperationSchema = z.enum([
@@ -78,6 +80,21 @@ export const AiUsageSummarySchema = z.object({
   totals: AiUsageTotalsSchema,
   byModel: z.array(AiUsageModelBreakdownSchema).max(MODEL_BREAKDOWN_MAX),
   recent: z.array(AiInvocationViewSchema).max(RECENT_INVOCATION_MAX),
+});
+
+export const AiInvocationPageQuerySchema = z.object({
+  period: AiUsagePeriodSchema,
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(PAGE_SIZE_MAX).default(PAGE_SIZE_DEFAULT),
+});
+
+export const AiInvocationPageSchema = z.object({
+  period: AiUsagePeriodSchema,
+  range: AiUsageRangeSchema,
+  page: z.number().int().min(1),
+  pageSize: z.number().int().min(1).max(PAGE_SIZE_MAX),
+  total: UsageCountSchema,
+  items: z.array(AiInvocationViewSchema).max(PAGE_SIZE_MAX),
 });
 
 const ProviderFilterSchema = z.string().trim().pipe(ModelProviderSchema);
@@ -149,6 +166,8 @@ export type AiUsageTotals = z.infer<typeof AiUsageTotalsSchema>;
 export type AiUsageModelBreakdown = z.infer<typeof AiUsageModelBreakdownSchema>;
 export type AiInvocationView = z.infer<typeof AiInvocationViewSchema>;
 export type AiUsageSummary = z.infer<typeof AiUsageSummarySchema>;
+export type AiInvocationPageQuery = z.infer<typeof AiInvocationPageQuerySchema>;
+export type AiInvocationPage = z.infer<typeof AiInvocationPageSchema>;
 export type PlatformAiAnalyticsQuery = z.infer<typeof PlatformAiAnalyticsQuerySchema>;
 export type AiUsageOperationBreakdown = z.infer<typeof AiUsageOperationBreakdownSchema>;
 export type AiUsageFailureBreakdown = z.infer<typeof AiUsageFailureBreakdownSchema>;

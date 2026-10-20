@@ -55,6 +55,51 @@ describe('AiUsageService', () => {
   });
 });
 
+describe('AiUsageService invocation paging', () => {
+  it('pages the caller invocations newest first and reports the total count', async () => {
+    const { service, store } = createService();
+    store.findMany.mockResolvedValueOnce([usageRecord()]);
+    store.count.mockResolvedValueOnce(24);
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-07-17T12:00:00.000Z'));
+    try {
+      const result = await service.invocations(context, { period: '7d', page: 3, pageSize: 10 });
+
+      expect(result).toMatchObject({ period: '7d', page: 3, pageSize: 10, total: 24 });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toMatchObject({ id: 'invoke-1', createdAt: expect.any(String) });
+    } finally {
+      jest.useRealTimers();
+    }
+    expect(store.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: 'tenant-1', userId: 'user-1' }),
+        skip: 20,
+        take: 10,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      }),
+    );
+    expect(store.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({ tenantId: 'tenant-1', userId: 'user-1' }),
+    });
+  });
+
+  it('rejects paging before reading private data when access is denied', async () => {
+    const { service, store } = createService({
+      assert: jest.fn(() => {
+        throw new Error('forbidden');
+      }),
+    });
+
+    await expect(
+      service.invocations(context, { period: 'today', page: 1, pageSize: 10 }),
+    ).rejects.toThrow('forbidden');
+
+    expect(store.findMany).not.toHaveBeenCalled();
+    expect(store.count).not.toHaveBeenCalled();
+  });
+});
+
 function createService(policyOverride: { assert?: jest.Mock } = {}) {
   const store = usageStore();
   const prisma = {
@@ -71,8 +116,9 @@ function usageStore() {
   const record = usageRecord();
   return {
     aggregate: jest.fn().mockResolvedValue({ _avg: { latencyMs: 320 }, _sum: { totalTokens: 42 } }),
+    count: jest.fn().mockResolvedValue(1),
     groupBy,
-    findMany: jest.fn().mockResolvedValueOnce([record]).mockResolvedValueOnce([record]),
+    findMany: jest.fn().mockResolvedValue([record]),
   };
 }
 

@@ -1,8 +1,10 @@
 import type { AiUsageSummary as AiUsageSummaryData } from '@interview-agent/contracts';
-import { createElement } from 'react';
+import React, { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { AiUsageSummaryContent } from './AiUsageSummary';
+
+(globalThis as typeof globalThis & { React: typeof React }).React = React;
 
 const summary: AiUsageSummaryData = {
   period: '7d',
@@ -44,12 +46,12 @@ const summary: AiUsageSummaryData = {
 };
 
 describe('AiUsageSummaryContent', () => {
-  it('explains missing token usage and renders a safe recent error state', () => {
+  it('explains missing token usage and keeps the detail table behind paging', () => {
     const markup = renderToStaticMarkup(createElement(AiUsageSummaryContent, { summary }));
 
     expect(markup).toContain('供应商尚未返回 token 用量');
-    expect(markup).toContain('单题评价');
-    expect(markup).toContain('失败');
+    expect(markup).toContain('deepseek-chat');
+    expect(markup).toContain('调用明细');
     expect(markup).not.toContain('prompt');
   });
 

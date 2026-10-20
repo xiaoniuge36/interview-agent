@@ -239,9 +239,15 @@ function totals(
   };
 }
 
-function toInvocationView(row: InvocationRow): AiInvocationView {
-  return { ...row, createdAt: row.createdAt.toISOString() };
+export function toInvocationView(row: InvocationRecord): AiInvocationView {
+  return {
+    ...row,
+    provider: row.provider as ModelProvider,
+    createdAt: row.createdAt.toISOString(),
+  };
 }
+
+type InvocationRecord = Omit<InvocationRow, 'provider'> & { provider: string };
 
 function analyticsStore(prisma: PrismaService): AnalyticsStore {
   return (prisma as unknown as { aiInvocation: AnalyticsStore }).aiInvocation;

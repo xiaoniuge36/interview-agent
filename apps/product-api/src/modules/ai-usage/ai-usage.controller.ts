@@ -1,5 +1,5 @@
 import { Controller, Get, Query, Req } from '@nestjs/common';
-import { AiUsageSummaryQuerySchema } from '@interview-agent/contracts';
+import { AiInvocationPageQuerySchema, AiUsageSummaryQuerySchema } from '@interview-agent/contracts';
 import { Roles } from '../../common/authz/roles.decorator';
 import type { ProductRequest } from '../../common/context/product-request';
 import { AiUsageService } from './ai-usage.service';
@@ -12,5 +12,10 @@ export class AiUsageController {
   @Get('summary')
   summary(@Req() request: ProductRequest, @Query() query: unknown) {
     return this.usage.summary(request.context, AiUsageSummaryQuerySchema.parse(query));
+  }
+
+  @Get('invocations')
+  invocations(@Req() request: ProductRequest, @Query() query: unknown) {
+    return this.usage.invocations(request.context, AiInvocationPageQuerySchema.parse(query));
   }
 }

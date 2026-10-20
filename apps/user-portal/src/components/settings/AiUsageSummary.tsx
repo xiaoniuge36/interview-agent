@@ -6,8 +6,9 @@ import type {
   AiUsageSummary as AiUsageSummaryData,
 } from '@interview-agent/contracts';
 import { CountUp } from '@/components/motion/CountUp';
-import { getAiUsageSummary } from '../../lib/ai-usage-api';
 import { createLatestRequestRunner } from '@interview-agent/api-client';
+import { getAiUsageSummary } from '../../lib/ai-usage-api';
+import { AiUsageInvocationsTable } from './AiUsageInvocationsTable';
 
 const PERIODS: { value: AiUsagePeriod; label: string }[] = [
   { value: 'today', label: '今日' },
@@ -63,27 +64,7 @@ export function AiUsageSummaryContent({ summary }: { summary: AiUsageSummaryData
   }
   return (
     <div className="ai-usage-content">
-      <div className="ai-usage-metrics">
-        <Metric
-          label="调用次数"
-          value={<CountUp value={summary.totals.invocations} format={formatNumber} />}
-        />
-        <Metric label="成功率" value={`${summary.totals.successRate}%`} />
-        <Metric
-          label="平均耗时"
-          value={<CountUp value={summary.totals.averageLatencyMs} format={(ms) => `${ms} ms`} />}
-        />
-        <Metric
-          label="返回 token"
-          value={
-            summary.totals.totalTokens === null ? (
-              '未提供'
-            ) : (
-              <CountUp value={summary.totals.totalTokens} format={formatNumber} />
-            )
-          }
-        />
-      </div>
+      <UsageMetrics totals={summary.totals} />
       {!summary.totals.usageAvailable ? (
         <p className="ai-usage-note">
           你的供应商尚未返回 token 用量，调用统计与健康度仍会正常记录。
@@ -91,8 +72,28 @@ export function AiUsageSummaryContent({ summary }: { summary: AiUsageSummaryData
       ) : null}
       <div className="ai-usage-details">
         <UsageModels summary={summary} />
-        <RecentInvocations summary={summary} />
+        <AiUsageInvocationsTable key={summary.period} period={summary.period} />
       </div>
+    </div>
+  );
+}
+
+function UsageMetrics({ totals }: { totals: AiUsageSummaryData['totals'] }) {
+  return (
+    <div className="ai-usage-metrics">
+      <Metric
+        label="调用次数"
+        value={<CountUp value={totals.invocations} format={formatNumber} />}
+      />
+      <Metric label="成功率" value={`${totals.successRate}%`} />
+      <Metric
+        label="平均耗时"
+        value={<CountUp value={totals.averageLatencyMs} format={(ms) => `${ms} ms`} />}
+      />
+      <Metric
+        label="返回 token"
+        value={totals.totalTokens === null ? '未提供' : formatNumber(totals.totalTokens)}
+      />
     </div>
   );
 }
@@ -113,28 +114,6 @@ function UsageModels({ summary }: { summary: AiUsageSummaryData }) {
             <span>{item.model}</span>
             <span>{item.provider}</span>
             <strong>{item.invocations} 次</strong>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function RecentInvocations({ summary }: { summary: AiUsageSummaryData }) {
-  return (
-    <div className="ai-usage-recent">
-      <h3>最近调用</h3>
-      <ul>
-        {summary.recent.map((item) => (
-          <li key={item.id}>
-            <div>
-              <strong>{operationLabel(item.operation)}</strong>
-              <span>{item.model}</span>
-            </div>
-            <span className={`ai-usage-status ${item.status}`}>{statusLabel(item.status)}</span>
-            <time dateTime={item.createdAt}>
-              {new Date(item.createdAt).toLocaleString('zh-CN')}
-            </time>
           </li>
         ))}
       </ul>
@@ -164,18 +143,6 @@ function useAiUsageSummary(period: AiUsagePeriod): UsageState {
     return request.invalidate;
   }, [period, request]);
   return state;
-}
-
-function operationLabel(operation: AiUsageSummaryData['recent'][number]['operation']): string {
-  if (operation === 'model_connection_test') return '连接测试';
-  if (operation === 'practice_evaluation') return '单题评价';
-  return '模拟面试';
-}
-
-function statusLabel(status: AiUsageSummaryData['recent'][number]['status']): string {
-  if (status === 'succeeded') return '成功';
-  if (status === 'cancelled') return '已取消';
-  return '失败';
 }
 
 function formatNumber(value: number): string {
