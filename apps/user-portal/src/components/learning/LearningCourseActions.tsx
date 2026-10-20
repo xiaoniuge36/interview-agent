@@ -7,6 +7,7 @@ import type { LearningHeading } from '@/lib/learning/learning-document-model';
 import type { LocalLearningVerification } from '@/lib/learning/learning-progress';
 import {
   isLearningVerificationReturnHash,
+  learningTopicForCourse,
   learningVerificationActionLabel,
   learningVerificationHref,
   LEARNING_COURSE_ACTIONS_ANCHOR,
@@ -46,6 +47,9 @@ export function LearningCourseActions({
       <div className="learning-course-action-buttons">
         {reviewHeading ? (
           <Link href={`#${reviewHeading.id}`}>复习本节 · {reviewHeading.title}</Link>
+        ) : null}
+        {learningTopicForCourse(course.slug) ? (
+          <Link href="#learning-question-shelf">看本课题目与答案</Link>
         ) : null}
         <ManualCompletionToggle
           completed={completed}

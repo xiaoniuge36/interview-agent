@@ -1,7 +1,9 @@
-﻿import { QuestionSchema } from '@interview-agent/contracts';
+import { QuestionSchema } from '@interview-agent/contracts';
 import { type RoleCategory } from '../../common/role-category';
 import { practiceCategoryTagFor } from './practice-question-categories';
 import { PUBLIC_PRACTICE_QUESTIONS } from './public-practice-questions';
+import { PUBLIC_RAG_DOCUMENT_QUESTIONS } from './public-rag-document-questions';
+import { PUBLIC_RAG_RETRIEVAL_QUESTIONS } from './public-rag-retrieval-questions';
 
 const CATEGORIES: RoleCategory[] = [
   'engineering',
@@ -18,7 +20,7 @@ const GENERALIST_CATEGORIES = CATEGORIES.filter((category) => category !== 'ai_a
 
 describe('PUBLIC_PRACTICE_QUESTIONS', () => {
   it('为每个岗位类别提供至少二十道可用题目，支撑多元岗位完整训练', () => {
-    expect(PUBLIC_PRACTICE_QUESTIONS).toHaveLength(192);
+    expect(PUBLIC_PRACTICE_QUESTIONS).toHaveLength(241);
     GENERALIST_CATEGORIES.forEach((category) => {
       const questions = PUBLIC_PRACTICE_QUESTIONS.filter((question) =>
         question.tags.includes(practiceCategoryTagFor(category)),
@@ -64,6 +66,42 @@ describe('PUBLIC_PRACTICE_QUESTIONS', () => {
         tags: expect.arrayContaining(['Agent Loop', 'Go', 'Tool Calling']),
       }),
     );
+  });
+});
+
+describe('LangChain 与 LangGraph 深层题', () => {
+  it('有可练习的答案、评分点和来源', () => {
+    const questions = PUBLIC_PRACTICE_QUESTIONS.filter((question) =>
+      question.id.startsWith('q-agent-bank-framework-'),
+    );
+    expect(questions).toHaveLength(34);
+    expect(questions.some((question) => question.title.includes('Pregel / super-step'))).toBe(true);
+    expect(questions.some((question) => question.title.includes('pending writes'))).toBe(true);
+    expect(questions.some((question) => question.title.includes('Runnable / LCEL'))).toBe(true);
+    questions.forEach((question) => {
+      expect(question.tags).toContain(practiceCategoryTagFor('ai_agent'));
+      expect(question.answer.length).toBeGreaterThan(30);
+      expect(question.rubric).toHaveLength(3);
+      expect(question.sourceRefs?.length).toBeGreaterThan(0);
+    });
+  });
+});
+
+describe('RAG 检索与知识图谱工程题', () => {
+  it('覆盖检索评测、融合、切片、图谱、文档解析与 OCR 的十五道题', () => {
+    const ragQuestions = [...PUBLIC_RAG_RETRIEVAL_QUESTIONS, ...PUBLIC_RAG_DOCUMENT_QUESTIONS];
+
+    expect(ragQuestions).toHaveLength(15);
+    expect(new Set(ragQuestions.map((question) => question.id)).size).toBe(15);
+
+    ragQuestions.forEach((question) => {
+      expect(question.tags).toContain(practiceCategoryTagFor('ai_agent'));
+      expect(question.tags).toContain('RAG');
+      expect(question.answer.length).toBeGreaterThan(80);
+      expect(question.rubric).toHaveLength(3);
+      expect(question.sourceRefs?.length).toBeGreaterThan(0);
+      expect(question.status).toBe('published');
+    });
   });
 });
 

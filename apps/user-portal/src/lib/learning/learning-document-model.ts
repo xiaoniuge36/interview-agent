@@ -13,6 +13,8 @@ export type LearningHeading = {
   depth: 2 | typeof TERTIARY_HEADING_DEPTH;
   id: string;
   title: string;
+  /** 标题在 Markdown 正文中的起始行（1 基）；渲染时按行号匹配锚点，避免计数型 ID 在开发态被重复调用改写。 */
+  line: number;
 };
 
 export type LearningDocument = {

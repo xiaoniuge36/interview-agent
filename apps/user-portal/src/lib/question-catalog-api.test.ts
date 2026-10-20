@@ -22,4 +22,11 @@ describe('题库目录请求路径', () => {
       '/question-catalog?company=%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8',
     );
   });
+
+  it('学习页题目速览显式请求参考答案', () => {
+    expect(questionCatalogPath({ tags: ['RAG'], includeAnswers: true })).toContain(
+      'includeAnswers=true',
+    );
+    expect(questionCatalogPath({ tags: ['RAG'] })).not.toContain('includeAnswers');
+  });
 });

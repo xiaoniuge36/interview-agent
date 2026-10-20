@@ -40,6 +40,7 @@ export function questionCatalogPath(input: Partial<QuestionCatalogQuery>) {
   append(params, 'type', input.type);
   append(params, 'difficulty', input.difficulty);
   append(params, 'sort', input.sort);
+  if (input.includeAnswers) params.set('includeAnswers', 'true');
   append(params, 'page', input.page);
   append(params, 'pageSize', input.pageSize);
   const query = params.toString();

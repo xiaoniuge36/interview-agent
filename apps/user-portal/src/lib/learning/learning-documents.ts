@@ -204,18 +204,22 @@ function firstHeading(content: string): string | null {
 function extractHeadings(content: string): LearningHeading[] {
   const ids = new Map<string, number>();
   let fenceMarker: string | null = null;
-  return content.split('\n').flatMap((line) => {
+  return content.split('\n').flatMap((line, index) => {
     const marker = line.match(/^\s*(`{3,}|~{3,})/)?.[1]?.[0] ?? null;
     if (marker) {
       fenceMarker = fenceMarker === marker ? null : (fenceMarker ?? marker);
       return [];
     }
     if (fenceMarker) return [];
-    return headingFromLine(line, ids);
+    return headingFromLine(line, ids, index + 1);
   });
 }
 
-function headingFromLine(line: string, ids: Map<string, number>): LearningHeading[] {
+function headingFromLine(
+  line: string,
+  ids: Map<string, number>,
+  lineNumber: number,
+): LearningHeading[] {
   const match = line.match(/^(#{2,3})\s+(.+?)\s*#*$/);
   if (!match) return [];
   const title = cleanHeading(match[2] ?? '');
@@ -227,6 +231,7 @@ function headingFromLine(line: string, ids: Map<string, number>): LearningHeadin
       depth: match[1]?.length === TERTIARY_HEADING_DEPTH ? TERTIARY_HEADING_DEPTH : 2,
       id: count === 1 ? baseId : `${baseId}-${count}`,
       title,
+      line: lineNumber,
     },
   ];
 }

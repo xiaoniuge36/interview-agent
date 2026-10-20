@@ -19,6 +19,7 @@ const context: ProductRequestContext = {
 describe('QuestionCatalogService', () => {
   it('scopes public and tenant questions and applies user filters', expectScopedCatalog);
   it('returns objective options without exposing correct option ids', expectSafeOptions);
+  it('only returns reference answers when includeAnswers is requested', expectAnswerVisibility);
 });
 
 async function expectScopedCatalog() {
@@ -53,6 +54,8 @@ async function expectScopedCatalog() {
       options: true,
       sourceRefs: true,
       status: true,
+      answer: true,
+      rubric: true,
     },
   });
   expectFacetQueryPlan(prisma);
@@ -87,6 +90,32 @@ async function expectSafeOptions() {
     label: '单选题',
     count: 1,
   });
+}
+
+async function expectAnswerVisibility() {
+  const { service, prisma } = createService();
+  const rubric = [{ point: '任务拆解', score: 4, description: '说明拆分依据。' }];
+  prisma.question.count.mockResolvedValue(1);
+  prisma.question.findMany.mockResolvedValue([questionRecord({ rubric })]);
+  prisma.$queryRaw.mockResolvedValue(facetTagCounts());
+  prisma.question.groupBy.mockImplementation(({ by }: { by: string[] }) =>
+    Promise.resolve(
+      by.includes('type')
+        ? [{ type: 'system_design', _count: { _all: 1 } }]
+        : [{ difficulty: 'hard', _count: { _all: 1 } }],
+    ),
+  );
+
+  const summary = await service.list(context, QuestionCatalogQuerySchema.parse({}));
+  const withAnswers = await service.list(
+    context,
+    QuestionCatalogQuerySchema.parse({ includeAnswers: 'true' }),
+  );
+
+  expect(summary.items[0]).not.toHaveProperty('answer');
+  expect(summary.items[0]).not.toHaveProperty('rubric');
+  expect(withAnswers.items[0]?.answer).toBe('先拆分任务，再设计状态与恢复机制。');
+  expect(withAnswers.items[0]?.rubric).toEqual(rubric);
 }
 
 function filteredQuery() {

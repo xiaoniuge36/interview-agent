@@ -61,8 +61,8 @@ tags: [Agent, 工程实践]
     });
     expect(documents[0]?.content).not.toContain('title: Agent 工程基础');
     expect(documents[0]?.headings).toEqual([
-      { depth: 2, id: '核心概念', title: '核心概念' },
-      { depth: 3, id: 'tool-calling', title: 'Tool Calling' },
+      { depth: 2, id: '核心概念', title: '核心概念', line: 3 },
+      { depth: 3, id: 'tool-calling', title: 'Tool Calling', line: 7 },
     ]);
   });
 });
@@ -114,7 +114,7 @@ describe('nested learning documents', () => {
 
     const documents = await loadLearningDocuments(root);
 
-    expect(documents[0]?.headings).toEqual([{ depth: 2, id: '真章节', title: '真章节' }]);
+    expect(documents[0]?.headings).toEqual([{ depth: 2, id: '真章节', title: '真章节', line: 7 }]);
   });
 });
 
@@ -152,9 +152,9 @@ describe('learning document selection', () => {
 describe('learning review heading', () => {
   it('uses the final self-review checkpoint and returns null when none exists', () => {
     const headings = [
-      { depth: 2 as const, id: 'baseline', title: '入学基线自测' },
-      { depth: 2 as const, id: 'build', title: '本课动手实验' },
-      { depth: 2 as const, id: 'final-review', title: 'Production Readiness Review' },
+      { depth: 2 as const, id: 'baseline', title: '入学基线自测', line: 1 },
+      { depth: 2 as const, id: 'build', title: '本课动手实验', line: 2 },
+      { depth: 2 as const, id: 'final-review', title: 'Production Readiness Review', line: 3 },
     ];
 
     expect(findLearningReviewHeading(headings)).toEqual(headings[2]);

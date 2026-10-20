@@ -135,6 +135,12 @@ export function learningCourseForTag(tag: string): LearningCourseSummary | null 
   return { slug: course.slug, title: course.title, topicLabel: course.topic.label };
 }
 
+/** 按课程 slug 取题库主题；未映射主题的课程（如学习地图）返回 null。 */
+export function learningTopicForCourse(courseSlug: string): { label: string; tag: string } | null {
+  const topic = courseBySlug(courseSlug)?.topic;
+  return topic ? { label: topic.label, tag: topic.tag } : null;
+}
+
 export type LearningVerification =
   | { status: 'inactive' }
   | { status: 'invalid' }

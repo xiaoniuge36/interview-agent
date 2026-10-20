@@ -4,6 +4,10 @@ import {
 } from './public-practice-question-builders';
 import { PUBLIC_AGENT_CHOICE_QUESTIONS } from './public-agent-choice-questions';
 import { PUBLIC_AGENT_OPEN_QUESTIONS } from './public-agent-open-questions';
+import { PUBLIC_AGENT_FRAMEWORK_OPEN_QUESTIONS } from './public-agent-framework-open-questions';
+import { PUBLIC_AGENT_FRAMEWORK_ENGINEERING_OPEN_QUESTIONS } from './public-agent-framework-engineering-open-questions';
+import { PUBLIC_RAG_RETRIEVAL_QUESTIONS } from './public-rag-retrieval-questions';
+import { PUBLIC_RAG_DOCUMENT_QUESTIONS } from './public-rag-document-questions';
 import {
   BUSINESS_CHOICE_INPUTS,
   GENERIC_CHOICE_INPUTS,
@@ -264,4 +268,8 @@ export const PUBLIC_PRACTICE_QUESTIONS = [
   ...buildPublicPracticeQuestions('data', DATA_HANDS_ON_INPUTS),
   ...PUBLIC_AGENT_CHOICE_QUESTIONS,
   ...PUBLIC_AGENT_OPEN_QUESTIONS,
+  ...PUBLIC_AGENT_FRAMEWORK_OPEN_QUESTIONS,
+  ...PUBLIC_AGENT_FRAMEWORK_ENGINEERING_OPEN_QUESTIONS,
+  ...PUBLIC_RAG_RETRIEVAL_QUESTIONS,
+  ...PUBLIC_RAG_DOCUMENT_QUESTIONS,
 ];

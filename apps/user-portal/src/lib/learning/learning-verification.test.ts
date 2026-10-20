@@ -2,6 +2,7 @@ import { expect, it } from 'vitest';
 import { loadLearningDocuments } from './learning-documents';
 import {
   learningPracticeHref,
+  learningTopicForCourse,
   learningVerificationHref,
   learningVerificationReturnHref,
   mappedLearningCourseSlugs,
@@ -82,6 +83,15 @@ it('keeps a known course with no exact tag mapping in an explicit unavailable st
     status: 'unavailable',
     courseSlug: '学习路线-00-学习地图与能力验收',
   });
+});
+
+it('resolves the question shelf topic for a course and skips unmapped courses', () => {
+  expect(learningTopicForCourse('学习路线-03-rag与agentic-rag')).toEqual({
+    label: 'RAG',
+    tag: 'RAG',
+  });
+  expect(learningTopicForCourse('学习路线-00-学习地图与能力验收')).toBeNull();
+  expect(learningTopicForCourse('https://evil.example')).toBeNull();
 });
 
 it.each([

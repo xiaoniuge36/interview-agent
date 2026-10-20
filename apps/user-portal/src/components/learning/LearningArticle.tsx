@@ -1,19 +1,27 @@
 import { isValidElement, type ReactNode } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { slugify, type LearningDocument } from '@/lib/learning/learning-document-model';
+import {
+  slugify,
+  type LearningDocument,
+  type LearningHeading,
+} from '@/lib/learning/learning-document-model';
+
+type HeadingNode = {
+  position?: { start?: { line?: number | undefined } | undefined } | undefined;
+};
 
 export function LearningArticle({ document }: { document: LearningDocument }) {
-  const nextHeadingId = createHeadingIdFactory();
+  const idsByLine = headingIdsByLine(document.headings);
   const components: Components = {
     h1: ({ children }) => <h2 className="learning-article-title">{children}</h2>,
-    h2: ({ children }) => (
-      <h3 className="learning-article-section" id={nextHeadingId(children)}>
+    h2: ({ children, node }) => (
+      <h3 className="learning-article-section" id={headingIdFor(node, children, idsByLine)}>
         {children}
       </h3>
     ),
-    h3: ({ children }) => (
-      <h4 className="learning-article-subsection" id={nextHeadingId(children)}>
+    h3: ({ children, node }) => (
+      <h4 className="learning-article-subsection" id={headingIdFor(node, children, idsByLine)}>
         {children}
       </h4>
     ),
@@ -44,14 +52,25 @@ export function LearningArticle({ document }: { document: LearningDocument }) {
   );
 }
 
-function createHeadingIdFactory() {
-  const counts = new Map<string, number>();
-  return (children: ReactNode) => {
-    const baseId = slugify(readText(children));
-    const count = (counts.get(baseId) ?? 0) + 1;
-    counts.set(baseId, count);
-    return count === 1 ? baseId : `${baseId}-${count}`;
-  };
+/**
+ * 目录 ID 在服务端按正文行号预计算；渲染端按 hast node 的行号回查，
+ * 不再依赖组件调用次数计数——React 开发态会重复调用渲染函数，计数型 ID 会整体漂移。
+ */
+function headingIdsByLine(headings: readonly LearningHeading[]): ReadonlyMap<number, string> {
+  return new Map(headings.map((heading) => [heading.line, heading.id]));
+}
+
+function headingIdFor(
+  node: HeadingNode | undefined,
+  children: ReactNode,
+  idsByLine: ReadonlyMap<number, string>,
+): string {
+  const line = node?.position?.start?.line;
+  const mapped = line === undefined ? undefined : idsByLine.get(line);
+  if (mapped) return mapped;
+  // 引用块内标题等未进入目录的标题：带行号兜底，避免与目录锚点重复。
+  const slug = slugify(readText(children));
+  return line === undefined ? slug : `${slug}-line-${line}`;
 }
 
 function readText(node: ReactNode): string {

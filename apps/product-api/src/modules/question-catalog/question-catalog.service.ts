@@ -48,7 +48,7 @@ export class QuestionCatalogService {
       this.prisma.question.groupBy({ by: ['difficulty'], where, _count: { _all: true } }),
     ]);
     return QuestionCatalogResponseSchema.parse({
-      items: records.map(mapCatalogItem),
+      items: records.map((record) => mapCatalogItem(record, query.includeAnswers)),
       facets: catalogFacets({
         tagCounts,
         typeCounts: typeGroups.map((group) => ({ value: group.type, count: group._count._all })),

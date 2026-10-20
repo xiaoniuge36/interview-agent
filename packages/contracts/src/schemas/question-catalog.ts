@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { CONTRACT_LIMITS } from '../limits';
 import { PracticeModeSchema, PracticeSessionStatusSchema } from './practice';
-import { CandidateQuestionSchema, QuestionDifficultySchema, QuestionTypeSchema } from './training';
+import {
+  CandidateQuestionSchema,
+  QuestionDifficultySchema,
+  QuestionTypeSchema,
+  RubricPointSchema,
+} from './training';
 
 const CATALOG_PAGE_SIZE_MAX = 50;
 const CATALOG_PAGE_SIZE_DEFAULT = 20;
@@ -40,6 +45,10 @@ export const QuestionCatalogQuerySchema = z.object({
   type: QuestionTypeSchema.optional(),
   difficulty: QuestionDifficultySchema.optional(),
   sort: QuestionCatalogSortSchema.default('recommended'),
+  // 学习页题目速览需要参考答案；默认关闭，普通题库目录仍不暴露答案。
+  includeAnswers: z
+    .preprocess((value) => value === true || value === 'true', z.boolean())
+    .default(false),
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce
     .number()
@@ -55,6 +64,9 @@ export const QuestionCatalogItemSchema = CandidateQuestionSchema.extend({
     .array(z.string().min(1).max(CONTRACT_LIMITS.shortText))
     .max(CONTRACT_LIMITS.tags)
     .default([]),
+  // 仅当 includeAnswers=true 时返回，学习页据此展示题目速览与参考答案。
+  answer: z.string().min(1).max(CONTRACT_LIMITS.longText).optional(),
+  rubric: z.array(RubricPointSchema).min(1).max(CONTRACT_LIMITS.list).optional(),
 });
 export const QuestionCatalogFacetSchema = z.object({
   value: z.string().min(1).max(CONTRACT_LIMITS.shortText),

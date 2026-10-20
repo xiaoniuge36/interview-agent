@@ -58,6 +58,8 @@ function registerVerificationStartTest() {
       'href="/questions?source=learn&amp;course=%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF-01-agent%E5%9F%BA%E7%A1%80%E4%B8%8E%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B&amp;topic=react"',
     );
     expect(markup).toContain('进入题库验证 · ReAct');
+    expect(markup).toContain('href="#learning-question-shelf"');
+    expect(markup).toContain('看本课题目与答案');
   });
 }
 

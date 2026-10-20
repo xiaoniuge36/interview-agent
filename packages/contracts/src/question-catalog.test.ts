@@ -40,6 +40,31 @@ test('题库目录只返回用户可浏览的题目摘要', () => {
   assert.equal('rubric' in result.items[0]!, false);
 });
 
+test('题库目录在显式请求答案时返回参考答案与评分要点', () => {
+  const result = QuestionCatalogResponseSchema.parse({
+    items: [
+      {
+        ...question,
+        answer: '先拆分任务，再设计状态与恢复机制。',
+        rubric: [{ point: '任务拆解', score: 4, description: '说明拆分依据。' }],
+      },
+    ],
+    facets: {
+      categories: [{ value: 'ai_agent', label: 'AI Agent', count: 1 }],
+      difficulties: [{ value: 'hard', label: '高阶', count: 1 }],
+      types: [{ value: 'system_design', label: '系统设计', count: 1 }],
+      tags: [{ value: 'Agent 工作流', label: 'Agent 工作流', count: 1 }],
+    },
+    page: 1,
+    pageSize: 20,
+    total: 1,
+    totalPages: 1,
+  });
+
+  assert.equal(result.items[0]!.answer, '先拆分任务，再设计状态与恢复机制。');
+  assert.equal(result.items[0]!.rubric?.[0]?.point, '任务拆解');
+});
+
 test('题库目录返回客观题选项但不会泄漏正确选项', () => {
   const result = QuestionCatalogResponseSchema.parse({
     items: [

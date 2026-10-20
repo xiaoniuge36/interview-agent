@@ -32,6 +32,7 @@
     "db:bootstrap:admin": "pnpm --filter @interview-agent/product-api db:bootstrap:admin",
     "predb:seed": "pnpm --filter @interview-agent/contracts build && pnpm db:generate",
     "db:seed": "tsx apps/product-api/prisma/seed.ts",
+    "db:seed:agent-framework": "pnpm --filter @interview-agent/contracts build && pnpm db:generate && tsx apps/product-api/prisma/seed-agent-framework-questions.ts",
     "contracts:generate": "tsx packages/contracts/scripts/generate-runtime-schema.ts",
     "infra:up": "docker compose --env-file .env -f infra/docker/docker-compose.yml up -d",
     "infra:down": "docker compose --env-file .env -f infra/docker/docker-compose.yml down",

@@ -59,6 +59,9 @@ export const QUESTION_CATALOG_ITEM_SELECT = {
   options: true,
   sourceRefs: true,
   status: true,
+  // 学习页题目速览复用目录查询；是否返回答案由 includeAnswers 控制。
+  answer: true,
+  rubric: true,
 } satisfies Prisma.QuestionSelect;
 
 type CatalogItemRecord = Prisma.QuestionGetPayload<{
@@ -137,8 +140,8 @@ export function catalogOrderBy(
   return [{ updatedAt: 'desc' }, { id: 'desc' }];
 }
 
-export function mapCatalogItem(record: CatalogItemRecord) {
-  return {
+export function mapCatalogItem(record: CatalogItemRecord, includeAnswers = false) {
+  const item = {
     id: record.id,
     tenantId: record.tenantId,
     visibility: record.visibility,
@@ -152,6 +155,8 @@ export function mapCatalogItem(record: CatalogItemRecord) {
     sourceRefs: record.sourceRefs,
     status: record.status,
   };
+  if (!includeAnswers) return item;
+  return { ...item, answer: record.answer, rubric: record.rubric };
 }
 
 export function catalogFacets(source: CatalogFacetSource) {

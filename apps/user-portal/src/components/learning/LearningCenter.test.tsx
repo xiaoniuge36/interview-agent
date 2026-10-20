@@ -38,8 +38,8 @@ const activeDocument: LearningDocument = {
 - 能否解释核心概念？
 `,
   headings: [
-    { depth: 2, id: '核心概念', title: '核心概念' },
-    { depth: 2, id: '自测', title: '自测' },
+    { depth: 2, id: '核心概念', title: '核心概念', line: 3 },
+    { depth: 2, id: '自测', title: '自测', line: 11 },
   ],
 };
 
@@ -92,6 +92,8 @@ it('renders the library, GFM content and safe external links', () => {
   expect(markup.match(/<h1/g)).toHaveLength(1);
   expect(markup).toContain('<h2 class="learning-article-title">Agent 工程基础</h2>');
   expect(markup).toMatch(/<h3[^>]*id="核心概念"[^>]*>核心概念<\/h3>/);
+  // 目录锚点必须与正文标题 ID 一一对应：手点目录能滚到对应章节。
+  expect(markup).toMatch(/<h3[^>]*id="自测"[^>]*>自测<\/h3>/);
   expect(markup).toContain('<table>');
   expect(markup).toContain('id="核心概念"');
   expect(markup).toContain('href="https://example.com/docs"');

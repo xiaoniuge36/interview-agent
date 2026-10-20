@@ -7,7 +7,12 @@ import {
   type FacetCount,
 } from './question-catalog-query';
 
-const baseQuery: QuestionCatalogQuery = { sort: 'recommended', page: 1, pageSize: 20 };
+const baseQuery: QuestionCatalogQuery = {
+  sort: 'recommended',
+  page: 1,
+  pageSize: 20,
+  includeAnswers: false,
+};
 
 function facetSource(tagCounts: FacetCount[]) {
   return {
@@ -41,6 +46,8 @@ describe('question catalog company tags', () => {
       options: [],
       sourceRefs: [],
       status: 'published',
+      answer: '先说明缓存失效策略。',
+      rubric: [],
     });
     expect(item.tags).toEqual(['缓存']);
     expect(item.companies).toEqual(['字节跳动']);

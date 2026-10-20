@@ -12,6 +12,7 @@ import { LearningArticle } from './LearningArticle';
 import { LearningCourseActions } from './LearningCourseActions';
 import { LearningLibraryRail, type LearningNavigationItem } from './LearningLibraryRail';
 import { LearningProgressProvider } from './LearningProgressProvider';
+import { LearningQuestionShelf } from './LearningQuestionShelf';
 
 type LearningCenterProps = {
   documents: LearningDocument[];
@@ -96,6 +97,7 @@ function ReadingDesk({
       <DocumentHeader document={activeDocument} />
       <CourseBrief document={activeDocument} />
       <LearningArticle document={activeDocument} />
+      <LearningQuestionShelf courseSlug={activeDocument.slug} />
       {activeCourse ? (
         <LearningCourseActions
           course={activeCourse}
