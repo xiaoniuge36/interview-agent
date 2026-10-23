@@ -167,6 +167,20 @@ pnpm db:seed              # 幂等写入默认租户与公共题目
 `pnpm db:seed:agent-framework`。该命令在 `public` 租户中只插入缺失题目，
 不会更新已有题目；需要可用的 `DATABASE_URL` 和已应用的数据库迁移。
 
+### 导入项目面试题（ai-god-learn）
+
+`scripts/seed-project-interview-questions.ts` 把 ai-god-learn 中的
+`24-InterviewAgent项目面试题.md` 与 `25-KnowledgeHub项目面试题.md` 解析成公共题库记录：
+自动推断题型/难度、生成标签与评分点、按标题哈希生成稳定 ID，并做幂等同步（重复执行会更新，
+同时清理已删除题目的旧 ID）：
+
+```powershell
+pnpm db:seed:project-interview
+```
+
+默认读取本机 ai-god-learn 面试题目录；也可以通过位置参数传入 Markdown 文件覆盖。
+加 `--dry-run` 只预览不写库。需要可用的 `DATABASE_URL` 且已执行迁移。
+
 ### 导入外部题库（agent-interview-hub）
 
 `scripts/import-agent-interview-hub.ts` 用于把 [agent-interview-hub](https://github.com/Zchary1106/agent-interview-hub) 整理的公司面试题 JSON 导入 `public` 租户题库：脚本按「公司 + 题干 + 序号」哈希生成稳定 ID 做幂等 upsert，可重复执行；根据题干自动推断题型（system_design / project_deep_dive / short_answer），并写入统一评分标准与来源引用。
