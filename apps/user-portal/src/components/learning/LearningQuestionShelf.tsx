@@ -1,34 +1,34 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { QuestionCatalogResponse } from '@interview-agent/contracts';
 import { getQuestionCatalog } from '@/lib/question-catalog-api';
-import { learningTopicForCourse } from '@/lib/learning/learning-verification';
+import { learningShelfTopicsForCourse } from '@/lib/learning/learning-verification';
 
 const SHELF_PAGE_SIZE = 8;
 
 type ShelfQuestion = QuestionCatalogResponse['items'][number];
 type ShelfTopic = { label: string; tag: string };
 type ShelfState =
-  | { status: 'loading'; items: ShelfQuestion[]; error: '' }
-  | { status: 'ready'; items: ShelfQuestion[]; error: '' }
-  | { status: 'error'; items: ShelfQuestion[]; error: string };
+  | { status: 'loading'; items: ShelfQuestion[]; total: number; error: '' }
+  | { status: 'ready'; items: ShelfQuestion[]; total: number; error: '' }
+  | { status: 'error'; items: ShelfQuestion[]; total: number; error: string };
 
-const INITIAL_STATE: ShelfState = { status: 'loading', items: [], error: '' };
+const INITIAL_STATE: ShelfState = { status: 'loading', items: [], total: 0, error: '' };
 
 /**
  * 学习页「题目速览」：按课程主题标签拉取题库题目和参考答案。
  * 只读取已发布题目；答案仅在本次请求显式 includeAnswers 时返回。
  */
 export function LearningQuestionShelf({ courseSlug }: { courseSlug: string }) {
-  const topic = learningTopicForCourse(courseSlug);
-  if (!topic) return null;
-  return <QuestionShelfBody key={topic.tag} topic={topic} />;
+  const topics = useMemo(() => learningShelfTopicsForCourse(courseSlug), [courseSlug]);
+  if (!topics.length) return null;
+  return <QuestionShelfBody key={topics.map((topic) => topic.tag).join('|')} topics={topics} />;
 }
 
-function QuestionShelfBody({ topic }: { topic: ShelfTopic }) {
-  const { state, retry } = useShelfQuestions(topic.tag);
+function QuestionShelfBody({ topics }: { topics: ShelfTopic[] }) {
+  const { state, retry } = useShelfQuestions(topics);
   const { expandedIds, allExpanded, toggle, toggleAll } = useShelfExpansion(state.items);
   return (
     <section
@@ -36,31 +36,57 @@ function QuestionShelfBody({ topic }: { topic: ShelfTopic }) {
       className="learning-question-shelf"
       aria-labelledby="learning-question-shelf-heading"
     >
-      <ShelfHeader topic={topic} state={state} allExpanded={allExpanded} onToggleAll={toggleAll} />
+      <ShelfHeader
+        label={topics.length > 1 ? '项目面试' : (topics[0]?.label ?? '本课')}
+        linkTag={topics.length > 1 ? '项目面试题' : (topics[0]?.tag ?? '')}
+        state={state}
+        allExpanded={allExpanded}
+        onToggleAll={toggleAll}
+      />
       <ShelfContent state={state} expandedIds={expandedIds} onToggle={toggle} onRetry={retry} />
     </section>
   );
 }
 
-function useShelfQuestions(tag: string) {
+function useShelfQuestions(topics: readonly ShelfTopic[]) {
   const [state, setState] = useState<ShelfState>(INITIAL_STATE);
   const [reloadToken, setReloadToken] = useState(0);
   useEffect(() => {
     let cancelled = false;
     setState(INITIAL_STATE);
-    getQuestionCatalog({ tags: [tag], pageSize: SHELF_PAGE_SIZE, includeAnswers: true })
-      .then((catalog) => {
-        if (!cancelled) setState({ status: 'ready', items: catalog.items, error: '' });
+    const perTopic = Math.max(1, Math.ceil(SHELF_PAGE_SIZE / topics.length));
+    Promise.all(
+      topics.map((topic) =>
+        getQuestionCatalog({
+          tags: [topic.tag],
+          pageSize: perTopic,
+          includeAnswers: true,
+        }),
+      ),
+    )
+      .then((catalogs) => {
+        if (cancelled) return;
+        setState({
+          status: 'ready',
+          items: catalogs.flatMap((catalog) => catalog.items),
+          total: catalogs.reduce((sum, catalog) => sum + catalog.total, 0),
+          error: '',
+        });
       })
       .catch(() => {
         if (!cancelled) {
-          setState({ status: 'error', items: [], error: '本课题目暂时没有加载成功。' });
+          setState({
+            status: 'error',
+            items: [],
+            total: 0,
+            error: '本课题目暂时没有加载成功。',
+          });
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [reloadToken, tag]);
+  }, [reloadToken, topics]);
   const retry = useCallback(() => setReloadToken((token) => token + 1), []);
   return { state, retry };
 }
@@ -86,12 +112,14 @@ function useShelfExpansion(items: ShelfQuestion[]) {
 }
 
 function ShelfHeader({
-  topic,
+  label,
+  linkTag,
   state,
   allExpanded,
   onToggleAll,
 }: {
-  topic: ShelfTopic;
+  label: string;
+  linkTag: string;
   state: ShelfState;
   allExpanded: boolean;
   onToggleAll: () => void;
@@ -101,7 +129,7 @@ function ShelfHeader({
       <div>
         <span>题目速览</span>
         <h2 id="learning-question-shelf-heading">本课题目与参考答案</h2>
-        <p>{shelfSummary(state, topic)}</p>
+        <p>{shelfSummary(state, label)}</p>
       </div>
       <div className="learning-question-shelf-actions">
         {state.items.length > 1 ? (
@@ -109,7 +137,7 @@ function ShelfHeader({
             {allExpanded ? '全部收起' : '全部展开'}
           </button>
         ) : null}
-        <Link href={`/questions?tags=${encodeURIComponent(topic.tag)}`}>去题库练这组题</Link>
+        <Link href={`/questions?tags=${encodeURIComponent(linkTag)}`}>去题库练这组题</Link>
       </div>
     </header>
   );
@@ -173,6 +201,7 @@ function QuestionRow({
   onToggle: () => void;
 }) {
   const answerId = `learning-question-answer-${question.id}`;
+  const project = projectLabel(question.tags);
   return (
     <li className={expanded ? 'learning-question-item expanded' : 'learning-question-item'}>
       <button
@@ -189,6 +218,7 @@ function QuestionRow({
           <strong>{question.title}</strong>
           <small>
             {typeLabel(question.type)} · {difficultyLabel(question.difficulty)}
+            {project ? ` · ${project}` : ''}
           </small>
         </span>
         <span className="learning-question-state" aria-hidden="true">
@@ -253,10 +283,17 @@ function QuestionRubric({ rubric }: { rubric: NonNullable<ShelfQuestion['rubric'
   );
 }
 
-function shelfSummary(state: ShelfState, topic: ShelfTopic): ReactNode {
-  if (state.status === 'loading') return `${topic.label} · 正在匹配本课题目`;
-  if (state.status === 'error') return `${topic.label} · 题目加载失败`;
-  return `${topic.label} · 共 ${state.items.length} 道相关题，点开即可对照参考答案`;
+function shelfSummary(state: ShelfState, label: string): ReactNode {
+  if (state.status === 'loading') return `${label} · 正在匹配本课题目`;
+  if (state.status === 'error') return `${label} · 题目加载失败`;
+  const preview = state.total > state.items.length ? `，当前展示前 ${state.items.length} 道` : '';
+  return `${label} · 共 ${state.total} 道相关题${preview}，点开即可对照参考答案`;
+}
+
+function projectLabel(tags: readonly string[]): string | null {
+  if (tags.includes('项目:InterviewAgent')) return 'Interview Agent';
+  if (tags.includes('项目:KnowledgeHub')) return 'Knowledge Hub';
+  return null;
 }
 
 function typeLabel(value: ShelfQuestion['type']): string {

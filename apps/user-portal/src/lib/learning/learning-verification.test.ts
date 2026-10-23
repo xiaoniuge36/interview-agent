@@ -2,6 +2,7 @@ import { expect, it } from 'vitest';
 import { loadLearningDocuments } from './learning-documents';
 import {
   learningPracticeHref,
+  learningShelfTopicsForCourse,
   learningTopicForCourse,
   learningVerificationHref,
   learningVerificationReturnHref,
@@ -58,6 +59,7 @@ it.each([
   ['学习路线-21-简历优化与自我介绍', 'resume', '简历优化'],
   ['学习路线-22-结构化表达与金字塔原理', 'structured-expression', '结构化表达'],
   ['学习路线-23-反问谈薪与offer决策', 'offer', 'Offer 决策'],
+  ['学习路线-24-项目实战面试题', 'project-interview', '项目面试题'],
   ['学习路线-30-后端工程面试基础', 'backend-basics', '数据库'],
   ['学习路线-31-数据分析面试指标与实验', 'stats-thinking', '统计思维'],
   ['学习路线-32-产品经理面试方法论', 'product-method', '产品方法论'],
@@ -90,8 +92,39 @@ it('resolves the question shelf topic for a course and skips unmapped courses', 
     label: 'RAG',
     tag: 'RAG',
   });
+  expect(learningTopicForCourse('学习路线-24-项目实战面试题')).toEqual({
+    label: '项目面试',
+    tag: '项目面试题',
+  });
   expect(learningTopicForCourse('学习路线-00-学习地图与能力验收')).toBeNull();
   expect(learningTopicForCourse('https://evil.example')).toBeNull();
+});
+
+it('keeps project interview verification open to all question types', () => {
+  const verification = resolveLearningVerification({
+    source: ['learn'],
+    course: ['学习路线-24-项目实战面试题'],
+    topic: ['project-interview'],
+  });
+
+  expect(verification).toMatchObject({
+    status: 'ready',
+    courseSlug: '学习路线-24-项目实战面试题',
+    topicLabel: '项目面试',
+    query: { tags: ['项目面试题'] },
+  });
+  expect(verification.status === 'ready' ? verification.query.type : 'missing').toBeUndefined();
+});
+
+it('previews both projects in the project course shelf', () => {
+  expect(learningShelfTopicsForCourse('学习路线-24-项目实战面试题')).toEqual([
+    { label: 'Interview Agent', tag: '项目:InterviewAgent' },
+    { label: 'Knowledge Hub', tag: '项目:KnowledgeHub' },
+  ]);
+  expect(learningShelfTopicsForCourse('学习路线-03-rag与agentic-rag')).toEqual([
+    { label: 'RAG', tag: 'RAG' },
+  ]);
+  expect(learningShelfTopicsForCourse('学习路线-00-学习地图与能力验收')).toEqual([]);
 });
 
 it.each([

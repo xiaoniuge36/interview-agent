@@ -39,7 +39,7 @@ export function useQuestionCatalog(query: QuestionCatalogQuery, enabled: boolean
 
 export function catalogQueryFromString(
   value: string,
-  learningQuery: { tags: string[]; type: 'single_choice' } | null,
+  learningQuery: { tags: string[]; type?: 'single_choice' } | null,
 ): QuestionCatalogQuery {
   const params = new URLSearchParams(value);
   const param = (key: string) => params.get(key) || undefined;

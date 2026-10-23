@@ -60,6 +60,18 @@ describe('QuestionPickerPage learning verification', () => {
     expect(markup).not.toContain('通用 Agent 推荐');
   });
 
+  it('shows project interview questions without restricting to single choice', () => {
+    searchParamsState.value = new URLSearchParams(
+      'source=learn&course=学习路线-24-项目实战面试题&topic=project-interview',
+    );
+
+    const markup = renderToStaticMarkup(<QuestionPickerPage />);
+
+    expect(markup).toContain('本课题目练习');
+    expect(markup).toContain('查看 项目面试 题目');
+    expect(markup).not.toContain('本课客观题验证');
+  });
+
   it('shows a safe no-match state instead of a generic catalog for a known unmapped course', () => {
     searchParamsState.value = new URLSearchParams(
       'source=learn&course=学习路线-00-学习地图与能力验收',

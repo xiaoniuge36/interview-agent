@@ -59,6 +59,7 @@ export function QuestionPickerPage() {
 
 function QuestionPickerHeader({ verification }: { verification: LearningVerification }) {
   const learningReady = verification.status === 'ready';
+  const objective = learningReady && verification.query.type === 'single_choice';
   return (
     <header className="question-picker-header motion-rise">
       <div>
@@ -67,13 +68,13 @@ function QuestionPickerHeader({ verification }: { verification: LearningVerifica
         <h1>{learningReady ? `验证 ${verification.courseTitle}` : '从一轮针对性训练开始'}</h1>
         <p>
           {learningReady
-            ? `已筛选 ${verification.topicLabel} 相关的现有单选题，不需要重新设置筛选条件。`
+            ? `已筛选 ${verification.topicLabel} 相关的现有${objective ? '单选题' : '题目'}，不需要重新设置筛选条件。`
             : 'Agent 会先排出值得练的题；需要时，你也可以自由组合自己的题单。'}
         </p>
       </div>
       <div className="question-picker-rule">
-        <strong>{learningReady ? '单选' : '1–10'}</strong>
-        <span>{learningReady ? '本课客观题' : '每轮题目数'}</span>
+        <strong>{learningReady ? (objective ? '单选' : '题库') : '1–10'}</strong>
+        <span>{learningReady ? (objective ? '本课客观题' : '本课题目') : '每轮题目数'}</span>
       </div>
     </header>
   );
@@ -134,6 +135,7 @@ function LearningVerificationContext({
   verification: Extract<LearningVerification, { status: 'ready' }>;
   workspaceFocused: boolean;
 }) {
+  const objective = verification.query.type === 'single_choice';
   return (
     <section
       className="learning-question-context motion-rise"
@@ -141,20 +143,24 @@ function LearningVerificationContext({
     >
       <div>
         <span>学习路径验证</span>
-        <h2 id="learning-question-context-heading">本课客观题验证</h2>
+        <h2 id="learning-question-context-heading">
+          {objective ? '本课客观题验证' : '本课题目练习'}
+        </h2>
         <p>
-          {verification.courseTitle} · {verification.topicLabel} · 现有单选题
+          {verification.courseTitle} · {verification.topicLabel} · 现有
+          {objective ? '单选题' : '题目'}
         </p>
       </div>
       <div className="learning-question-context-actions">
         <Link className="primary" href="#self-picker-workspace">
-          查看 {verification.topicLabel} 客观题
+          查看 {verification.topicLabel} {objective ? '客观题' : '题目'}
         </Link>
         <Link href={learningVerificationReturnHref(verification.courseSlug)}>返回本课</Link>
       </div>
       {workspaceFocused ? (
         <span className="sr-only" role="status">
-          已定位到 {verification.topicLabel} 客观题，可开始筛选和组卷。
+          已定位到 {verification.topicLabel}
+          {objective ? '客观题' : '题目'}，可开始筛选和组卷。
         </span>
       ) : null}
     </section>
@@ -198,7 +204,7 @@ function UnavailableLearningVerification({
     <section className="learning-question-state" aria-live="polite">
       <span>学习路径验证</span>
       <h2>该主题暂无对应题目</h2>
-      <p>{courseTitle} 尚未找到与本课主题精确匹配的现有客观题，因此没有展示全量题库。</p>
+      <p>{courseTitle} 尚未找到与本课主题精确匹配的现有题目，因此没有展示全量题库。</p>
       <div>
         <Link className="primary" href={learningVerificationReturnHref(courseSlug)}>
           返回本课

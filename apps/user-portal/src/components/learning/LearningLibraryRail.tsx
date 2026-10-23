@@ -23,8 +23,6 @@ export type LearningNavigationItem = {
   durationMinutes: number | null;
 };
 
-const REFERENCE_GROUP_TITLE = '参考资料';
-
 export function LearningLibraryRail({
   documents,
   activeSlug,
@@ -36,6 +34,9 @@ export function LearningLibraryRail({
 }) {
   const courses = documents.filter((document) => document.kind === 'course');
   const trackGroups = groupCoursesByTrack(courses);
+  const referenceGroups = groupCoursesByTrack(
+    documents.filter((document) => document.kind === 'reference'),
+  );
   const { progress, summary, storageStatus, isCompleted } = useLearningProgress();
   const continueDocument = courses.find((document) => document.slug === progress.lastOpenedSlug);
   const { railRef, activeLinkRef } = useActiveDocumentInView(activeSlug);
@@ -57,22 +58,40 @@ export function LearningLibraryRail({
         storageStatus={storageStatus}
         onSelectDocument={onSelectDocument}
       />
-      {trackGroups.map((group) => (
+      <LibraryGroups
+        groups={[...trackGroups, ...referenceGroups]}
+        isCompleted={isCompleted}
+        {...groupProps}
+      />
+    </aside>
+  );
+}
+
+function LibraryGroups({
+  groups,
+  isCompleted,
+  ...groupProps
+}: {
+  groups: CourseTrackGroup[];
+  isCompleted: (slug: string) => boolean;
+} & Omit<DocumentGroupSectionProps, 'title' | 'meta' | 'documents' | 'isCompleted'>) {
+  return (
+    <>
+      {groups.map((group) => (
         <DocumentGroupSection
           key={group.track}
           title={group.track}
-          meta={courseGroupMeta(group.courses, isCompleted)}
+          meta={
+            group.courses[0]?.kind === 'course'
+              ? courseGroupMeta(group.courses, isCompleted)
+              : String(group.courses.length)
+          }
           documents={group.courses}
           isCompleted={isCompleted}
           {...groupProps}
         />
       ))}
-      <ReferenceGroupSection
-        references={documents.filter((document) => document.kind === 'reference')}
-        isCompleted={() => false}
-        {...groupProps}
-      />
-    </aside>
+    </>
   );
 }
 
@@ -118,23 +137,6 @@ function DocumentGroupSection({
   );
 }
 
-function ReferenceGroupSection({
-  references,
-  ...groupProps
-}: Omit<DocumentGroupSectionProps, 'title' | 'meta' | 'documents'> & {
-  references: LearningNavigationItem[];
-}) {
-  if (!references.length) return null;
-  return (
-    <DocumentGroupSection
-      title={REFERENCE_GROUP_TITLE}
-      meta={String(references.length)}
-      documents={references}
-      {...groupProps}
-    />
-  );
-}
-
 type CourseTrackGroup = {
   track: string;
   courses: LearningNavigationItem[];
@@ -161,9 +163,9 @@ function trackSummaryLabel(trackGroups: CourseTrackGroup[]): string {
   return `${first.track} 等 ${trackGroups.length} 个方向`;
 }
 
-/** 组名到当前文档所在组的映射：参考资料归入固定组名。 */
+/** 组名就是文档所属 track；课程和参考资料都按各自的 track 分组。 */
 function groupTitleFor(document: LearningNavigationItem): string {
-  return document.kind === 'course' ? document.track : REFERENCE_GROUP_TITLE;
+  return document.track;
 }
 
 type GroupExpansion = {

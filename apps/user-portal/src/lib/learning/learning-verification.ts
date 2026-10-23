@@ -6,6 +6,8 @@ type LearningTopic = {
   slug: string;
   label: string;
   tag: string;
+  /** 项目题包含简答/系统设计等开放题，不强制只筛单选题。 */
+  allTypes?: boolean;
 };
 
 type LearningCourse = {
@@ -92,6 +94,11 @@ const LEARNING_COURSES: readonly LearningCourse[] = [
     topic: { slug: 'offer', label: 'Offer 决策', tag: 'Offer 决策' },
   },
   {
+    slug: '学习路线-24-项目实战面试题',
+    title: '项目实战面试题：Interview Agent 与 Knowledge Hub',
+    topic: { slug: 'project-interview', label: '项目面试', tag: '项目面试题', allTypes: true },
+  },
+  {
     slug: '学习路线-30-后端工程面试基础',
     title: '后端工程面试基础：网络、数据库与并发',
     topic: { slug: 'backend-basics', label: '后端基础', tag: '数据库' },
@@ -141,6 +148,24 @@ export function learningTopicForCourse(courseSlug: string): { label: string; tag
   return topic ? { label: topic.label, tag: topic.tag } : null;
 }
 
+/**
+ * 学习页题目速览使用的主题列表。
+ * 项目实战课同时预览两个项目，避免只显示其中一个项目的题。
+ */
+export function learningShelfTopicsForCourse(
+  courseSlug: string,
+): Array<{ label: string; tag: string }> {
+  const course = courseBySlug(courseSlug);
+  if (!course?.topic) return [];
+  if (course.topic.slug === 'project-interview') {
+    return [
+      { label: 'Interview Agent', tag: '项目:InterviewAgent' },
+      { label: 'Knowledge Hub', tag: '项目:KnowledgeHub' },
+    ];
+  }
+  return [{ label: course.topic.label, tag: course.topic.tag }];
+}
+
 export type LearningVerification =
   | { status: 'inactive' }
   | { status: 'invalid' }
@@ -151,7 +176,7 @@ export type LearningVerification =
       courseTitle: string;
       topicLabel: string;
       topicSlug: string;
-      query: { tags: string[]; type: 'single_choice' };
+      query: { tags: string[]; type?: 'single_choice' };
     };
 
 export function learningVerificationHref(courseSlug: string) {
@@ -163,7 +188,8 @@ export function learningVerificationHref(courseSlug: string) {
 
 export function learningVerificationActionLabel(courseSlug: string) {
   const topic = courseBySlug(courseSlug)?.topic;
-  return topic ? `进入题库验证 · ${topic.label}` : '进入题库验证';
+  if (!topic) return '进入题库验证';
+  return topic.allTypes ? `进入题库练习 · ${topic.label}` : `进入题库验证 · ${topic.label}`;
 }
 
 export function learningPracticeHref(sessionId: string, verification: LearningVerification) {
@@ -200,8 +226,15 @@ export function resolveLearningVerification(input: {
     courseTitle: course.title,
     topicLabel: course.topic.label,
     topicSlug: course.topic.slug,
-    query: { tags: [course.topic.tag], type: 'single_choice' },
+    query: learningVerificationQuery(course.topic),
   };
+}
+
+function learningVerificationQuery(topic: LearningTopic): {
+  tags: string[];
+  type?: 'single_choice';
+} {
+  return topic.allTypes ? { tags: [topic.tag] } : { tags: [topic.tag], type: 'single_choice' };
 }
 
 export function learningVerificationReturnHref(courseSlug: string) {
