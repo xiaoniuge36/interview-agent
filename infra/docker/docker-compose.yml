@@ -110,7 +110,7 @@ services:
       - backend
 
   phoenix:
-    image: arizephoenix/phoenix:13.15.0@sha256:598e699ef3e71e26bbcfa3b19963fc480d954a758badfef1d665ec92885f13e6
+    image: arizephoenix/phoenix:20.24.0@sha256:d77e94c0227e46490d9d935d5b58dcd8799feade912491b8182a49ad76d154b1
     restart: unless-stopped
     environment:
       PHOENIX_WORKING_DIR: /mnt/data
